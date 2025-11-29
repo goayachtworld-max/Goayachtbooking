@@ -1,0 +1,80 @@
+.dashboardWrapper {
+   min-height: calc(100vh - 60px);
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #f3faff, #e7f5ff);
+}
+
+.content {
+  width: 100%;
+  max-width: 1200px;
+}
+
+.title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #003d66;
+  margin-bottom: 0.25rem;
+}
+
+.subTitle {
+  text-align: center;
+  color: #4a6070;
+  margin-bottom: 2rem;
+  font-size: 1rem;
+}
+
+/* Card styles */
+.card {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 60, 120, 0.1);
+  transition: box-shadow 0.25s ease;
+}
+
+/* Remove hover lift - only subtle shadow on hover */
+.card:hover {
+  box-shadow: 0 8px 22px rgba(0, 60, 120, 0.12);
+}
+
+.cardBody {
+  padding: 20px;
+  text-align: center;
+}
+
+.cardBody h5 {
+  font-weight: 600;
+  color: #003d66;
+  margin-bottom: 0.5rem;
+}
+
+.cardBody p {
+  font-size: 0.95rem;
+  color: #4a6070;
+  margin-bottom: 1rem;
+}
+
+.cardBtn {
+  padding: 8px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cardBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 60, 120, 0.15);
+}
+
+/* Quick Actions */
+.quickActions {
+  margin-top: 3rem;
+  text-align: center;
+}
+
+.quickActions h5 {
+  font-weight: 600;
+  color: #003d66;
+}

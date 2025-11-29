@@ -1,0 +1,173 @@
+/* -------- Light Premium Yacht Theme -------- */
+
+.loginWrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+
+  background: linear-gradient(
+    135deg,
+    #ffffff,
+    #f3faff,
+    #e7f5ff
+  );
+  background-size: 300% 300%;
+  animation: softFlow 14s ease infinite;
+}
+
+@keyframes softFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 360px;
+  padding: 28px;
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(200, 220, 255, 0.4);
+  box-shadow: 0 10px 35px rgba(0, 60, 120, 0.15);
+  color: #00253d;
+}
+
+.loginTitle {
+  text-align: center;
+  margin-bottom: 2px;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #003d66;
+}
+
+.loginForm {
+  margin-top: 16px;
+}
+
+.inputGroup {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.inputGroup label {
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  color: #003d66;
+  font-weight: 500;
+}
+
+/* LEFT ICONS ---------------------------- */
+.leftIcon {
+  position: absolute;
+  left: 12px;
+  top: 39px;
+  color: #6c8598;
+  font-size: 1.1rem;
+}
+
+.inputField {
+  padding: 12px;
+  padding-left: 42px !important; /* for icons */
+  padding-right: 42px !important; /* for eye icon */
+  border-radius: 12px;
+  border: 1px solid #d0e4f5;
+  outline: none;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.9);
+  transition: 0.25s ease;
+  color: #003d66;
+}
+
+.inputField::placeholder {
+  color: #8aa5b7;
+}
+
+.inputField:focus {
+  border-color: #64aee8;
+  box-shadow: 0 0 0 4px rgba(100, 174, 232, 0.2);
+}
+
+/* RIGHT ICON - SHOW/HIDE PASSWORD */
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  top: 38px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #6c8598;
+  transition: color 0.2s;
+}
+
+.passwordToggle:hover {
+  color: #003d66;
+}
+
+.errorMsg {
+  color: #b32626;
+  background: rgba(255, 120, 120, 0.18);
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+
+.loginButton {
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  background: #0077c7;
+  color: #ffffff;
+  transition: 0.25s;
+  letter-spacing: 0.3px;
+}
+
+.loginButton:hover {
+  background: #005fa5;
+  transform: translateY(-2px);
+}
+
+.loginButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* -------- MOBILE VIEW -------- */
+@media (max-width: 480px) {
+  .loginWrapper {
+    padding: 14px;
+  }
+
+  .loginCard {
+    padding: 22px;
+    max-width: 92%;
+    border-radius: 14px;
+  }
+
+  .loginTitle {
+    font-size: 1.55rem;
+  }
+
+  .leftIcon {
+    top: 35px;
+  }
+
+  .passwordToggle {
+    top: 34px;
+  }
+
+  .inputField {
+    padding: 10px;
+  }
+}

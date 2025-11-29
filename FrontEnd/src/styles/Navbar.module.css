@@ -1,0 +1,109 @@
+/* MAIN NAVBAR */
+.navbar {
+  width: 100%;
+  padding: 12px 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: linear-gradient(135deg, #347ff0, #073a8c);
+  /* box-shadow: 0px 3px 12px rgba(0, 0, 0, 0.25); */
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* BRAND TITLE */
+.brand {
+  font-size: 1.4rem;
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* NAV LIST */
+.navList {
+  list-style: none;
+  display: flex;
+  gap: 26px;
+  margin: 0;
+  padding: 0;
+}
+
+/* NAV LINKS */
+.navItem {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: 0.25s ease-in-out;
+  position: relative;
+}
+
+/* HOVER EFFECT */
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffe082;
+  transform: translateY(-2px);
+}
+
+/* ACTIVE TAB */
+.activeTab {
+  background: rgba(255, 255, 255, 0.40);
+  color: #ffe082 !important;
+  font-weight: 600;
+  border-radius: 8px;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(255, 220, 100, 0.35);
+}
+
+/* ACTIVE TAB BOTTOM BAR (optional) */
+/*
+.activeTab::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #ffe082;
+  border-radius: 2px;
+}
+*/
+
+/* MOBILE VIEW */
+@media (max-width: 600px) {
+  .navbar {
+    padding: 10px 20px;
+  }
+
+  .navList {
+    gap: 14px;
+  }
+
+  .navItem {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+  }
+}
+
+
+.navHover {
+  transition: 0.25s ease-in-out;
+  padding: 8px 14px !important;
+  border-radius: 8px;
+}
+
+.navHover:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+/* ACTIVE TAB */
+.activeTab {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  font-weight: 600;
+}

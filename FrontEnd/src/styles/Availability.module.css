@@ -1,0 +1,140 @@
+/* Container Title */
+.availability-title {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #092a56;
+}
+
+/* Filter Bar */
+.filter-bar {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(6px);
+  border-radius: 16px;
+}
+
+.filter-select {
+  border-radius: 12px !important;
+  max-width: 110px;
+}
+
+.filter-capacity {
+  max-width: 65px;
+}
+
+.clear-btn {
+  border-radius: 12px;
+}
+
+/* Card Styling */
+.yacht-card {
+  cursor: pointer;
+  border-radius: 20px;
+  overflow: hidden;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.yacht-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Yacht Image */
+.yacht-image {
+  height: 200px;
+  width: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Yacht Name */
+.yacht-name {
+  font-weight: 600;
+  color: #145da0;
+}
+
+/* Day Status Box */
+.day-box {
+  width: 31%;
+  color: #333;
+  font-size: 13px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  padding: 8px;
+  text-align: center;
+}
+
+.day-free {
+  background: #28a745;
+  color: white;
+}
+
+.day-busy {
+  background: #ffd659;
+}
+
+.day-locked {
+  background: #d9d9d9;
+}
+
+.availability-title {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #1f3d63;
+}
+
+.filter-box {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(6px);
+}
+
+.capacity-select,
+.budget-select {
+  max-width: 120px;
+  border-radius: 12px;
+}
+
+.clear-btn {
+  border-radius: 12px;
+}
+
+.card-yacht {
+  cursor: pointer;
+  border-radius: 20px;
+  overflow: hidden;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.244);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.card-yacht:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.yacht-img {
+  height: 200px;
+  width: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.yacht-name {
+  font-weight: 600;
+  color: #145DA0;
+}
+
+.day-box {
+  width: 31%;
+  color: #fff;
+  font-size: 13px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}

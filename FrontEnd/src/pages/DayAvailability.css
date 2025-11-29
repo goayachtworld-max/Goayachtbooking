@@ -1,0 +1,109 @@
+/*  Remove border around react-calendar */
+.react-calendar {
+  border: none !important;
+  margin: auto;
+}
+
+/*  Bigger calendar for screens >= 600px */
+@media (min-width: 650px) {
+  .react-calendar {
+    transform: scale(1.05);
+    transform-origin: top center;
+  }
+}
+
+/*  Make calendar dates round */
+.react-calendar__tile {
+  border-radius: 50% !important;
+  height: 45px !important;
+  width: 45px !important;
+  line-height: 45px !important;
+  text-align: center !important;
+  margin: 2px 0 !important; 
+  padding: 0 !important;
+}
+
+.react-calendar__tile--active,
+.react-calendar__tile--now {
+  border-radius: 50% !important;
+}
+
+/*  Parent wrapper uses full width and centers the layout */
+.availability-wrapper {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  gap: 20px;
+}
+
+/*  Desktop + Tablet: side by side */
+.availability-left {
+  flex: 0 0 50%;
+  max-width: 50%;
+}
+
+.availability-right {
+  flex: 1;
+}
+
+/*  Mobile (<600px): stack vertical */
+@media (max-width: 600px) {
+  .availability-wrapper {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .availability-left,
+  .availability-right {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+
+  .back{
+    display: none;
+  }
+}
+
+/*  For tablets & small screens (< 750px): expand container */
+@media (max-width: 750px) {
+  .day-container {
+    width: 95% !important;
+    max-width: 95% !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    /* margin-left: 0 !important;
+    margin-right: 0 !important; */
+    margin: auto;
+  }
+}
+
+/*  NEW — Only one slot per line */
+.slot-column-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+/*  Full-width slot buttons */
+.slot-column-container .slot-btn {
+  width: 100%;
+  text-align: center;
+  padding: 12px 0;
+  font-size: 16px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+ .slot-btn{
+  margin: 5px 0;
+ }
+
+/*  Disabled slots style for clarity */
+.slot-btn.disabled,
+.bg-secondary.opacity-50 {
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
