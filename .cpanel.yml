@@ -1,0 +1,19 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/phfapdtpgbb8/goaboatrides.com
+    - echo "Installing server dependencies..."
+    - cd server && npm install
+
+    - echo "Building frontend..."
+    - cd ../client && npm install && npm run build
+
+    - echo "Copying frontend build to public folder..."
+    - rm -rf $DEPLOYPATH/*
+    - cp -R dist/* $DEPLOYPATH/
+
+    - echo "Copying backend to deploy folder..."
+    - mkdir -p $DEPLOYPATH/backend
+    - cp -R ../server/* $DEPLOYPATH/backend/
+
+    - echo "Deployment finished!"
