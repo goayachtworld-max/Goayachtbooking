@@ -1,0 +1,94 @@
+/* Base styles (for small screens) */
+.slot-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-bottom: 1px solid #eee;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.time-input {
+  width: 70px;
+  flex-shrink: 0;
+  padding: 2px 4px;
+  font-size: 13px;
+}
+
+.time-separator {
+  margin: 0 2px;
+  font-weight: 500;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.slot-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  opacity: 0.6;
+  padding: 1px 3px;
+  border-radius: 3px;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.icon-btn:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.05);
+  cursor: pointer;
+}
+
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.slot-free {
+  background: #e9f7ef;
+}
+
+.slot-locked {
+  background: #fff7da;
+}
+
+.slot-booked {
+  background: #f8d7da;
+  opacity: 0.7;
+}
+
+/* Restore normal size for larger screens (>600px) */
+@media (min-width: 600px) {
+  .slot-row {
+    gap: 10px;
+    padding: 8px 10px;
+  }
+
+  .time-input {
+    width: 110px;
+    font-size: 14px;
+    padding: 4px 6px;
+  }
+
+  .time-separator {
+    margin: 0 4px;
+    font-size: 14px;
+  }
+
+  .slot-controls {
+    gap: 6px;
+  }
+
+  .icon-btn {
+    font-size: 15px;
+    padding: 2px 5px;
+  }
+}

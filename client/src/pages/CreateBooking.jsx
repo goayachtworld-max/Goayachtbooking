@@ -57,7 +57,8 @@ function CreateBooking() {
     const fetchYachts = async () => {
       try {
         const token = localStorage.getItem("authToken");
-        const res = await getAllYachtsAPI(token);
+        const date = formData.date;
+        const res = await getAllYachtsAPI(token, date);
         const yachtList = Array.isArray(res?.data?.yachts)
           ? res.data.yachts
           : [];
@@ -67,8 +68,10 @@ function CreateBooking() {
         console.error("Failed to fetch yachts:", err);
       }
     };
-    fetchYachts();
-  }, []);
+    if (formData.date) {
+      fetchYachts();
+    }
+  }, [formData.date]);
 
   //  Slot generator with special slot logic
 
@@ -158,24 +161,90 @@ function CreateBooking() {
   //   return finalSlots;
   // };
 
-  const buildSlotsForYacht = (yacht) => {
-    if (!yacht) {
-      console.log("⛔ No yacht found");
-      return [];
-    }
+  // const buildSlotsForYacht = (yacht) => {
+  //   if (!yacht) return [];
+
+  //   const sailStart = yacht.sailStartTime;
+  //   const sailEnd = yacht.sailEndTime;
+  //   const durationRaw = yacht.slotDurationMinutes || yacht.duration;
+
+  //   const slotsFromSchema = yacht.slots || []; // if schema-defined slots exist
+  //   const specialSlots = yacht.specialSlots || [];
+
+  //   const timeToMin = (t) => {
+  //     if (!t) return 0;
+  //     const [h, m] = t.split(":").map(Number);
+  //     return h * 60 + m;
+  //   };
+
+  //   const minToTime = (m) => {
+  //     const h = Math.floor(m / 60);
+  //     const mm = m % 60;
+  //     return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  //   };
+
+  //   let duration = 0;
+  //   if (typeof durationRaw === "string" && durationRaw.includes(":")) {
+  //     const [h, m] = durationRaw.split(":").map(Number);
+  //     duration = h * 60 + (m || 0);
+  //   } else {
+  //     duration = Number(durationRaw);
+  //   }
+
+  //   // If slots already exist, just return them (sorted & formatted)
+  //   if (slotsFromSchema.length > 0) {
+  //     return slotsFromSchema
+  //       .map((s) => ({ start: s.start, end: s.end }))
+  //       .sort((a, b) => timeToMin(a.start) - timeToMin(b.start));
+  //   }
+
+  //   // Else, generate default slots
+  //   const startMin = timeToMin(sailStart);
+  //   const endMin = timeToMin(sailEnd);
+  //   const specialMins = specialSlots.map(timeToMin).sort((a, b) => a - b);
+
+  //   const slots = [];
+  //   let cursor = startMin;
+
+  //   // Generate normal slots respecting special slots
+  //   while (cursor < endMin) {
+  //     const next = cursor + duration;
+  //     const hit = specialMins.find((sp) => sp > cursor && sp < next);
+
+  //     if (hit) {
+  //       slots.push({ start: cursor, end: hit });
+  //       cursor = hit;
+  //     } else {
+  //       slots.push({ start: cursor, end: Math.min(next, endMin) });
+  //       cursor = next;
+  //     }
+  //   }
+
+  //   // Add special blocks outside sail window
+  //   specialMins.forEach((sp) => slots.push({ start: sp, end: sp + duration }));
+
+  //   // Remove duplicates & sort
+  //   const seen = new Set();
+  //   const cleaned = slots.filter((s) => {
+  //     const key = `${s.start}-${s.end}`;
+  //     if (seen.has(key)) return false;
+  //     seen.add(key);
+  //     return true;
+  //   }).sort((a, b) => a.start - b.start);
+
+  //   return cleaned.map((s) => ({
+  //     start: minToTime(s.start),
+  //     end: minToTime(s.end),
+  //   }));
+  // };
+
+  const buildSlotsForYacht = (yacht, selectedDate) => {
+    if (!yacht) return [];
 
     const sailStart = yacht.sailStartTime;
     const sailEnd = yacht.sailEndTime;
     const durationRaw = yacht.slotDurationMinutes || yacht.duration;
     const specialSlots = yacht.specialSlots || [];
-
-    console.log("\n============================");
-    console.log("🛥 Generating Slots For Yacht:", yacht.name);
-    console.log("⏳ Sail Start:", sailStart);
-    console.log("⏳ Sail End:", sailEnd);
-    console.log("🕒 Duration:", durationRaw);
-    console.log("⭐ Special Slot Times:", specialSlots);
-    console.log("============================\n");
 
     const timeToMin = (t) => {
       if (!t) return 0;
@@ -189,7 +258,20 @@ function CreateBooking() {
       return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
     };
 
-    // Convert slot duration
+    // Check if schema-defined slots exist for selected date
+    const slotsForDate = yacht.slots?.find(
+      (slotGroup) =>
+        new Date(slotGroup.date).toDateString() ===
+        new Date(selectedDate).toDateString()
+    );
+
+    if (slotsForDate && slotsForDate.slots?.length > 0) {
+      return slotsForDate.slots
+        .map((s) => ({ start: s.start, end: s.end }))
+        .sort((a, b) => timeToMin(a.start) - timeToMin(b.start));
+    }
+
+    // Else, generate slots dynamically
     let duration = 0;
     if (typeof durationRaw === "string" && durationRaw.includes(":")) {
       const [h, m] = durationRaw.split(":").map(Number);
@@ -202,92 +284,60 @@ function CreateBooking() {
     const endMin = timeToMin(sailEnd);
     const specialMins = specialSlots.map(timeToMin).sort((a, b) => a - b);
 
-    // ---------------------------
-    // 🔥 PROCESS SPECIAL SLOTS
-    // ---------------------------
-    const buildProcessedSpecialSlots = (specialStarts, duration) => {
-      let specialBlocks = specialStarts.map((sp) => ({
-        start: sp,
-        end: sp + duration,
-      }));
-
-      // Sort by start time
-      specialBlocks.sort((a, b) => a.start - b.start);
-
-      const merged = [];
-
-      for (let block of specialBlocks) {
-        const last = merged[merged.length - 1];
-
-        if (!last || block.start >= last.end) {
-          merged.push(block);
-        } else {
-          // Overlap → split previous and add new
-          last.end = block.start; // cut previous
-          merged.push(block);
-        }
-      }
-
-      return merged;
-    };
-
-    const processedSpecials = buildProcessedSpecialSlots(specialMins, duration);
-
-    // ---------------------------
-    // 🔥 GENERATE NORMAL SLOTS
-    // ---------------------------
     const slots = [];
     let cursor = startMin;
 
     while (cursor < endMin) {
       const next = cursor + duration;
-
-      // If special slot starts inside this normal block → cut
-      const hit = processedSpecials.find((sp) => sp.start > cursor && sp.start < next);
+      const hit = specialMins.find((sp) => sp > cursor && sp < next);
 
       if (hit) {
-        // normal cut
-        slots.push({ start: cursor, end: hit.start });
-        cursor = hit.start;
+        slots.push({ start: cursor, end: hit });
+        cursor = hit;
       } else {
         slots.push({ start: cursor, end: Math.min(next, endMin) });
         cursor = next;
       }
     }
 
-    // ---------------------------
-    // 🔥 ADD SPECIAL BLOCKS EVEN OUTSIDE SAIL WINDOW
-    // ---------------------------
-    processedSpecials.forEach((sp) => slots.push(sp));
-
-    // ---------------------------
-    // 🔥 REMOVE DUPLICATES & SORT
-    // ---------------------------
+    // Remove duplicates & sort
     const seen = new Set();
     const cleaned = slots.filter((s) => {
       const key = `${s.start}-${s.end}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
-    });
+    }).sort((a, b) => a.start - b.start);
 
-    cleaned.sort((a, b) => a.start - b.start);
-
-    // ---------------------------
-    // 🔥 CONVERT TO TIME STRINGS
-    // ---------------------------
-    const finalSlots = cleaned.map((s) => ({
+    return cleaned.map((s) => ({
       start: minToTime(s.start),
       end: minToTime(s.end),
     }));
-
-    finalSlots.forEach((s) => console.log(`➡ ${s.start} - ${s.end}`));
-
-    return finalSlots;
   };
 
 
+
+
   //  Update startTimeOptions whenever yacht changes
+  // useEffect(() => {
+  //   const selectedYacht = yachts.find((y) => y.id === formData.yachtId);
+  //   if (!selectedYacht) {
+  //     setStartTimeOptions([]);
+  //     return;
+  //   }
+
+  //   setRunningCost(selectedYacht.runningCost || 0);
+  //   const slots = buildSlotsForYacht(selectedYacht);
+  //   setStartTimeOptions(slots);
+
+  //   // auto-set endTime if startTime exists
+  //   if (formData.startTime) {
+  //     const match = slots.find((s) => s.start === formData.startTime);
+  //     if (match) {
+  //       setFormData((p) => ({ ...p, endTime: match.end }));
+  //     }
+  //   }
+  // }, [formData.yachtId, yachts]);
   useEffect(() => {
     const selectedYacht = yachts.find((y) => y.id === formData.yachtId);
     if (!selectedYacht) {
@@ -296,17 +346,17 @@ function CreateBooking() {
     }
 
     setRunningCost(selectedYacht.runningCost || 0);
-    const slots = buildSlotsForYacht(selectedYacht);
+
+    const slots = buildSlotsForYacht(selectedYacht, formData.date);
     setStartTimeOptions(slots);
 
-    // auto-set endTime if startTime exists
     if (formData.startTime) {
       const match = slots.find((s) => s.start === formData.startTime);
       if (match) {
         setFormData((p) => ({ ...p, endTime: match.end }));
       }
     }
-  }, [formData.yachtId, yachts]);
+  }, [formData.yachtId, yachts, formData.date]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -456,6 +506,7 @@ function CreateBooking() {
               name="name"
               value={formData.name}
               onChange={handleChange}
+              placeholder="Customer Name"
               required
             />
           </div>
@@ -469,6 +520,7 @@ function CreateBooking() {
               name="contact"
               value={formData.contact}
               onChange={handleChange}
+              placeholder="Contact No"
               required
             />
           </div>
@@ -482,6 +534,7 @@ function CreateBooking() {
               name="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="Gmail Id"
               required
             />
           </div>
@@ -495,12 +548,39 @@ function CreateBooking() {
               name="govtId"
               value={formData.govtId}
               onChange={handleChange}
+              placeholder="Govt. Id"
               required
             />
           </div>
 
+          {/* Date */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">Date of Ride</label>
+            <input
+              type="date"
+              min={new Date().toISOString().split("T")[0]}
+              className="form-control border border-dark text-dark"
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          {/* Number of People */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">Number of People</label>
+            <input
+              type="number"
+              className="form-control border border-dark text-dark"
+              name="numPeople"
+              value={formData.numPeople}
+              onChange={handleChange}
+              placeholder="Number of peoples"
+              required
+            />
+          </div>
           {/* Yacht */}
-          <div className="col-12">
+          <div className="col-6">
             <label className="form-label fw-bold">Select Yacht</label>
             <select
               className="form-select border border-dark text-dark"
@@ -518,43 +598,8 @@ function CreateBooking() {
             </select>
           </div>
 
-          {/* Total Amount */}
-          <div className="col-md-4">
-            <label className="form-label fw-bold">Total Amount</label>
-            <input
-              type="number"
-              className={`form-control border text-dark ${isAmountInvalid
-                ? "border-danger is-invalid"
-                : "border-dark"
-                }`}
-              name="totalAmount"
-              value={formData.totalAmount}
-              onChange={handleChange}
-              required
-            />
-            {isAmountInvalid && (
-              <div className="text-danger mt-1">
-                ⚠ Total amount must be at least ₹{runningCost}.
-              </div>
-            )}
-          </div>
-
-          {/* Date */}
-          <div className="col-md-4">
-            <label className="form-label fw-bold">Date of Ride</label>
-            <input
-              type="date"
-              min={new Date().toISOString().split("T")[0]}
-              className="form-control border border-dark text-dark"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
           {/* Start Time */}
-          <div className="col-md-4">
+          <div className="col-md-6">
             <label className="form-label fw-bold">Start Time</label>
             <select
               className="form-select border border-dark text-dark"
@@ -573,7 +618,7 @@ function CreateBooking() {
           </div>
 
           {/* End Time */}
-          <div className="col-md-4">
+          <div className="col-md-6">
             <label className="form-label fw-bold">End Time</label>
             <input
               type="text"
@@ -584,17 +629,26 @@ function CreateBooking() {
             />
           </div>
 
-          {/* Number of People */}
-          <div className="col-md-4">
-            <label className="form-label fw-bold">Number of People</label>
+          {/* Total Amount */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">Total Amount</label>
             <input
               type="number"
-              className="form-control border border-dark text-dark"
-              name="numPeople"
-              value={formData.numPeople}
+              className={`form-control border text-dark ${isAmountInvalid
+                ? "border-danger is-invalid"
+                : "border-dark"
+                }`}
+              name="totalAmount"
+              value={formData.totalAmount}
               onChange={handleChange}
+              placeholder="Amount"
               required
             />
+            {isAmountInvalid && (
+              <div className="text-danger mt-1">
+                ⚠ Total amount must be at least ₹{runningCost}.
+              </div>
+            )}
           </div>
 
           <div className="col-12 text-center">

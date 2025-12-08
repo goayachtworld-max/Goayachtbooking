@@ -36,11 +36,18 @@ export const createYacht = async (formData, token) => {
  * @param {string} token - Auth token
  * @returns {Promise} - Axios response
  */
-export const getAllYachtsAPI = async (token) => {
+export const getAllYachtsAPI = async (token, date) => {
   try {
-    const response = await apiConnector("GET", yaut.GET_ALL_YACHTS_API, null, {
-      Authorization: `Bearer ${token}`,
-    });
+    console.log("Here is date ", date);
+    const response = await apiConnector(
+      "GET",
+      yaut.GET_ALL_YACHTS_API,
+      null, 
+      {
+        Authorization: `Bearer ${token}`,
+      },
+      { date } 
+    );
     return response;
   } catch (error) {
     console.error("❌ Failed to fetch yachts:", error.response?.data || error);
@@ -106,6 +113,34 @@ export const updateYacht = async (id, data, token) => {
     return response;
   } catch (error) {
     console.error("❌ Failed to update yacht:", error.response?.data || error);
+    throw error;
+  }
+};
+
+
+export const updateDaySlots = async (yachtId, date, payloadSlots, token) => {
+  try {
+    if (!token) throw new Error("Authorization token is missing");
+
+    const body = {
+      yachtId,
+      date,
+      slots: payloadSlots,  // each slot: {start, end}
+    };
+
+    console.log("Update slots : ", body);
+    const response = await apiConnector(
+      "PUT",
+      yaut.UPDATE_DAY_SLOTS,
+      body,
+      {
+        Authorization: `Bearer ${token}`,
+      }
+    );
+
+    return response?.data;
+  } catch (error) {
+    console.error("❌ Error updating day slots:", error);
     throw error;
   }
 };

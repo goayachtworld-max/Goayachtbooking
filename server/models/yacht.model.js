@@ -40,6 +40,12 @@ const yachtSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    slots: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Slot",
+      },
+    ],
     // Extra details
     boardingLocation: { type: String },
     description: { type: String },

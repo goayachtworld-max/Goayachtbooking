@@ -10,7 +10,10 @@ import bookingRoutes from "./routes/booking.routes.js";
 import availabilityRoutes from "./routes/availability.routes.js";
 import yachtRoutes from "./routes/yacht.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
+import slotRouter from "./routes/slot.routes.js";
 import { globalErrorHandler } from "./middleware/errorHandler.js";
+// import "./cron/slotCleanup.js";
+
 
 dotenv.config();
 
@@ -20,7 +23,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://yaut-2-o.vercel.app"], 
+      "https://yaut-2-o.vercel.app"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // 👈 allow cookies / authorization headers
@@ -40,6 +43,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/yacht", yachtRoutes);
+app.use("/api/slot", slotRouter)
 
 // Global Error Handler (must be after all routes)
 app.use(globalErrorHandler);

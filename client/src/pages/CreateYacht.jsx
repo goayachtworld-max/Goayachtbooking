@@ -171,6 +171,7 @@ function CreateYacht() {
 
   // Options common array so both selects use same set
   const SLOT_OPTIONS = [
+    { value: "15:30 PM", label: "3:30 PM - 5:30 PM" },
     { value: "16:00 PM", label: "4:00 PM - 6:00 PM" },
     { value: "17:30 PM", label: "5:30 PM - 7:30 PM" },
     { value: "18:00 PM", label: "6:00 PM - 8:00 PM" },

@@ -5,18 +5,27 @@ import "react-calendar/dist/Calendar.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./DayAvailability.css";
 import { toast } from "react-hot-toast";
+import "./EditableSlots.css"
 
 import {
   getDayAvailability,
   lockSlot,
   releaseSlot,
 } from "../services/operations/availabilityAPI";
-import { getYachtById } from "../services/operations/yautAPI";
+
+import {
+  getYachtById,
+  updateDaySlots
+} from "../services/operations/yautAPI";
 
 function DayAvailability() {
   const location = useLocation();
   const navigate = useNavigate();
-  let { yachtId, yachtName, day, requireDateSelection } = location.state || {};
+  const { yachtId, yachtName, day: incomingDay, requireDateSelection } =
+    location.state || {};
+
+  // Local day state (avoid mutating location.state directly)
+  const [currentDay, setCurrentDay] = useState(incomingDay || null);
 
   const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -31,27 +40,41 @@ function DayAvailability() {
   const [isReleasing, setIsReleasing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
+  // Admin edit-day modal state
+  const [editedDaySlots, setEditedDaySlots] = useState([]);
+  const [isSavingDaySlots, setIsSavingDaySlots] = useState(false);
+
   const token = localStorage.getItem("authToken");
+  const user = JSON.parse(localStorage.getItem("user"));
+  console.log("Here is user" , user)
+  const userRole = user.type;
+  const isAdmin = userRole === "admin";
 
   // Handle initial state based on whether date selection is required
   useEffect(() => {
     if (requireDateSelection) {
-      // User clicked "Other" - no date selected yet
-      setError("📅 Please select a date from the calendar to view available time slots");
+      setError(
+        "📅 Please select a date from the calendar to view available time slots"
+      );
       setSelectedDate(null);
-      day = null;
-    } else if (day) {
-      // Convert string → object if needed
-      if (typeof day === "string") {
-        day = {
-          date: day,
-          day: new Date(day).toLocaleDateString("en-US", { weekday: "long" }),
-        };
+      setCurrentDay(null);
+    } else if (incomingDay) {
+      if (typeof incomingDay === "string") {
+        setCurrentDay({
+          date: incomingDay,
+          day: new Date(incomingDay).toLocaleDateString("en-US", {
+            weekday: "long",
+          }),
+        });
+        setSelectedDate(new Date(incomingDay));
+      } else {
+        setCurrentDay(incomingDay);
+        setSelectedDate(new Date(incomingDay.date));
       }
-      setSelectedDate(new Date(day.date));
       setError("");
     }
-  }, [requireDateSelection]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requireDateSelection, incomingDay]);
 
   if (!yachtId) {
     return (
@@ -94,8 +117,9 @@ function DayAvailability() {
 
   // Disable past slots for today
   const isPastSlot = (slot) => {
+    if (!currentDay || !currentDay.date) return false;
     const today = new Date().toISOString().split("T")[0];
-    if (day.date !== today) return false;
+    if (currentDay.date !== today) return false;
 
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -147,9 +171,7 @@ function DayAvailability() {
     if (Array.isArray(yachtObj.specialSlots))
       specialMins.push(...yachtObj.specialSlots);
 
-    const specialStarts = specialMins
-      .map(timeToMin)
-      .sort((a, b) => a - b);
+    const specialStarts = specialMins.map(timeToMin).sort((a, b) => a - b);
 
     // -----------------------------
     // PROCESS SPECIAL SLOTS (split overlaps)
@@ -197,17 +219,29 @@ function DayAvailability() {
       if (hit) {
         slots.push({ start: cursor, end: hit.start });
 
-        const specialEnd = Math.min(hit.end, endMin);
+        const specialEnd = hit.end;
         slots.push({ start: hit.start, end: specialEnd });
 
         cursor = specialEnd;
-      } else {
+        continue;
+      }
+
+      // ✅ ALLOW LAST SLOT TO EXTEND BEYOND sailEndTime
+      if (next > endMin) {
         slots.push({
           start: cursor,
-          end: Math.min(next, endMin),
+          end: next, // do NOT clamp to endMin
         });
-        cursor = next;
+        break; // last slot completed
       }
+
+      // Normal slot
+      slots.push({
+        start: cursor,
+        end: next,
+      });
+
+      cursor = next;
     }
 
     // -----------------------------
@@ -234,26 +268,113 @@ function DayAvailability() {
     }));
   };
 
-  const buildTimeline = (yachtObj, booked = [], locked = []) => {
-    const freeSlots = buildSlotsForYacht(yachtObj);
+  // const buildTimeline = (yachtObj, booked = [], locked = []) => {
+  //   const freeSlots = buildSlotsForYacht(yachtObj);
 
+  //   const normalizedBusy = [
+  //     ...booked.map((b) => ({
+  //       start: b.startTime || b.start,
+  //       end: b.endTime || b.end,
+  //       type: "booked",
+  //       custName: b.custName || b.customerName || "",
+  //       empName: b.empName || b.employeeName || "",
+  //     })),
+  //     ...locked.map((l) => ({
+  //       start: l.startTime || l.start,
+  //       end: l.endTime || l.end,
+  //       type: "locked",
+  //       empName: l.empName || l.employeeName || "",
+  //     })),
+  //   ];
+
+  //   return freeSlots.map((slot) => {
+  //     const overlaps = normalizedBusy.filter(
+  //       (b) =>
+  //         !(
+  //           hhmmToMinutes(b.end) <= hhmmToMinutes(slot.start) ||
+  //           hhmmToMinutes(b.start) >= hhmmToMinutes(slot.end)
+  //         )
+  //     );
+
+  //     if (overlaps.length === 0) return { ...slot, type: "free" };
+
+  //     const bookedOverlap = overlaps.find((o) => o.type === "booked");
+  //     if (bookedOverlap) {
+  //       return {
+  //         ...slot,
+  //         type: "booked",
+  //         custName: bookedOverlap.custName,
+  //         empName: bookedOverlap.empName,
+  //       };
+  //     }
+
+  //     const lockedOverlap = overlaps.find((o) => o.type === "locked");
+  //     return {
+  //       ...slot,
+  //       type: "locked",
+  //       empName: lockedOverlap.empName,
+  //     };
+  //   });
+  // };
+
+  // // ---------- Fetch ----------
+  // const fetchTimeline = async () => {
+  //   if (!currentDay || !currentDay.date) {
+  //     setTimeline([]);
+  //     setLoading(false);
+  //     setIsCalendarDisabled(false);
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoading(true);
+  //     setIsCalendarDisabled(true);
+  //     setError("");
+
+  //     const yachtRes = await getYachtById(yachtId, token);
+  //     const yachtData = yachtRes?.data?.yacht ?? yachtRes?.yacht ?? yachtRes;
+  //     setYacht(yachtData);
+
+  //     const dayResRaw = await getDayAvailability(yachtId, currentDay.date, token);
+  //     const dayRes = dayResRaw?.data ?? dayResRaw;
+
+  //     if (yachtData) {
+  //       const booked = dayRes.bookedSlots || [];
+  //       const locked = dayRes.lockedSlots || [];
+  //       const built = buildTimeline(yachtData, booked, locked);
+  //       setTimeline(built);
+  //     } else {
+  //       setTimeline([]);
+  //     }
+  //   } catch (err) {
+  //     setError("Failed to load timeline");
+  //     setTimeline([]);
+  //   } finally {
+  //     setLoading(false);
+  //     setIsCalendarDisabled(false);
+  //   }
+  // };
+
+
+  // ---------- Build timeline from stored DB slots or auto-generated slots ----------
+  const buildTimeline = (baseSlots, booked = [], locked = []) => {
     const normalizedBusy = [
       ...booked.map((b) => ({
         start: b.startTime || b.start,
         end: b.endTime || b.end,
         type: "booked",
-        custName: b.custName || b.customerName || "",
-        empName: b.empName || b.employeeName || "",
+        custName: b.custName || "",
+        empName: b.empName || "",
       })),
       ...locked.map((l) => ({
         start: l.startTime || l.start,
         end: l.endTime || l.end,
         type: "locked",
-        empName: l.empName || l.employeeName || "",
+        empName: l.empName || "",
       })),
     ];
 
-    return freeSlots.map((slot) => {
+    return baseSlots.map((slot) => {
       const overlaps = normalizedBusy.filter(
         (b) =>
           !(
@@ -283,10 +404,10 @@ function DayAvailability() {
     });
   };
 
-  // ---------- Fetch ----------
+
+  // ---------- Fetch timeline (updated logic for fallback vs stored slots) ----------
   const fetchTimeline = async () => {
-    // Don't fetch if no date is selected
-    if (!day || !day.date) {
+    if (!currentDay || !currentDay.date) {
       setTimeline([]);
       setLoading(false);
       setIsCalendarDisabled(false);
@@ -298,21 +419,43 @@ function DayAvailability() {
       setIsCalendarDisabled(true);
       setError("");
 
+      // 1️⃣ Fetch yacht data
       const yachtRes = await getYachtById(yachtId, token);
       const yachtData = yachtRes?.data?.yacht ?? yachtRes?.yacht ?? yachtRes;
       setYacht(yachtData);
-      console.log("Here is yaut data ", yachtData)
-      const dayResRaw = await getDayAvailability(yachtId, day.date, token);
+
+      // 2️⃣ Fetch day availability (booked + locked + stored slots)
+      const dayResRaw = await getDayAvailability(yachtId, currentDay.date, token);
       const dayRes = dayResRaw?.data ?? dayResRaw;
 
-      if (yachtData) {
-        const booked = dayRes.bookedSlots || [];
-        const locked = dayRes.lockedSlots || [];
-        setTimeline(buildTimeline(yachtData, booked, locked));
+      const booked = dayRes.bookedSlots || [];
+      const locked = dayRes.lockedSlots || [];
+
+      // 3️⃣ Check if DB has manually saved slots for this date
+      const storedSlotEntry =
+        dayRes?.slots && Array.isArray(dayRes.slots) && dayRes.slots.length > 0
+          ? dayRes.slots[0] // slot document for that date
+          : null;
+
+      let finalBaseSlots = [];
+
+      if (storedSlotEntry && storedSlotEntry.slots?.length > 0) {
+        // 🟦 CASE A: Use stored slots from DB
+        finalBaseSlots = storedSlotEntry.slots.map((s) => ({
+          start: s.start,
+          end: s.end,
+        }));
       } else {
-        setTimeline([]);
+        // 🟧 CASE B: No stored slots → use auto generator
+        finalBaseSlots = buildSlotsForYacht(yachtData);
       }
+
+      // 4️⃣ Build timeline with overhead (booked + locked)
+      const finalTimeline = buildTimeline(finalBaseSlots, booked, locked);
+      setTimeline(finalTimeline);
+
     } catch (err) {
+      console.error(err);
       setError("Failed to load timeline");
       setTimeline([]);
     } finally {
@@ -322,12 +465,28 @@ function DayAvailability() {
   };
 
   useEffect(() => {
-    if (day && day.date) {
+    if (currentDay && currentDay.date) {
       fetchTimeline();
     }
-  }, [yachtId, day?.date]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [yachtId, currentDay?.date]);
 
   // ---------- Slot Interactions ----------
+
+  const handleMoveSlot = (index, direction) => {
+    const newSlots = [...editedDaySlots];
+    const targetIndex = index + direction;
+
+    if (targetIndex < 0 || targetIndex >= newSlots.length) return;
+
+    const temp = newSlots[targetIndex];
+    newSlots[targetIndex] = newSlots[index];
+    newSlots[index] = temp;
+
+    setEditedDaySlots(newSlots);
+  };
+
+
   const handleSlotClick = (slot) => {
     setSelectedSlot(slot);
 
@@ -351,7 +510,7 @@ function DayAvailability() {
     try {
       const res = await lockSlot(
         yachtId,
-        day.date,
+        currentDay.date,
         selectedSlot.start,
         selectedSlot.end,
         token
@@ -359,9 +518,7 @@ function DayAvailability() {
 
       if (res?.success) {
         toast.success("Slot locked successfully!");
-        window.bootstrap.Modal.getInstance(
-          document.getElementById("lockModal")
-        )?.hide();
+        window.bootstrap.Modal.getInstance(document.getElementById("lockModal"))?.hide();
         fetchTimeline();
       } else toast.error(res?.message || "Failed to lock slot");
     } catch {
@@ -379,7 +536,7 @@ function DayAvailability() {
     try {
       const res = await releaseSlot(
         yachtId,
-        day.date,
+        currentDay.date,
         selectedSlot.start,
         selectedSlot.end,
         token
@@ -387,9 +544,7 @@ function DayAvailability() {
 
       if (res?.success) {
         toast.success("Slot released successfully!");
-        window.bootstrap.Modal.getInstance(
-          document.getElementById("confirmModal")
-        )?.hide();
+        window.bootstrap.Modal.getInstance(document.getElementById("confirmModal"))?.hide();
         fetchTimeline();
       } else toast.error(res?.message || "Failed to release slot");
     } catch {
@@ -405,22 +560,190 @@ function DayAvailability() {
 
     setIsConfirming(true);
 
-    window.bootstrap.Modal.getInstance(
-      document.getElementById("confirmModal")
-    )?.hide();
+    window.bootstrap.Modal.getInstance(document.getElementById("confirmModal"))?.hide();
 
     navigate("/create-booking", {
       state: {
         yachtId,
         yachtName,
         yacht,
-        date: day.date,
+        date: currentDay.date,
         startTime: selectedSlot.start,
         endTime: selectedSlot.end,
       },
     });
 
     setIsConfirming(false);
+  };
+
+  // ---------- Edit-Day Modal logic (Replace ALL slots) ----------
+  // Open edit modal and load current free slots into editedDaySlots
+  const openEditDaySlotsModal = () => {
+    if (!timeline || timeline.length === 0) {
+      // If timeline is empty, we can try to build from yacht default
+      const defaultSlots = yacht ? buildSlotsForYacht(yacht) : [];
+      setEditedDaySlots(defaultSlots.map((s) => ({ ...s, status: "free" })));
+    } else {
+      // Load timeline free/locked/booked as editable base.
+      // We will only allow editing "free" and "locked" slots (booked slots marked read-only)
+      setEditedDaySlots(
+        timeline.map((t) => ({
+          start: t.start,
+          end: t.end,
+          status: t.type || "free", // 'free' | 'locked' | 'booked'
+        }))
+      );
+    }
+
+    setTimeout(() => {
+      new window.bootstrap.Modal(document.getElementById("editDaySlotsModal")).show();
+    }, 50);
+  };
+
+  const handleEditedSlotChange = (index, field, value) => {
+    setEditedDaySlots((prev) => {
+      const copy = prev.map((s) => ({ ...s }));
+      copy[index][field] = value;
+      return copy;
+    });
+  };
+
+  const handleAddEditedSlot = (indexAfter = null) => {
+    // default new slot: one hour after previous or 1-hour default
+    setEditedDaySlots((prev) => {
+      const copy = prev.map((s) => ({ ...s }));
+      let newSlot = { start: "00:00", end: "01:00", status: "free" };
+
+      if (indexAfter !== null && indexAfter >= -1 && indexAfter < copy.length) {
+        copy.splice(indexAfter + 1, 0, newSlot);
+      } else {
+        copy.push(newSlot);
+      }
+      return copy;
+    });
+  };
+
+  const handleRemoveEditedSlot = (index) => {
+    setEditedDaySlots((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Validation: ensure start < end and no overlaps
+  const validateEditedDaySlots = () => {
+    if (!editedDaySlots || editedDaySlots.length === 0) {
+      toast.error("Add at least one slot");
+      return false;
+    }
+
+    // Normalize into minutes and sort by start time
+    const normalized = editedDaySlots.map((s, idx) => {
+      const startMin = hhmmToMinutes(s.start);
+      const endMin = hhmmToMinutes(s.end);
+      return { startMin, endMin, idx, raw: s };
+    });
+
+    // Each slot must have start < end
+    for (let sl of normalized) {
+      if (sl.endMin <= sl.startMin) {
+        toast.error("Each slot must have end time after start time");
+        return false;
+      }
+    }
+
+    // Check for overlaps (including touching allowed? We allow touching: end === next.start)
+    normalized.sort((a, b) => a.startMin - b.startMin);
+
+    for (let i = 0; i < normalized.length - 1; i++) {
+      const cur = normalized[i];
+      const next = normalized[i + 1];
+      // Overlap if cur.end > next.start
+      if (cur.endMin > next.startMin) {
+        toast.error("Slots must not overlap. Please fix the timings.");
+        return false;
+      }
+    }
+
+    // Optionally ensure slots fall inside yacht sail window
+    // if (yacht && yacht.sailStartTime && yacht.sailEndTime) {
+    //   const sailStart = hhmmToMinutes(yacht.sailStartTime);
+    //   const sailEnd = hhmmToMinutes(yacht.sailEndTime);
+    //   for (let sl of normalized) {
+    //     if (sl.startMin < sailStart || sl.endMin > sailEnd) {
+    //       toast.error(
+    //         `Slots must be within yacht sail window ${yacht.sailStartTime} - ${yacht.sailEndTime}`
+    //       );
+    //       return false;
+    //     }
+    //   }
+    // }
+
+    return true;
+  };
+
+  const handleSaveEditedDaySlots = async () => {
+    if (!currentDay || !currentDay.date) {
+      toast.error("No date selected");
+      return;
+    }
+
+    console.log("Edited slots - ", editedDaySlots);
+    if (!validateEditedDaySlots()) return;
+    setIsSavingDaySlots(true);
+
+    try {
+      // Build payload expected by backend: array of { start, end }
+      const payloadSlots = editedDaySlots.map((s) => ({
+        start: s.start,
+        end: s.end
+      }));
+
+      console.log(payloadSlots)
+      const res = await updateDaySlots(yachtId, currentDay.date, payloadSlots, token);
+      console.log("Here is res - ", res)
+      if (res?.success) {
+        toast.success("Day slots updated successfully!");
+        window.bootstrap.Modal.getInstance(
+          document.getElementById("editDaySlotsModal")
+        )?.hide();
+
+        // Refresh timeline from server
+        fetchTimeline();
+      } else {
+        toast.error(res?.message || "Failed to update day slots");
+      }
+    } catch (err) {
+      toast.error("Error updating day slots");
+    } finally {
+      setIsSavingDaySlots(false);
+    }
+  };
+
+  // Calendar onChange handler
+  const handleCalendarChange = (sd) => {
+    if (isCalendarDisabled) return;
+
+    const year = sd.getFullYear();
+    const month = String(sd.getMonth() + 1).padStart(2, "0");
+    const date = String(sd.getDate()).padStart(2, "0");
+    const iso = `${year}-${month}-${date}`;
+
+    const newDay = {
+      date: iso,
+      day: sd.toLocaleDateString("en-US", { weekday: "long" }),
+    };
+
+    setCurrentDay(newDay);
+    // also update location.state safely
+    if (location.state) {
+      try {
+        location.state.day = newDay;
+        location.state.requireDateSelection = false;
+      } catch (e) {
+        // ignore
+      }
+    }
+    setSelectedDate(sd);
+    setError("");
+    // fetchTimeline will be triggered by effect when currentDay.date changes
   };
 
   // ---------- Render ----------
@@ -473,7 +796,9 @@ function DayAvailability() {
           <div className="text-center flex-grow-1">
             <h4 className="fw-bold text-primary mb-1">{yachtName}</h4>
             <h6 className="text-muted mb-0">
-              {day && day.day ? `${day.day}, ${day.date}` : "Please select a date"}
+              {currentDay && currentDay.day
+                ? `${currentDay.day}, ${currentDay.date}`
+                : "Please select a date"}
             </h6>
           </div>
 
@@ -496,29 +821,7 @@ function DayAvailability() {
             }}
           >
             <Calendar
-              onChange={(selectedDate) => {
-                if (isCalendarDisabled) return;
-
-                const year = selectedDate.getFullYear();
-                const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-                const date = String(selectedDate.getDate()).padStart(2, "0");
-                const iso = `${year}-${month}-${date}`;
-
-                const newDay = {
-                  date: iso,
-                  day: selectedDate.toLocaleDateString("en-US", {
-                    weekday: "long",
-                  }),
-                };
-
-                day = newDay;
-                location.state.day = newDay;
-                location.state.requireDateSelection = false;
-
-                setSelectedDate(selectedDate);
-                setError("");
-                fetchTimeline();
-              }}
+              onChange={handleCalendarChange}
               value={selectedDate}
               minDate={new Date()}
               maxDate={new Date(new Date().setMonth(new Date().getMonth() + 6))}
@@ -531,9 +834,20 @@ function DayAvailability() {
 
         <div className="availability-right">
           <div className="card shadow-sm border-0 rounded-4 p-3">
-            <h5 className="fw-semibold mb-3 text-center text-secondary">
-              🕒 Available Time Slots
-            </h5>
+            <div className="d-flex align-items-center justify-content-between mb-2">
+              <h5 className="fw-semibold mb-0 text-secondary">
+                🕒 Available Time Slots
+              </h5>
+
+              {isAdmin && (
+                <button
+                  className="btn btn-outline-primary btn-sm"
+                  onClick={openEditDaySlotsModal}
+                >
+                  Edit
+                </button>
+              )}
+            </div>
 
             {error ? (
               <div className="alert alert-warning text-center py-4 my-4" role="alert">
@@ -561,9 +875,7 @@ function DayAvailability() {
                           : "bg-success text-white";
 
                     const cursorStyle =
-                      disabled && slot.type !== "booked"
-                        ? "not-allowed"
-                        : "pointer";
+                      disabled && slot.type !== "booked" ? "not-allowed" : "pointer";
 
                     return (
                       <div
@@ -575,8 +887,7 @@ function DayAvailability() {
                           handleSlotClick(slot);
                         }}
                       >
-                        {to12HourFormat(slot.start)} —{" "}
-                        {to12HourFormat(slot.end)}
+                        {to12HourFormat(slot.start)} — {to12HourFormat(slot.end)}
                       </div>
                     );
                   })}
@@ -648,9 +959,7 @@ function DayAvailability() {
                       Locked slot: <strong>{to12HourFormat(selectedSlot.start)}</strong> —{" "}
                       <strong>{to12HourFormat(selectedSlot.end)}</strong>
                     </div>
-                    <div className="mt-2 fs-6">
-                      Locked by: {selectedSlot.empName}
-                    </div>
+                    <div className="mt-2 fs-6">Locked by: {selectedSlot.empName}</div>
                   </>
                 )}
               </div>
@@ -702,9 +1011,7 @@ function DayAvailability() {
                   )}
 
                   {selectedSlot.empName && (
-                    <div className="mt-1 fw-bold text-secondary">
-                      Handled by: {selectedSlot.empName}
-                    </div>
+                    <div className="mt-1 fw-bold text-secondary">Handled by: {selectedSlot.empName}</div>
                   )}
                 </>
               )}
@@ -719,16 +1026,137 @@ function DayAvailability() {
         </div>
       </div>
 
+      {/* Edit Entire Day Slots Modal */}
+      <div className="modal fade" id="editDaySlotsModal" tabIndex="-1" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-centered modal-lg">
+          <div className="modal-content rounded-4">
+
+            {/* Header */}
+            <div className="modal-header bg-info bg-opacity-10">
+              <h5 className="modal-title">
+                Edit Slots for {currentDay?.day}, {currentDay?.date}
+              </h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            {/* Body */}
+            <div className="modal-body p-3" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <button
+                  type="button"
+                  className="btn btn-success btn-sm"
+                  onClick={() => handleAddEditedSlot(null)}
+                >
+                  + Add Slot
+                </button>
+
+                <div className="text-muted small">Avoid overlaps when editing.</div>
+              </div>
+
+              {editedDaySlots.length === 0 && (
+                <div className="text-center text-muted py-4">
+                  No slots yet — add one to begin.
+                </div>
+              )}
+
+              {/* List */}
+              <div className="slot-list">
+                {editedDaySlots.map((slot, index) => {
+                  const isBooked = slot.status === "booked";
+
+                  // Determine row color
+                  let rowClass = "slot-row ";
+                  if (slot.status === "free") rowClass += "slot-free";
+                  else if (slot.status === "locked") rowClass += "slot-locked";
+                  else if (slot.status === "booked") rowClass += "slot-booked";
+
+                  return (
+                    <div key={index} className={rowClass}>
+
+                      {/* Time Fields */}
+                      <input
+                        type="time"
+                        className="form-control form-control-sm time-input"
+                        disabled={isBooked}
+                        value={slot.start}
+                        onChange={(e) =>
+                          handleEditedSlotChange(index, "start", e.target.value)
+                        }
+                      />
+
+                      <span className="time-separator">—</span>
+
+                      <input
+                        type="time"
+                        className="form-control form-control-sm time-input"
+                        disabled={isBooked}
+                        value={slot.end}
+                        onChange={(e) =>
+                          handleEditedSlotChange(index, "end", e.target.value)
+                        }
+                      />
+
+                      {/* Controls */}
+                      <div className="slot-controls ms-auto">
+
+                        {/* Up */}
+                        <button
+                          className="icon-btn"
+                          disabled={index === 0}
+                          onClick={() => handleMoveSlot(index, -1)}
+                        >
+                          ↑
+                        </button>
+
+                        {/* Down */}
+                        <button
+                          className="icon-btn"
+                          disabled={index === editedDaySlots.length - 1}
+                          onClick={() => handleMoveSlot(index, +1)}
+                        >
+                          ↓
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          className="icon-btn text-danger"
+                          disabled={isBooked}
+                          onClick={() => handleRemoveEditedSlot(index)}
+                        >
+                          🗑
+                        </button>
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="modal-footer">
+              <button className="btn btn-secondary" data-bs-dismiss="modal" disabled={isSavingDaySlots}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveEditedDaySlots}
+                disabled={isSavingDaySlots}
+              >
+                {isSavingDaySlots ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+
       {/* Add fadeIn animation */}
       <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
+        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
       `}</style>
     </div>
   );

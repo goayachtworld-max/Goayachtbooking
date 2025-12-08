@@ -13,14 +13,77 @@ export const createYacht = async (req, res, next) => {
 };
 
 // Get all Yachts (company-scoped & only active)
+// export const getAllYachts = async (req, res, next) => {
+//   try {
+//     const date = req.query.date; // <--- use query param
+//     console.log("Here is date ", date);
+
+//     if (!date) {
+//       return res.status(400).json({ success: false, message: "Date is required" });
+//     }
+
+//     const yachts = await YachtModel.find({
+//       company: req.user.company,
+//       status: "active",
+//     })
+//       .populate({
+//         path: "slots",
+//         match: {
+//           date: date
+//         },
+//         select: "date slots"
+//       });
+
+//     // Return array of {id, name, ...} objects
+//     const formatted = yachts.map((yacht) => ({
+//       id: yacht._id,
+//       name: yacht.name,
+//       sailStartTime: yacht.sailStartTime,
+//       sailEndTime: yacht.sailEndTime,
+//       slotDurationMinutes: yacht.duration,
+//       specialSlots: yacht.specialSlotTimes,
+//       runningCost: yacht.runningCost,
+//       status: yacht.status,
+//       slots: yacht.slots
+//     }));
+
+//     res.json({ success: true, yachts: formatted });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+// controllers/yachtController.js (or wherever you have it)
 export const getAllYachts = async (req, res, next) => {
   try {
+    const date = req.query.date; // date comes as string "YYYY-MM-DD"
+    console.log("Here is date ", date);
+
+    if (!date) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Date is required" });
+    }
+
+    // Convert date string to start and end of day
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Fetch yachts
     const yachts = await YachtModel.find({
       company: req.user.company,
       status: "active",
+    }).populate({
+      path: "slots",
+      match: {
+        date: { $gte: startOfDay, $lte: endOfDay },
+      },
+      select: "date slots", // pick fields you need
     });
 
-    // Return array of {id, name, ...} objects
+    // Format response
     const formatted = yachts.map((yacht) => ({
       id: yacht._id,
       name: yacht.name,
@@ -30,6 +93,7 @@ export const getAllYachts = async (req, res, next) => {
       specialSlots: yacht.specialSlotTimes,
       runningCost: yacht.runningCost,
       status: yacht.status,
+      slots: yacht.slots || [],
     }));
 
     res.json({ success: true, yachts: formatted });
@@ -65,7 +129,7 @@ export const updateYacht = async (req, res, next) => {
     const { newPhotos, ...otherFields } = req.body;
 
     const updateData = { ...otherFields };
-    console.log("Here is updated yacht " , updateData)
+    console.log("Here is updated yacht ", updateData)
     // ✅ Add photos to existing array if provided
     if (newPhotos && Array.isArray(newPhotos)) {
       updateData.$push = { yachtPhotos: { $each: newPhotos } };
@@ -111,4 +175,5 @@ export const deleteYacht = async (req, res, next) => {
     next(error);
   }
 };
+
 

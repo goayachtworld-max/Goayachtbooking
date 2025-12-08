@@ -39,4 +39,5 @@ export const yaut = {
   GET_YACHT_BY_ID_API: (id) => `${BASE_URL}/yacht/${id}`,
   UPDATE_YACHT_API: (id) => `${BASE_URL}/yacht/${id}`,
   DELETE_YACHT_API: (id) => `${BASE_URL}/yacht/${id}`,
+  UPDATE_DAY_SLOTS:`${BASE_URL}/slot/`
 };

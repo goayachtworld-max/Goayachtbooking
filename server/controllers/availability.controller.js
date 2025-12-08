@@ -329,42 +329,48 @@ export const getDayAvailability = async (req, res, next) => {
         .json({ success: false, message: "yachtId and date are required" });
     }
 
-    // ✅ Check if yacht exists
-    const yacht = await YachtModel.findById(yachtId).select("name");
+    // ✅ Convert input date into full day range
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    // Convert to string to match your slotSchema string format
+    const startStr = dayStart.toString();
+    const endStr = dayEnd.toString();
+
+    // ===========================================
+    // ✅ GET YACHT + ONLY SLOTS MATCHING THIS DATE
+    // ===========================================
+    const yacht = await YachtModel.findById(yachtId)
+      .select("name slots")
+      .populate({
+        path: "slots",
+        match: {
+          date: { $gte: startStr, $lte: endStr } // <--- FIXED MATCH
+        },
+        select: "date slots"
+      });
+
     if (!yacht) {
       return res
         .status(404)
         .json({ success: false, message: "Yacht not found" });
     }
 
-    // ✅ Fetch bookings for that yacht & date
+    // ===========================================
+    // ✅ GET BOOKINGS
+    // ===========================================
     const bookings = await BookingModel.find({
       yachtId,
       date,
-      status: { $in: ["initiated", "booked"] },
-    }).select("startTime endTime status")
-      .populate({
-        path: "customerId",
-        select: "name",
-      })
-      .populate({
-        path: "employeeId",
-        select: "name",
-      });;;
+      status: { $in: ["initiated", "booked"] }
+    })
+      .select("startTime endTime status")
+      .populate({ path: "customerId", select: "name" })
+      .populate({ path: "employeeId", select: "name" });
 
-    // ✅ Fetch locked slots from AvailabilityModel
-    const lockedSlots = await AvailabilityModel.find({
-      yachtId,
-      date,
-      status: "locked",
-    }).select("startTime endTime appliedBy")
-      .populate({
-        path: "appliedBy",
-        select: "name",
-      });
-
-    // console.log("In back ", lockedSlots)
-    // Format them nicely for frontend
     const bookedSlots = bookings.map((b) => ({
       start: b.startTime,
       end: b.endTime,
@@ -373,7 +379,18 @@ export const getDayAvailability = async (req, res, next) => {
       custName: b.customerId.name
     }));
 
-    const locked = lockedSlots.map((l) => ({
+    // ===========================================
+    // ✅ GET LOCKED SLOTS
+    // ===========================================
+    const lockedSlotsDb = await AvailabilityModel.find({
+      yachtId,
+      date,
+      status: "locked"
+    })
+      .select("startTime endTime appliedBy")
+      .populate({ path: "appliedBy", select: "name" });
+
+    const lockedSlots = lockedSlotsDb.map((l) => ({
       start: l.startTime,
       end: l.endTime,
       status: "locked",
@@ -381,17 +398,21 @@ export const getDayAvailability = async (req, res, next) => {
       empName: l.appliedBy?.name
     }));
 
-    // ✅ Send combined availability info
+    // ===========================================
+    // ✅ SEND RESPONSE
+    // ===========================================
     return res.status(200).json({
       success: true,
       yachtId,
       yachtName: yacht.name,
       date,
       bookedSlots,
-      lockedSlots: locked,
+      lockedSlots,
+      slots: yacht.slots // <--- NOW CORRECTLY POPULATED
     });
   } catch (error) {
     console.error("getDayAvailability error:", error);
     next(error);
   }
 };
+
