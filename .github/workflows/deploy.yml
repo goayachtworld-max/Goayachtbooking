@@ -1,0 +1,36 @@
+name: Deploy React Frontend to cPanel
+
+on:
+  push:
+    branches: [ "main" ]   # If your default is master, change to master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download Repository
+      uses: actions/checkout@v3
+
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Install Dependencies
+      working-directory: ./client
+      run: npm install
+
+    - name: Build React App
+      working-directory: ./client
+      run: npm run build
+
+    - name: Deploy to cPanel via FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        port: ${{ secrets.FTP_PORT }}
+        local-dir: ./client/build
+        server-dir: /goaboatride.com/
