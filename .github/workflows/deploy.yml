@@ -1,12 +1,57 @@
-- name: Debug deploy values
-  run: |
-    echo "---- DEBUG DEPLOY VALUES ----"
-    echo "LOCAL DIR: ./client/dist/"
-    echo "SERVER DIR: /"
-    echo "PORT: 21"
-    echo "FTP_SERVER set? -> ${{ secrets.FTP_SERVER != '' }}"
-    echo "FTP_USERNAME set? -> ${{ secrets.FTP_USERNAME != '' }}"
-    echo "FTP_PASSWORD set? -> ${{ secrets.FTP_PASSWORD != '' }}"
+name: Deploy Frontend to cPanel
 
-- name: DNS lookup test
-  run: nslookup ftp.b2bgoa.com
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      LOCAL_DIR: ./client/dist/
+      SERVER_DIR: /
+      FTP_PORT: 21
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm install
+
+      - name: Build project
+        working-directory: ./client
+        run: npm run build
+
+      # 🔍 PRINT VALUES (SAFE)
+      - name: Print deploy values
+        run: |
+          echo "---- DEPLOY DEBUG ----"
+          echo "LOCAL_DIR  = $LOCAL_DIR"
+          echo "SERVER_DIR = $SERVER_DIR"
+          echo "FTP_PORT   = $FTP_PORT"
+          echo "FTP_SERVER set? -> ${{ secrets.FTP_SERVER != '' }}"
+          echo "FTP_USERNAME set? -> ${{ secrets.FTP_USERNAME != '' }}"
+          echo "FTP_PASSWORD set? -> ${{ secrets.FTP_PASSWORD != '' }}"
+
+      # 🌐 DNS CHECK (VERY IMPORTANT)
+      - name: DNS lookup test
+        run: nslookup ftp.b2bgoa.com
+
+      # 🚀 DEPLOY
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ env.FTP_PORT }}
+          local-dir: ${{ env.LOCAL_DIR }}
+          server-dir: ${{ env.SERVER_DIR }}
