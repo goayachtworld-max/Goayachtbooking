@@ -2,9 +2,11 @@ name: Deploy Frontend to cPanel
 on:
   push:
     branches: [ "main" ]
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -14,7 +16,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install  dependencies
+      - name: Install dependencies
         working-directory: ./client
         run: npm install
 
@@ -28,6 +30,6 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
+          port: 21
           local-dir: ./client/dist/
-          server-dir: /goaboatride.com/
+          server-dir: /
