@@ -1,35 +1,12 @@
-name: Deploy Frontend to cPanel
-on:
-  push:
-    branches: [ "main" ]
+- name: Debug deploy values
+  run: |
+    echo "---- DEBUG DEPLOY VALUES ----"
+    echo "LOCAL DIR: ./client/dist/"
+    echo "SERVER DIR: /"
+    echo "PORT: 21"
+    echo "FTP_SERVER set? -> ${{ secrets.FTP_SERVER != '' }}"
+    echo "FTP_USERNAME set? -> ${{ secrets.FTP_USERNAME != '' }}"
+    echo "FTP_PASSWORD set? -> ${{ secrets.FTP_PASSWORD != '' }}"
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        working-directory: ./client
-        run: npm install
-
-      - name: Build project
-        working-directory: ./client
-        run: npm run build
-
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          local-dir: ./client/dist/
-          server-dir: /
+- name: DNS lookup test
+  run: nslookup ftp.b2bgoa.com
