@@ -37,9 +37,9 @@ jobs:
           echo "LOCAL_DIR  = $LOCAL_DIR"
           echo "SERVER_DIR = $SERVER_DIR"
           echo "FTP_PORT   = $FTP_PORT"
-          echo "FTP_SERVER set? -> ${{ secrets.FTP_SERVER }}"
-          echo "FTP_USERNAME set? -> ${{ secrets.FTP_USERNAME }}"
-          echo "FTP_PASSWORD set? -> ${{ secrets.FTP_PASSWORD }}"
+          echo "FTP_SERVER set? -> ${{ secrets.FTP_SERVER != '' }}"
+          echo "FTP_USERNAME set? -> ${{ secrets.FTP_USERNAME != '' }}"
+          echo "FTP_PASSWORD set? -> ${{ secrets.FTP_PASSWORD != '' }}"
 
       # 🌐 DNS CHECK (VERY IMPORTANT)
       - name: DNS lookup test
