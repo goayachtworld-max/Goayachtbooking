@@ -46,7 +46,7 @@ function DayAvailability() {
 
   const token = localStorage.getItem("authToken");
   const user = JSON.parse(localStorage.getItem("user"));
-  console.log("Here is user" , user)
+  console.log("Here is user", user)
   const userRole = user.type;
   const isAdmin = userRole === "admin";
 
@@ -107,13 +107,23 @@ function DayAvailability() {
     return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
   };
 
+  // const to12HourFormat = (time24) => {
+  //   if (!time24) return "";
+  //   const [hour, minute] = time24.split(":").map(Number);
+  //   const period = hour >= 12 ? "PM" : "AM";
+  //   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  //   return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
+  // };
   const to12HourFormat = (time24) => {
     if (!time24) return "";
-    const [hour, minute] = time24.split(":").map(Number);
+    let [hour, minute] = time24.split(":").map(Number);
+    // ✅ normalize hour (24 → 0, 25 → 1, etc.)
+    hour = hour % 24;
     const period = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-    return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
+    return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
   };
+
 
   // Disable past slots for today
   const isPastSlot = (slot) => {
@@ -160,8 +170,11 @@ function DayAvailability() {
     }
 
     const startMin = timeToMin(yachtObj.sailStartTime);
-    const endMin = timeToMin(yachtObj.sailEndTime);
+    let endMin = timeToMin(yachtObj.sailEndTime);
 
+    if (endMin <= startMin) {
+      endMin += 24 * 60;
+    }
     // Gather special slots (single + multiple)
     const specialMins = [];
 

@@ -27,6 +27,17 @@ function CreateYacht() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [photoError, setPhotoError] = useState("");
 
+  const getEndTimeLimits = () => {
+    const start = yacht.sailStartTime;
+
+    return {
+      min: start,        // cannot be before start
+      max: "23:59",      // browser limitation
+      allowMidnight: true
+    };
+  };
+
+
   // Price validation
   useEffect(() => {
     const errors = {};
@@ -248,12 +259,54 @@ function CreateYacht() {
           </div>
 
           {/* Sail End */}
-          <div className="col-md-6">
+          {/* <div className="col-md-6">
             <label className="form-label fw-bold">
               Sail End Time <span className="text-danger">*</span>
             </label>
             <input type="time" name="sailEndTime" className="form-control border border-dark" value={yacht.sailEndTime} onChange={handleChange} required />
+            <input
+              type="time"
+              name="sailEndTime"
+              className="form-control border border-dark"
+              value={yacht.sailEndTime}
+              onChange={handleChange}
+              min={getEndTimeLimits().min}
+              max={getEndTimeLimits().max}
+              required
+            />
+          </div> */}
+          {/* Sail End */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">
+              Sail End Time <span className="text-danger">*</span>
+            </label>
+
+            <input
+              type="time"
+              name="sailEndTime"
+              className="form-control border border-dark"
+              value={yacht.sailEndTime}
+              min={yacht.sailStartTime}
+              max="23:59"
+              onChange={(e) => {
+                const val = e.target.value;
+                // allow midnight explicitly
+                if (val === "00:00") {
+                  setYacht((prev) => ({ ...prev, sailEndTime: "00:00" }));
+                  return;
+                }
+                // normal validation
+                if (val < yacht.sailStartTime) {
+                  toast.error("End time cannot be before start time");
+                  return;
+                }
+
+                setYacht((prev) => ({ ...prev, sailEndTime: val }));
+              }}
+              required
+            />
           </div>
+
 
           {/* Duration */}
           <div className="col-md-6">
@@ -325,7 +378,7 @@ function CreateYacht() {
             </select>
           </div>
 
-           {/* Status */}
+          {/* Status */}
           <div className="col-md-6">
             <label className="form-label fw-bold">
               Status <span className="text-danger">*</span>

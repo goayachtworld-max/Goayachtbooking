@@ -44,13 +44,24 @@ function CreateBooking() {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
   };
 
-  function to12Hour(time) {
-    if (!time) return "";
-    const [h, m] = time.split(":").map(Number);
-    const suffix = h >= 12 ? "PM" : "AM";
-    const hour = ((h + 11) % 12) + 1;
-    return `${hour}:${m.toString().padStart(2, "0")} ${suffix}`;
-  }
+  // function to12Hour(time) {
+  //   if (!time) return "";
+  //   const [h, m] = time.split(":").map(Number);
+  //   const suffix = h >= 12 ? "PM" : "AM";
+  //   const hour = ((h + 11) % 12) + 1;
+  //   return `${hour}:${m.toString().padStart(2, "0")} ${suffix}`;
+  // }
+
+  const to12Hour = (time24) => {
+    if (!time24) return "";
+    let [hour, minute] = time24.split(":").map(Number);
+    // ✅ normalize hour (24 → 0, 25 → 1, etc.)
+    hour = hour % 24;
+    const period = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
+  };
+
 
   //  Fetch yachts
   useEffect(() => {
@@ -281,9 +292,16 @@ function CreateBooking() {
     }
 
     const startMin = timeToMin(sailStart);
-    const endMin = timeToMin(sailEnd);
+    let endMin = timeToMin(sailEnd);
     const specialMins = specialSlots.map(timeToMin).sort((a, b) => a - b);
 
+    // FIX for 00:00 or overnight ranges  -- Issue with 12am as end time and 6am as start time
+    if (endMin <= startMin) {
+      endMin += 24 * 60;
+    }
+    if (sailEnd === "00:00") {
+      endMin = 24 * 60 - 1; // 1439
+    }
     const slots = [];
     let cursor = startMin;
 
@@ -309,6 +327,7 @@ function CreateBooking() {
       return true;
     }).sort((a, b) => a.start - b.start);
 
+    console.log("Slots are : ", cleaned)
     return cleaned.map((s) => ({
       start: minToTime(s.start),
       end: minToTime(s.end),
