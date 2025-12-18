@@ -564,8 +564,7 @@ const AllYachts = () => {
                     "runningCost",
                     "maxSellingPrice",
                     "sellingPrice",
-                    "sailStartTime",
-                    "sailEndTime",
+                    "sailStartTime"
                   ].map((field) => (
                     <div className="col-12 col-md-6" key={field}>
                       <label className="form-label text-capitalize">
@@ -617,6 +616,31 @@ const AllYachts = () => {
                     </div>
                   ))}
 
+                  {/* Sail End */}
+                  <div className="col-md-6">
+                    <label className="form-label fw-bold">
+                      Sail End Time <span className="text-danger">*</span>
+                    </label>
+
+                    <input
+                      type="time"
+                      name="sailEndTime"
+                      className="form-control border border-dark"
+                      value={selectedYacht.sailEndTime}
+                      min={selectedYacht.sailStartTime}
+                      max="23:59"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        // normal validation
+                        if (val < selectedYacht.sailStartTime) {
+                          toast.error("End time cannot be before start time");
+                          return;
+                        }
+                        setSelectedYacht((prev) => ({ ...prev, sailEndTime: val }));
+                      }}
+                      required
+                    />
+                  </div>
 
                   {/* Status */}
                   <div className="col-12 col-md-6">
