@@ -1,7 +1,7 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/phfapdtpgbb8/goaboatrides.com
+    - export DEPLOYPATH=/home/phfapdtpgbb8/goaboat.com
     - echo "Installing server dependencies..."
     - cd server && npm install
 
