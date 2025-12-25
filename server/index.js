@@ -22,7 +22,7 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "http://goaboatride.com",
+      "http://goaboatride.com","https://goaboat.com/",
       "http://localhost:5173",
       "https://yaut-2-o.vercel.app"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
