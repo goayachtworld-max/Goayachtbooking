@@ -10,7 +10,7 @@ jobs:
 
     env:
       LOCAL_DIR: ./client/dist/
-      SERVER_DIR: /
+      SERVER_DIR: /public_html/
       FTP_PORT: 21
 
     steps:
