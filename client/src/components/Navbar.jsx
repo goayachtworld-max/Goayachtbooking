@@ -130,6 +130,19 @@ function Navbar({ user, onLogout }) {
                 </li>
               )}
 
+              {/*Grid Availability */}
+              {(user?.type === "admin" || user?.type === "backdesk") && (
+                <li className="nav-item">
+                  <Link
+                    className={`nav-link text-white ${styles.navHover} ${isActive("/grid-availability") ? styles.activeTab : ""}`}
+                    to="/grid-availability"
+                    onClick={handleNavLinkClick}
+                  >
+                    GridAvailability
+                  </Link>
+                </li>
+              )}
+
               {/* Yachts */}
               {user?.type === "admin" && (
                 <li className="nav-item">

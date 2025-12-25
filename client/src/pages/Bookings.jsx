@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getBookingsAPI } from "../services/operations/bookingAPI";
+import "./Bookings.css"
 
 function Bookings({ user }) {
   const navigate = useNavigate();
@@ -21,6 +22,16 @@ function Bookings({ user }) {
     params.get("status") || ""
   );
 
+  const to12HourFormat = (time24) => {
+    if (!time24) return "";
+    let [hour, minute] = time24.split(":").map(Number);
+    // ✅ normalize hour (24 → 0, 25 → 1, etc.)
+    hour = hour % 24;
+    const period = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
+  };
+
   //  Sync filters → URL whenever they change
   useEffect(() => {
     const p = new URLSearchParams();
@@ -37,6 +48,7 @@ function Bookings({ user }) {
       const token = localStorage.getItem("authToken");
       const res = await getBookingsAPI(token, filters);
       setBookings(res.data.bookings || []);
+      console.log("Here are bookins ", bookings)
     } catch (err) {
       console.error("❌ Error fetching bookings:", err);
     } finally {
@@ -87,7 +99,7 @@ function Bookings({ user }) {
           className="form-control"
           value={filterDate}
           onChange={(e) => setFilterDate(e.target.value)}
-          style={{ maxWidth: "200px" }}
+          style={{ maxWidth: "100px" }}
           min={new Date().toISOString().split("T")[0]}
         />
 
@@ -95,7 +107,7 @@ function Bookings({ user }) {
           className="form-select"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          style={{ maxWidth: "200px" }}
+          style={{ maxWidth: "100px" }}
         >
           <option value="">All Status</option>
           <option value="Initiated">Initiated</option>
@@ -108,62 +120,84 @@ function Bookings({ user }) {
         </button>
       </div>
 
-      {/* Booking Cards */}
       {loading ? (
-        <p>Loading bookings...</p>
+        <p className="text-center text-muted">Loading bookings...</p>
       ) : (
-        <div className="row mt-3">
+        <div className="row mt-2">
           {bookings.length > 0 ? (
-            bookings.map((booking) => (
-              <div key={booking._id} className="col-md-6 mb-3">
-                <div className="card p-3">
-                  <h5>{booking.customerId?.name}</h5>
-                  <p>Yacht: {booking.yachtId?.name}</p>
-                  <p>Ticket : {booking._id.toString().slice(-5).toUpperCase()}</p>
-                  <p>Date: {new Date(booking.date).toISOString().split("T")[0]}</p>
+            bookings.map((booking) => {
+              const statusColor =
+                booking.status === "Initiated"
+                  ? "warning"
+                  : booking.status === "Terminated"
+                    ? "danger"
+                    : "success";
 
-                  <p>
-                    Status:{" "}
-                    <span
-                      className={`badge ${
-                        booking.status === "Initiated"
-                          ? "bg-warning"
-                          : booking.status === "Terminated"
-                          ? "bg-danger"
-                          : "bg-success"
-                      }`}
-                    >
-                      {booking.status}
-                    </span>
-                  </p>
+              return (
+                <div key={booking._id} className="col-lg-4 col-md-6 mb-3">
+                  <div
+                    className={`card border-0 shadow-sm h-100 border-start border-4 border-${statusColor} booking-card`}
+                  >
+                    <div className="card-body p-3">
+                      {/* Header */}
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                          <h6 className="mb-0 fw-semibold text-dark">
+                            {booking.customerId?.name}
+                          </h6>
+                          <small className="text-muted">
+                            Ticket #{booking._id.slice(-5).toUpperCase()}
+                          </small>
+                        </div>
 
-                  <div className="d-flex gap-2">
-                    <button
-                      className="btn btn-primary flex-fill"
-                      onClick={() => handleViewDetails(booking)}
-                    >
-                      View Details
-                    </button>
+                        <span className={`badge bg-${statusColor} bg-opacity-10 text-${statusColor}`}>
+                          {booking.status}
+                        </span>
+                      </div>
 
-                    {(user?.type === "admin" ||
-                      user?.type === "backdesk" ||
-                      user?.type === "onsite") && (
-                      <button
-                        className="btn btn-info flex-fill"
-                        onClick={() => handleUpdateBooking(booking)}
-                      >
-                        Update Booking
-                      </button>
-                    )}
+                      <hr className="my-2" />
+
+                      {/* Info Grid */}
+                      <div className="small text-muted booking-info">
+                        <div>🚤 <b>Yacht:</b> {booking.yachtId?.name}</div>
+                        <div>📅 <b>Date:</b> {new Date(booking.date).toISOString().split("T")[0]}</div>
+                        <div>⏰ <b>Time:</b> {to12HourFormat(booking.startTime)} – {to12HourFormat(booking.endTime)}</div>
+                        <div className="fw-semibold text-dark">
+                          💰 Pending: {booking.pendingAmount}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="d-flex gap-2 mt-3">
+                        <button
+                          className="btn btn-sm btn-outline-primary flex-fill rounded-pill"
+                          onClick={() => handleViewDetails(booking)}
+                        >
+                          View
+                        </button>
+
+                        {(user?.type === "admin" ||
+                          user?.type === "backdesk" ||
+                          user?.type === "onsite") && (
+                            <button
+                              className="btn btn-sm btn-outline-info flex-fill rounded-pill"
+                              onClick={() => handleUpdateBooking(booking)}
+                            >
+                              Update
+                            </button>
+                          )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
-            <p className="text-center">No bookings found</p>
+            <p className="text-center text-muted">No bookings found</p>
           )}
         </div>
       )}
+
     </div>
   );
 }

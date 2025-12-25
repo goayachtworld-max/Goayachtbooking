@@ -100,15 +100,16 @@ export const createBooking = async (req, res, next) => {
         Your Company
       `;
 
-      await sendEmail({
-        to: customer.email,
-        subject: "Booking Confirmation",
-        text: emailContent,
-        html: `<pre>${emailContent}</pre>`,
-      });
+      // await sendEmail({
+      //   to: customer.email,
+      //   subject: "Booking Confirmation",
+      //   text: emailContent,
+      //   html: `<pre>${emailContent}</pre>`,
+      // });
     }
 
     res.status(201).json({ success: true, booking });
+    return;
   } catch (error) {
     console.error("Booking creation error:", error);
     next(error);
@@ -138,7 +139,7 @@ export const updateBooking = async (req, res, next) => {
       { new: true }
     ).populate("customerId employeeId transactionId");
 
-    res.status(200).json(updatedBooking);
+    return res.status(200).json(updatedBooking);
   } catch (error) {
     next(error);
   }
@@ -184,6 +185,7 @@ export const getBookings = async (req, res) => {
       .sort({ date: -1 });
 
     res.json({ success: true, bookings });
+    return
   } catch (error) {
     console.error("❌ Error fetching bookings:", error);
     res.status(500).json({ success: false, message: error.message });
@@ -197,6 +199,7 @@ export const getBookingById = async (req, res) => {
       .populate("customerId empId transactionId");
     if (!booking) return res.status(404).json({ error: "Booking not found" });
     res.json(booking);
+    return
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

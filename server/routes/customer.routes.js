@@ -1,5 +1,5 @@
 import express from "express";
-import { createCustomer, getCustomers, getCustomerByEmail } from "../controllers/customer.controller.js";
+import { createCustomer, getCustomerByContact, getCustomers, searchCustomersByName } from "../controllers/customer.controller.js";
 import { customerSchema } from "../validators/customer.validator.js";
 import { validate } from "../middleware/validate.js";
 import { upload, uploadToCloudinary } from "../middleware/upload.js";
@@ -13,15 +13,18 @@ router.post(
   upload.single("govtIdImage"),
   // Merge file into body for validation
   (req, res, next) => {
-    if (req.file) req.body.govtIdImage = req.file.path || req.file.buffer;
+    if (req.file) {
+      req.body.govtIdImage = req.file.path || req.file.buffer;
+      uploadToCloudinary("yaut/govtProof")
+    }
     next();
   },
   validate(customerSchema),
-  uploadToCloudinary("yaut/govtProof"),
   createCustomer
 );
 
-router.get("/:email", authMiddleware, getCustomerByEmail);
+router.get("/contact/:contact", authMiddleware, getCustomerByContact);
 router.get("/", authMiddleware, getCustomers);
+router.get("/search", authMiddleware, searchCustomersByName);
 
 export default router;

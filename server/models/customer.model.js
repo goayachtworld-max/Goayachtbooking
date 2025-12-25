@@ -7,6 +7,10 @@ const customerSchema = new mongoose.Schema({
     trim: true,
     minlength: 2
   },
+  company: {
+    type: String,
+    required: true
+  },
   contact: {
     type: String,
     required: true,
@@ -14,13 +18,12 @@ const customerSchema = new mongoose.Schema({
   },
   alternateContact: {
     type: String,
-    required: false,
     match: [/^\+?[0-9]{10,15}$/, 'Alternate contact must be 10–15 digits if provided']
   },
   email: {
     type: String,
-    required: true,
-    unique: true,
+    // required: true,
+    // unique: true,
     lowercase: true,
     match: [/^\S+@\S+\.\S+$/, 'Invalid email format']
   },

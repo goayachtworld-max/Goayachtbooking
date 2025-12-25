@@ -961,7 +961,7 @@ function DayAvailability() {
           <div className="modal-content rounded-4">
             <form onSubmit={handleConfirmBooking}>
               <div className="modal-header bg-primary bg-opacity-10">
-                <h5 className="modal-title">Confirm Booking</h5>
+                <h5 className="modal-title">Create Booking</h5>
                 <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
               </div>
 

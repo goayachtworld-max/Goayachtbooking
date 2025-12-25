@@ -14,7 +14,7 @@ const transactionSchema = new mongoose.Schema({
   },
   paymentProof: {
     type: String,
-    required: true // can store file path or URL to the uploaded image
+    // required: true // can store file path or URL to the uploaded image
   },
   employeeId: {
     type: mongoose.Schema.Types.ObjectId,

@@ -114,8 +114,8 @@ function CreateEmployee() {
             required
           >
             <option value="">-- Select Role --</option>
-            <option value="backdesk">Backdesk</option>
-            <option value="onsite">Onsite</option>
+            <option value="backdesk">Agent</option>
+            <option value="onsite">Staff</option>
           </select>
         </div>
 

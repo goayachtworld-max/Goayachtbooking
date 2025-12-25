@@ -1,19 +1,50 @@
 import { CustomerModel } from "../models/customer.model.js";
 
+const cleanEmptyFields = (obj) => {
+  Object.keys(obj).forEach((key) => {
+    if (
+      obj[key] === "" ||
+      obj[key] === null ||
+      obj[key] === undefined
+    ) {
+      delete obj[key];
+    }
+  });
+};
+
+
 export const createCustomer = async (req, res, next) => {
-  console.log("Create Customer")
   try {
-    console.log("Cloudinary img ", req.cloudinaryUrl)
+    let data = { ...req.body };
+    cleanEmptyFields(data);
+
     const customer = await CustomerModel.create({
-      ...req.body,
-      govtIdImage: req.cloudinaryUrl // Attach uploaded image URL
+      ...data,
+      company: req.user.company,
+      govtIdImage: req.cloudinaryUrl
     });
-    console.log("Customer - ", customer);
+
     res.status(201).json(customer);
   } catch (error) {
     next(error);
   }
 };
+
+// export const createCustomer = async (req, res, next) => {
+//   console.log("Create Customer")
+//   try {
+//     console.log("Cloudinary img ", req.cloudinaryUrl)
+//     const customer = await CustomerModel.create({
+//       ...req.body,
+//       company: req.user.company,
+//       govtIdImage: req.cloudinaryUrl // Attach uploaded image URL
+//     });
+//     console.log("Customer - ", customer);
+//     res.status(201).json(customer);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
 export const getCustomers = async (req, res, next) => {
   console.log("Get all Customers")
@@ -25,36 +56,44 @@ export const getCustomers = async (req, res, next) => {
   }
 };
 
-// export const getCustomerByEmail = async (req, res, next) => {
-//   try {
-//     const { email } = req.params; // 👈 Expecting email in URL
-//     console.log("Get by email ", email)
-//     const customer = await CustomerModel.findOne({ email });
-
-//     if (!customer) {
-//       return res.status(404).json({ error: "Customer not found" });
-//     }
-
-//     res.json(customer);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-export const getCustomerByEmail = async (req, res, next) => {
+export const getCustomerByContact = async (req, res, next) => {
   try {
-    const { email } = req.params;
-    console.log("Get by email ", email);
+    const { contact } = req.params; // 👈 Expecting contact in URL
+    console.log("Get by contact ", contact)
+    const customer = await CustomerModel.findOne({ contact });
 
-    const customer = await CustomerModel.findOne({ email });
+    // if (!customer) {
+    //   return res.status(404).json({ error: "Customer not found" });
+    // }
 
-    // ✅ Always respond with 200
-    // ✅ Frontend will check if customer === null
-    return res.status(200).json({
-      customer: customer || null
-    });
-
+    res.json({"customer":customer});
   } catch (error) {
     next(error);
   }
 };
+
+
+// controllers/customer.controller.js
+export const searchCustomersByName = async (req, res, next) => {
+  try {
+    const { name } = req.query;
+
+    console.log("Here is name in query : ", name)
+    if (!name || name.trim().length < 2) {
+      return res.json({ customers: [] });
+    }
+
+    const customers = await CustomerModel.find({
+      name: { $regex: name, $options: "i" },
+      company: req.user.company
+    })
+      .limit(5)
+      .select("name contact email govtIdNo");
+
+    console.log("here is debounce result : ", customers);
+    res.json({ customers });
+  } catch (error) {
+    next(error);
+  }
+};
+

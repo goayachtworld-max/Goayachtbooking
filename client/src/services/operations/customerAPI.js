@@ -7,13 +7,33 @@ export const createCustomerAPI = async (payload, token) => {
   });
 };
 
-export const getCustomerByEmailAPI = async (email, token) => {
+export const getCustomerByContactAPI = async (contact, token) => {
   return apiConnector(
     "GET",
-    `${customer.GET_CUSTOMER_BY_EMAIL}/${encodeURIComponent(email)}`,
+    `${customer.GET_CUSTOMER_BY_CONTACT}/${encodeURIComponent(contact)}`,
     null,
     {
       Authorization: `Bearer ${token}`,
     }
   );
+};
+
+export const searchCustomersByNameAPI = async (name, token) => {
+  try {
+    const response = await apiConnector(
+      "GET",
+      `${customer.SEARCH_CUSTOMERS_API}?name=${name}`,
+      null,
+      {
+        Authorization: `Bearer ${token}`,
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error(
+      "❌ Failed to search customers:",
+      error.response?.data || error
+    );
+    throw error;
+  }
 };

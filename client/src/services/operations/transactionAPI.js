@@ -14,10 +14,10 @@ export const createTransactionAPI = async (payload, token) => {
 };
 
 export const createTransactionAndUpdateBooking = async (payload, token) => {
-    console.log("FormData values:");
-      for (let [key, value] of payload.entries()) {
-        console.log(key, value);
-      }
+    // console.log("FormData values:");
+    //   for (let [key, value] of payload.entries()) {
+    //     console.log(key, value);
+    //   }
     console.log("Request " , payload)
     return apiConnector(
         "POST",

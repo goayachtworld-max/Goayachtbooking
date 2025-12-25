@@ -64,7 +64,7 @@ const AllEmployees = () => {
           }}
           onClick={() => navigate("/create-employee")}
         >
-          + Create Employee
+          + Create User
         </button>
       </div>
 
@@ -136,10 +136,10 @@ const AllEmployees = () => {
                   </div>
 
                   <div className="mt-3 text-center">
-                    <p className="mb-1"><strong>Contact:</strong> {emp.contact}</p>
-                    <p className="mb-1"><strong>Email:</strong> {emp.email}</p>
                     <p className="mb-1"><strong>Role:</strong> {emp.type}</p>
                     <p className="mb-3"><strong>Username:</strong> {emp.username}</p>
+                    <p className="mb-1"><strong>Contact:</strong> {emp.contact}</p>
+                    <p className="mb-1"><strong>Email:</strong> {emp.email}</p>
 
                     <button
                       className="btn btn-sm px-4"

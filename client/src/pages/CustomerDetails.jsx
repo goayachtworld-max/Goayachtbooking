@@ -21,8 +21,18 @@ function CustomerDetails() {
     );
   }
 
+  const to12HourFormat = (time24) => {
+    if (!time24) return "";
+    let [hour, minute] = time24.split(":").map(Number);
+    // ✅ normalize hour (24 → 0, 25 → 1, etc.)
+    hour = hour % 24;
+    const period = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
+  };
   const bookingDate = booking.date ? new Date(booking.date).toLocaleDateString() : "-";
   const startTime = booking.startTime || "-";
+  const endTime = booking.endTime;
 
   return (
     <div className="container my-4">
@@ -40,7 +50,10 @@ function CustomerDetails() {
             <strong>Date of Booking:</strong> {bookingDate}
           </p>
           <p className="m-0">
-            <strong>Start Time:</strong> {startTime}
+            <strong>Start Time:</strong> {to12HourFormat(startTime)}
+          </p>
+          <p className="m-0">
+            <strong>End Time:</strong> {to12HourFormat(endTime)}
           </p>
           <p className="m-0"><strong>Number of People:</strong> {booking.numPeople || "N/A"}</p>
           <p className="m-0"><strong>Status:</strong> {booking.status || "N/A"}</p>

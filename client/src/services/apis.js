@@ -10,7 +10,8 @@ export const employee = {
 
 export const customer = {
   CREATE_CUSTOMER_API: `${BASE_URL}/customers`,
-  GET_CUSTOMER_BY_EMAIL: `${BASE_URL}/customers`, // we'll append /:email dynamically
+  GET_CUSTOMER_BY_CONTACT: `${BASE_URL}/customers/contact`, // we'll append /:contact dynamically
+  SEARCH_CUSTOMERS_API: `${BASE_URL}/customers/search`,
 }
 
 export const booking = {
@@ -21,7 +22,7 @@ export const booking = {
 
 export const transaction = {
   CREATE_TRANSACTION_API: `${BASE_URL}/transactions`,
-  CREATE_WITH_BOOKING_UPDATE : `${BASE_URL}/transactions/create-with-booking-update`
+  CREATE_WITH_BOOKING_UPDATE: `${BASE_URL}/transactions/create-with-booking-update`
 };
 
 export const availability = {
@@ -39,5 +40,5 @@ export const yaut = {
   GET_YACHT_BY_ID_API: (id) => `${BASE_URL}/yacht/${id}`,
   UPDATE_YACHT_API: (id) => `${BASE_URL}/yacht/${id}`,
   DELETE_YACHT_API: (id) => `${BASE_URL}/yacht/${id}`,
-  UPDATE_DAY_SLOTS:`${BASE_URL}/slot/`
+  UPDATE_DAY_SLOTS: `${BASE_URL}/slot/`
 };

@@ -134,7 +134,7 @@ function UpdateBooking() {
             name="proofFile"
             onChange={handleChange}
             accept="image/*,application/pdf"
-            required
+            // required
           />
         </div>
 

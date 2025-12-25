@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createCustomerAPI } from "../services/operations/customerAPI"; // import the API call
+import { createCustomerAPI } from "../services/operations/customerAPI";
 import { toast } from "react-hot-toast";
 
 function CustomerForm() {
@@ -11,7 +11,7 @@ function CustomerForm() {
     contact: "",
     alternateContact: "",
     email: "",
-    govtIdType: "Aadhar",
+    govtIdType: "None",
     govtIdNo: "",
     govtIdImage: null,
   });
@@ -21,6 +21,16 @@ function CustomerForm() {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
+    if (name === "govtIdType" && value === "None") {
+      setFormData({
+        ...formData,
+        govtIdType: value,
+        govtIdNo: "",
+        govtIdImage: null,
+      });
+      return;
+    }
+
     if (name === "govtIdImage") {
       setFormData({ ...formData, govtIdImage: files[0] });
     } else {
@@ -40,25 +50,34 @@ function CustomerForm() {
     try {
       const token = localStorage.getItem("authToken");
 
-      // Prepare FormData for file upload
       const payload = new FormData();
       for (let key in formData) {
+
+        if (
+          formData.govtIdType === "None" &&
+          (key === "govtIdNo" || key === "govtIdImage")
+        ) {
+          continue;
+        }
+
         if (formData[key] !== null) {
-          payload.append(key, formData[key]);
+          if (key === "alternateContact" && !formData.alternateContact?.trim()) {
+            payload.append("alternateContact", formData.contact);
+          } else {
+            payload.append(key, formData[key]);
+          }
         }
       }
 
-      const res = await createCustomerAPI(payload, token);
-      // console.log(" Customer created:", res.data);
-      // alert(" Customer profile created successfully!");
+      await createCustomerAPI(payload, token);
       toast.success("Customer profile created successfully!");
-      // Reset form
+
       setFormData({
         name: "",
         contact: "",
         alternateContact: "",
         email: "",
-        govtIdType: "Aadhar",
+        govtIdType: "None",
         govtIdNo: "",
         govtIdImage: null,
       });
@@ -70,20 +89,20 @@ function CustomerForm() {
     }
   };
 
+  const isGovtIdDisabled = formData.govtIdType === "None";
+
   return (
     <div className="container my-4">
-      {/* Header with Back Button */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4>Create Customer Profile</h4>
+        <h4>Create Customer</h4>
         <button className="btn btn-secondary" onClick={handleBack}>
-          &larr; Back
+        Back
         </button>
       </div>
 
       {error && <p className="text-danger">{error}</p>}
 
       <form className="row g-3" onSubmit={handleSubmit}>
-        {/* Full Name */}
         <div className="col-12 col-md-6">
           <label className="form-label fw-bold">Full Name</label>
           <input
@@ -97,7 +116,6 @@ function CustomerForm() {
           />
         </div>
 
-        {/* Contact Number */}
         <div className="col-12 col-md-6">
           <label className="form-label fw-bold">Contact Number</label>
           <input
@@ -111,20 +129,18 @@ function CustomerForm() {
           />
         </div>
 
-        {/* Alternate Contact */}
         <div className="col-12 col-md-6">
-          <label className="form-label fw-bold">Alternate Contact Number</label>
+          <label className="form-label fw-bold">WhatsApp Number</label>
           <input
             type="tel"
             className="form-control form-control-lg border border-dark text-dark"
             name="alternateContact"
             value={formData.alternateContact}
             onChange={handleChange}
-            placeholder="Enter alternate contact"
+            placeholder="Enter WhatsApp contact"
           />
         </div>
 
-        {/* Email */}
         <div className="col-12 col-md-6">
           <label className="form-label fw-bold">Email Address</label>
           <input
@@ -134,11 +150,9 @@ function CustomerForm() {
             value={formData.email}
             onChange={handleChange}
             placeholder="Enter email address"
-            required
           />
         </div>
 
-        {/* Govt ID Type */}
         <div className="col-12 col-md-6">
           <label className="form-label fw-bold">Govt ID Type</label>
           <select
@@ -147,6 +161,7 @@ function CustomerForm() {
             value={formData.govtIdType}
             onChange={handleChange}
           >
+            <option value="None">None</option>
             <option value="Aadhar">Aadhar</option>
             <option value="PAN">PAN</option>
             <option value="Driving License">Driving License</option>
@@ -154,34 +169,34 @@ function CustomerForm() {
           </select>
         </div>
 
-        {/* Govt ID Number */}
         <div className="col-12 col-md-6">
           <label className="form-label fw-bold">Govt ID Number</label>
           <input
             type="text"
-            className="form-control form-control-lg border border-dark text-dark"
+            className={`form-control form-control-lg border border-dark text-dark ${isGovtIdDisabled ? "bg-light" : ""
+              }`}
             name="govtIdNo"
             value={formData.govtIdNo}
             onChange={handleChange}
             placeholder="Enter govt ID number"
-            required
+            disabled={isGovtIdDisabled}
+            required={!isGovtIdDisabled}
           />
         </div>
 
-        {/* Upload ID Image */}
         <div className="col-12">
           <label className="form-label fw-bold">Upload Govt ID Image</label>
           <input
             type="file"
-            className="form-control form-control-lg border border-dark"
+            className={`form-control form-control-lg border border-dark ${isGovtIdDisabled ? "bg-light" : ""
+              }`}
             name="govtIdImage"
             accept="image/*"
             onChange={handleChange}
-            required
+            disabled={isGovtIdDisabled}
           />
         </div>
 
-        {/* Submit Button */}
         <div className="col-12 text-center">
           <button
             type="submit"

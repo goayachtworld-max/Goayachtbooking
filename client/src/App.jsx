@@ -22,6 +22,7 @@ import DayAvailability from "./pages/DayAvailability";
 import CreateYacht from "./pages/CreateYacht";
 import AllYachts from "./pages/AllYachts";
 import AllEmployees from "./pages/AllEmployees";
+import GridAvailability from "./pages/GridAvailability";
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -151,6 +152,14 @@ function App() {
           element={
             <ProtectedRoute user={user}>
               {["admin", "backdesk"].includes(role) ? <Availability /> : <NotFound />}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/grid-availability"
+          element={
+            <ProtectedRoute user={user}>
+              {["admin", "backdesk", "onsite"].includes(role) ? <GridAvailability/> : <NotFound />}
             </ProtectedRoute>
           }
         />

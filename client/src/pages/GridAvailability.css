@@ -1,0 +1,113 @@
+/* Wrapper */
+.availability-wrapper {
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.07);
+  overflow-x: auto;
+}
+
+/* Table */
+table {
+  border-spacing: 0;
+  min-width: 700px;
+}
+
+th, td {
+  text-align: center;
+  white-space: nowrap;
+  padding: 10px;
+}
+
+/* Sticky date column */
+.sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  border-right: 1px solid #eee;
+}
+
+/* Slot headers */
+.slot-header {
+  background: #f8f9fa;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* Slot cells */
+.slot-cell {
+  border-radius: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  text-transform: capitalize;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+/* Slot types */
+.slot-cell.free {
+  background: linear-gradient(135deg, #1abc9c, #16a085);
+  color: #fff;
+}
+.slot-cell.booked {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: #fff;
+}
+.slot-cell.locked {
+  background: linear-gradient(135deg, #f1c40f, #f39c12);
+  color: #333;
+}
+
+/* Hover effect */
+.slot-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Legend pills */
+.legend {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+.legend.free { background: #1abc9c; color: #fff; }
+.legend.booked { background: #e74c3c; color: #fff; }
+.legend.locked { background: #f1c40f; color: #333; }
+
+/* Modals */
+.modal-content {
+  border-radius: 16px;
+}
+.modal-header {
+  border-bottom: none;
+  font-weight: 600;
+}
+.modal-header.bg-warning {
+  background: linear-gradient(135deg, #f7dc6f, #f1c40f);
+}
+.modal-header.bg-primary {
+  background: linear-gradient(135deg, #5dade2, #3498db);
+}
+.modal-header.bg-danger {
+  background: linear-gradient(135deg, #ec7063, #e74c3c);
+}
+
+/* Buttons rounded */
+button.btn, select.form-select, input.form-control {
+  border-radius: 50px;
+}
+
+/* Mobile tweaks */
+@media (max-width: 768px) {
+  .slot-header small {
+    font-size: 10px;
+  }
+  th, td {
+    padding: 6px 8px;
+  }
+  .slot-cell {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+}
