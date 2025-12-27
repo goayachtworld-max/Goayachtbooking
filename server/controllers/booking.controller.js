@@ -11,15 +11,27 @@ export const createBooking = async (req, res, next) => {
 
     const { yachtId, date, startTime, endTime, customerId, quotedAmount, numPeople } = req.body;
     const employeeId = req.user.id;
+    console.log("User type : ", req.user.type)
 
-    // ----------------------------
-    // 0️⃣ Determine trip end datetime for TTL
+    // ✅ 0️⃣ determine booking status by role
+    let bookingStatus = "pending";
+    let tripS = "pending";
+
+    if (
+      req.user.type === "admin" ||
+      req.user.type === "staff" ||
+      req.user.type === "onsite"
+    ) {
+      bookingStatus = "confirmed";
+      tripS = "initiated";
+    }
+
+    // 1️⃣ determine trip end datetime 
     const [year, month, day] = date.split("-");
     const [endHour, endMinute] = endTime.split(":");
     const tripEnd = new Date(year, month - 1, day, endHour, endMinute);
 
-    // ----------------------------
-    // 1️⃣ Check slot availability using helper
+    // 2️⃣ check slot availability 
     const { available, conflictSlot, reason } = await checkSlotAvailability({
       yachtId,
       date,
@@ -32,36 +44,32 @@ export const createBooking = async (req, res, next) => {
       return res.status(400).json({ success: false, message: reason });
     }
 
-    // ----------------------------
-    // 2️⃣ Create Booking (original logic)
+    // 3️⃣ create booking
     const booking = await BookingModel.create({
       ...req.body,
       employeeId,
       company: req.user.company,
       pendingAmount: quotedAmount,
+      status: bookingStatus,
+      tripStatus: tripS,
     });
+    console.log(booking)
 
-    // ----------------------------
-    // 3️⃣ Update customer (original logic)
+    // 4️⃣ update customer 
     await CustomerModel.findByIdAndUpdate(
       booking.customerId,
       { bookingId: booking._id },
       { new: true }
     );
 
-    console.log("Booking created:", booking);
-
-    // ----------------------------
-    // 4️⃣ Update or create availability slot
+    // 5️⃣ update availability slot
     if (conflictSlot) {
-      // Convert lock → booked
       conflictSlot.status = "booked";
       conflictSlot.appliedBy = employeeId;
       conflictSlot.bookingId = booking._id;
       conflictSlot.deleteAfter = tripEnd;
       await conflictSlot.save();
     } else {
-      // Create booked slot
       await AvailabilityModel.create({
         yachtId,
         date,
@@ -74,48 +82,188 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
-    // Send email to customer
-    const customer = await CustomerModel.findById(customerId);
-    const yacht = await YachtModel.findById(yachtId).select("name");
-    const yachtName = yacht?.name || "N/A";
-
-    if (customer?.email) {
-      const emailContent = `
-        Hi ${customer.name},
-
-        Your booking has been confirmed ✅
-
-        Details:
-        - Ticket : ${booking._id.toString().slice(-5).toUpperCase()}
-        - Yacht Name : ${yachtName}
-        - Date: ${date}
-        - Start Time: ${startTime}
-        - End Time: ${endTime}
-        - Number of People: ${numPeople}
-        - Total Amount: ${quotedAmount}
-
-        Thank you for choosing our service!
-
-        Regards,
-        Your Company
-      `;
-
-      // await sendEmail({
-      //   to: customer.email,
-      //   subject: "Booking Confirmation",
-      //   text: emailContent,
-      //   html: `<pre>${emailContent}</pre>`,
-      // });
-    }
-
     res.status(201).json({ success: true, booking });
-    return;
   } catch (error) {
     console.error("Booking creation error:", error);
     next(error);
   }
 };
 
+
+// export const updateBooking = async (req, res, next) => {
+//   try {
+//     const { transactionId, amount, status } = req.body;
+//     const bookingId = req.params.id;
+
+//     if (!transactionId) {
+//       return res.status(400).json({ error: "transactionId is required" });
+//     }
+
+//     const booking = await BookingModel.findById(bookingId);
+//     if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+//     const updatedBooking = await BookingModel.findByIdAndUpdate(
+//       bookingId,
+//       {
+//         $push: { transactionId },
+//         pendingAmount: Math.max(booking.pendingAmount - amount, 0),
+//         ...(status && { status }),
+//       },
+//       { new: true }
+//     ).populate("customerId employeeId transactionId");
+
+//     return res.status(200).json(updatedBooking);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+// controllers/bookingController.js
+// export const getBookings = async (req, res) => {
+//   try {
+//     const { startDate, endDate, date, status } = req.query;
+//     const company = req.user.company;
+
+//     const filter = { company };
+
+//     // Filter by date
+//     if (date) {
+//       const start = new Date(date);
+//       const end = new Date(date);
+//       end.setDate(end.getDate() + 1);
+//       filter.date = { $gte: start, $lt: end };
+//     } else if (startDate && endDate) {
+//       filter.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
+//     }
+
+//     // Filter by status (if provided)
+//     if (status && status !== "all") {
+//       filter.status = status.toLowerCase();
+//     }
+
+//     const bookings = await BookingModel.find(filter)
+//       .populate({
+//         path: "yachtId",
+//         select: "name",
+//       })
+//       .populate({
+//         path: "customerId",
+//         select: "name contact email",
+//       })
+//       .populate({
+//         path: "employeeId",
+//         select: "name type", // avoid sending password, company, etc.
+//       })
+//       .sort({ date: -1 });
+
+//     res.json({ success: true, bookings });
+//     return
+//   } catch (error) {
+//     console.error("❌ Error fetching bookings:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
+// export const getBookings = async (req, res) => {
+//   try {
+//     const { date, employeeId, status } = req.query;
+//     const company = req.user.company;
+
+//     const filter = { company };
+
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+
+//     // 📅 DATE FILTER
+//     if (date) {
+//       const start = new Date(date);
+//       const end = new Date(date);
+//       end.setDate(end.getDate() + 1);
+
+//       filter.date = { $gte: start, $lt: end };
+//     } else {
+//       // ✅ DEFAULT: today onwards
+//       filter.date = { $gte: today };
+//     }
+
+//     // 👤 AGENT / EMPLOYEE FILTER
+//     if (employeeId) {
+//       filter.employeeId = employeeId;
+//     }
+
+//     // 📌 STATUS FILTER
+//     if (status) {
+//       filter.status = status;
+//     }
+
+//     const bookings = await BookingModel.find(filter)
+//       .populate("yachtId", "name")
+//       .populate("customerId", "name contact email")
+//       .populate("employeeId", "name type")
+//       .sort({
+//         date: 1,       // ASC
+//         startTime: 1,  // ASC
+//       });
+
+//     res.json({ success: true, bookings });
+//   } catch (error) {
+//     console.error("❌ Error fetching bookings:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
+// export const getBookings = async (req, res) => {
+//   try {
+//     const { date, status } = req.query;
+
+//     const { company, id: loggedInEmployeeId, type } = req.user;
+
+//     const filter = { company };
+
+//     // 📅 DATE FILTER
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+
+//     if (date) {
+//       const start = new Date(date);
+//       const end = new Date(date);
+//       end.setDate(end.getDate() + 1);
+//       filter.date = { $gte: start, $lt: end };
+//     } else {
+//       filter.date = { $gte: today };
+//     }
+
+//     // 📌 STATUS FILTER
+//     if (status) {
+//       filter.status = status;
+//     }
+
+//     // 🔐 ROLE-BASED ACCESS CONTROL
+//     if (type === "backdesk") {
+//       // ❌ Backdesk sees ONLY their own bookings
+//       filter.employeeId = loggedInEmployeeId;
+//     }
+//     // ✅ admin & onsite see ALL bookings (no extra filter)
+
+//     const bookings = await BookingModel.find(filter)
+//       .populate("yachtId", "name")
+//       .populate("customerId", "name contact email")
+//       .populate("employeeId", "name type")
+//       .sort({
+//         date: 1,
+//         startTime: 1,
+//       });
+
+//     res.json({ success: true, bookings });
+//   } catch (error) {
+//     console.error("❌ Error fetching bookings:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
 
 export const updateBooking = async (req, res, next) => {
   try {
@@ -129,12 +277,25 @@ export const updateBooking = async (req, res, next) => {
     const booking = await BookingModel.findById(bookingId);
     if (!booking) return res.status(404).json({ error: "Booking not found" });
 
+    // ----------------------------
+    // ✅ determine tripStatus
+    let tripStatus = booking.tripStatus;
+
+    if (status === "cancelled") {
+      tripStatus = "cancelled";
+    } else if (status === "confirmed") {
+      const bookingEnd = new Date(`${booking.date.toISOString().split("T")[0]}T${booking.endTime}`);
+      tripStatus = bookingEnd < new Date() ? "success" : "initiated";
+    }
+
+
     const updatedBooking = await BookingModel.findByIdAndUpdate(
       bookingId,
       {
         $push: { transactionId },
         pendingAmount: Math.max(booking.pendingAmount - amount, 0),
         ...(status && { status }),
+        tripStatus, // ✅ synced
       },
       { new: true }
     ).populate("customerId employeeId transactionId");
@@ -146,49 +307,72 @@ export const updateBooking = async (req, res, next) => {
 };
 
 
-// controllers/bookingController.js
 export const getBookings = async (req, res) => {
   try {
-    const { startDate, endDate, date, status } = req.query;
-    const company = req.user.company;
+    const { date, status, employeeId: filterEmployee } = req.query;
+
+    const { company, id: loggedInEmployeeId, type } = req.user;
 
     const filter = { company };
 
-    // Filter by date
+    // 📅 DATE FILTER
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     if (date) {
       const start = new Date(date);
       const end = new Date(date);
       end.setDate(end.getDate() + 1);
       filter.date = { $gte: start, $lt: end };
-    } else if (startDate && endDate) {
-      filter.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
+    } else {
+      filter.date = { $gte: today };
     }
 
-    // Filter by status (if provided)
-    if (status && status !== "all") {
-      filter.status = status.toLowerCase();
+    // 📌 STATUS FILTER
+    if (status) {
+      filter.status = status;
+    }
+
+    // EMPLOYEE FILTER
+    if (filterEmployee) filter.employeeId = filterEmployee;
+
+    // 🔐 ROLE-BASED ACCESS CONTROL
+    if (type === "backdesk") {
+      filter.employeeId = loggedInEmployeeId;
     }
 
     const bookings = await BookingModel.find(filter)
-      .populate({
-        path: "yachtId",
-        select: "name",
-      })
-      .populate({
-        path: "customerId",
-        select: "name contact email",
-      })
-      .populate({
-        path: "employeeId",
-        select: "name type", // avoid sending password, company, etc.
-      })
-      .sort({ date: -1 });
+      .populate("yachtId", "name")
+      .populate("customerId", "name contact email")
+      .populate("employeeId", "name type")
+      .sort({ date: 1, startTime: 1 });
 
-    res.json({ success: true, bookings });
-    return
+    // ⏱ AUTO UPDATE tripStatus (response level)
+    const now = new Date();
+
+    const updatedBookings = bookings.map((b) => {
+      const bookingEnd = new Date(`${b.date.toISOString().split("T")[0]}T${b.endTime}`);
+
+      let tripStatus = b.tripStatus;
+      if (b.status === "cancelled") tripStatus = "cancelled";
+      else if (b.status === "confirmed" && bookingEnd < new Date()) tripStatus = "success";
+      else if (b.status === "confirmed") tripStatus = "initiated";
+      else tripStatus = "pending";
+
+      return {
+        ...b.toObject(),
+        tripStatus,
+      };
+    });
+
+
+    res.json({ success: true, bookings: updatedBookings });
   } catch (error) {
     console.error("❌ Error fetching bookings:", error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -196,10 +380,23 @@ export const getBookings = async (req, res) => {
 export const getBookingById = async (req, res) => {
   try {
     const booking = await BookingModel.findById(req.params.id)
-      .populate("customerId empId transactionId");
-    if (!booking) return res.status(404).json({ error: "Booking not found" });
+      .populate("customerId employeeId transactionId");
+
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    // 🔐 Backdesk access restriction
+    if (
+      req.user.type === "backdesk" &&
+      booking.employeeId._id.toString() !== req.user.id
+    ) {
+      return res.status(403).json({
+        error: "You are not allowed to view this booking",
+      });
+    }
+
     res.json(booking);
-    return
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

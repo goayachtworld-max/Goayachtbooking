@@ -6,6 +6,7 @@ export const employee = {
   CREATE_EMPLOYEE_API: `${BASE_URL}/employees/createEmployee`,
   GET_ALL_EMPLOYEES_API: `${BASE_URL}/employees/`,
   UPDATE_EMPLOYEE_STATUS_API: `${BASE_URL}/employees/updateStatus`,
+  GET_EMPLOYEES_FOR_BOOKING_API: `${BASE_URL}/employees/bookingpage`,
 };
 
 export const customer = {

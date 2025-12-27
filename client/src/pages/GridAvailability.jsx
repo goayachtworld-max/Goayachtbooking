@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-hot-toast";
-import "./GridAvailability.css"
+import "./GridAvailability.css";
 
 import {
   getAllYachtsDetailsAPI,
@@ -90,7 +90,6 @@ function GridAvailability() {
   const location = useLocation();
   const token = localStorage.getItem("authToken");
   const params = new URLSearchParams(location.search);
-  const didAutoLoad = useRef(false);
 
   /* -------- FILTER STATE -------- */
   const [yachtId, setYachtId] = useState(params.get("yachtId") || "");
@@ -111,7 +110,7 @@ function GridAvailability() {
 
   /* -------- SLOT MODAL STATE -------- */
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [modalType, setModalType] = useState(""); // "lock" | "confirm" | "booked"
+  const [modalType, setModalType] = useState("");
   const [isLocking, setIsLocking] = useState(false);
   const [isReleasing, setIsReleasing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -136,15 +135,6 @@ function GridAvailability() {
       setYachtId(yachts[0]._id);
     }
   }, [yachts, yachtId]);
-
-  /* -------- SYNC FILTERS → URL -------- */
-  useEffect(() => {
-    const p = new URLSearchParams();
-    if (yachtId) p.set("yachtId", yachtId);
-    if (fromDate) p.set("fromDate", fromDate);
-    if (toDate) p.set("toDate", toDate);
-    navigate({ search: p.toString() }, { replace: true });
-  }, [yachtId, fromDate, toDate]);
 
   /* -------- LOAD GRID -------- */
   const loadGrid = async () => {
@@ -180,23 +170,52 @@ function GridAvailability() {
         return {
           date,
           slots: slotList.map((slot) => {
-            const isBooked = booked.some(
+            const bookedOverlap = booked.find(
               (b) =>
-                hhmmToMinutes(b.startTime || b.start) < hhmmToMinutes(slot.end) &&
-                hhmmToMinutes(b.endTime || b.end) > hhmmToMinutes(slot.start)
+                hhmmToMinutes(b.startTime || b.start) <
+                hhmmToMinutes(slot.end) &&
+                hhmmToMinutes(b.endTime || b.end) >
+                hhmmToMinutes(slot.start)
             );
 
-            if (isBooked)
-              return { type: "booked", ...slot, date };
+            if (bookedOverlap) {
+              return {
+                type:
+                  bookedOverlap.status === "pending"
+                    ? "pending"
+                    : "booked",
+                ...slot,
+                date,
+                custName:
+                  bookedOverlap.custName ||
+                  bookedOverlap.customerName ||
+                  "",
+                empName:
+                  bookedOverlap.empName ||
+                  bookedOverlap.employeeName ||
+                  "",
+              };
+            }
 
-            const isLocked = locked.some(
+            const lockedOverlap = locked.find(
               (l) =>
-                hhmmToMinutes(l.startTime || l.start) < hhmmToMinutes(slot.end) &&
-                hhmmToMinutes(l.endTime || l.end) > hhmmToMinutes(slot.start)
+                hhmmToMinutes(l.startTime || l.start) <
+                hhmmToMinutes(slot.end) &&
+                hhmmToMinutes(l.endTime || l.end) >
+                hhmmToMinutes(slot.start)
             );
 
-            if (isLocked)
-              return { type: "locked", ...slot, date };
+            if (lockedOverlap) {
+              return {
+                type: "locked",
+                ...slot,
+                date,
+                empName:
+                  lockedOverlap.empName ||
+                  lockedOverlap.employeeName ||
+                  "",
+              };
+            }
 
             return { type: "free", ...slot, date };
           }),
@@ -211,21 +230,32 @@ function GridAvailability() {
     }
   };
 
-  /* -------- AUTO LOAD ONCE DEFAULTS READY -------- */
   useEffect(() => {
     if (yachtId && fromDate && toDate) {
       loadGrid();
     }
   }, [yachtId, fromDate, toDate]);
 
-  /* -------- SLOT HANDLERS -------- */
+
+  const isPastSlot = (slot, slotDate) => {
+    const today = new Date().toISOString().split("T")[0];
+    if (slotDate !== today) return false;
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const slotEnd = hhmmToMinutes(slot.end);
+
+    return slotEnd <= currentMinutes;
+  };
+
+
   const handleSlotClick = (slot, type) => {
     setSelectedSlot(slot);
     setModalType(type);
 
     setTimeout(() => {
       const modalId =
-        type === "booked"
+        type === "booked" || type === "pending"
           ? "bookedModal"
           : type === "locked"
             ? "confirmModal"
@@ -251,7 +281,9 @@ function GridAvailability() {
       );
       if (res?.success) {
         toast.success("Slot locked successfully!");
-        window.bootstrap.Modal.getInstance(document.getElementById("lockModal"))?.hide();
+        window.bootstrap.Modal.getInstance(
+          document.getElementById("lockModal")
+        )?.hide();
         loadGrid();
       } else toast.error(res?.message || "Failed to lock slot");
     } catch {
@@ -275,7 +307,9 @@ function GridAvailability() {
       );
       if (res?.success) {
         toast.success("Slot released successfully!");
-        window.bootstrap.Modal.getInstance(document.getElementById("confirmModal"))?.hide();
+        window.bootstrap.Modal.getInstance(
+          document.getElementById("confirmModal")
+        )?.hide();
         loadGrid();
       } else toast.error(res?.message || "Failed to release slot");
     } catch {
@@ -290,7 +324,9 @@ function GridAvailability() {
     if (!selectedSlot || isConfirming) return;
 
     setIsConfirming(true);
-    window.bootstrap.Modal.getInstance(document.getElementById("confirmModal"))?.hide();
+    window.bootstrap.Modal.getInstance(
+      document.getElementById("confirmModal")
+    )?.hide();
 
     navigate("/create-booking", {
       state: {
@@ -305,12 +341,10 @@ function GridAvailability() {
     setIsConfirming(false);
   };
 
-  /* ---------------- RENDER ---------------- */
   return (
     <div className="container py-4">
-      <h4 className="fw-bold mb-4">🗓 Yacht Availability – Grid View</h4>
+      <h4 className="fw-bold mb-4">Calendar View</h4>
 
-      {/* Filters */}
       <div className="row g-3 mb-4">
         <div className="col-md-4">
           <select
@@ -351,7 +385,6 @@ function GridAvailability() {
         </div>
       </div>
 
-      {/* Grid */}
       {loading ? (
         <div className="text-center py-5">Loading availability...</div>
       ) : grid.length > 0 ? (
@@ -367,27 +400,77 @@ function GridAvailability() {
                 ))}
               </tr>
             </thead>
-
             <tbody>
               {grid.map((row, i) => (
                 <tr key={i}>
                   <td className="fw-semibold">{row.date}</td>
-                  {row.slots.map((cell, j) => (
+                  {/* {row.slots.map((cell, j) => (
                     <td
                       key={j}
-                      className={
+                      title={
                         cell.type === "booked"
-                          ? "bg-danger text-white"
+                          ? `Booked\nUser Name: ${cell.empName}\nBooking Name: ${cell.custName}`
                           : cell.type === "locked"
-                            ? "bg-warning"
-                            : "bg-success text-white"
+                            ? `Locked by: ${cell.empName}`
+                            : "Available"
                       }
+                      className={`slot-cell ${cell.type === "booked"
+                        ? "booked"
+                        : cell.type === "locked"
+                          ? "locked"
+                          : cell.type === "pending"
+                            ? "pending"
+                            : "free"
+                        }`}
+
+
                       onClick={() => handleSlotClick(cell, cell.type)}
                       style={{ cursor: "pointer" }}
                     >
                       {cell.type}
                     </td>
-                  ))}
+
+                  ))} */}
+                  {row.slots.map((cell, j) => {
+                    const past = isPastSlot(cell, row.date);
+
+                    let cellClass = "";
+                    if (past) {
+                      cellClass = "bg-secondary text-white opacity-40";
+                    } else if (cell.type === "booked") {
+                      cellClass = "bg-danger text-white";
+                    } else if (cell.type === "locked") {
+                      cellClass = "bg-warning text-dark";
+                    } else if (cell.type === "pending") {
+                      cellClass = "bg-info text-dark";
+                    } else {
+                      cellClass = "bg-success text-white";
+                    }
+
+                    return (
+                      <td
+                        key={j}
+                        title={
+                          cell.type === "booked" || cell.type === "pending"
+                            ? `Booked\nUser Name: ${cell.empName}\nBooking Name: ${cell.custName}`
+                            : cell.type === "locked"
+                              ? `Locked by: ${cell.empName}`
+                              : "Available"
+                        }
+                        className={cellClass}
+                        onClick={() => {
+                          if (!past) {
+                            const typeToOpen = cell.type === "pending" ? "booked" : cell.type;
+                            handleSlotClick(cell, typeToOpen);
+                          }
+                        }}
+                        style={{ cursor: past ? "not-allowed" : "pointer" }}
+                      >
+                        {cell.type}
+                      </td>
+                    );
+                  })}
+
                 </tr>
               ))}
             </tbody>
@@ -399,31 +482,40 @@ function GridAvailability() {
         </div>
       )}
 
-      {/* ------------------- MODALS ------------------- */}
       {/* Lock Modal */}
-      <div className="modal fade" id="lockModal" tabIndex="-1" aria-hidden="true">
+      <div className="modal fade" id="lockModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content rounded-4">
             <form onSubmit={handleLockSlot}>
               <div className="modal-header bg-warning bg-opacity-25">
                 <h5 className="modal-title">Lock Time Slot</h5>
-                <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  data-bs-dismiss="modal"
+                ></button>
               </div>
               <div className="modal-body text-center">
                 {selectedSlot && (
-                  <p className="fs-6">
-                    Are you sure you want to lock this slot?
-                    <br />
-                    <strong>{to12HourFormat(selectedSlot.start)}</strong> —
-                    <strong>{to12HourFormat(selectedSlot.end)}</strong>
+                  <p>
+                    {to12HourFormat(selectedSlot.start)} —{" "}
+                    {to12HourFormat(selectedSlot.end)}
                   </p>
                 )}
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  data-bs-dismiss="modal"
+                >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-warning text-dark fw-semibold" disabled={isLocking}>
+                <button
+                  type="submit"
+                  className="btn btn-warning"
+                  disabled={isLocking}
+                >
                   {isLocking ? "Locking..." : "Lock Slot"}
                 </button>
               </div>
@@ -432,23 +524,29 @@ function GridAvailability() {
         </div>
       </div>
 
-      {/* Confirm Booking Modal */}
-      <div className="modal fade" id="confirmModal" tabIndex="-1" aria-hidden="true">
+      {/* Confirm Modal */}
+      <div className="modal fade" id="confirmModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content rounded-4">
             <form onSubmit={handleConfirmBooking}>
               <div className="modal-header bg-primary bg-opacity-10">
                 <h5 className="modal-title">Confirm Booking</h5>
-                <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  data-bs-dismiss="modal"
+                ></button>
               </div>
               <div className="modal-body text-center">
                 {selectedSlot && (
                   <>
-                    <div className="fs-6">
-                      Locked slot: <strong>{to12HourFormat(selectedSlot.start)}</strong> —
-                      <strong>{to12HourFormat(selectedSlot.end)}</strong>
+                    <div>
+                      {to12HourFormat(selectedSlot.start)} —{" "}
+                      {to12HourFormat(selectedSlot.end)}
                     </div>
-                    <div className="mt-2 fs-6">Locked by: {selectedSlot.empName}</div>
+                    <div className="mt-2">
+                      Locked by: {selectedSlot.empName}
+                    </div>
                   </>
                 )}
               </div>
@@ -463,10 +561,10 @@ function GridAvailability() {
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary fw-semibold"
+                  className="btn btn-primary"
                   disabled={isConfirming}
                 >
-                  {isConfirming ? "Please wait..." : "Confirm Booking"}
+                  Confirm Booking
                 </button>
               </div>
             </form>
@@ -474,36 +572,46 @@ function GridAvailability() {
         </div>
       </div>
 
-      {/* Booked Slot Modal */}
-      <div className="modal fade" id="bookedModal" tabIndex="-1" aria-hidden="true">
+      {/* Booked Modal */}
+      <div className="modal fade" id="bookedModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content rounded-4">
             <div className="modal-header bg-danger bg-opacity-10">
               <h5 className="modal-title">Booked Slot Details</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
             </div>
             <div className="modal-body text-center">
               {selectedSlot && (
                 <>
-                  <div className="fs-6">
-                    Time: <strong>{to12HourFormat(selectedSlot.start)}</strong> —
-                    <strong>{to12HourFormat(selectedSlot.end)}</strong>
+                  <div>
+                    {to12HourFormat(selectedSlot.start)} —{" "}
+                    {to12HourFormat(selectedSlot.end)}
                   </div>
-                  {selectedSlot.empName && (
-                    <div className="mt-1 fw-bold text-secondary">Handled by: {selectedSlot.empName}</div>
-                  )}
+                  <div className="mt-2">
+                    User Name: {selectedSlot.empName}
+                  </div>
+                  <div className="mt-2">
+                    Booking Name: {selectedSlot.custName}
+                  </div>
                 </>
               )}
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-outline-secondary" data-bs-dismiss="modal">
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                data-bs-dismiss="modal"
+              >
                 Close
               </button>
             </div>
           </div>
         </div>
       </div>
-
     </div>
   );
 }

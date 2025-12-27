@@ -49,7 +49,7 @@ router.post(
 
 // Get all yachts
 router.get("/", authMiddleware, getAllYachts);
-router.get("/details", authMiddleware, onlyAdmin, getAllYachtsDetails);
+router.get("/details", authMiddleware, getAllYachtsDetails);
 
 // Get yacht by ID
 router.get("/:id", authMiddleware, getYachtById);

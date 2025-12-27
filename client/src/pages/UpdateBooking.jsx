@@ -8,11 +8,14 @@ function UpdateBooking() {
   const { booking } = location.state || {};
 
   const [formData, setFormData] = useState({
-    status: "inprogress",
+    status: booking.status || "",
     amount: "",
     type: "advance",
     proofFile: null,
   });
+
+  // 👇 track if user changed status
+  const [statusChanged, setStatusChanged] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -22,8 +25,17 @@ function UpdateBooking() {
     return null;
   }
 
+  // UI-only helpers
+  const isConfirmed = booking.status === "confirmed";
+  const isCancelled = booking.status === "cancelled";
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
+
+    if (name === "status" && value !== booking.status) {
+      setStatusChanged(true);
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: name === "proofFile" ? files[0] : value,
@@ -45,12 +57,16 @@ function UpdateBooking() {
       if (formData.proofFile) data.append("paymentProof", formData.proofFile);
 
       const response = await createTransactionAndUpdateBooking(data, token);
-
-      // alert("Booking updated successfully!");
-      navigate("/customer-details", { state: { booking: response.data.booking } });
+      navigate("/customer-details", {
+        state: { booking: response.data.booking },
+      });
     } catch (err) {
       console.error("Error updating booking:", err);
-      setError(err.response?.data?.error || err.response?.data?.message  || "Failed to update booking");
+      setError(
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to update booking"
+      );
     } finally {
       setLoading(false);
     }
@@ -58,14 +74,14 @@ function UpdateBooking() {
 
   return (
     <div className="container my-4 px-3">
+      <div className="mx-auto" style={{ maxWidth: "85%" }}> 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4>Update Booking</h4>
-        <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+        <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>
           &larr; Back
         </button>
       </div>
 
-      {/* Error message */}
       {error && (
         <div className="alert alert-danger text-center">
           {error}
@@ -90,25 +106,27 @@ function UpdateBooking() {
             onChange={handleChange}
             required
           >
-            <option value="inprogress">In Progress</option>
-            <option value="success">Success</option>
-            <option value="terminated">Terminated</option>
+            <option value="pending" disabled={isConfirmed || isCancelled}>
+              Pending
+            </option>
+            <option value="confirmed" disabled={isCancelled}>
+              Confirmed
+            </option>
+            <option value="cancelled">Cancelled</option>
           </select>
-        </div>
 
-        {/* Payment Type */}
-        <div className="col-12 col-md-6">
-          <label className="form-label fw-bold">Payment Type</label>
-          <select
-            className="form-select border border-dark text-dark"
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            required
-          >
-            <option value="advance">Advance</option>
-            <option value="settlement">Settlement</option>
-          </select>
+          {/* ⚠️ Warning ONLY when status changes */}
+          {statusChanged && isConfirmed && (
+            <div className="form-text text-warning mt-1">
+              ⚠️ You are changing a confirmed booking. Please ensure this is intended.
+            </div>
+          )}
+
+          {statusChanged && isCancelled && (
+            <div className="form-text text-danger mt-1">
+              ⚠️ You are modifying a cancelled booking. Changes may affect records.
+            </div>
+          )}
         </div>
 
         {/* Amount */}
@@ -121,12 +139,11 @@ function UpdateBooking() {
             value={formData.amount}
             onChange={handleChange}
             placeholder="Enter current amount"
-            required
           />
         </div>
 
         {/* Proof */}
-        <div className="col-12">
+        {/* <div className="col-12">
           <label className="form-label fw-bold">Upload Proof of Payment</label>
           <input
             type="file"
@@ -134,16 +151,44 @@ function UpdateBooking() {
             name="proofFile"
             onChange={handleChange}
             accept="image/*,application/pdf"
-            // required
           />
+        </div> */}
+
+        <div className="col-12">
+          <label className="form-label fw-bold">Upload Proof of Payment</label>
+
+          <div className="d-flex align-items-center gap-3">
+            <label className="btn btn-outline-secondary btn-sm">
+              📎 Attach File
+              <input
+                type="file"
+                name="proofFile"
+                onChange={handleChange}
+                accept="image/*,application/pdf"
+                hidden
+              />
+            </label>
+
+            {formData.proofFile && (
+              <span className="text-muted small">
+                {formData.proofFile.name}
+              </span>
+            )}
+          </div>
         </div>
 
+
         <div className="col-12 text-center mt-3">
-          <button type="submit" className="btn btn-primary w-100 w-md-auto" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary w-100 w-md-auto"
+            disabled={loading}
+          >
             {loading ? "Updating..." : "Update Booking"}
           </button>
         </div>
       </form>
+      </div>
     </div>
   );
 }

@@ -56,8 +56,11 @@ const bookingSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['initiated', 'inprogress', 'success', 'terminated'],
-        default: 'initiated'
+        enum: ['pending','confirmed', 'cancelled'],
+    },
+    tripStatus:{
+        type: String,
+        enum: ['pending', 'initiated', 'success', 'cancelled'],
     },
     numPeople: {
         type: Number,

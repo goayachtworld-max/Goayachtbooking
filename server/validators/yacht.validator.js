@@ -13,6 +13,16 @@ export const yachtSchema = z.object({
     z.number({ required_error: "Running cost is required" }).min(0)
   ),
 
+  sailingCost: z.preprocess(
+    (val) => (val ? Number(val) : undefined),
+    z.number({ required_error: "Sailing cost is required" }).min(0)
+  ),
+
+  anchorageCost: z.preprocess(
+    (val) => (val ? Number(val) : undefined),
+    z.number({ required_error: "Anchorage cost is required" }).min(0)
+  ),
+
   maxSellingPrice: z.preprocess(
     (val) => (val ? Number(val) : undefined),
     z.number({ required_error: "Max selling price is required" }).min(0)

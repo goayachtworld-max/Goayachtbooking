@@ -22,11 +22,9 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "http://goaboatride.com",
       "https://goaboat.com/",
       "http://goaboat.com/",
-      "http://localhost:5173",
-      "https://yaut-2-o.vercel.app"],
+      "http://localhost:5173"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // 👈 allow cookies / authorization headers

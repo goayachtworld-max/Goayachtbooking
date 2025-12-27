@@ -67,7 +67,7 @@ function Navbar({ user, onLogout }) {
           >
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
 
-              {/* Admin */}
+              {/* Dashboard */}
               {user?.type === "admin" && (
                 <li className="nav-item">
                   <Link
@@ -75,33 +75,7 @@ function Navbar({ user, onLogout }) {
                     to="/admin"
                     onClick={handleNavLinkClick}
                   >
-                    Admin
-                  </Link>
-                </li>
-              )}
-
-              {/* Create Customer */}
-              {(user?.type === "admin" || user?.type === "backdesk") && (
-                <li className="nav-item">
-                  <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/create-customer") ? styles.activeTab : ""}`}
-                    to="/create-customer"
-                    onClick={handleNavLinkClick}
-                  >
-                    Create Customer
-                  </Link>
-                </li>
-              )}
-
-              {/* Employee Management */}
-              {user?.type === "admin" && (
-                <li className="nav-item">
-                  <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/all-employees") ? styles.activeTab : ""}`}
-                    to="/all-employees"
-                    onClick={handleNavLinkClick}
-                  >
-                    Employee Management
+                    Dashboard
                   </Link>
                 </li>
               )}
@@ -130,7 +104,7 @@ function Navbar({ user, onLogout }) {
                 </li>
               )}
 
-              {/*Grid Availability */}
+              {/*Calendar View */}
               {(user?.type === "admin" || user?.type === "backdesk") && (
                 <li className="nav-item">
                   <Link
@@ -138,7 +112,7 @@ function Navbar({ user, onLogout }) {
                     to="/grid-availability"
                     onClick={handleNavLinkClick}
                   >
-                    GridAvailability
+                    Calendar
                   </Link>
                 </li>
               )}
@@ -151,10 +125,37 @@ function Navbar({ user, onLogout }) {
                     to="/all-yachts"
                     onClick={handleNavLinkClick}
                   >
-                    Yacht Management
+                    Yacht Master
                   </Link>
                 </li>
               )}
+
+              {/* Create Customer */}
+              {(user?.type === "admin" || user?.type === "backdesk") && (
+                <li className="nav-item">
+                  <Link
+                    className={`nav-link text-white ${styles.navHover} ${isActive("/create-customer") ? styles.activeTab : ""}`}
+                    to="/create-customer"
+                    onClick={handleNavLinkClick}
+                  >
+                    Customer
+                  </Link>
+                </li>
+              )}
+
+              {/* Employee Management */}
+              {user?.type === "admin" && (
+                <li className="nav-item">
+                  <Link
+                    className={`nav-link text-white ${styles.navHover} ${isActive("/all-employees") ? styles.activeTab : ""}`}
+                    to="/all-employees"
+                    onClick={handleNavLinkClick}
+                  >
+                    User Master
+                  </Link>
+                </li>
+              )}
+
             </ul>
 
             {/* Profile + Logout */}

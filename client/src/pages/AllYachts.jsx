@@ -23,6 +23,7 @@ const AllYachts = () => {
   const navigate = useNavigate();
 
   const SLOT_OPTIONS = [
+    { value: "15:30", label: "3:30 PM - 5:30 PM" },
     { value: "16:00", label: "4:00 PM - 6:00 PM" },
     { value: "17:30", label: "5:30 PM - 7:30 PM" },
     { value: "18:00", label: "6:00 PM - 8:00 PM" },
@@ -132,17 +133,17 @@ const AllYachts = () => {
     if (!selectedYacht) return;
 
     const errors = {};
-    const running = Number(selectedYacht.runningCost || 0);
+    const running = Number((Number(selectedYacht.sailingCost || 0) + Number(selectedYacht.anchorageCost)) || 0);
     const maxSell = Number(selectedYacht.maxSellingPrice || 0);
     const sell = Number(selectedYacht.sellingPrice || 0);
 
     if (running && maxSell && maxSell <= running) {
       errors.maxSellingPrice =
-        "Max selling price must be greater than running cost";
+        "Max selling price must be greater than (Sailing + Anchorage) running cost";
     }
 
     if (running && sell && sell < running) {
-      errors.sellingPrice = "Selling price must be ≥ running cost";
+      errors.sellingPrice = "Selling price must be ≥  (Sailing + Anchorage) running cost";
     }
 
     if (maxSell && sell && sell > maxSell) {
@@ -153,7 +154,9 @@ const AllYachts = () => {
   }, [
     selectedYacht?.runningCost,
     selectedYacht?.maxSellingPrice,
-    selectedYacht?.sellingPrice
+    selectedYacht?.sellingPrice,
+    selectedYacht?.sailingCost,
+    selectedYacht?.anchorageCost
   ]);
 
 
@@ -226,7 +229,7 @@ const AllYachts = () => {
 
     //  Validation 1 — Selling Price > Running Cost
     if (Number(sellingPrice) <= Number(runningCost)) {
-      toast.error("Selling Price must be greater than Running Cost.", {
+      toast.error("Selling Price must be greater than (Sailing + Anchorage)  Running Cost.", {
         duration: 3000,
         style: { borderRadius: "10px", background: "#333", color: "#fff" },
       });
@@ -261,6 +264,7 @@ const AllYachts = () => {
         ...selectedYacht,
         duration: durationHHMM,
         specialSlotTimes,
+        runningCost: Number(Number(selectedYacht.sailingCost) + Number(selectedYacht.anchorageCost))
       };
 
       // remove UI-only keys before sending
@@ -561,9 +565,10 @@ const AllYachts = () => {
                     "name",
                     "capacity",
                     "duration",
-                    "runningCost",
-                    "maxSellingPrice",
+                    "sailingCost",
+                    "anchorageCost",
                     "sellingPrice",
+                    "maxSellingPrice",
                     "sailStartTime"
                   ].map((field) => (
                     <div className="col-12 col-md-6" key={field}>
@@ -625,7 +630,7 @@ const AllYachts = () => {
                     <input
                       type="time"
                       name="sailEndTime"
-                      className="form-control border border-dark"
+                      className="form-control border"
                       value={selectedYacht.sailEndTime}
                       min={selectedYacht.sailStartTime}
                       max="23:59"
@@ -662,7 +667,7 @@ const AllYachts = () => {
                   <div className="col-12 col-md-6">
                     <label className="form-label fw-bold">Special Slot 1</label>
                     <select
-                      className="form-select border border-dark"
+                      className="form-select border"
                       value={selectedYacht.specialSlot1 || "none"}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -685,7 +690,7 @@ const AllYachts = () => {
                   <div className="col-12 col-md-6">
                     <label className="form-label fw-bold">Special Slot 2</label>
                     <select
-                      className="form-select border border-dark"
+                      className="form-select border"
                       value={selectedYacht.specialSlot2 || "none"}
                       disabled={!selectedYacht.specialSlot1 || selectedYacht.specialSlot1 === "none"}
                       onChange={(e) => {

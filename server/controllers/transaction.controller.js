@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
-import {TransactionModel} from "../models/transaction.model.js";
+import { TransactionModel } from "../models/transaction.model.js";
 import { BookingModel } from "../models/booking.model.js";
+import { deleteAvailabilityForBooking } from "./availability.controller.js";
 
 export const createTransactionAndUpdateBooking = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -9,19 +10,25 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
   try {
     const employeeId = req.user.id; // from token
     const { bookingId, type, amount, paymentProof, status } = req.body;
+    // if(req.user.type === "backdesk"){
+    //   throw new Error("Not allowed to Update Booking")
+    // }
 
     // Step 1: Create Transaction
-    const transaction = await TransactionModel.create(
-      [{
-        bookingId,
-        type,
-        employeeId,
-        amount,
-        paymentProof: req.cloudinaryUrl || paymentProof,
-        date: new Date().toISOString()
-      }],
-      { session }
-    );
+    let transaction = null;
+    if (amount > 0) {
+      transaction = await TransactionModel.create(
+        [{
+          bookingId,
+          type,
+          employeeId,
+          amount,
+          paymentProof: req.cloudinaryUrl || paymentProof,
+          date: new Date().toISOString()
+        }],
+        { session }
+      );
+    }
 
     // Step 2: Update Booking
     const booking = await BookingModel.findById(bookingId).session(session);
@@ -35,11 +42,18 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
       throw new Error("Amount cannot exceed pending amount");
     }
 
-    booking.status = status;
+    if (status) {
+      booking.status = status;
+    }
     booking.pendingAmount = updatedPendingAmount;
-    booking.transactionIds.push(transaction[0]._id);
+    if (transaction != null)
+      booking.transactionIds.push(transaction[0]._id);
 
     await booking.save({ session });
+
+    if (booking.status === "cancelled") {
+      await deleteAvailabilityForBooking(booking, session);
+    }
 
     // Step 3: Populate customer, employee, and transactions
     const populatedBooking = await BookingModel.findById(booking._id)
@@ -52,11 +66,12 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
 
+    console.log("Booking after update Tras : ", populatedBooking)
     // Step 5: Send populated booking to frontend
     res.status(201).json({
       success: true,
       message: "Transaction created & booking updated successfully",
-      transaction: transaction[0],
+      transaction: transaction ? transaction[0] : null,
       booking: populatedBooking,
     });
 

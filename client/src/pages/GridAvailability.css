@@ -47,7 +47,7 @@ th, td {
 
 /* Slot types */
 .slot-cell.free {
-  background: linear-gradient(135deg, #1abc9c, #16a085);
+  background: #198754;
   color: #fff;
 }
 .slot-cell.booked {
@@ -65,6 +65,11 @@ th, td {
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
+.slot-cell.pending {
+  background: linear-gradient(135deg, #5dade2, #3498db); /* blue */
+  color: #fff;
+}
+
 /* Legend pills */
 .legend {
   padding: 4px 12px;
@@ -74,6 +79,7 @@ th, td {
 .legend.free { background: #1abc9c; color: #fff; }
 .legend.booked { background: #e74c3c; color: #fff; }
 .legend.locked { background: #f1c40f; color: #333; }
+.legend.pending {background: #3498db; color: #fff; }
 
 /* Modals */
 .modal-content {
@@ -110,4 +116,14 @@ button.btn, select.form-select, input.form-control {
     padding: 4px 6px;
     font-size: 12px;
   }
+}
+
+
+.bg-pending {
+  background: #3498db; /* your blue */
+  color: #fff;
+}
+
+.pending{
+  background: blue;
 }

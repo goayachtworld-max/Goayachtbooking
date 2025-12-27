@@ -10,6 +10,8 @@ function CreateYacht() {
     name: "",
     capacity: "",
     runningCost: "",
+    sailingCost: "",
+    anchorageCost: "",
     maxSellingPrice: "",
     sellingPrice: "",
     sailStartTime: "06:00",
@@ -30,23 +32,23 @@ function CreateYacht() {
   // Price validation
   useEffect(() => {
     const errors = {};
-    const running = Number(yacht.runningCost || 0);
+    const running = Number((Number(yacht.sailingCost || 0) + Number(yacht.anchorageCost)) || 0);
     const maxSell = Number(yacht.maxSellingPrice || 0);
     const sell = Number(yacht.sellingPrice || 0);
 
     if (running && maxSell && maxSell <= running) {
       errors.maxSellingPrice =
-        "Max selling price must be greater than running cost";
+        "Max selling price must be greater than Selling Price ";
     }
     if (running && sell && sell < running) {
-      errors.sellingPrice = "Selling price must be ≥ running cost";
+      errors.sellingPrice = "Selling price must be ≥ (Sailing + Anchorage) Running Price";
     }
     if (maxSell && sell && sell > maxSell) {
       errors.sellingPrice = "Selling price must be ≤ max selling price";
     }
 
     setFieldErrors(errors);
-  }, [yacht.runningCost, yacht.maxSellingPrice, yacht.sellingPrice]);
+  }, [yacht.runningCost, yacht.maxSellingPrice, yacht.sellingPrice, yacht.sailingCost, yacht.anchorageCost]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -126,11 +128,16 @@ function CreateYacht() {
     try {
       setLoading(true);
       const token = localStorage.getItem("authToken");
-
+      setYacht(prev => ({
+        ...prev,
+        runningCost: prev.anchorageCost + prev.sailingCost
+      }));
       const formData = new FormData();
       formData.append("name", yacht.name);
       formData.append("capacity", yacht.capacity);
-      formData.append("runningCost", yacht.runningCost);
+      formData.append("sailingCost", yacht.sailingCost);
+      formData.append("anchorageCost", yacht.anchorageCost);
+      formData.append("runningCost", Number(Number(yacht.sailingCost) + Number(yacht.anchorageCost)));
       formData.append("maxSellingPrice", yacht.maxSellingPrice);
       formData.append("sellingPrice", yacht.sellingPrice);
       formData.append("sailStartTime", yacht.sailStartTime);
@@ -171,10 +178,10 @@ function CreateYacht() {
 
   // Options common array so both selects use same set
   const SLOT_OPTIONS = [
-    { value: "15:30 PM", label: "3:30 PM - 5:30 PM" },
-    { value: "16:00 PM", label: "4:00 PM - 6:00 PM" },
-    { value: "17:30 PM", label: "5:30 PM - 7:30 PM" },
-    { value: "18:00 PM", label: "6:00 PM - 8:00 PM" },
+    { value: "15:30", label: "3:30 PM - 5:30 PM" },
+    { value: "16:00", label: "4:00 PM - 6:00 PM" },
+    { value: "17:30", label: "5:30 PM - 7:30 PM" },
+    { value: "18:00", label: "6:00 PM - 8:00 PM" },
   ];
 
   return (
@@ -202,7 +209,7 @@ function CreateYacht() {
             <label className="form-label fw-bold">
               Yacht Name <span className="text-danger">*</span>
             </label>
-            <input type="text" className="form-control border border-dark" name="name" value={yacht.name} onChange={handleChange} required />
+            <input type="text" className="form-control border border-dark" name="name" placeholder="Yacht Name" value={yacht.name} onChange={handleChange} required />
           </div>
 
           {/* Capacity */}
@@ -213,21 +220,20 @@ function CreateYacht() {
             <input type="number" className="form-control border border-dark" name="capacity" value={yacht.capacity} onChange={handleChange} required />
           </div>
 
-          {/* Running Cost */}
+          {/* Sailing Cost */}
           <div className="col-md-6">
             <label className="form-label fw-bold">
-              Running Cost <span className="text-danger">*</span>
+              Sailing Cost <span className="text-danger">*</span>
             </label>
-            <input type="number" name="runningCost" className={`form-control border border-dark ${fieldErrors.runningCost ? "is-invalid" : ""}`} value={yacht.runningCost} onChange={handleChange} required />
+            <input type="number" name="sailingCost" className={`form-control border border-dark ${fieldErrors.sailingCost ? "is-invalid" : ""}`} value={yacht.sailingCost} onChange={handleChange} required />
           </div>
 
-          {/* Max Selling Price */}
+          {/* Anchorage Cost */}
           <div className="col-md-6">
             <label className="form-label fw-bold">
-              Max Selling Price <span className="text-danger">*</span>
+              Anchorage Cost <span className="text-danger">*</span>
             </label>
-            <input type="number" name="maxSellingPrice" className={`form-control border border-dark ${fieldErrors.maxSellingPrice ? "is-invalid" : ""}`} value={yacht.maxSellingPrice} onChange={handleChange} required />
-            {fieldErrors.maxSellingPrice && <div className="text-danger small">{fieldErrors.maxSellingPrice}</div>}
+            <input type="number" name="anchorageCost" className={`form-control border border-dark ${fieldErrors.anchorageCost ? "is-invalid" : ""}`} value={yacht.anchorageCost} onChange={handleChange} required />
           </div>
 
           {/* Selling Price */}
@@ -237,6 +243,15 @@ function CreateYacht() {
             </label>
             <input type="number" name="sellingPrice" className={`form-control border border-dark ${fieldErrors.sellingPrice ? "is-invalid" : ""}`} value={yacht.sellingPrice} onChange={handleChange} required />
             {fieldErrors.sellingPrice && <div className="text-danger small">{fieldErrors.sellingPrice}</div>}
+          </div>
+
+          {/* Max Selling Price */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">
+              Max Selling Price <span className="text-danger">*</span>
+            </label>
+            <input type="number" name="maxSellingPrice" className={`form-control border border-dark ${fieldErrors.maxSellingPrice ? "is-invalid" : ""}`} value={yacht.maxSellingPrice} onChange={handleChange} required />
+            {fieldErrors.maxSellingPrice && <div className="text-danger small">{fieldErrors.maxSellingPrice}</div>}
           </div>
 
           {/* Sail Start */}

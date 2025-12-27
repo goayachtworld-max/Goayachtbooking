@@ -101,7 +101,7 @@ function CreateEmployee() {
 
   return (
     <div className="container my-4 px-3">
-      <h4 className="mb-4 text-center">Create Employee</h4>
+      <h4 className="mb-4 text-center">Create User</h4>
       <form className="row g-3" onSubmit={handleSubmit}>
         {/* Role */}
         <div className="col-12">
@@ -134,7 +134,7 @@ function CreateEmployee() {
         </div>
 
         {/* Contact */}
-        <div className="col-12">
+        <div className="col-6">
           <label className="form-label fw-bold">Contact Number</label>
           <input
             type="tel"
@@ -148,7 +148,7 @@ function CreateEmployee() {
         </div>
 
         {/* Email */}
-        <div className="col-12">
+        <div className="col-6">
           <label className="form-label fw-bold">Email Address</label>
           <input
             type="email"
@@ -223,7 +223,7 @@ function CreateEmployee() {
         {/* Submit */}
         <div className="col-12 text-center">
           <button type="submit" className="btn btn-primary w-100 w-md-auto" disabled={loading}>
-            {loading ? "Creating..." : "Create Employee"}
+            {loading ? "Creating..." : "Create User"}
           </button>
         </div>
       </form>

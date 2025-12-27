@@ -67,6 +67,31 @@ export const getEmployees = async (req, res, next) => {
   }
 };
 
+// ✅ Employees list for booking page
+export const getEmployeesForBooking = async (req, res, next) => {
+  try {
+    const { type, id, company } = req.user;
+
+    let filter = { company, status: "active" };
+
+    // 🔒 Backdesk → only himself
+    if (type === "backdesk") {
+      filter._id = id;
+    }
+
+    // 🟢 Admin & Onsite → all employees
+    const employees = await EmployeeModel.find(
+      filter,
+      "_id name type"
+    ).sort({ name: 1 });
+
+    res.json({ success: true, employees });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 // Get Single Employee by ID
 export const getEmployeeById = async (req, res, next) => {
   try {

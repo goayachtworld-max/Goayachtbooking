@@ -107,13 +107,6 @@ function DayAvailability() {
     return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
   };
 
-  // const to12HourFormat = (time24) => {
-  //   if (!time24) return "";
-  //   const [hour, minute] = time24.split(":").map(Number);
-  //   const period = hour >= 12 ? "PM" : "AM";
-  //   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-  //   return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
-  // };
   const to12HourFormat = (time24) => {
     if (!time24) return "";
     let [hour, minute] = time24.split(":").map(Number);
@@ -281,101 +274,13 @@ function DayAvailability() {
     }));
   };
 
-  // const buildTimeline = (yachtObj, booked = [], locked = []) => {
-  //   const freeSlots = buildSlotsForYacht(yachtObj);
-
-  //   const normalizedBusy = [
-  //     ...booked.map((b) => ({
-  //       start: b.startTime || b.start,
-  //       end: b.endTime || b.end,
-  //       type: "booked",
-  //       custName: b.custName || b.customerName || "",
-  //       empName: b.empName || b.employeeName || "",
-  //     })),
-  //     ...locked.map((l) => ({
-  //       start: l.startTime || l.start,
-  //       end: l.endTime || l.end,
-  //       type: "locked",
-  //       empName: l.empName || l.employeeName || "",
-  //     })),
-  //   ];
-
-  //   return freeSlots.map((slot) => {
-  //     const overlaps = normalizedBusy.filter(
-  //       (b) =>
-  //         !(
-  //           hhmmToMinutes(b.end) <= hhmmToMinutes(slot.start) ||
-  //           hhmmToMinutes(b.start) >= hhmmToMinutes(slot.end)
-  //         )
-  //     );
-
-  //     if (overlaps.length === 0) return { ...slot, type: "free" };
-
-  //     const bookedOverlap = overlaps.find((o) => o.type === "booked");
-  //     if (bookedOverlap) {
-  //       return {
-  //         ...slot,
-  //         type: "booked",
-  //         custName: bookedOverlap.custName,
-  //         empName: bookedOverlap.empName,
-  //       };
-  //     }
-
-  //     const lockedOverlap = overlaps.find((o) => o.type === "locked");
-  //     return {
-  //       ...slot,
-  //       type: "locked",
-  //       empName: lockedOverlap.empName,
-  //     };
-  //   });
-  // };
-
-  // // ---------- Fetch ----------
-  // const fetchTimeline = async () => {
-  //   if (!currentDay || !currentDay.date) {
-  //     setTimeline([]);
-  //     setLoading(false);
-  //     setIsCalendarDisabled(false);
-  //     return;
-  //   }
-
-  //   try {
-  //     setLoading(true);
-  //     setIsCalendarDisabled(true);
-  //     setError("");
-
-  //     const yachtRes = await getYachtById(yachtId, token);
-  //     const yachtData = yachtRes?.data?.yacht ?? yachtRes?.yacht ?? yachtRes;
-  //     setYacht(yachtData);
-
-  //     const dayResRaw = await getDayAvailability(yachtId, currentDay.date, token);
-  //     const dayRes = dayResRaw?.data ?? dayResRaw;
-
-  //     if (yachtData) {
-  //       const booked = dayRes.bookedSlots || [];
-  //       const locked = dayRes.lockedSlots || [];
-  //       const built = buildTimeline(yachtData, booked, locked);
-  //       setTimeline(built);
-  //     } else {
-  //       setTimeline([]);
-  //     }
-  //   } catch (err) {
-  //     setError("Failed to load timeline");
-  //     setTimeline([]);
-  //   } finally {
-  //     setLoading(false);
-  //     setIsCalendarDisabled(false);
-  //   }
-  // };
-
-
-  // ---------- Build timeline from stored DB slots or auto-generated slots ----------
   const buildTimeline = (baseSlots, booked = [], locked = []) => {
     const normalizedBusy = [
       ...booked.map((b) => ({
         start: b.startTime || b.start,
         end: b.endTime || b.end,
         type: "booked",
+        bookingStatus: b.status,
         custName: b.custName || "",
         empName: b.empName || "",
       })),
@@ -403,6 +308,7 @@ function DayAvailability() {
         return {
           ...slot,
           type: "booked",
+          bookingStatus: bookedOverlap.bookingStatus,
           custName: bookedOverlap.custName,
           empName: bookedOverlap.empName,
         };
@@ -878,14 +784,15 @@ function DayAvailability() {
                     const disabled = isPastSlot(slot);
 
                     const slotClass = disabled
-                      ? slot.type === "booked"
-                        ? "bg-danger text-white"
-                        : "bg-secondary text-white opacity-50"
+                      ? "bg-secondary text-white opacity-50"
                       : slot.type === "booked"
-                        ? "bg-danger text-white"
+                        ? slot.bookingStatus === "pending"
+                          ? "bg-info text-dark"        // 🔵 pending (blue)
+                          : "bg-danger text-white"                 // 🔴 confirmed
                         : slot.type === "locked"
-                          ? "bg-warning text-dark"
-                          : "bg-success text-white";
+                          ? "bg-warning text-dark"                 // 🟡 locked
+                          : "bg-success text-white";               // 🟢 free
+
 
                     const cursorStyle =
                       disabled && slot.type !== "booked" ? "not-allowed" : "pointer";
@@ -910,6 +817,7 @@ function DayAvailability() {
                   <div className="mt-4 text-center">
                     <span className="badge bg-success me-2">Free</span>
                     <span className="badge bg-warning text-dark me-2">Locked</span>
+                    <span className="badge bg-info text-dark me-2">Pending</span>
                     <span className="badge bg-danger me-2">Booked</span>
                   </div>
                 )}
@@ -1019,12 +927,12 @@ function DayAvailability() {
 
                   {selectedSlot.custName && (
                     <div className="mt-2 fw-semibold text-primary">
-                      Booked for: {selectedSlot.custName}
+                      Booking Name: {selectedSlot.custName}
                     </div>
                   )}
 
                   {selectedSlot.empName && (
-                    <div className="mt-1 fw-bold text-secondary">Handled by: {selectedSlot.empName}</div>
+                    <div className="mt-1 fw-bold text-secondary">User Name: {selectedSlot.empName}</div>
                   )}
                 </>
               )}

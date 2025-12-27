@@ -53,6 +53,8 @@ export const createYacht = async (req, res, next) => {
 //   }
 // };
 // controllers/yachtController.js (or wherever you have it)
+
+// Used in create booking
 export const getAllYachts = async (req, res, next) => {
   try {
     const date = req.query.date; // date comes as string "YYYY-MM-DD"
@@ -102,7 +104,7 @@ export const getAllYachts = async (req, res, next) => {
   }
 };
 
-
+// Used for Yacht management
 export const getAllYachtsDetails = async (req, res, next) => {
   try {
     const yachts = await YachtModel.find({ company: req.user.company });

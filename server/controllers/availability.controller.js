@@ -68,7 +68,7 @@ export const checkSlotAvailability = async ({
   const existingBookings = await BookingModel.find({
     yachtId,
     date,
-    status: { $in: ["initiated", "booked"] },
+    status: { $in: ["pending", "initiated", "confirmed"] }
   });
 
   for (const b of existingBookings) {
@@ -165,6 +165,7 @@ export const releaseSlot = async (req, res, next) => {
   try {
     const { yachtId, date, startTime, endTime } = req.body;
     const employeeId = req.user.id;
+    const employeeType = req.user.type;
 
     if (!yachtId || !date || !startTime || !endTime) {
       return res
@@ -189,7 +190,7 @@ export const releaseSlot = async (req, res, next) => {
       return res
         .status(400)
         .json({ success: false, message: "Slot is not locked." });
-    if (String(slot.appliedBy) !== String(employeeId)) {
+    if ((String(slot.appliedBy) !== String(employeeId)) && employeeType!=="admin" ) {
       console.log("Locked by another emp");
       return res
         .status(403)
@@ -249,7 +250,7 @@ export const getAvailabilitySummary = async (req, res, next) => {
     const bookings = await BookingModel.find({
       yachtId: { $in: yachtIds },
       date: { $gte: start, $lte: end },
-      status: { $in: ["initiated", "booked"] },
+     status: { $in: ["pending", "initiated", "confirmed"] }
     });
 
     // Map yachts -> date -> booked info
@@ -365,7 +366,7 @@ export const getDayAvailability = async (req, res, next) => {
     const bookings = await BookingModel.find({
       yachtId,
       date,
-      status: { $in: ["initiated", "booked"] }
+      status: { $in: ["pending", "initiated", "confirmed"] }
     })
       .select("startTime endTime status")
       .populate({ path: "customerId", select: "name" })
@@ -416,3 +417,20 @@ export const getDayAvailability = async (req, res, next) => {
   }
 };
 
+export const deleteAvailabilityForBooking = async (booking, session = null) => {
+  if (!booking) return;
+
+  const query = {
+    yachtId: booking.yachtId,
+    date: booking.date,
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    status: "booked",
+  };
+
+  if (session) {
+    await AvailabilityModel.deleteMany(query).session(session);
+  } else {
+    await AvailabilityModel.deleteMany(query);
+  }
+};

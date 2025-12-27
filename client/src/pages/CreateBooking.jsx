@@ -270,12 +270,12 @@ function CreateBooking() {
         duration: 3000,
         style: { borderRadius: "10px", background: "#333", color: "#fff" },
       });
+      
       if (response.data.success && formData.advanceAmount > 0) {
         const payload = {
           bookingId: booking._id,
           type: "advance",
           amount: formData.advanceAmount,
-          status: "initiated"
         }
         const transResponse = await createTransactionAndUpdateBooking(payload, token)
         console.log("Trans Response : ", transResponse);

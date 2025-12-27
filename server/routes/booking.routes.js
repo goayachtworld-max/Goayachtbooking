@@ -3,6 +3,7 @@ import { createBooking, getBookings, getBookingById, updateBooking } from "../co
 import { bookingSchema } from "../validators/booking.validator.js";
 import { validate } from "../middleware/validate.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { getEmployeesForBooking } from "../controllers/employee.controller.js";
 
 const router = express.Router();
 
