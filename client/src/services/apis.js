@@ -43,3 +43,8 @@ export const yaut = {
   DELETE_YACHT_API: (id) => `${BASE_URL}/yacht/${id}`,
   UPDATE_DAY_SLOTS: `${BASE_URL}/slot/`
 };
+
+export const notification = {
+  GET_NOTIFICATIONS_API: `${BASE_URL}/notifications`,
+  MARK_AS_READ_API: (id) => `${BASE_URL}/notifications/${id}/read`,
+};

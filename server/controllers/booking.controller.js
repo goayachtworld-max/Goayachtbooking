@@ -4,6 +4,7 @@ import { AvailabilityModel } from "../models/availability.model.js";
 import { checkSlotAvailability } from "./availability.controller.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import { YachtModel } from "../models/yacht.model.js";
+import { sendNotification } from "../services/notification.service.js";
 
 export const createBooking = async (req, res, next) => {
   try {
@@ -80,6 +81,19 @@ export const createBooking = async (req, res, next) => {
         bookingId: booking._id,
         deleteAfter: tripEnd,
       });
+    }
+
+    if (booking.status === "pending" && req.user.type === "backdesk") {
+      await sendNotification({
+        company: req.user.company,
+        roles: ["admin", "onsite"],
+        title: "New Booking Pending",
+        message: "A booking created by backdesk is awaiting approval.",
+        type: "booking_created",
+        bookingId: booking._id,
+        excludeUserId: req.user.id,
+      });
+      console.log("Notification send - Create booking")
     }
 
     res.status(201).json({ success: true, booking });

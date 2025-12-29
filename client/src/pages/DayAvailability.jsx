@@ -350,12 +350,14 @@ function DayAvailability() {
       const booked = dayRes.bookedSlots || [];
       const locked = dayRes.lockedSlots || [];
 
+      console.log("dayres : ", dayRes)
       // 3️⃣ Check if DB has manually saved slots for this date
       const storedSlotEntry =
         dayRes?.slots && Array.isArray(dayRes.slots) && dayRes.slots.length > 0
           ? dayRes.slots[0] // slot document for that date
           : null;
 
+      console.log("storedSlotEntry : ", storedSlotEntry);
       let finalBaseSlots = [];
 
       if (storedSlotEntry && storedSlotEntry.slots?.length > 0) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-hot-toast";
@@ -15,7 +15,7 @@ import {
   releaseSlot,
 } from "../services/operations/availabilityAPI";
 
-/* ---------------- HELPERS ---------------- */
+/* helpers */
 const todayISO = () => new Date().toISOString().split("T")[0];
 
 const plusDaysISO = (days) => {
@@ -24,10 +24,16 @@ const plusDaysISO = (days) => {
   return d.toISOString().split("T")[0];
 };
 
-const hhmmToMinutes = (t) => {
+const hhmmToMinutes = (t = "00:00") => {
   if (!t) return 0;
   const [h, m] = t.split(":").map(Number);
   return h * 60 + m;
+};
+
+const minutesToHHMM = (m) => {
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 };
 
 const to12HourFormat = (time24) => {
@@ -43,7 +49,6 @@ const getDatesBetween = (start, end) => {
   const dates = [];
   let cur = new Date(start);
   const last = new Date(end);
-
   while (cur <= last) {
     dates.push(cur.toISOString().split("T")[0]);
     cur.setDate(cur.getDate() + 1);
@@ -51,7 +56,6 @@ const getDatesBetween = (start, end) => {
   return dates;
 };
 
-/* -------- BUILD TIME SLOTS -------- */
 const buildSlotsForYacht = (yacht) => {
   if (!yacht?.sailStartTime || !yacht?.sailEndTime) return [];
 
@@ -84,38 +88,35 @@ const buildSlotsForYacht = (yacht) => {
   return slots;
 };
 
-/* ================= PAGE ================= */
+const roundDownTo30 = (minutes) => minutes - (minutes % 30);
+const roundUpTo30 = (minutes) => (minutes % 30 === 0 ? minutes : minutes + (30 - (minutes % 30)));
+const getColSpan = (start, end) => (hhmmToMinutes(end) - hhmmToMinutes(start)) / 30;
+
 function GridAvailability() {
   const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem("authToken");
   const params = new URLSearchParams(location.search);
 
-  /* -------- FILTER STATE -------- */
   const [yachtId, setYachtId] = useState(params.get("yachtId") || "");
   const [fromDate, setFromDate] = useState(
     params.get("fromDate") || todayISO()
   );
-  const [toDate, setToDate] = useState(
-    params.get("toDate") || plusDaysISO(6)
-  );
+  const [toDate, setToDate] = useState(params.get("toDate") || plusDaysISO(6));
 
-  /* -------- DATA STATE -------- */
   const [yachts, setYachts] = useState([]);
   const [yacht, setYacht] = useState(null);
   const [dates, setDates] = useState([]);
-  const [slots, setSlots] = useState([]);
-  const [grid, setGrid] = useState([]);
+  const [timeHeaders, setTimeHeaders] = useState([]); // 30-min incremental headers
+  const [grid, setGrid] = useState([]); // [{date, slots: [{start,end,type,custName,empName}]}]
   const [loading, setLoading] = useState(false);
 
-  /* -------- SLOT MODAL STATE -------- */
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [modalType, setModalType] = useState("");
   const [isLocking, setIsLocking] = useState(false);
   const [isReleasing, setIsReleasing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
-  /* -------- LOAD YACHTS -------- */
   useEffect(() => {
     (async () => {
       try {
@@ -129,17 +130,14 @@ function GridAvailability() {
     })();
   }, [token]);
 
-  /* -------- AUTO SELECT FIRST YACHT -------- */
   useEffect(() => {
     if (!yachtId && yachts.length > 0) {
       setYachtId(yachts[0]._id);
     }
   }, [yachts, yachtId]);
 
-  /* -------- LOAD GRID -------- */
   const loadGrid = async () => {
     if (!yachtId || !fromDate || !toDate) return;
-
     try {
       setLoading(true);
 
@@ -147,83 +145,100 @@ function GridAvailability() {
       const yachtData = yachtRes?.data?.yacht ?? yachtRes;
       setYacht(yachtData);
 
-      const slotList = buildSlotsForYacht(yachtData);
       const dateList = getDatesBetween(fromDate, toDate);
-
-      setSlots(slotList);
       setDates(dateList);
+
+      const rows = [];
+      let globalMin = Infinity;
+      let globalMax = -Infinity;
 
       const availabilityByDate = {};
 
-      await Promise.all(
-        dateList.map(async (date) => {
-          const res = await getDayAvailability(yachtId, date, token);
-          availabilityByDate[date] = res?.data || res || {};
-        })
-      );
+      for (const date of dateList) {
+        const res = await getDayAvailability(yachtId, date, token);
+        const day = res?.data || res || {};
+        availabilityByDate[date] = day;
 
-      const gridRows = dateList.map((date) => {
-        const day = availabilityByDate[date] || {};
         const booked = day.bookedSlots || [];
         const locked = day.lockedSlots || [];
 
-        return {
-          date,
-          slots: slotList.map((slot) => {
-            const bookedOverlap = booked.find(
-              (b) =>
-                hhmmToMinutes(b.startTime || b.start) <
-                hhmmToMinutes(slot.end) &&
-                hhmmToMinutes(b.endTime || b.end) >
-                hhmmToMinutes(slot.start)
-            );
+        let baseSlots = [];
+        if (Array.isArray(day.slots) && day.slots.length > 0 && Array.isArray(day.slots[0].slots)) {
+          baseSlots = day.slots[0].slots.map((s) => ({ start: s.start, end: s.end }));
+        } else {
+          baseSlots = buildSlotsForYacht(yachtData);
+        }
 
-            if (bookedOverlap) {
-              return {
-                type:
-                  bookedOverlap.status === "pending"
-                    ? "pending"
-                    : "booked",
-                ...slot,
-                date,
-                custName:
-                  bookedOverlap.custName ||
-                  bookedOverlap.customerName ||
-                  "",
-                empName:
-                  bookedOverlap.empName ||
-                  bookedOverlap.employeeName ||
-                  "",
-              };
-            }
+        baseSlots.forEach(s => {
+          const sMin = hhmmToMinutes(s.start);
+          const eMin = hhmmToMinutes(s.end);
+          if (sMin < globalMin) globalMin = sMin;
+          if (eMin > globalMax) globalMax = eMin;
+        });
 
-            const lockedOverlap = locked.find(
-              (l) =>
-                hhmmToMinutes(l.startTime || l.start) <
-                hhmmToMinutes(slot.end) &&
-                hhmmToMinutes(l.endTime || l.end) >
-                hhmmToMinutes(slot.start)
-            );
+        const enriched = baseSlots.map((slot) => {
+          const bookedOverlap = booked.find(
+            (b) =>
+              hhmmToMinutes(b.startTime || b.start) < hhmmToMinutes(slot.end) &&
+              hhmmToMinutes(b.endTime || b.end) > hhmmToMinutes(slot.start)
+          );
 
-            if (lockedOverlap) {
-              return {
-                type: "locked",
-                ...slot,
-                date,
-                empName:
-                  lockedOverlap.empName ||
-                  lockedOverlap.employeeName ||
-                  "",
-              };
-            }
+          if (bookedOverlap) {
+            return {
+              type: bookedOverlap.status === "pending" ? "pending" : "booked",
+              ...slot,
+              date,
+              custName: bookedOverlap.custName || bookedOverlap.customerName || "",
+              empName: bookedOverlap.empName || bookedOverlap.employeeName || "",
+            };
+          }
 
-            return { type: "free", ...slot, date };
-          }),
-        };
-      });
+          const lockedOverlap = locked.find(
+            (l) =>
+              hhmmToMinutes(l.startTime || l.start) < hhmmToMinutes(slot.end) &&
+              hhmmToMinutes(l.endTime || l.end) > hhmmToMinutes(slot.start)
+          );
 
-      setGrid(gridRows);
-    } catch {
+          if (lockedOverlap) {
+            return {
+              type: "locked",
+              ...slot,
+              date,
+              empName: lockedOverlap.empName || lockedOverlap.employeeName || "",
+            };
+          }
+
+          return { type: "free", ...slot, date };
+        });
+
+        rows.push({ date, slots: enriched });
+      }
+
+      // if there were no slots at all (globalMin remains Infinity), fallback to yacht sail window
+      if (!isFinite(globalMin)) {
+        if (yachtData?.sailStartTime && yachtData?.sailEndTime) {
+          globalMin = hhmmToMinutes(yachtData.sailStartTime);
+          globalMax = hhmmToMinutes(yachtData.sailEndTime);
+          if (globalMax <= globalMin) globalMax += 1440;
+        } else {
+          // fallback common range
+          globalMin = hhmmToMinutes("06:00");
+          globalMax = hhmmToMinutes("22:00");
+        }
+      }
+
+      // round to 30-min steps
+      const startHeader = roundDownTo30(globalMin);
+      const endHeader = roundUpTo30(globalMax);
+
+      const headers = [];
+      for (let m = startHeader; m < endHeader; m += 30) {
+        headers.push(minutesToHHMM(m));
+      }
+
+      setTimeHeaders(headers);
+      setGrid(rows);
+    } catch (err) {
       toast.error("Failed to load grid");
     } finally {
       setLoading(false);
@@ -234,20 +249,17 @@ function GridAvailability() {
     if (yachtId && fromDate && toDate) {
       loadGrid();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [yachtId, fromDate, toDate]);
-
 
   const isPastSlot = (slot, slotDate) => {
     const today = new Date().toISOString().split("T")[0];
     if (slotDate !== today) return false;
-
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const slotEnd = hhmmToMinutes(slot.end);
-
     return slotEnd <= currentMinutes;
   };
-
 
   const handleSlotClick = (slot, type) => {
     setSelectedSlot(slot);
@@ -341,196 +353,242 @@ function GridAvailability() {
     setIsConfirming(false);
   };
 
-  return (
-    <div className="container py-4">
-      <h4 className="fw-bold mb-4">Calendar View</h4>
+  const renderRowCells = (row) => {
+    const cells = [];
+    let colIndex = 0;
+    while (colIndex < timeHeaders.length) {
+      const current = timeHeaders[colIndex];
+      const slot = row.slots.find((s) => s.start === current);
+      if (slot) {
+        const span = Math.max(1, getColSpan(slot.start, slot.end));
+        const past = isPastSlot(slot, row.date);
+        let cellClass = "";
+        if (past) cellClass = "bg-secondary text-white opacity-40";
+        else if (slot.type === "booked") cellClass = "bg-danger text-white";
+        else if (slot.type === "locked") cellClass = "bg-warning text-dark";
+        else if (slot.type === "pending") cellClass = "bg-info text-dark";
+        else cellClass = "bg-success text-white";
 
-      <div className="row g-3 mb-4">
-        <div className="col-md-4">
-          <select
-            className="form-select"
-            value={yachtId}
-            onChange={(e) => setYachtId(e.target.value)}
+        const title =
+          slot.type === "booked" || slot.type === "pending"
+            ? `Booked\nUser Name: ${slot.empName}\nBooking Name: ${slot.custName}`
+            : slot.type === "locked"
+              ? `Locked by: ${slot.empName}`
+              : `${slot.start} - ${slot.end}`;
+
+        cells.push(
+          <td
+            key={`${row.date}-${current}`}
+            colSpan={span}
+            title={title}
+            className={`slot-cell ${slot.type} ${past ? "opacity-40" : ""}`}
+            style={{ cursor: past ? "not-allowed" : "pointer" }}
+            onClick={() => {
+              if (!past) {
+                const typeToOpen = slot.type === "pending" ? "booked" : slot.type;
+                handleSlotClick(slot, typeToOpen);
+              }
+            }}
           >
-            {yachts.map((y) => (
-              <option key={y._id} value={y._id}>
-                {y.name}
-              </option>
-            ))}
-          </select>
-        </div>
+            {to12HourFormat(slot.start)} – {to12HourFormat(slot.end)}
+          </td>
+        );
+        colIndex += span;
+      } else {
+        cells.push(
+          <td
+            key={`${row.date}-${current}`}
+            className="bg-light text-muted"
+            title="Not available"
+          >
+            —
+          </td>
+        );
+        colIndex += 1;
+      }
+    }
+    return cells;
+  };
 
-        <div className="col-md-3">
-          <input
-            type="date"
-            className="form-control"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-          />
-        </div>
+  return (
+    <div className="container-fluid py-4">
+      <div className="mx-auto" style={{ maxWidth: "85vw" }}>
 
-        <div className="col-md-3">
-          <input
-            type="date"
-            className="form-control"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-          />
-        </div>
+        <h4 className="fw-bold mb-4">Calendar View</h4>
 
-        <div className="col-md-2">
-          <button className="btn btn-primary w-100" onClick={loadGrid}>
-            View
-          </button>
-        </div>
-      </div>
+        <div className="row g-3 mb-4">
 
-      {loading ? (
-        <div className="text-center py-5">Loading availability...</div>
-      ) : grid.length > 0 ? (
-        <div className="table-responsive">
-          <table className="table table-bordered text-center align-middle">
-            <thead className="table-light sticky-top">
-              <tr>
-                <th>Date</th>
-                {slots.map((s, i) => (
-                  <th key={i}>
-                    {to12HourFormat(s.start)} – {to12HourFormat(s.end)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {grid.map((row, i) => (
-                <tr key={i}>
-                  <td className="fw-semibold">{row.date}</td>
-                  {/* {row.slots.map((cell, j) => (
-                    <td
-                      key={j}
-                      title={
-                        cell.type === "booked"
-                          ? `Booked\nUser Name: ${cell.empName}\nBooking Name: ${cell.custName}`
-                          : cell.type === "locked"
-                            ? `Locked by: ${cell.empName}`
-                            : "Available"
-                      }
-                      className={`slot-cell ${cell.type === "booked"
-                        ? "booked"
-                        : cell.type === "locked"
-                          ? "locked"
-                          : cell.type === "pending"
-                            ? "pending"
-                            : "free"
-                        }`}
-
-
-                      onClick={() => handleSlotClick(cell, cell.type)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      {cell.type}
-                    </td>
-
-                  ))} */}
-                  {row.slots.map((cell, j) => {
-                    const past = isPastSlot(cell, row.date);
-
-                    let cellClass = "";
-                    if (past) {
-                      cellClass = "bg-secondary text-white opacity-40";
-                    } else if (cell.type === "booked") {
-                      cellClass = "bg-danger text-white";
-                    } else if (cell.type === "locked") {
-                      cellClass = "bg-warning text-dark";
-                    } else if (cell.type === "pending") {
-                      cellClass = "bg-info text-dark";
-                    } else {
-                      cellClass = "bg-success text-white";
-                    }
-
-                    return (
-                      <td
-                        key={j}
-                        title={
-                          cell.type === "booked" || cell.type === "pending"
-                            ? `Booked\nUser Name: ${cell.empName}\nBooking Name: ${cell.custName}`
-                            : cell.type === "locked"
-                              ? `Locked by: ${cell.empName}`
-                              : "Available"
-                        }
-                        className={cellClass}
-                        onClick={() => {
-                          if (!past) {
-                            const typeToOpen = cell.type === "pending" ? "booked" : cell.type;
-                            handleSlotClick(cell, typeToOpen);
-                          }
-                        }}
-                        style={{ cursor: past ? "not-allowed" : "pointer" }}
-                      >
-                        {cell.type}
-                      </td>
-                    );
-                  })}
-
-                </tr>
+          <div className="col-md-4">
+            <select
+              className="form-select"
+              value={yachtId}
+              onChange={(e) => setYachtId(e.target.value)}
+            >
+              {yachts.map((y) => (
+                <option key={y._id} value={y._id}>
+                  {y.name}
+                </option>
               ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="text-muted text-center py-5">
-          No availability found
-        </div>
-      )}
+            </select>
+          </div>
+                
+          <div className="col-md-3">
+            <input
+              type="date"
+              className="form-control"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+          </div>
 
-      {/* Lock Modal */}
-      <div className="modal fade" id="lockModal" tabIndex="-1">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content rounded-4">
-            <form onSubmit={handleLockSlot}>
-              <div className="modal-header bg-warning bg-opacity-25">
-                <h5 className="modal-title">Lock Time Slot</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  data-bs-dismiss="modal"
-                ></button>
-              </div>
-              <div className="modal-body text-center">
-                {selectedSlot && (
-                  <p>
-                    {to12HourFormat(selectedSlot.start)} —{" "}
-                    {to12HourFormat(selectedSlot.end)}
-                  </p>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  data-bs-dismiss="modal"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-warning"
-                  disabled={isLocking}
-                >
-                  {isLocking ? "Locking..." : "Lock Slot"}
-                </button>
-              </div>
-            </form>
+          <div className="col-md-3">
+            <input
+              type="date"
+              className="form-control"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
+          </div>
+
+          <div className="col-md-2">
+            <button className="btn btn-primary w-100" onClick={loadGrid}>
+              View
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Confirm Modal */}
-      <div className="modal fade" id="confirmModal" tabIndex="-1">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content rounded-4">
-            <form onSubmit={handleConfirmBooking}>
-              <div className="modal-header bg-primary bg-opacity-10">
-                <h5 className="modal-title">Confirm Booking</h5>
+        {loading ? (
+          <div className="text-center py-5">Loading availability...</div>
+        ) : grid.length > 0 ? (
+          <div className="availability-wrapper">
+            <table className="table text-center align-middle">
+              {/* <thead className="table-light sticky-top">
+              <tr>
+                <th className="sticky-col">Date</th>
+                {timeHeaders.map((t, i) => (
+                  <th key={i}>{to12HourFormat(t)}</th>
+                ))}
+              </tr>
+            </thead> */}
+
+              <thead className="table-light sticky-top">
+                <tr>
+                  <th className="sticky-col">Date</th>
+                  {timeHeaders.map((t, i) =>
+                    t.endsWith(":00") ? (
+                      <th key={i} colSpan={2} className="hour-header">
+                        {to12HourFormat(t)}
+                      </th>
+                    ) : null
+                  )}
+                </tr>
+              </thead>
+
+              <tbody>
+                {grid.map((row, i) => (
+                  <tr key={i}>
+                    <td className="sticky-col fw-semibold">{row.date}</td>
+                    {renderRowCells(row)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-muted text-center py-5">No availability found</div>
+        )}
+
+        <div className="modal fade" id="lockModal" tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4">
+              <form onSubmit={handleLockSlot}>
+                <div className="modal-header bg-warning bg-opacity-25">
+                  <h5 className="modal-title">Lock Time Slot</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    data-bs-dismiss="modal"
+                  ></button>
+                </div>
+                <div className="modal-body text-center">
+                  {selectedSlot && (
+                    <p>
+                      {to12HourFormat(selectedSlot.start)} —{" "}
+                      {to12HourFormat(selectedSlot.end)}
+                    </p>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    data-bs-dismiss="modal"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-warning"
+                    disabled={isLocking}
+                  >
+                    {isLocking ? "Locking..." : "Lock Slot"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div className="modal fade" id="confirmModal" tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4">
+              <form onSubmit={handleConfirmBooking}>
+                <div className="modal-header bg-primary bg-opacity-10">
+                  <h5 className="modal-title">Confirm Booking</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    data-bs-dismiss="modal"
+                  ></button>
+                </div>
+                <div className="modal-body text-center">
+                  {selectedSlot && (
+                    <>
+                      <div>
+                        {to12HourFormat(selectedSlot.start)} —{" "}
+                        {to12HourFormat(selectedSlot.end)}
+                      </div>
+                      <div className="mt-2">Locked by: {selectedSlot.empName}</div>
+                    </>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger"
+                    onClick={handleReleaseLock}
+                    disabled={isReleasing}
+                  >
+                    {isReleasing ? "Releasing..." : "Release Lock"}
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isConfirming}
+                  >
+                    Confirm Booking
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div className="modal fade" id="bookedModal" tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4">
+              <div className="modal-header bg-danger bg-opacity-10">
+                <h5 className="modal-title">Booked Slot Details</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -544,70 +602,20 @@ function GridAvailability() {
                       {to12HourFormat(selectedSlot.start)} —{" "}
                       {to12HourFormat(selectedSlot.end)}
                     </div>
-                    <div className="mt-2">
-                      Locked by: {selectedSlot.empName}
-                    </div>
+                    <div className="mt-2">User Name: {selectedSlot.empName}</div>
+                    <div className="mt-2">Booking Name: {selectedSlot.custName}</div>
                   </>
                 )}
               </div>
               <div className="modal-footer">
                 <button
                   type="button"
-                  className="btn btn-outline-danger"
-                  onClick={handleReleaseLock}
-                  disabled={isReleasing}
+                  className="btn btn-outline-secondary"
+                  data-bs-dismiss="modal"
                 >
-                  {isReleasing ? "Releasing..." : "Release Lock"}
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={isConfirming}
-                >
-                  Confirm Booking
+                  Close
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      {/* Booked Modal */}
-      <div className="modal fade" id="bookedModal" tabIndex="-1">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content rounded-4">
-            <div className="modal-header bg-danger bg-opacity-10">
-              <h5 className="modal-title">Booked Slot Details</h5>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-              ></button>
-            </div>
-            <div className="modal-body text-center">
-              {selectedSlot && (
-                <>
-                  <div>
-                    {to12HourFormat(selectedSlot.start)} —{" "}
-                    {to12HourFormat(selectedSlot.end)}
-                  </div>
-                  <div className="mt-2">
-                    User Name: {selectedSlot.empName}
-                  </div>
-                  <div className="mt-2">
-                    Booking Name: {selectedSlot.custName}
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                data-bs-dismiss="modal"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>

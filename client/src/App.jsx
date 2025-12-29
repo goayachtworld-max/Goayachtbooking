@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import axios from "axios";
-import "./App.css"; 
+import "./App.css";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -23,7 +23,11 @@ import CreateYacht from "./pages/CreateYacht";
 import AllYachts from "./pages/AllYachts";
 import AllEmployees from "./pages/AllEmployees";
 import GridAvailability from "./pages/GridAvailability";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
+import { socket } from "./socket";
+import "./styles/NavbarNotification.css"
+import NotificationBell from "./pages/NotificationBell";
+
 
 function App() {
   const storedUser = localStorage.getItem("user");
@@ -32,20 +36,41 @@ function App() {
   const role = user?.type?.toLowerCase();
 
   //  LOGOUT FUNCTION
+  // const logoutUser = () => {
+  //   setUser(null);
+  //   localStorage.removeItem("user");
+  //   localStorage.removeItem("authToken");
+  //   navigate("/");
+  // };
   const logoutUser = () => {
+    socket.disconnect(); // 🔌 DISCONNECT SOCKET
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("authToken");
     navigate("/");
   };
 
+
   //  LOGIN FUNCTION
+  // const handleLogin = (data) => {
+  //   setUser(data);
+  //   localStorage.setItem("user", JSON.stringify(data));
+
+  //   const token = data?.token || localStorage.getItem("authToken");
+  //   if (token) scheduleAutoLogout(token);
+  // };
   const handleLogin = (data) => {
     setUser(data);
     localStorage.setItem("user", JSON.stringify(data));
 
     const token = data?.token || localStorage.getItem("authToken");
-    if (token) scheduleAutoLogout(token);
+
+    if (token) {
+      localStorage.setItem("authToken", token);
+      socket.auth = { token };
+      socket.connect(); // 🔌 CONNECT SOCKET
+      scheduleAutoLogout(token);
+    }
   };
 
   //  AUTO LOGOUT BASED ON TOKEN EXPIRY
@@ -64,6 +89,47 @@ function App() {
       logoutUser();
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+
+    if (user && token && !socket.connected) {
+      socket.auth = { token };
+      socket.connect();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("❌ Socket error:", err.message);
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("connect_error");
+    };
+  }, []);
+
+
+
+  useEffect(() => {
+    if (!user) return;
+
+    socket.on("notification:new", (notification) => {
+      console.log("🔔 Notification received:", notification);
+
+      toast.success(notification.message || "New notification");
+    });
+
+    return () => {
+      socket.off("notification:new");
+    };
+  }, [user]);
+
 
   //  RUN ON PAGE LOAD / REFRESH
   useEffect(() => {
@@ -101,7 +167,9 @@ function App() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
       {user && <Navbar user={user} onLogout={logoutUser} />}
-
+      {user && <NotificationBell className="nav-notification"/>}
+      {/* <div className="mt-1">hi</div> */}
+      <div className="app-content">
       <Routes>
         {/* Root Route → Redirect based on user role */}
         <Route
@@ -159,7 +227,7 @@ function App() {
           path="/grid-availability"
           element={
             <ProtectedRoute user={user}>
-              {["admin", "backdesk", "onsite"].includes(role) ? <GridAvailability/> : <NotFound />}
+              {["admin", "backdesk", "onsite"].includes(role) ? <GridAvailability /> : <NotFound />}
             </ProtectedRoute>
           }
         />
@@ -248,6 +316,7 @@ function App() {
         {/* Fallback Route */}
         <Route path="*" element={<NotFound user={user} />} />
       </Routes>
+      </div>
     </>
   );
 }

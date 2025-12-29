@@ -38,7 +38,7 @@ function CreateBooking() {
   const [customerSuggestions, setCustomerSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const typingTimeoutRef = useRef(null);
-  // Time helpers
+
   const hhmmToMinutes = (time = "00:00") => {
     const [h, m] = time.split(":").map(Number);
     return h * 60 + m;
@@ -47,14 +47,13 @@ function CreateBooking() {
   const to12Hour = (time24) => {
     if (!time24) return "";
     let [hour, minute] = time24.split(":").map(Number);
-    // ✅ normalize hour (24 → 0, 25 → 1, etc.)
     hour = hour % 24;
     const period = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 === 0 ? 12 : hour % 12;
     return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
   };
 
-  //  Fetch yachts
+  // Fetch yachts
   useEffect(() => {
     const fetchYachts = async () => {
       try {
@@ -65,14 +64,11 @@ function CreateBooking() {
           ? res.data.yachts
           : [];
         setYachts(yachtList);
-        console.log("Here is yaut list - ", yachtList)
       } catch (err) {
         console.error("Failed to fetch yachts:", err);
       }
     };
-    if (formData.date) {
-      fetchYachts();
-    }
+    if (formData.date) fetchYachts();
   }, [formData.date]);
 
   const buildSlotsForYacht = (yacht, selectedDate) => {
@@ -95,7 +91,6 @@ function CreateBooking() {
       return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
     };
 
-    // Check if schema-defined slots exist for selected date
     const slotsForDate = yacht.slots?.find(
       (slotGroup) =>
         new Date(slotGroup.date).toDateString() ===
@@ -108,7 +103,6 @@ function CreateBooking() {
         .sort((a, b) => timeToMin(a.start) - timeToMin(b.start));
     }
 
-    // Else, generate slots dynamically
     let duration = 0;
     if (typeof durationRaw === "string" && durationRaw.includes(":")) {
       const [h, m] = durationRaw.split(":").map(Number);
@@ -121,13 +115,9 @@ function CreateBooking() {
     let endMin = timeToMin(sailEnd);
     const specialMins = specialSlots.map(timeToMin).sort((a, b) => a - b);
 
-    // FIX for 00:00 or overnight ranges  -- Issue with 12am as end time and 6am as start time
-    if (endMin <= startMin) {
-      endMin += 24 * 60;
-    }
-    if (sailEnd === "00:00") {
-      endMin = 24 * 60 - 1; // 1439
-    }
+    if (endMin <= startMin) endMin += 24 * 60;
+    if (sailEnd === "00:00") endMin = 24 * 60 - 1;
+
     const slots = [];
     let cursor = startMin;
 
@@ -144,17 +134,7 @@ function CreateBooking() {
       }
     }
 
-    // Remove duplicates & sort
-    const seen = new Set();
-    const cleaned = slots.filter((s) => {
-      const key = `${s.start}-${s.end}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).sort((a, b) => a.start - b.start);
-
-    console.log("Slots are : ", cleaned)
-    return cleaned.map((s) => ({
+    return slots.map((s) => ({
       start: minToTime(s.start),
       end: minToTime(s.end),
     }));
@@ -174,9 +154,7 @@ function CreateBooking() {
 
     if (formData.startTime) {
       const match = slots.find((s) => s.start === formData.startTime);
-      if (match) {
-        setFormData((p) => ({ ...p, endTime: match.end }));
-      }
+      if (match) setFormData((p) => ({ ...p, endTime: match.end }));
     }
   }, [formData.yachtId, yachts, formData.date]);
 
@@ -189,22 +167,22 @@ function CreateBooking() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "yachtId") {
-      setFormData((prev) => ({
-        ...prev,
+      setFormData((p) => ({
+        ...p,
         yachtId: value,
         startTime: "",
         endTime: "",
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((p) => ({ ...p, [name]: value }));
     }
   };
 
   const handleStartSelect = (e) => {
     const start = e.target.value;
     const slot = startTimeOptions.find((s) => s.start === start);
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((p) => ({
+      ...p,
       startTime: start,
       endTime: slot ? slot.end : "",
     }));
@@ -213,9 +191,14 @@ function CreateBooking() {
   const isAmountInvalid =
     formData.totalAmount &&
     runningCost &&
-    parseFloat(formData.totalAmount) < runningCost;
+    Number(formData.totalAmount) < runningCost;
 
-  //  Handle Submit
+  const isCapacityExceeded =
+    formData.numPeople &&
+    yachts.find((y) => y.id === formData.yachtId)?.capacity &&
+    Number(formData.numPeople) >
+      yachts.find((y) => y.id === formData.yachtId).capacity;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -231,27 +214,17 @@ function CreateBooking() {
         return;
       }
 
-      if (parseFloat(formData.totalAmount) < selectedYacht.runningCost) {
-        alert(
-          `Total Amount must be ≥ yacht running cost (₹${selectedYacht.runningCost}).`
-        );
-        setLoading(false);
-        return;
-      }
-
       const { data } = await getCustomerByContactAPI(formData.contact, token);
       let customerId = data.customer?._id;
-      console.log("Find customer by contact ", data);
+
       if (!data.customer) {
         const payload = new FormData();
         for (let key in formData) payload.append(key, formData[key]);
         const res = await createCustomerAPI(payload, token);
-        console.log("Customer not found - new cust data : ", res)
-        if(res?.data?.success){
-          toast.success("New Customer Created!")
-        }
+        if (res?.data?.success) toast.success("New Customer Created!");
         customerId = res?.data?._id;
       }
+
       const bookingPayload = {
         customerId,
         employeeId: "replace_with_employee_id",
@@ -265,24 +238,22 @@ function CreateBooking() {
 
       const response = await createBookingAPI(bookingPayload, token);
       const booking = response.data.booking;
-      console.log("response of create booking ", response.data)
-      toast.success(" Booking created successfully!", {
-        duration: 3000,
-        style: { borderRadius: "10px", background: "#333", color: "#fff" },
-      });
-      
+
+      toast.success("Booking created successfully!");
+
       if (response.data.success && formData.advanceAmount > 0) {
-        const payload = {
-          bookingId: booking._id,
-          type: "advance",
-          amount: formData.advanceAmount,
-        }
-        const transResponse = await createTransactionAndUpdateBooking(payload, token)
-        console.log("Trans Response : ", transResponse);
+        await createTransactionAndUpdateBooking(
+          {
+            bookingId: booking._id,
+            type: "advance",
+            amount: formData.advanceAmount,
+          },
+          token
+        );
       }
+
       navigate("/bookings");
     } catch (err) {
-      console.error("Booking failed:", err);
       setError(err.response?.data?.message || "Failed to create booking");
     } finally {
       setLoading(false);
@@ -293,8 +264,7 @@ function CreateBooking() {
     const token = localStorage.getItem("authToken");
     const value = e.target.value;
 
-    setFormData((prev) => ({ ...prev, name: value }));
-
+    setFormData((p) => ({ ...p, name: value }));
     clearTimeout(typingTimeoutRef.current);
 
     if (value.length < 2) {
@@ -306,23 +276,19 @@ function CreateBooking() {
     typingTimeoutRef.current = setTimeout(async () => {
       try {
         const res = await searchCustomersByNameAPI(value, token);
-
         const customers = res?.data?.customers || [];
-
         setCustomerSuggestions(customers);
         setShowSuggestions(customers.length > 0);
-      } catch (err) {
-        console.error("Search failed", err);
+      } catch {
         setCustomerSuggestions([]);
         setShowSuggestions(false);
       }
     }, 500);
   };
 
-
   const handleCustomerSelect = (customer) => {
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((p) => ({
+      ...p,
       name: customer.name,
       contact: customer.contact || "",
       email: customer.email || "",
@@ -331,10 +297,8 @@ function CreateBooking() {
     setShowSuggestions(false);
   };
 
-
   return (
     <>
-      {/* Loader */}
       {loading && (
         <div className="blur-loader-overlay">
           <div className="custom-spinner"></div>
@@ -354,7 +318,6 @@ function CreateBooking() {
           align-items: center;
           z-index: 99999;
         }
-
         .custom-spinner {
           width: 70px;
           height: 70px;
@@ -363,7 +326,6 @@ function CreateBooking() {
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
         }
-
         @keyframes spin {
           100% { transform: rotate(360deg); }
         }
@@ -382,7 +344,6 @@ function CreateBooking() {
 
         <form className="row g-2" onSubmit={handleSubmit}>
           {/* Full Name */}
-          {/* Full Name */}
           <div className="col-md-6 position-relative">
             <label className="form-label fw-bold">Full Name</label>
             <input
@@ -390,22 +351,18 @@ function CreateBooking() {
               className="form-control border border-dark text-dark"
               name="name"
               value={formData.name}
-              onChange={handleNameTyping}   // 👈 changed ONLY here
-              placeholder="Customer Name"
+              onChange={handleNameTyping}
               autoComplete="off"
               required
+              placeholder="Customer Name"
             />
 
             {showSuggestions && customerSuggestions.length > 0 && (
-              <ul
-                className="list-group position-absolute w-100 shadow"
-                style={{ zIndex: 1000 }}
-              >
+              <ul className="list-group position-absolute w-100 shadow">
                 {customerSuggestions.map((c) => (
                   <li
                     key={c._id}
                     className="list-group-item list-group-item-action"
-                    style={{ cursor: "pointer" }}
                     onClick={() => handleCustomerSelect(c)}
                   >
                     <strong>{c.name}</strong>
@@ -417,7 +374,6 @@ function CreateBooking() {
             )}
           </div>
 
-
           {/* Contact */}
           <div className="col-md-6">
             <label className="form-label fw-bold">Contact Number</label>
@@ -427,13 +383,12 @@ function CreateBooking() {
               name="contact"
               value={formData.contact}
               onChange={handleChange}
-              placeholder="Contact No"
               required
             />
           </div>
 
           {/* Email */}
-          <div className="col-md-6">
+          {/* <div className="col-md-6">
             <label className="form-label fw-bold">Customer Email</label>
             <input
               type="email"
@@ -441,12 +396,11 @@ function CreateBooking() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Gmail Id"
             />
-          </div>
+          </div> */}
 
           {/* Govt ID */}
-          <div className="col-md-6">
+          {/* <div className="col-md-6">
             <label className="form-label fw-bold">Govt ID Number</label>
             <input
               type="text"
@@ -454,9 +408,8 @@ function CreateBooking() {
               name="govtId"
               value={formData.govtId}
               onChange={handleChange}
-              placeholder="Govt. Id"
             />
-          </div>
+          </div> */}
 
           {/* Date */}
           <div className="col-md-6">
@@ -471,21 +424,30 @@ function CreateBooking() {
               required
             />
           </div>
+
           {/* Number of People */}
           <div className="col-md-6">
             <label className="form-label fw-bold">Number of People</label>
             <input
               type="number"
-              className="form-control border border-dark text-dark"
+              className={`form-control border text-dark ${
+                isCapacityExceeded ? "border-warning" : "border-dark"
+              }`}
               name="numPeople"
               value={formData.numPeople}
               onChange={handleChange}
-              placeholder="Number of peoples"
               required
             />
+            {isCapacityExceeded && (
+              <div className="text-warning mt-1">
+                ⚠ Exceeds yacht capacity (
+                {yachts.find((y) => y.id === formData.yachtId)?.capacity})
+              </div>
+            )}
           </div>
+
           {/* Yacht */}
-          <div className="col-6">
+          <div className="col-12">
             <label className="form-label fw-bold">Select Yacht</label>
             <select
               className="form-select border border-dark text-dark"
@@ -528,7 +490,6 @@ function CreateBooking() {
             <input
               type="text"
               className="form-control border border-dark text-dark"
-              name="endTime"
               value={to12Hour(formData.endTime)}
               readOnly
             />
@@ -539,19 +500,17 @@ function CreateBooking() {
             <label className="form-label fw-bold">Quoted Amount</label>
             <input
               type="number"
-              className={`form-control border text-dark ${isAmountInvalid
-                ? "border-danger is-invalid"
-                : "border-dark"
-                }`}
+              className={`form-control border text-dark ${
+                isAmountInvalid ? "border-danger is-invalid" : "border-dark"
+              }`}
               name="totalAmount"
               value={formData.totalAmount}
               onChange={handleChange}
-              placeholder="Amount"
               required
             />
             {isAmountInvalid && (
               <div className="text-danger mt-1">
-                ⚠ Total amount must be at least ₹{runningCost}.
+                ⚠ Total amount is below running cost (₹{runningCost})
               </div>
             )}
           </div>
@@ -561,20 +520,15 @@ function CreateBooking() {
             <label className="form-label fw-bold">Advance Amount</label>
             <input
               type="number"
-              className={`form-control border border-dark text-dark}`}
+              className="form-control border border-dark text-dark"
               name="advanceAmount"
               value={formData.advanceAmount}
               onChange={handleChange}
-              placeholder="Advance"
             />
           </div>
 
           <div className="col-12 text-center">
-            <button
-              type="submit"
-              className="btn btn-primary w-100"
-              disabled={loading || isAmountInvalid}
-            >
+            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
               {loading ? "Creating..." : "Create Booking"}
             </button>
           </div>

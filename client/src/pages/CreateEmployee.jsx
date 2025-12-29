@@ -45,20 +45,20 @@ function CreateEmployee() {
         contact,
         email: formData.email,
         username: formData.username,
-        password: formData.password,
-        status: formData.status, //  Now matches Zod enum
+        password: formData.password.toLowerCase(),
+        status: formData.status,
       };
 
       const res = await createEmployeeAPI(payload, token);
       console.log(" Employee created:", res.data);
       toast.success(" Employee created successfully!", {
-  duration: 3000, // disappears after 3 seconds
-  style: {
-    borderRadius: "10px",
-    background: "#333",
-    color: "#fff",
-  },
-});
+        duration: 3000, // disappears after 3 seconds
+        style: {
+          borderRadius: "10px",
+          background: "#333",
+          color: "#fff",
+        },
+      });
 
       // Reset form
       setFormData({

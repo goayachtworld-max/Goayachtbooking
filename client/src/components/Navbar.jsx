@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styles from "../styles/Navbar.module.css";
 
+
 function Navbar({ user, onLogout }) {
   const collapseRef = useRef(null);
   const [showProfile, setShowProfile] = useState(false);
@@ -33,8 +34,11 @@ function Navbar({ user, onLogout }) {
     <>
       {/* NAVBAR */}
       <nav
-        className="navbar navbar-expand-lg sticky-top"
+        className="navbar navbar-expand-lg position-fixed w-100"
         style={{
+          top: 0,
+          left: 0,
+          zIndex: 1030,
           background: "linear-gradient(90deg, #0d6efd, #0b5ed7)",
           boxShadow: "0 2px 5px rgba(0,0,0,0.25)",
         }}
@@ -60,6 +64,7 @@ function Navbar({ user, onLogout }) {
             <span className="navbar-toggler-icon"></span>
           </button>
 
+          {/* Navbar links */}
           <div
             className="collapse navbar-collapse"
             id="navbarNav"
@@ -104,7 +109,7 @@ function Navbar({ user, onLogout }) {
                 </li>
               )}
 
-              {/*Calendar View */}
+              {/* Calendar */}
               {(user?.type === "admin" || user?.type === "backdesk") && (
                 <li className="nav-item">
                   <Link
@@ -160,7 +165,6 @@ function Navbar({ user, onLogout }) {
 
             {/* Profile + Logout */}
             <div className="d-flex align-items-center gap-2">
-
               {/* Profile Button */}
               <button
                 className="btn bg-white rounded-circle text-primary fw-bold shadow-sm d-flex align-items-center justify-content-center"
@@ -182,6 +186,28 @@ function Navbar({ user, onLogout }) {
           </div>
         </div>
       </nav>
+
+      {/* Notification Bell */}
+      {/* Notification Bell */}
+      {/* <div className="nav-notification"> */}
+      {/* <button className="nav-notification"> */}
+      {/* <FaBell  size={25} className="nav-notification"/> */}
+      {/* <NotificationBell className="nav-notification"/> */}
+      {/* </button> */}
+      {/* </div> */}
+
+      {/* <div
+        className="position-absolute"
+        style={{
+          top: "10px",
+          right: "10px",
+          zIndex: 1050, // above navbar
+        }}
+      >
+        <button className="btn btn-light rounded-circle shadow-sm">
+          <FaBell />
+        </button>
+      </div> */}
 
       {/* PROFILE MODAL */}
       {showProfile && (

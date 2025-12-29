@@ -7,60 +7,73 @@ export const createOrUpdateSlot = async (req, res) => {
     console.log("Inside createOrUpdateSlot:", req.body);
 
     if (!yachtId || !date || !Array.isArray(slots)) {
-      return res.status(400).json({ message: "yachtId, date, slots required" });
+      return res.status(400).json({
+        success: false,
+        message: "yachtId, date, and slots are required",
+      });
     }
 
-    // Convert date to real JS Date (midnight)
+    // Normalize date
     const d = new Date(date);
-    const startOfDay = new Date(d.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(d.setHours(23, 59, 59, 999));
+    const startOfDay = new Date(d);
+    startOfDay.setHours(0, 0, 0, 0);
 
-    // Ensure yacht exists
-    const yacht = await YachtModel.findById(yachtId);
-    if (!yacht) return res.status(404).json({ message: "Yacht not found" });
+    const endOfDay = new Date(d);
+    endOfDay.setHours(23, 59, 59, 999);
 
-    // Check if slot for this day already exists
-    let existingSlot = await SlotModel.findOne({
+    // Ensure yacht exists (no save here)
+    const yachtExists = await YachtModel.exists({ _id: yachtId });
+    if (!yachtExists) {
+      return res.status(404).json({
+        success: false,
+        message: "Yacht not found",
+      });
+    }
+
+    // Find existing slot
+    let slot = await SlotModel.findOne({
       yachtId,
       date: { $gte: startOfDay, $lte: endOfDay },
     });
 
-    if (existingSlot) {
-      existingSlot.slots = slots;
-      await existingSlot.save();
-
-      return res.status(200).json({
-        success: true,
-        message: "Slot updated successfully",
-        data: existingSlot,
+    // Update slot
+    if (slot) {
+      slot.slots = slots;
+      await slot.save();
+    }
+    // Create slot
+    else {
+      slot = await SlotModel.create({
+        yachtId,
+        date: startOfDay,
+        slots,
       });
     }
 
-    // Create new slot record
-    const newSlot = await SlotModel.create({
-      yachtId,
-      date: startOfDay,
-      slots,
-    });
+    // ✅ SAFE UPDATE: no validation triggered
+    await YachtModel.updateOne(
+      { _id: yachtId },
+      { $addToSet: { slots: slot._id } } // prevents duplicates
+    );
 
-    // Add reference to yacht
-    if (!yacht.slots.includes(newSlot._id)) {
-      yacht.slots.push(newSlot._id);
-      await yacht.save();
-    }
-
-    console.log("New slot created:", newSlot);
-
-    return res.status(201).json({
+    return res.status(slot.isNew ? 201 : 200).json({
       success: true,
-      message: "Slot created successfully",
-      data: newSlot,
+      message: slot.isNew
+        ? "Slot created successfully"
+        : "Slot updated successfully",
+      data: slot,
     });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error", error: err.message });
+
+  } catch (error) {
+    console.error("createOrUpdateSlot error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
+
 
 // ============================================================
 // GET ALL SLOTS FOR A YACHT

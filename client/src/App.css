@@ -54,3 +54,13 @@ body, #root {
   background-size: 300% 300%;
   animation: softFlow 14s ease infinite;
 }
+
+/* body {
+  padding-top: 55px;
+} */
+
+/* App.css or global css */
+.app-content {
+  padding-top: 72px; /* navbar height */
+  min-height: calc(100vh - 72px);
+}

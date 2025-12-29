@@ -53,13 +53,15 @@ function UpdateBooking() {
       data.append("bookingId", booking._id);
       data.append("type", formData.type);
       data.append("status", formData.status);
-      data.append("amount", formData.amount);
+      if(formData.amount=="" || formData.amount == null){
+        data.append("amount", Number(0));
+      }else{
+        data.append("amount", formData.amount);
+      }
       if (formData.proofFile) data.append("paymentProof", formData.proofFile);
 
       const response = await createTransactionAndUpdateBooking(data, token);
-      navigate("/customer-details", {
-        state: { booking: response.data.booking },
-      });
+      navigate("/bookings");
     } catch (err) {
       console.error("Error updating booking:", err);
       setError(

@@ -5,12 +5,16 @@ import { EmployeeModel } from "../models/employee.model.js";
 // ✅ Create Employee
 export const createEmployee = async (req, res, next) => {
   try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    const { username, password } = req.body;
+    const uname = username.toLowerCase();
+    const pass = password;
+    const hashedPassword = await bcrypt.hash(pass, 10);
 
     const employee = await EmployeeModel.create({
       ...req.body,
       password: hashedPassword,
-      company: req.user.company
+      company: req.user.company,
+      username:uname
     });
 
     employee.password = null;
@@ -24,7 +28,10 @@ export const createEmployee = async (req, res, next) => {
 export const loginEmployee = async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    const employee = await EmployeeModel.findOne({ username });
+    const uname = username.toLowerCase();
+    const pass = password;
+
+    const employee = await EmployeeModel.findOne({ username:uname });
 
     if (!employee) {
       const err = new Error("Employee not found");
@@ -32,7 +39,7 @@ export const loginEmployee = async (req, res, next) => {
       throw err;
     }
 
-    const isMatch = await bcrypt.compare(password, employee.password);
+    const isMatch = await bcrypt.compare(pass, employee.password);
     if (!isMatch) {
       const err = new Error("Invalid credentials");
       err.status = 401;
