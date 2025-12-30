@@ -4,10 +4,12 @@ import {
   loginEmployee,
   getEmployees,
   getEmployeeById,
-  updateEmployee,
+  // updateEmployee,
   toggleEmployeeStatus,
   deleteEmployee,
-  getEmployeesForBooking
+  getEmployeesForBooking,
+  updateEmployeeProfile,
+  updateEmployeeProfileByAdmin
 } from "../controllers/employee.controller.js";import { employeeSchema } from "../validators/employee.validator.js";
 import { validate } from "../middleware/validate.js";
 import { authMiddleware, onlyAdmin } from "../middleware/auth.js";
@@ -19,8 +21,9 @@ router.post("/createEmployee", authMiddleware, onlyAdmin, validate(employeeSchem
 router.get("/", authMiddleware, onlyAdmin, getEmployees);
 router.get("/bookingpage",authMiddleware, getEmployeesForBooking);
 router.get("/:id", authMiddleware, onlyAdmin, getEmployeeById);
-router.put("/:id", authMiddleware, onlyAdmin, updateEmployee);
-router.patch("/:id/status", authMiddleware, onlyAdmin, toggleEmployeeStatus);
+router.put("/update-profile/:id", authMiddleware, updateEmployeeProfile);
+router.patch("/update-status/:id", authMiddleware, onlyAdmin, toggleEmployeeStatus);
+router.put("/update-by-admin/:id", authMiddleware, onlyAdmin, updateEmployeeProfileByAdmin);
 router.delete("/:id", authMiddleware, onlyAdmin, deleteEmployee);
 
 

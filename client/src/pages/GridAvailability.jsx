@@ -56,36 +56,174 @@ const getDatesBetween = (start, end) => {
   return dates;
 };
 
-const buildSlotsForYacht = (yacht) => {
-  if (!yacht?.sailStartTime || !yacht?.sailEndTime) return [];
+// const buildSlotsForYacht = (yacht) => {
+//   if (!yacht?.sailStartTime || !yacht?.sailEndTime) return [];
 
-  const durationRaw = yacht.slotDurationMinutes || yacht.duration;
-  const duration =
-    typeof durationRaw === "string"
-      ? hhmmToMinutes(durationRaw)
-      : Number(durationRaw);
+//   const durationRaw = yacht.slotDurationMinutes || yacht.duration;
+//   const duration =
+//     typeof durationRaw === "string"
+//       ? hhmmToMinutes(durationRaw)
+//       : Number(durationRaw);
 
-  const startMin = hhmmToMinutes(yacht.sailStartTime);
-  let endMin = hhmmToMinutes(yacht.sailEndTime);
+//   const startMin = hhmmToMinutes(yacht.sailStartTime);
+//   let endMin = hhmmToMinutes(yacht.sailEndTime);
+//   if (endMin <= startMin) endMin += 1440;
+
+//   const slots = [];
+//   let cursor = startMin;
+
+//   while (cursor < endMin) {
+//     slots.push({
+//       start: `${String(Math.floor(cursor / 60)).padStart(2, "0")}:${String(
+//         cursor % 60
+//       ).padStart(2, "0")}`,
+//       end: `${String(Math.floor((cursor + duration) / 60)).padStart(
+//         2,
+//         "0"
+//       )}:${String((cursor + duration) % 60).padStart(2, "0")}`,
+//     });
+//     cursor += duration;
+//   }
+
+//   return slots;
+// };
+
+
+const buildSlotsForYacht = (yachtObj) => {
+  if (
+    !yachtObj ||
+    !yachtObj.sailStartTime ||
+    !yachtObj.sailEndTime ||
+    !(yachtObj.slotDurationMinutes || yachtObj.duration)
+  )
+    return [];
+
+  const timeToMin = (t) => {
+    if (!t) return 0;
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+
+  const minToTime = (m) => {
+    const h = Math.floor(m / 60);
+    const mm = m % 60;
+    return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  };
+
+  // duration
+  const durationRaw = yachtObj.slotDurationMinutes || yachtObj.duration;
+  let duration = 0;
+
+  if (typeof durationRaw === "string" && durationRaw.includes(":")) {
+    const [h, m] = durationRaw.split(":").map(Number);
+    duration = h * 60 + (m || 0);
+  } else {
+    duration = Number(durationRaw);
+  }
+
+  const startMin = timeToMin(yachtObj.sailStartTime);
+  let endMin = timeToMin(yachtObj.sailEndTime);
+
   if (endMin <= startMin) endMin += 1440;
 
+  // -----------------------------
+  // SPECIAL SLOT COLLECTION
+  // -----------------------------
+  const specialMins = [];
+
+  if (yachtObj.specialSlotTime)
+    specialMins.push(yachtObj.specialSlotTime);
+
+  if (Array.isArray(yachtObj.specialSlotTimes))
+    specialMins.push(...yachtObj.specialSlotTimes);
+
+  if (Array.isArray(yachtObj.specialSlots))
+    specialMins.push(...yachtObj.specialSlots);
+
+  const specialStarts = specialMins
+    .map(timeToMin)
+    .filter(Boolean)
+    .sort((a, b) => a - b);
+
+  // -----------------------------
+  // PROCESS SPECIAL SLOTS
+  // -----------------------------
+  const buildProcessedSpecialSlots = (starts, duration) => {
+    const blocks = starts.map((sp) => ({
+      start: sp,
+      end: sp + duration,
+    }));
+
+    blocks.sort((a, b) => a.start - b.start);
+
+    const merged = [];
+
+    for (let block of blocks) {
+      const last = merged[merged.length - 1];
+
+      if (!last || block.start >= last.end) {
+        merged.push(block);
+      } else {
+        last.end = block.start;
+        merged.push(block);
+      }
+    }
+
+    return merged;
+  };
+
+  const processedSpecials = buildProcessedSpecialSlots(
+    specialStarts,
+    duration
+  );
+
+  // -----------------------------
+  // BUILD FINAL SLOTS
+  // -----------------------------
   const slots = [];
   let cursor = startMin;
 
   while (cursor < endMin) {
-    slots.push({
-      start: `${String(Math.floor(cursor / 60)).padStart(2, "0")}:${String(
-        cursor % 60
-      ).padStart(2, "0")}`,
-      end: `${String(Math.floor((cursor + duration) / 60)).padStart(
-        2,
-        "0"
-      )}:${String((cursor + duration) % 60).padStart(2, "0")}`,
-    });
-    cursor += duration;
+    const next = cursor + duration;
+
+    const hit = processedSpecials.find(
+      (sp) => sp.start > cursor && sp.start < next
+    );
+
+    if (hit) {
+      slots.push({ start: cursor, end: hit.start });
+      slots.push({ start: hit.start, end: hit.end });
+      cursor = hit.end;
+      continue;
+    }
+
+    if (next > endMin) {
+      slots.push({ start: cursor, end: next });
+      break;
+    }
+
+    slots.push({ start: cursor, end: next });
+    cursor = next;
   }
 
-  return slots;
+  // add specials outside sail window
+  processedSpecials.forEach((sp) => slots.push(sp));
+
+  // dedupe + sort
+  const seen = new Set();
+  const cleaned = slots.filter((s) => {
+    const key = `${s.start}-${s.end}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  cleaned.sort((a, b) => a.start - b.start);
+
+  return cleaned.map((s) => ({
+    start: minToTime(s.start),
+    end: minToTime(s.end),
+  }));
 };
 
 const roundDownTo30 = (minutes) => minutes - (minutes % 30);
@@ -431,7 +569,7 @@ function GridAvailability() {
               ))}
             </select>
           </div>
-                
+
           <div className="col-md-3">
             <input
               type="date"

@@ -4,7 +4,7 @@
 .nav-notification {
   position: fixed;
   top: 8px;
-  right: 150px;
+  right: 100px;
   z-index: 1050; /* above navbar */
   fill: rgb(245, 245, 142);
   
@@ -14,7 +14,7 @@
 @media (max-width: 790px) {
   .nav-notification {
     top: 8px;
-    right: 70px; /* move a bit left of hamburger */
+    right: 57px; /* move a bit left of hamburger */
   }
 }
 

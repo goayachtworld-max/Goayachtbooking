@@ -5,7 +5,9 @@ export const employee = {
   LOGIN_API: `${BASE_URL}/employees/login`,
   CREATE_EMPLOYEE_API: `${BASE_URL}/employees/createEmployee`,
   GET_ALL_EMPLOYEES_API: `${BASE_URL}/employees/`,
-  UPDATE_EMPLOYEE_STATUS_API: `${BASE_URL}/employees/updateStatus`,
+  UPDATE_EMPLOYEE_STATUS_API: `${BASE_URL}/employees/update-status`,
+  UPDATE_EMPLOYEE_PROFILE_API: `${BASE_URL}/employees/update-profile`,
+  UPDATE_EMPLOYEE_BY_ADMIN_API: `${BASE_URL}/employees/update-by-admin`,
   GET_EMPLOYEES_FOR_BOOKING_API: `${BASE_URL}/employees/bookingpage`,
 };
 

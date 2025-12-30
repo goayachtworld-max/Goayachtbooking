@@ -1,12 +1,29 @@
 import React, { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styles from "../styles/Navbar.module.css";
-
+import toast from "react-hot-toast";
+import { updateEmployeeProfileAPI } from "../services/operations/employeeAPI";
 
 function Navbar({ user, onLogout }) {
   const collapseRef = useRef(null);
   const [showProfile, setShowProfile] = useState(false);
   const location = useLocation();
+
+  const token = localStorage.getItem("authToken");
+  const [showEditProfile, setShowEditProfile] = useState(false);
+
+  const [editForm, setEditForm] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    contact: user?.contact || "",
+    currentPassword: "",
+    newPassword: "",
+  });
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+
 
   // Collapse navbar on link click (for mobile)
   const handleNavLinkClick = () => {
@@ -28,6 +45,77 @@ function Navbar({ user, onLogout }) {
       : parts[0][0].toUpperCase();
   };
 
+  const handleProfileUpdate = async () => {
+    console.log("inside call")
+    try {
+      const newErrors = {};
+
+      if (!editForm.name.trim()) newErrors.name = "Name is required";
+      if (!editForm.email.trim()) newErrors.email = "Email is required";
+      if (!editForm.contact.trim()) newErrors.contact = "Contact is required";
+
+      if (editForm.currentPassword && !editForm.newPassword) {
+        newErrors.newPassword = "New password is required";
+      }
+
+      if (!editForm.currentPassword && editForm.newPassword) {
+        newErrors.currentPassword = "Current password is required";
+      }
+
+      if (editForm.newPassword && editForm.newPassword.length < 6) {
+        newErrors.newPassword = "Password must be at least 6 characters";
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
+      }
+
+      setErrors({});
+
+      const payload = {
+        name: editForm.name,
+        email: editForm.email,
+        contact: editForm.contact,
+      };
+
+      if (editForm.currentPassword && editForm.newPassword) {
+        payload.currentPassword = editForm.currentPassword;
+        payload.newPassword = editForm.newPassword;
+      }
+      console.log("Inside call : ", payload)
+
+      const response = await updateEmployeeProfileAPI(user._id, payload, token);
+
+      const updatedEmployee = response.data.employee;
+
+      // ✅ Update ONLY required fields in localStorage
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...storedUser,
+          name: updatedEmployee.name,
+          email: updatedEmployee.email,
+          contact: updatedEmployee.contact,
+        })
+      );
+
+      // ✅ Clear password fields from state
+      setEditForm((prev) => ({
+        ...prev,
+        currentPassword: "",
+        newPassword: "",
+      }));
+      toast.success("Profile updated successfully 🎉");
+      setShowEditProfile(false);
+      setShowProfile(false);
+    } catch (err) {
+      toast.error("Profile update failed ❌");
+    }
+  };
+
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -44,7 +132,6 @@ function Navbar({ user, onLogout }) {
         }}
       >
         <div className="container-fluid">
-
           {/* Brand */}
           <Link
             className="navbar-brand fw-bold text-white"
@@ -71,12 +158,11 @@ function Navbar({ user, onLogout }) {
             ref={collapseRef}
           >
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-
-              {/* Dashboard */}
               {user?.type === "admin" && (
                 <li className="nav-item">
                   <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/admin") ? styles.activeTab : ""}`}
+                    className={`nav-link text-white ${styles.navHover} ${isActive("/admin") ? styles.activeTab : ""
+                      }`}
                     to="/admin"
                     onClick={handleNavLinkClick}
                   >
@@ -85,10 +171,10 @@ function Navbar({ user, onLogout }) {
                 </li>
               )}
 
-              {/* Bookings */}
               <li className="nav-item">
                 <Link
-                  className={`nav-link text-white ${styles.navHover} ${isActive("/bookings") ? styles.activeTab : ""}`}
+                  className={`nav-link text-white ${styles.navHover} ${isActive("/bookings") ? styles.activeTab : ""
+                    }`}
                   to="/bookings"
                   onClick={handleNavLinkClick}
                 >
@@ -96,11 +182,11 @@ function Navbar({ user, onLogout }) {
                 </Link>
               </li>
 
-              {/* Availability */}
               {(user?.type === "admin" || user?.type === "backdesk") && (
                 <li className="nav-item">
                   <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/availability") ? styles.activeTab : ""}`}
+                    className={`nav-link text-white ${styles.navHover} ${isActive("/availability") ? styles.activeTab : ""
+                      }`}
                     to="/availability"
                     onClick={handleNavLinkClick}
                   >
@@ -109,11 +195,11 @@ function Navbar({ user, onLogout }) {
                 </li>
               )}
 
-              {/* Calendar */}
               {(user?.type === "admin" || user?.type === "backdesk") && (
                 <li className="nav-item">
                   <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/grid-availability") ? styles.activeTab : ""}`}
+                    className={`nav-link text-white ${styles.navHover} ${isActive("/grid-availability") ? styles.activeTab : ""
+                      }`}
                     to="/grid-availability"
                     onClick={handleNavLinkClick}
                   >
@@ -122,11 +208,11 @@ function Navbar({ user, onLogout }) {
                 </li>
               )}
 
-              {/* Yachts */}
               {user?.type === "admin" && (
                 <li className="nav-item">
                   <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/all-yachts") ? styles.activeTab : ""}`}
+                    className={`nav-link text-white ${styles.navHover} ${isActive("/all-yachts") ? styles.activeTab : ""
+                      }`}
                     to="/all-yachts"
                     onClick={handleNavLinkClick}
                   >
@@ -135,11 +221,11 @@ function Navbar({ user, onLogout }) {
                 </li>
               )}
 
-              {/* Create Customer */}
               {(user?.type === "admin" || user?.type === "backdesk") && (
                 <li className="nav-item">
                   <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/create-customer") ? styles.activeTab : ""}`}
+                    className={`nav-link text-white ${styles.navHover} ${isActive("/create-customer") ? styles.activeTab : ""
+                      }`}
                     to="/create-customer"
                     onClick={handleNavLinkClick}
                   >
@@ -148,11 +234,11 @@ function Navbar({ user, onLogout }) {
                 </li>
               )}
 
-              {/* Employee Management */}
               {user?.type === "admin" && (
                 <li className="nav-item">
                   <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/all-employees") ? styles.activeTab : ""}`}
+                    className={`nav-link text-white ${styles.navHover} ${isActive("/all-employees") ? styles.activeTab : ""
+                      }`}
                     to="/all-employees"
                     onClick={handleNavLinkClick}
                   >
@@ -160,7 +246,6 @@ function Navbar({ user, onLogout }) {
                   </Link>
                 </li>
               )}
-
             </ul>
 
             {/* Profile + Logout */}
@@ -174,40 +259,28 @@ function Navbar({ user, onLogout }) {
                 {getInitials(user?.name)}
               </button>
 
-              {/* Logout */}
+              {/* Logout Icon */}
               <button
-                className="btn btn-outline-light btn-sm px-3 fw-semibold"
-                style={{ borderRadius: "50px" }}
+                className="btn btn-outline-light d-flex align-items-center justify-content-center"
+                style={{ width: "42px", height: "42px", borderRadius: "50%" }}
                 onClick={onLogout}
+                title="Logout"
               >
-                Logout
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  fill="currentColor"
+                  viewBox="0 0 16 16"
+                >
+                  <path d="M6 2a1 1 0 0 1 1-1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a1 1 0 0 1-1-1v-1h1v1h3a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7v1H6V2z" />
+                  <path d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z" />
+                </svg>
               </button>
             </div>
           </div>
         </div>
       </nav>
-
-      {/* Notification Bell */}
-      {/* Notification Bell */}
-      {/* <div className="nav-notification"> */}
-      {/* <button className="nav-notification"> */}
-      {/* <FaBell  size={25} className="nav-notification"/> */}
-      {/* <NotificationBell className="nav-notification"/> */}
-      {/* </button> */}
-      {/* </div> */}
-
-      {/* <div
-        className="position-absolute"
-        style={{
-          top: "10px",
-          right: "10px",
-          zIndex: 1050, // above navbar
-        }}
-      >
-        <button className="btn btn-light rounded-circle shadow-sm">
-          <FaBell />
-        </button>
-      </div> */}
 
       {/* PROFILE MODAL */}
       {showProfile && (
@@ -243,17 +316,42 @@ function Navbar({ user, onLogout }) {
                 />
 
                 <h5>{user.name}</h5>
-                <p className="text-muted mb-2">{user.type.toUpperCase()}</p>
+                <p className="text-muted mb-2">
+                  {user.type === "backdesk"
+                        ? "Agent"
+                        : user.type === "onsite"
+                          ? "Staff"
+                          : user.type.charAt(0).toUpperCase() +
+                          user.type.slice(1)}
+                </p>
 
                 <hr />
 
-                <p><strong>Username:</strong> {user.username}</p>
-                <p><strong>Email:</strong> {user.email}</p>
-                <p><strong>Contact:</strong> {user.contact}</p>
-                <p><strong>Status:</strong> {user.status}</p>
+                <p>
+                  <strong>Username:</strong> {user.username}
+                </p>
+                <p>
+                  <strong>Email:</strong> {user.email}
+                </p>
+                <p>
+                  <strong>Contact:</strong> {user.contact}
+                </p>
+                <p>
+                  <strong>Status:</strong> {user.status}
+                </p>
               </div>
 
               <div className="modal-footer">
+                <button
+                  className="btn btn-outline-primary"
+                  onClick={() => {
+                    setShowProfile(false);
+                    setShowEditProfile(true);
+                  }}
+                >
+                  Edit Profile
+                </button>
+
                 <button
                   className="btn btn-secondary"
                   onClick={() => setShowProfile(false)}
@@ -261,10 +359,170 @@ function Navbar({ user, onLogout }) {
                   Close
                 </button>
               </div>
+
             </div>
           </div>
         </div>
       )}
+
+      {/* Update Profile Modal */}
+      {/* Update Profile Modal */}
+      {showEditProfile && (
+        <div
+          className="modal fade show"
+          style={{
+            display: "block",
+            backgroundColor: "rgba(0,0,0,0.6)",
+          }}
+          onClick={() => setShowEditProfile(false)}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content shadow">
+              <div className="modal-header bg-warning">
+                <h5 className="modal-title">Edit Profile</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowEditProfile(false)}
+                ></button>
+              </div>
+
+              <div className="modal-body">
+                {/* Name */}
+                <input
+                  className={`form-control mb-2 ${errors.name ? "is-invalid" : ""}`}
+                  placeholder="Name"
+                  value={editForm.name}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, name: e.target.value })
+                  }
+                />
+                {errors.name && (
+                  <div className="text-danger small mb-2">{errors.name}</div>
+                )}
+
+                {/* Email */}
+                <input
+                  className={`form-control mb-2 ${errors.email ? "is-invalid" : ""}`}
+                  placeholder="Email"
+                  value={editForm.email}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, email: e.target.value })
+                  }
+                />
+                {errors.email && (
+                  <div className="text-danger small mb-2">{errors.email}</div>
+                )}
+
+                {/* Contact */}
+                <input
+                  className={`form-control mb-3 ${errors.contact ? "is-invalid" : ""
+                    }`}
+                  placeholder="Contact"
+                  value={editForm.contact}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, contact: e.target.value })
+                  }
+                />
+                {errors.contact && (
+                  <div className="text-danger small mb-3">{errors.contact}</div>
+                )}
+
+                <hr />
+
+                {/* Current Password */}
+                <div className="input-group mb-2">
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    className={`form-control ${errors.currentPassword ? "is-invalid" : ""
+                      }`}
+                    placeholder="Current Password"
+                    value={editForm.currentPassword}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        currentPassword: e.target.value,
+                      })
+                    }
+                  />
+                  <button
+                    className="btn btn-outline-secondary"
+                    type="button"
+                    onClick={() =>
+                      setShowCurrentPassword(!showCurrentPassword)
+                    }
+                  >
+                    {showCurrentPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+                {errors.currentPassword && (
+                  <div className="text-danger small mb-2">
+                    {errors.currentPassword}
+                  </div>
+                )}
+
+                {/* New Password */}
+                <div className="input-group">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    className={`form-control ${errors.newPassword ? "is-invalid" : ""
+                      }`}
+                    placeholder="New Password"
+                    value={editForm.newPassword}
+                    disabled={!editForm.currentPassword}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        newPassword: e.target.value,
+                      })
+                    }
+                  />
+                  <button
+                    className="btn btn-outline-secondary"
+                    type="button"
+                    disabled={!editForm.currentPassword}
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+
+                {/* {!editForm.currentPassword && (
+                  <div className="text-muted small mt-1">
+                    Enter current password to enable new password
+                  </div>
+                )} */}
+
+                {errors.newPassword && (
+                  <div className="text-danger small mt-1">
+                    {errors.newPassword}
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowEditProfile(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-success"
+                  onClick={handleProfileUpdate}
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </>
   );
 }

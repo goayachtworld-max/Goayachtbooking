@@ -44,3 +44,43 @@ export const updateEmployeeStatusAPI = async (id, status, token) => {
     throw error;
   }
 };
+
+
+export const updateEmployeeProfileAPI = async (employeeId, payload, token) => {
+
+  console.log("Inside update profile")
+  try {
+    const response = await apiConnector(
+      "PUT",
+      `${employee.UPDATE_EMPLOYEE_PROFILE_API}/${employeeId}`,
+      payload,
+      {
+        Authorization: `Bearer ${token}`,
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error("❌ Failed to update employee Profile:", error.response?.data || error);
+    throw error;
+  }
+};
+
+export const updateEmployeeProfileByAdminAPI = async (employeeId, payload, token) => {
+  try {
+    const response = await apiConnector(
+      "PUT",
+      `${employee.UPDATE_EMPLOYEE_BY_ADMIN_API}/${employeeId}`,
+      payload,
+      {
+        Authorization: `Bearer ${token}`,
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error(
+      "❌ Failed to update employee profile by admin:",
+      error.response?.data || error
+    );
+    throw error;
+  }
+};

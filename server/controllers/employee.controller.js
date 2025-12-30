@@ -39,6 +39,12 @@ export const loginEmployee = async (req, res, next) => {
       throw err;
     }
 
+    if(employee.status === "inactive"){
+      const err = new Error("User is Deactivated, contact with Admin");
+      err.status = 403;
+      throw err;
+    }
+
     const isMatch = await bcrypt.compare(pass, employee.password);
     if (!isMatch) {
       const err = new Error("Invalid credentials");
@@ -112,16 +118,62 @@ export const getEmployeeById = async (req, res, next) => {
 };
 
 // Update Employee
-export const updateEmployee = async (req, res, next) => {
+export const updateEmployeeProfile = async (req, res, next) => {
   try {
-    const updateData = { ...req.body };
-    if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, 10);
+    const { currentPassword, newPassword, ...otherUpdates } = req.body;
+
+    // Find employee first
+    const employee = await EmployeeModel.findById(req.params.id);
+    if (!employee) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Employee not found" });
     }
-    const employee = await EmployeeModel.findByIdAndUpdate(req.params.id, updateData, { new: true });
-    if (!employee) return res.status(404).json({ success: false, message: "Employee not found" });
-    employee.password = null;
-    res.json({ success: true, employee });
+
+    // 🟡 If password change is requested
+    if (newPassword) {
+      // Both must be present
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Both current and new password are required",
+        });
+      }
+
+      // Verify current password
+      const isMatch = await bcrypt.compare(
+        currentPassword,
+        employee.password
+      );
+
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          message: "Current password is incorrect",
+        });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      employee.password = hashedPassword;
+    }
+
+    // 🟢 Update other profile fields
+    Object.keys(otherUpdates).forEach((key) => {
+      employee[key] = otherUpdates[key];
+    });
+
+    await employee.save();
+
+    // Remove password before sending response
+    const employeeObj = employee.toObject();
+    delete employeeObj.password;
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      employee: employeeObj,
+    });
   } catch (error) {
     next(error);
   }
@@ -149,5 +201,58 @@ export const deleteEmployee = async (req, res, next) => {
     res.json({ success: true, message: "Employee deleted successfully." });
   } catch (error) {
     next(error);
+  }
+};
+
+
+export const updateEmployeeProfileByAdmin = async (req, res) => {
+  try {
+    const { adminPassword, name, email, contact, newPassword } = req.body;
+
+    // 1. Validate input
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Admin password is required" });
+    }
+    // 2. Verify admin password
+    const adminId = req.user.id; // Assuming admin is authenticated via middleware
+    console.log("I'm admin : ", adminId)
+    console.log("req.user : ", req.user);
+    const admin = await EmployeeModel.findById(adminId);
+    if (!admin) {
+      return res.status(401).json({ success: false, message: "Admin not found" });
+    }
+
+    const isMatch = await bcrypt.compare(adminPassword, admin.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Invalid admin password" });
+    }
+
+    // 3. Find employee
+    const employee = await EmployeeModel.findById(req.params.id);
+    if (!employee) {
+      return res.status(404).json({ success: false, message: "Employee not found" });
+    }
+
+    // 4. Update fields
+    if (name) employee.name = name;
+    if (email) employee.email = email;
+    if (contact) employee.contact = contact;
+
+    // 5. Update password if provided
+    if (newPassword) {
+      if (newPassword.length < 6) {
+        return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+      }
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      employee.password = hashedPassword
+    }
+
+    await employee.save();
+    employee.password=null;
+
+    res.json({ success: true, employee });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
