@@ -7,6 +7,7 @@ import {
 } from "../services/operations/yautAPI";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-hot-toast";
+import "./createYacht.css"
 
 const AllYachts = () => {
   const [yachts, setYachts] = useState([]);
@@ -19,6 +20,9 @@ const AllYachts = () => {
   const [editFieldErrors, setEditFieldErrors] = useState({});
   const [editError, setEditError] = useState("");
 
+  const [newImages, setNewImages] = useState([]); // File[]
+  const [removedImages, setRemovedImages] = useState([]); // string URLs
+  const [imagePreviews, setImagePreviews] = useState([]);
 
   const navigate = useNavigate();
 
@@ -210,99 +214,237 @@ const AllYachts = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showEditModal, selectedYacht?._id]);
 
+
   // ------------------------------------------------------------------
   // ✏️ Handle edit save (duration goes to backend as HH:MM)
   // ------------------------------------------------------------------
-  const handleEditSave = async () => {
-    if (!selectedYacht) return;
+  const handleNewImages = (e) => {
+    const files = Array.from(e.target.files || []);
 
-    const { runningCost, sellingPrice, maxSellingPrice, name } = selectedYacht;
-
-    //  Required field checks
-    if (!name || !runningCost || !sellingPrice || !maxSellingPrice) {
-      toast.error("Please fill all required fields.", {
-        duration: 3000,
-        style: { borderRadius: "10px", background: "#333", color: "#fff" },
-      });
-      return;
+    // optional size validation
+    for (const file of files) {
+      if (file.size > 1 * 1024 * 1024) {
+        toast.error("Each image must be under 1MB");
+        return;
+      }
     }
 
-    //  Validation 1 — Selling Price > Running Cost
-    if (Number(sellingPrice) <= Number(runningCost)) {
-      toast.error("Selling Price must be greater than (Sailing + Anchorage)  Running Cost.", {
-        duration: 3000,
-        style: { borderRadius: "10px", background: "#333", color: "#fff" },
-      });
-      return;
-    }
+    setNewImages((prev) => [...prev, ...files]);
 
-    //  Validation 2 — Max Selling Price > Selling Price
-    if (Number(maxSellingPrice) <= Number(sellingPrice)) {
-      toast.error("Max Selling Price must be greater than Selling Price.", {
-        duration: 3000,
-        style: { borderRadius: "10px", background: "#333", color: "#fff" },
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("authToken");
-
-      // build specialSlotTimes from UI-only fields
-      const specialSlotTimes = [
-        selectedYacht.specialSlot1,
-        selectedYacht.specialSlot2,
-      ].filter(Boolean);
-
-      // ensure duration converted to HH:MM expected by mongoose schema
-      const durationMinutes = Number(selectedYacht.duration) || 0;
-      const durationHHMM = minutesToHHMM(durationMinutes);
-
-      // Build payload (do NOT include UI-only keys specialSlot1/specialSlot2)
-      const yachtToSave = {
-        ...selectedYacht,
-        duration: durationHHMM,
-        specialSlotTimes,
-        runningCost: Number(Number(selectedYacht.sailingCost) + Number(selectedYacht.anchorageCost))
-      };
-
-      // remove UI-only keys before sending
-      delete yachtToSave.specialSlot1;
-      delete yachtToSave.specialSlot2;
-
-      await updateYacht(selectedYacht._id, yachtToSave, token);
-
-      // reflect server-side shape in local state (keep images unchanged)
-      setYachts((prev) =>
-        prev.map((y) =>
-          y._id === selectedYacht._id
-            ? {
-              ...y,
-              ...yachtToSave,
-              // ensure images not lost if backend returns minimal payload
-              images: y.images || yachtToSave.images || ["/default-yacht.jpg"],
-            }
-            : y
-        )
-      );
-
-      toast.success("Yacht details updated!", {
-        duration: 3000,
-        style: {
-          borderRadius: "10px",
-          background: "#333",
-          color: "#fff",
-        },
-      });
-    } catch (err) {
-      console.error("❌ Error updating yacht:", err);
-      setError(err?.response?.data?.message || "Failed to update yacht");
-    } finally {
-      setLoading(false);
-      setShowEditModal(false);
-    }
+    const previews = files.map((f) => URL.createObjectURL(f));
+    setImagePreviews((prev) => [...prev, ...previews]);
   };
+
+  const removeExistingImage = (img) => {
+    setRemovedImages((prev) => [...prev, img]);
+    setImagePreviews((prev) => prev.filter((i) => i !== img));
+  };
+  const removeNewImage = (index) => {
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // const handleEditSave = async () => {
+  //   if (!selectedYacht) return;
+
+  //   const { runningCost, sellingPrice, maxSellingPrice, name } = selectedYacht;
+
+  //   //  Required field checks
+  //   if (!name || !runningCost || !sellingPrice || !maxSellingPrice) {
+  //     toast.error("Please fill all required fields.", {
+  //       duration: 3000,
+  //       style: { borderRadius: "10px", background: "#333", color: "#fff" },
+  //     });
+  //     return;
+  //   }
+
+  //   //  Validation 1 — Selling Price > Running Cost
+  //   if (Number(sellingPrice) <= Number(runningCost)) {
+  //     toast.error("Selling Price must be greater than (Sailing + Anchorage)  Running Cost.", {
+  //       duration: 3000,
+  //       style: { borderRadius: "10px", background: "#333", color: "#fff" },
+  //     });
+  //     return;
+  //   }
+
+  //   //  Validation 2 — Max Selling Price > Selling Price
+  //   if (Number(maxSellingPrice) <= Number(sellingPrice)) {
+  //     toast.error("Max Selling Price must be greater than Selling Price.", {
+  //       duration: 3000,
+  //       style: { borderRadius: "10px", background: "#333", color: "#fff" },
+  //     });
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoading(true);
+  //     const token = localStorage.getItem("authToken");
+
+  //     // build specialSlotTimes from UI-only fields
+  //     const specialSlotTimes = [
+  //       selectedYacht.specialSlot1,
+  //       selectedYacht.specialSlot2,
+  //     ].filter(Boolean);
+
+  //     // ensure duration converted to HH:MM expected by mongoose schema
+  //     const durationMinutes = Number(selectedYacht.duration) || 0;
+  //     const durationHHMM = minutesToHHMM(durationMinutes);
+
+  //     // Build payload (do NOT include UI-only keys specialSlot1/specialSlot2)
+  //     const yachtToSave = {
+  //       ...selectedYacht,
+  //       duration: durationHHMM,
+  //       specialSlotTimes,
+  //       runningCost: Number(Number(selectedYacht.sailingCost) + Number(selectedYacht.anchorageCost))
+  //     };
+
+  //     // remove UI-only keys before sending
+  //     delete yachtToSave.specialSlot1;
+  //     delete yachtToSave.specialSlot2;
+
+  //     await updateYacht(selectedYacht._id, yachtToSave, token);
+
+  //     // reflect server-side shape in local state (keep images unchanged)
+  //     setYachts((prev) =>
+  //       prev.map((y) =>
+  //         y._id === selectedYacht._id
+  //           ? {
+  //             ...y,
+  //             ...yachtToSave,
+  //             // ensure images not lost if backend returns minimal payload
+  //             images: y.images || yachtToSave.images || ["/default-yacht.jpg"],
+  //           }
+  //           : y
+  //       )
+  //     );
+
+  //     toast.success("Yacht details updated!", {
+  //       duration: 3000,
+  //       style: {
+  //         borderRadius: "10px",
+  //         background: "#333",
+  //         color: "#fff",
+  //       },
+  //     });
+  //   } catch (err) {
+  //     console.error("❌ Error updating yacht:", err);
+  //     setError(err?.response?.data?.message || "Failed to update yacht");
+  //   } finally {
+  //     setLoading(false);
+  //     setShowEditModal(false);
+  //   }
+  // };
+
+  const handleEditSave = async () => {
+  if (!selectedYacht) return;
+
+  const { runningCost, sellingPrice, maxSellingPrice, name } = selectedYacht;
+
+  // ---------------- VALIDATIONS ----------------
+  if (!name || !sellingPrice || !maxSellingPrice) {
+    toast.error("Please fill all required fields.");
+    return;
+  }
+
+  if (Number(sellingPrice) <= Number(runningCost)) {
+    toast.error(
+      "Selling Price must be greater than (Sailing + Anchorage) Running Cost."
+    );
+    return;
+  }
+
+  if (Number(maxSellingPrice) <= Number(sellingPrice)) {
+    toast.error("Max Selling Price must be greater than Selling Price.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    const token = localStorage.getItem("authToken");
+
+    // ---------------- SPECIAL SLOTS ----------------
+    const specialSlotTimes = [
+      selectedYacht.specialSlot1,
+      selectedYacht.specialSlot2,
+    ].filter(Boolean);
+
+    // ---------------- DURATION ----------------
+    const durationMinutes = Number(selectedYacht.duration) || 0;
+    const durationHHMM = minutesToHHMM(durationMinutes);
+
+    // ---------------- FORM DATA ----------------
+    const formData = new FormData();
+
+    // append normal fields
+    formData.append("name", selectedYacht.name);
+    formData.append("capacity", selectedYacht.capacity);
+    formData.append("sailingCost", selectedYacht.sailingCost);
+    formData.append("anchorageCost", selectedYacht.anchorageCost);
+    formData.append(
+      "runningCost",
+      Number(selectedYacht.sailingCost) +
+        Number(selectedYacht.anchorageCost)
+    );
+    formData.append("sellingPrice", selectedYacht.sellingPrice);
+    formData.append("maxSellingPrice", selectedYacht.maxSellingPrice);
+    formData.append("sailStartTime", selectedYacht.sailStartTime);
+    formData.append("sailEndTime", selectedYacht.sailEndTime);
+    formData.append("duration", durationHHMM);
+    formData.append("status", selectedYacht.status);
+
+    formData.append(
+      "specialSlotTimes",
+      JSON.stringify(specialSlotTimes)
+    );
+
+    // ---------------- NEW IMAGES ----------------
+    newImages.forEach((file) => {
+      formData.append("yachtPhotos", file);
+    });
+
+    // ---------------- REMOVED IMAGES ----------------
+    if (removedImages.length > 0) {
+      formData.append(
+        "removedPhotos",
+        JSON.stringify(removedImages)
+      );
+    }
+
+    // ---------------- API CALL ----------------
+    const res = await updateYacht(
+      selectedYacht._id,
+      formData,
+      token
+    );
+
+    const updatedYacht = res?.data?.yacht;
+
+    // ---------------- UPDATE LOCAL STATE ----------------
+    setYachts((prev) =>
+      prev.map((y) =>
+        y._id === updatedYacht._id
+          ? {
+              ...updatedYacht,
+              images:
+                updatedYacht.yachtPhotos?.length > 0
+                  ? updatedYacht.yachtPhotos
+                  : ["/default-yacht.jpg"],
+            }
+          : y
+      )
+    );
+
+    toast.success("Yacht details updated successfully!");
+  } catch (err) {
+    console.error("❌ Error updating yacht:", err);
+    setError(
+      err?.response?.data?.message || "Failed to update yacht"
+    );
+  } finally {
+    setLoading(false);
+    setShowEditModal(false);
+  }
+};
 
   const closeAllModals = () => {
     setShowViewModal(false);
@@ -382,7 +524,7 @@ const AllYachts = () => {
                       >
                         View
                       </button>
-                      <button
+                      {/* <button
                         className="btn btn-sm btn-warning"
                         onClick={() => {
                           setSelectedYacht({
@@ -393,7 +535,24 @@ const AllYachts = () => {
                         }}
                       >
                         Edit
+                      </button> */}
+
+                      <button
+                        className="btn btn-sm btn-warning"
+                        onClick={() => {
+                          setSelectedYacht({
+                            ...yacht,
+                            duration: toMinutes(yacht.duration),
+                          });
+                          setImagePreviews(yacht.yachtPhotos || []);
+                          setNewImages([]);
+                          setRemovedImages([]);
+                          setShowEditModal(true);
+                        }}
+                      >
+                        Edit
                       </button>
+
                       <button
                         className="btn btn-sm btn-danger"
                         onClick={() => {
@@ -715,6 +874,40 @@ const AllYachts = () => {
                   </div>
                   {/* ---------------- END SPECIAL SLOT SECTION ---------------- */}
                 </div>
+              </div>
+
+              {/* ================= IMAGES ================= */}
+              <div className="col-12">
+                <label className="form-label fw-bold">Yacht Images</label>
+
+                <div className="row g-3">
+                  {imagePreviews.map((img, idx) => (
+                    <div key={idx} className="col-6 col-md-4">
+                      <div className="image-preview-box position-relative">
+                        <img src={img} alt="preview" />
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
+                          onClick={() =>
+                            selectedYacht.yachtPhotos?.includes(img)
+                              ? removeExistingImage(img)
+                              : removeNewImage(idx)
+                          }
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <input
+                  type="file"
+                  className="form-control mt-3"
+                  multiple
+                  accept="image/*"
+                  onChange={handleNewImages}
+                />
               </div>
 
               <div className="modal-footer">

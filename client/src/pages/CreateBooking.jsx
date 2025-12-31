@@ -129,7 +129,7 @@ function CreateBooking() {
         slots.push({ start: cursor, end: hit });
         cursor = hit;
       } else {
-        slots.push({ start: cursor, end: Math.min(next, endMin) });
+        slots.push({ start: cursor, end: next });
         cursor = next;
       }
     }
@@ -197,7 +197,7 @@ function CreateBooking() {
     formData.numPeople &&
     yachts.find((y) => y.id === formData.yachtId)?.capacity &&
     Number(formData.numPeople) >
-      yachts.find((y) => y.id === formData.yachtId).capacity;
+    yachts.find((y) => y.id === formData.yachtId).capacity;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -430,9 +430,8 @@ function CreateBooking() {
             <label className="form-label fw-bold">Number of People</label>
             <input
               type="number"
-              className={`form-control border text-dark ${
-                isCapacityExceeded ? "border-warning" : "border-dark"
-              }`}
+              className={`form-control border text-dark ${isCapacityExceeded ? "border-warning" : "border-dark"
+                }`}
               name="numPeople"
               value={formData.numPeople}
               onChange={handleChange}
@@ -500,9 +499,8 @@ function CreateBooking() {
             <label className="form-label fw-bold">Quoted Amount</label>
             <input
               type="number"
-              className={`form-control border text-dark ${
-                isAmountInvalid ? "border-danger is-invalid" : "border-dark"
-              }`}
+              className={`form-control border text-dark ${isAmountInvalid ? "border-danger is-invalid" : "border-dark"
+                }`}
               name="totalAmount"
               value={formData.totalAmount}
               onChange={handleChange}

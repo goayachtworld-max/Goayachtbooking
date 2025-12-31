@@ -42,11 +42,11 @@ export const getAllYachtsAPI = async (token, date) => {
     const response = await apiConnector(
       "GET",
       yaut.GET_ALL_YACHTS_API,
-      null, 
+      null,
       {
         Authorization: `Bearer ${token}`,
       },
-      { date } 
+      { date }
     );
     return response;
   } catch (error) {
@@ -99,7 +99,14 @@ export const deleteYacht = async (id, token) => {
 
 
 export const updateYacht = async (id, data, token) => {
-  console.log("Here is edit yacht data - ", data);
+  if (data instanceof FormData) {
+    console.log("📦 Incoming FormData:");
+    for (let [key, value] of data.entries()) {
+      console.log(`➡ ${key}:`, value);
+    }
+  } else {
+    console.log("📦 Incoming Data (not FormData):", data);
+  }
   try {
     const response = await apiConnector(
       "PUT",

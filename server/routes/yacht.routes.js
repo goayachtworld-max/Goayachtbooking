@@ -55,21 +55,32 @@ router.get("/details", authMiddleware, getAllYachtsDetails);
 router.get("/:id", authMiddleware, getYachtById);
 
 // Update yacht (Admin Only)
+// router.put(
+//   "/:id",
+//   authMiddleware,
+//   onlyAdmin,
+//   upload.array("yachtPhotos"),
+//   (req, res, next) => {
+//     if (req.files) {
+//       req.body.yachtPhotos = req.files.map(file => file.path || file.buffer);
+//     }
+//     next();
+//   },
+//   validate(yachtSchema),
+//   uploadToCloudinary("yaut/yachts"),
+//   updateYacht
+// );
+
 router.put(
   "/:id",
   authMiddleware,
   onlyAdmin,
-  upload.array("yachtPhotos"),
-  (req, res, next) => {
-    if (req.files) {
-      req.body.yachtPhotos = req.files.map(file => file.path || file.buffer);
-    }
-    next();
-  },
-  validate(yachtSchema),
-  uploadToCloudinary("yaut/yachts"),
+  upload.array("yachtPhotos"),      // multer
+  uploadToCloudinary("yaut/yachts"),// cloudinary
+  validate(yachtSchema),            // zod LAST
   updateYacht
 );
+
 
 // Delete yacht (Admin Only)
 router.delete("/:id", authMiddleware, onlyAdmin, deleteYacht);

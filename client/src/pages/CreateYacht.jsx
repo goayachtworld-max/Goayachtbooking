@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createYacht as createYachtAPI } from "../services/operations/yautAPI";
 import { toast } from "react-hot-toast";
+import "./createYacht.css"
 
 function CreateYacht() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ function CreateYacht() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [photoError, setPhotoError] = useState("");
+  const [photoPreviews, setPhotoPreviews] = useState([]);
 
   // Price validation
   useEffect(() => {
@@ -55,11 +57,27 @@ function CreateYacht() {
     setYacht((prev) => ({ ...prev, [name]: value }));
   };
 
-  // photo upload validation
+  // inside CreateYacht component, below handlePhotoUpload
+  const handleRemovePhoto = (index) => {
+    setYacht((prev) => {
+      const newPhotos = [...prev.photos];
+      newPhotos.splice(index, 1);
+      return { ...prev, photos: newPhotos };
+    });
+
+    setPhotoPreviews((prev) => {
+      const newPreviews = [...prev];
+      newPreviews.splice(index, 1);
+      return newPreviews;
+    });
+  };
+
   const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files || []);
+
     if (files.length === 0) {
       setYacht((prev) => ({ ...prev, photos: [] }));
+      setPhotoPreviews([]);
       setPhotoError("");
       return;
     }
@@ -73,7 +91,31 @@ function CreateYacht() {
 
     setPhotoError("");
     setYacht((prev) => ({ ...prev, photos: files }));
+
+    // Generate preview URLs
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setPhotoPreviews(previews);
   };
+
+  // photo upload validation
+  // const handlePhotoUpload = (e) => {
+  //   const files = Array.from(e.target.files || []);
+  //   if (files.length === 0) {
+  //     setYacht((prev) => ({ ...prev, photos: [] }));
+  //     setPhotoError("");
+  //     return;
+  //   }
+
+  //   for (const file of files) {
+  //     if (file.size > 1 * 1024 * 1024) {
+  //       setPhotoError("Each photo must be less than 1 MB.");
+  //       return;
+  //     }
+  //   }
+
+  //   setPhotoError("");
+  //   setYacht((prev) => ({ ...prev, photos: files }));
+  // };
 
   const convertMinutesToHHMM = (mins) => {
     const h = String(Math.floor(mins / 60)).padStart(2, "0");
@@ -383,6 +425,29 @@ function CreateYacht() {
             {photoError && <div className="text-danger small mt-1">{photoError}</div>}
             <div className="form-text">Max size: 1 MB per image</div>
           </div>
+
+          {photoPreviews.length > 0 && (
+            <div className="row mt-3 g-3">
+              {photoPreviews.map((src, index) => (
+                <div key={index} className="col-6 col-md-4 col-lg-3 position-relative">
+                  <div className="image-preview-box">
+                    <img src={src} alt={`preview-${index}`} />
+                    {/* Remove button */}
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm position-absolute top-0 end-0"
+                      style={{ borderRadius: "50%", padding: "0.25rem 0.4rem" }}
+                      onClick={() => handleRemovePhoto(index)}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+
 
           {/* Submit */}
           <div className="col-12">
