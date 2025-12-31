@@ -6,6 +6,7 @@ import {
   updateYacht,
 } from "../services/operations/yautAPI";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; // FontAwesome icons
 import { toast } from "react-hot-toast";
 import "./createYacht.css"
 
@@ -514,7 +515,7 @@ const AllYachts = () => {
                     </span>
                   </td>
                   <td>
-                    <div className="d-flex flex-wrap justify-content-center gap-2">
+                    {/* <div className="d-flex flex-wrap justify-content-center gap-2">
                       <button
                         className="btn btn-sm btn-info"
                         onClick={() => {
@@ -524,18 +525,6 @@ const AllYachts = () => {
                       >
                         View
                       </button>
-                      {/* <button
-                        className="btn btn-sm btn-warning"
-                        onClick={() => {
-                          setSelectedYacht({
-                            ...yacht,
-                            duration: toMinutes(yacht.duration), //  always minutes for UI
-                          });
-                          setShowEditModal(true);
-                        }}
-                      >
-                        Edit
-                      </button> */}
 
                       <button
                         className="btn btn-sm btn-warning"
@@ -562,11 +551,42 @@ const AllYachts = () => {
                       >
                         Delete
                       </button>
-                    </div>
+                    </div> */}
+                    <div className="d-flex justify-content-center gap-2">
+  <button
+    className="btn btn-sm btn-info"
+    onClick={() => { setSelectedYacht(yacht); setShowViewModal(true); }}
+  >
+    <FaEye />
+  </button>
+
+  <button
+    className="btn btn-sm btn-warning"
+    onClick={() => { 
+      setSelectedYacht({ ...yacht, duration: toMinutes(yacht.duration) });
+      setImagePreviews(yacht.yachtPhotos || []);
+      setNewImages([]);
+      setRemovedImages([]);
+      setShowEditModal(true);
+    }}
+  >
+    <FaEdit />
+  </button>
+
+  <button
+    className="btn btn-sm btn-danger"
+    onClick={() => { setSelectedYacht(yacht); setShowDeleteModal(true); }}
+  >
+    <FaTrash />
+  </button>
+</div>
+
                   </td>
                 </tr>
               ))}
             </tbody>
+
+            
           </table>
         </div>
       ) : (
