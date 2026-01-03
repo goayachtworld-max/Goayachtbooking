@@ -7,6 +7,7 @@ import "./GridAvailability.css";
 import {
   getAllYachtsDetailsAPI,
   getYachtById,
+  updateDaySlots,
 } from "../services/operations/yautAPI";
 
 import {
@@ -14,6 +15,7 @@ import {
   lockSlot,
   releaseSlot,
 } from "../services/operations/availabilityAPI";
+import { adjustSlots } from "../utils/slotEngine";
 
 /* helpers */
 const todayISO = () => new Date().toISOString().split("T")[0];
@@ -55,39 +57,6 @@ const getDatesBetween = (start, end) => {
   }
   return dates;
 };
-
-// const buildSlotsForYacht = (yacht) => {
-//   if (!yacht?.sailStartTime || !yacht?.sailEndTime) return [];
-
-//   const durationRaw = yacht.slotDurationMinutes || yacht.duration;
-//   const duration =
-//     typeof durationRaw === "string"
-//       ? hhmmToMinutes(durationRaw)
-//       : Number(durationRaw);
-
-//   const startMin = hhmmToMinutes(yacht.sailStartTime);
-//   let endMin = hhmmToMinutes(yacht.sailEndTime);
-//   if (endMin <= startMin) endMin += 1440;
-
-//   const slots = [];
-//   let cursor = startMin;
-
-//   while (cursor < endMin) {
-//     slots.push({
-//       start: `${String(Math.floor(cursor / 60)).padStart(2, "0")}:${String(
-//         cursor % 60
-//       ).padStart(2, "0")}`,
-//       end: `${String(Math.floor((cursor + duration) / 60)).padStart(
-//         2,
-//         "0"
-//       )}:${String((cursor + duration) % 60).padStart(2, "0")}`,
-//     });
-//     cursor += duration;
-//   }
-
-//   return slots;
-// };
-
 
 const buildSlotsForYacht = (yachtObj) => {
   if (
@@ -255,6 +224,24 @@ function GridAvailability() {
   const [isReleasing, setIsReleasing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
+  const [editStart, setEditStart] = useState(null);
+  const [editEnd, setEditEnd] = useState(null);
+
+  useEffect(() => {
+    if (selectedSlot) {
+      setEditStart(selectedSlot.start);
+      setEditEnd(selectedSlot.end);
+    }
+  }, [selectedSlot]);
+
+  const canEditSlot = selectedSlot?.type === "free";
+
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [daySlots, setDaySlots] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+
+
+
   useEffect(() => {
     (async () => {
       try {
@@ -382,6 +369,95 @@ function GridAvailability() {
       setLoading(false);
     }
   };
+  // 🔹 update only one slot in grid
+  const updateGridSlot = (date, start, end, patch) => {
+    setGrid((prev) =>
+      prev.map((row) =>
+        row.date !== date
+          ? row
+          : {
+            ...row,
+            slots: row.slots.map((slot) =>
+              slot.start === start && slot.end === end
+                ? { ...slot, ...patch }
+                : slot
+            ),
+          }
+      )
+    );
+  };
+
+  // 🔹 reload only ONE day (not full calendar)
+  const reloadSingleDay = async (date) => {
+    const res = await getDayAvailability(yachtId, date, token);
+    const day = res?.data || res;
+
+    let baseSlots = [];
+
+    if (
+      Array.isArray(day.slots) &&
+      day.slots.length > 0 &&
+      Array.isArray(day.slots[0].slots)
+    ) {
+      baseSlots = day.slots[0].slots.map((s) => ({
+        start: s.start,
+        end: s.end,
+      }));
+    } else {
+      baseSlots = buildSlotsForYacht(yacht);
+    }
+
+    const booked = day.bookedSlots || [];
+    const locked = day.lockedSlots || [];
+
+    const enriched = baseSlots.map((slot) => {
+      const bookedOverlap = booked.find(
+        (b) =>
+          hhmmToMinutes(b.startTime || b.start) <
+          hhmmToMinutes(slot.end) &&
+          hhmmToMinutes(b.endTime || b.end) >
+          hhmmToMinutes(slot.start)
+      );
+
+      if (bookedOverlap) {
+        return {
+          ...slot,
+          date,
+          type:
+            bookedOverlap.status === "pending"
+              ? "pending"
+              : "booked",
+          custName: bookedOverlap.custName || "",
+          empName: bookedOverlap.empName || "",
+        };
+      }
+
+      const lockedOverlap = locked.find(
+        (l) =>
+          hhmmToMinutes(l.startTime || l.start) <
+          hhmmToMinutes(slot.end) &&
+          hhmmToMinutes(l.endTime || l.end) >
+          hhmmToMinutes(slot.start)
+      );
+
+      if (lockedOverlap) {
+        return {
+          ...slot,
+          date,
+          type: "locked",
+          empName: lockedOverlap.empName || "",
+        };
+      }
+
+      return { ...slot, date, type: "free" };
+    });
+
+    setGrid((prev) =>
+      prev.map((row) =>
+        row.date === date ? { ...row, slots: enriched } : row
+      )
+    );
+  };
 
   useEffect(() => {
     if (yachtId && fromDate && toDate) {
@@ -403,6 +479,19 @@ function GridAvailability() {
     setSelectedSlot(slot);
     setModalType(type);
 
+    // 🔥 FIND DAY ROW
+    const dayRow = grid.find((r) => r.date === slot.date);
+    if (!dayRow) return;
+
+    // 🔥 FIND SLOT INDEX
+    const index = dayRow.slots.findIndex(
+      (s) => s.start === slot.start && s.end === slot.end
+    );
+
+    setSelectedDate(slot.date);
+    setDaySlots(dayRow.slots);
+    setSelectedIndex(index);
+
     setTimeout(() => {
       const modalId =
         type === "booked" || type === "pending"
@@ -416,54 +505,191 @@ function GridAvailability() {
     }, 50);
   };
 
-  const handleLockSlot = async (e) => {
+  // const handleSaveAndLock = async (e) => {
+  //   e.preventDefault();
+  //   if (!selectedSlot || isLocking) return;
+
+  //   setIsLocking(true);
+
+  //   const isEdited =
+  //     editStart !== selectedSlot.start ||
+  //     editEnd !== selectedSlot.end;
+
+  //   try {
+  //     // 🟢 CASE 1: NO EDIT → JUST LOCK
+  //     if (!isEdited) {
+  //       await lockSlot(
+  //         yachtId,
+  //         selectedDate,
+  //         selectedSlot.start,
+  //         selectedSlot.end,
+  //         token
+  //       );
+
+  //       toast.success("Slot locked successfully");
+
+  //       window.bootstrap.Modal.getInstance(
+  //         document.getElementById("lockModal")
+  //       )?.hide();
+
+  //       loadGrid();
+  //       return;
+  //     }
+
+  //     // 🟡 CASE 2: EDITED → ADJUST + UPDATE + LOCK
+  //     const updatedSlots = adjustSlots({
+  //       allSlots: daySlots,
+  //       targetIndex: selectedIndex,
+  //       newStart: editStart,
+  //       newEnd: editEnd,
+  //       durationMinutes: hhmmToMinutes(yacht.duration)
+  //     });
+
+  //     // update timeline
+  //     await updateDaySlots(
+  //       yachtId,
+  //       selectedDate,
+  //       updatedSlots.map(({ start, end }) => ({ start, end })),
+  //       token
+  //     );
+
+  //     // lock edited slot
+  //     await lockSlot(
+  //       yachtId,
+  //       selectedDate,
+  //       editStart,
+  //       editEnd,
+  //       token
+  //     );
+
+  //     toast.success("Slot updated & locked successfully");
+
+  //     window.bootstrap.Modal.getInstance(
+  //       document.getElementById("lockModal")
+  //     )?.hide();
+
+  //     // loadGrid();
+  //   } catch (err) {
+  //     toast.error(err.message || "Failed to lock slot");
+  //   } finally {
+  //     setIsLocking(false);
+  //   }
+  // };
+
+  const handleSaveAndLock = async (e) => {
     e.preventDefault();
     if (!selectedSlot || isLocking) return;
+
     setIsLocking(true);
 
+    const start = editStart;
+    const end = editEnd;
+
+    // 🔥 OPTIMISTIC UI UPDATE
+    updateGridSlot(selectedDate, selectedSlot.start, selectedSlot.end, {
+      type: "locked",
+      start,
+      end,
+      empName: "You",
+    });
+
     try {
-      const res = await lockSlot(
-        yachtId,
-        selectedSlot.date,
-        selectedSlot.start,
-        selectedSlot.end,
-        token
-      );
-      if (res?.success) {
-        toast.success("Slot locked successfully!");
-        window.bootstrap.Modal.getInstance(
-          document.getElementById("lockModal")
-        )?.hide();
-        loadGrid();
-      } else toast.error(res?.message || "Failed to lock slot");
-    } catch {
-      toast.error("Error locking slot");
+      const isEdited =
+        start !== selectedSlot.start || end !== selectedSlot.end;
+
+      if (isEdited) {
+        const updatedSlots = adjustSlots({
+          allSlots: daySlots,
+          targetIndex: selectedIndex,
+          newStart: start,
+          newEnd: end,
+          durationMinutes: hhmmToMinutes(yacht.duration),
+        });
+
+        await updateDaySlots(
+          yachtId,
+          selectedDate,
+          updatedSlots.map(({ start, end }) => ({ start, end })),
+          token
+        );
+      }
+
+      await lockSlot(yachtId, selectedDate, start, end, token);
+
+      // 🔄 revalidate ONLY this day
+      await reloadSingleDay(selectedDate);
+
+      toast.success("Slot locked successfully");
+
+      window.bootstrap.Modal.getInstance(
+        document.getElementById("lockModal")
+      )?.hide();
+    } catch (err) {
+      toast.error("Failed to lock slot");
+      await reloadSingleDay(selectedDate); // rollback
     } finally {
       setIsLocking(false);
     }
   };
 
+  // const handleReleaseLock = async () => {
+  //   if (!selectedSlot || isReleasing) return;
+  //   setIsReleasing(true);
+
+  //   try {
+  //     const res = await releaseSlot(
+  //       yachtId,
+  //       selectedSlot.date,
+  //       selectedSlot.start,
+  //       selectedSlot.end,
+  //       token
+  //     );
+  //     if (res?.success) {
+  //       toast.success("Slot released successfully!");
+  //       window.bootstrap.Modal.getInstance(
+  //         document.getElementById("confirmModal")
+  //       )?.hide();
+  //       // loadGrid();
+  //     } else toast.error(res?.message || "Failed to release slot");
+  //   } catch {
+  //     toast.error("Error releasing slot");
+  //   } finally {
+  //     setIsReleasing(false);
+  //   }
+  // };
+
   const handleReleaseLock = async () => {
     if (!selectedSlot || isReleasing) return;
+
     setIsReleasing(true);
 
+    // 🔥 optimistic UI
+    updateGridSlot(
+      selectedSlot.date,
+      selectedSlot.start,
+      selectedSlot.end,
+      { type: "free", empName: "" }
+    );
+
     try {
-      const res = await releaseSlot(
+      await releaseSlot(
         yachtId,
         selectedSlot.date,
         selectedSlot.start,
         selectedSlot.end,
         token
       );
-      if (res?.success) {
-        toast.success("Slot released successfully!");
-        window.bootstrap.Modal.getInstance(
-          document.getElementById("confirmModal")
-        )?.hide();
-        loadGrid();
-      } else toast.error(res?.message || "Failed to release slot");
+
+      await reloadSingleDay(selectedSlot.date);
+
+      toast.success("Slot released successfully");
+
+      window.bootstrap.Modal.getInstance(
+        document.getElementById("confirmModal")
+      )?.hide();
     } catch {
-      toast.error("Error releasing slot");
+      toast.error("Failed to release slot");
+      await reloadSingleDay(selectedSlot.date);
     } finally {
       setIsReleasing(false);
     }
@@ -639,7 +865,8 @@ function GridAvailability() {
         <div className="modal fade" id="lockModal" tabIndex="-1">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content rounded-4">
-              <form onSubmit={handleLockSlot}>
+              <form onSubmit={handleSaveAndLock}>
+                {/* HEADER */}
                 <div className="modal-header bg-warning bg-opacity-25">
                   <h5 className="modal-title">Lock Time Slot</h5>
                   <button
@@ -648,14 +875,48 @@ function GridAvailability() {
                     data-bs-dismiss="modal"
                   ></button>
                 </div>
+
+                {/* BODY */}
                 <div className="modal-body text-center">
                   {selectedSlot && (
-                    <p>
-                      {to12HourFormat(selectedSlot.start)} —{" "}
-                      {to12HourFormat(selectedSlot.end)}
-                    </p>
+                    <>
+                      {/* Current slot display */}
+                      <p className="mb-3 fw-semibold">
+                        {to12HourFormat(selectedSlot.start)} —{" "}
+                        {to12HourFormat(selectedSlot.end)}
+                      </p>
+
+                      {/* Editable time fields */}
+                      <div className="text-start">
+                        <label className="form-label">Start time</label>
+                        <input
+                          type="time"
+                          className="form-control mb-2"
+                          value={editStart || ""}
+                          disabled={!canEditSlot}
+                          onChange={(e) => setEditStart(e.target.value)}
+                        />
+
+                        <label className="form-label">End time</label>
+                        <input
+                          type="time"
+                          className="form-control"
+                          value={editEnd || ""}
+                          disabled={!canEditSlot}
+                          onChange={(e) => setEditEnd(e.target.value)}
+                        />
+
+                        {!canEditSlot && (
+                          <div className="form-text text-muted mt-2">
+                            This slot cannot be edited
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
+
+                {/* FOOTER */}
                 <div className="modal-footer">
                   <button
                     type="button"
@@ -669,13 +930,14 @@ function GridAvailability() {
                     className="btn btn-warning"
                     disabled={isLocking}
                   >
-                    {isLocking ? "Locking..." : "Lock Slot"}
+                    {isLocking ? "Locking..." : "Save & Lock"}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         </div>
+
 
         <div className="modal fade" id="confirmModal" tabIndex="-1">
           <div className="modal-dialog modal-dialog-centered">
