@@ -20,8 +20,6 @@ export const checkActiveYachtByParams = async (req, res, next) => {
         message: "Yacht is inactive and cannot be used",
       });
     }
-
-    // Attach yacht to request (useful later)
     req.yacht = yacht;
 
     next();
@@ -50,8 +48,6 @@ export const checkActiveYachtByData = async (req, res, next) => {
         message: "Yacht is inactive and cannot be used",
       });
     }
-
-    // Attach yacht to request (useful later)
     req.yacht = yacht;
 
     next();

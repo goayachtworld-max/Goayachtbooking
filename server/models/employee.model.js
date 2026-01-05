@@ -6,10 +6,13 @@ const employeeSchema = new mongoose.Schema({
     enum: ['admin', 'backdesk', 'onsite'], // 👈 Only these values allowed
     required: true
   },
-  company: {
-    type: String,
-    required: true
-  },
+  company: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: true
+    }
+  ],
   username: {
     type: String,
     required: true,
@@ -43,6 +46,10 @@ const employeeSchema = new mongoose.Schema({
     type: String,
     enum: ['active', 'inactive'],
     default: 'active'
+  },
+  isPrivate: {
+    type: Boolean,
+    default: false   // 👈 public by default
   }
 }, {
   timestamps: true // 👈 adds createdAt & updatedAt automatically

@@ -12,12 +12,28 @@ function CreateEmployee() {
     password: "",
     confirmPassword: "",
     status: "active",
+    isPrivate: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // const handleChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setFormData({ ...formData, [name]: value });
+  // };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    // 👇 If role is onsite, force isPrivate = true
+    if (name === "role") {
+      setFormData({
+        ...formData,
+        role: value,
+        isPrivate: value === "onsite" ? true : formData.isPrivate,
+      });
+      return;
+    }
+
     setFormData({ ...formData, [name]: value });
   };
 
@@ -47,8 +63,10 @@ function CreateEmployee() {
         username: formData.username,
         password: formData.password.toLowerCase(),
         status: formData.status,
+        isPrivate: formData.isPrivate
       };
 
+      console.log("Create emp : ", payload)
       const res = await createEmployeeAPI(payload, token);
       console.log(" Employee created:", res.data);
       toast.success(" Employee created successfully!", {
@@ -70,6 +88,7 @@ function CreateEmployee() {
         password: "",
         confirmPassword: "",
         status: "active",
+        isPrivate: false,
       });
     } catch (err) {
       console.error("❌ Error creating employee:", err);
@@ -120,7 +139,7 @@ function CreateEmployee() {
         </div>
 
         {/* Name */}
-        <div className="col-12">
+        <div className="col-6">
           <label className="form-label fw-bold">Full Name</label>
           <input
             type="text"
@@ -216,6 +235,28 @@ function CreateEmployee() {
             <option value="inactive">Inactive</option>
           </select>
         </div>
+
+        {/* Private User */}
+        <div className="col-12 col-md-6">
+          <label className="form-label fw-bold">Private User</label>
+
+          <select
+            className="form-select border border-dark text-dark"
+            value={String(formData.isPrivate)}   // 👈 BOOLEAN → STRING
+            disabled={formData.role === "onsite"}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                isPrivate: e.target.value === "true", // 👈 STRING → BOOLEAN
+              })
+            }
+          >
+            <option value="false">No (Public)</option>
+            <option value="true">Yes (Private)</option>
+          </select>
+
+        </div>
+
 
         {/* Error */}
         {error && <p className="text-danger text-center">{error}</p>}

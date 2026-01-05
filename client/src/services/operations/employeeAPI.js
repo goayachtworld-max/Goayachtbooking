@@ -84,3 +84,38 @@ export const updateEmployeeProfileByAdminAPI = async (employeeId, payload, token
     throw error;
   }
 };
+
+
+// Get employees not in admin company
+export const getEmployeesNotInCompanyAPI = async (token) => {
+  try {
+    return await apiConnector(
+      "GET",
+      employee.GET_EMPLOYEES_NOT_IN_COMPANY,
+      null,
+      {
+        Authorization: `Bearer ${token}`,
+      }
+    );
+  } catch (error) {
+    console.error("❌ Failed to fetch not-in-company employees:", error);
+    throw error;
+  }
+};
+
+// Add employee to admin company
+export const addEmployeeToCompanyAPI = async (employeeId, companyId, token) => {
+  try {
+    return await apiConnector(
+      "POST",
+      employee.ADD_EMPLOYEE_TO_COMPANY,
+      { employeeId , companyId},
+      {
+        Authorization: `Bearer ${token}`,
+      }
+    );
+  } catch (error) {
+    console.error("❌ Failed to add employee to company:", error);
+    throw error;
+  }
+};

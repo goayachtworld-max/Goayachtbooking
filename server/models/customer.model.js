@@ -7,10 +7,10 @@ const customerSchema = new mongoose.Schema({
     trim: true,
     minlength: 2
   },
-  company: {
-    type: String,
-    required: true
-  },
+  company:[{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company'
+  }],
   contact: {
     type: String,
     required: true,

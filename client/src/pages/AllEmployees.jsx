@@ -5,6 +5,8 @@ import {
   updateEmployeeStatusAPI,
   updateEmployeeProfileAPI,
   updateEmployeeProfileByAdminAPI,
+  addEmployeeToCompanyAPI,
+  getEmployeesNotInCompanyAPI,
 } from "../services/operations/employeeAPI";
 import { toast } from "react-hot-toast";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -26,9 +28,14 @@ const AllEmployees = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [activeTab, setActiveTab] = useState("current");
+  const [notInCompanyEmployees, setNotInCompanyEmployees] = useState([]);
+  const [loadingNotInCompany, setLoadingNotInCompany] = useState(false);
+
 
   const navigate = useNavigate();
   const token = localStorage.getItem("authToken");
+  const admin = JSON.parse(localStorage.getItem("user"));
 
   const fetchEmployees = async () => {
     try {
@@ -73,58 +80,97 @@ const AllEmployees = () => {
     setShowEditModal(true);
   };
 
-const handleEmployeeUpdate = async () => {
-  const newErrors = {};
-  
-  if (!editForm.name.trim()) newErrors.name = "Name is required";
-  if (!editForm.email.trim()) newErrors.email = "Email is required";
-  if (!editForm.contact.trim()) newErrors.contact = "Contact is required";
-  if (!editForm.currentPassword) newErrors.adminPassword = "Admin password is required";
+  const handleEmployeeUpdate = async () => {
+    const newErrors = {};
 
-  if (editForm.newPassword && editForm.newPassword.length < 6) {
-    newErrors.newPassword = "Password must be at least 6 characters";
-  }
+    if (!editForm.name.trim()) newErrors.name = "Name is required";
+    if (!editForm.email.trim()) newErrors.email = "Email is required";
+    if (!editForm.contact.trim()) newErrors.contact = "Contact is required";
+    if (!editForm.currentPassword) newErrors.adminPassword = "Admin password is required";
 
-  if (Object.keys(newErrors).length > 0) {
-    setErrors(newErrors);
-    return;
-  }
-
-  try {
-    const payload = {
-      name: editForm.name,
-      email: editForm.email,
-      contact: editForm.contact,
-      adminPassword: editForm.currentPassword, // always required
-    };
-
-    if (editForm.newPassword) {
-      payload.newPassword = editForm.newPassword; // optional
+    if (editForm.newPassword && editForm.newPassword.length < 6) {
+      newErrors.newPassword = "Password must be at least 6 characters";
     }
 
-    console.log("by admin : ", payload)
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
-    const res = await updateEmployeeProfileByAdminAPI(
-      selectedEmployee._id,
-      payload,
-      token
-    );
+    try {
+      const payload = {
+        name: editForm.name,
+        email: editForm.email,
+        contact: editForm.contact,
+        adminPassword: editForm.currentPassword, // always required
+      };
 
-    const updatedEmployee = res.data.employee;
+      if (editForm.newPassword) {
+        payload.newPassword = editForm.newPassword; // optional
+      }
 
-    setEmployees((prev) =>
-      prev.map((emp) =>
-        emp._id === updatedEmployee._id ? { ...emp, ...updatedEmployee } : emp
-      )
-    );
+      console.log("by admin : ", payload)
 
-    toast.success("Employee updated successfully");
-    setShowEditModal(false);
-    setEditForm({ name: "", email: "", contact: "", currentPassword: "", newPassword: "" });
-  } catch {
-    toast.error("Update failed");
-  }
-};
+      const res = await updateEmployeeProfileByAdminAPI(
+        selectedEmployee._id,
+        payload,
+        token
+      );
+
+      const updatedEmployee = res.data.employee;
+
+      setEmployees((prev) =>
+        prev.map((emp) =>
+          emp._id === updatedEmployee._id ? { ...emp, ...updatedEmployee } : emp
+        )
+      );
+
+      toast.success("Employee updated successfully");
+      setShowEditModal(false);
+      setEditForm({ name: "", email: "", contact: "", currentPassword: "", newPassword: "" });
+    } catch {
+      toast.error("Update failed");
+    }
+  };
+
+  const fetchNotInCompanyEmployees = async () => {
+    try {
+      setLoadingNotInCompany(true);
+      const res = await getEmployeesNotInCompanyAPI(token);
+      if (res.data.success) {
+        setNotInCompanyEmployees(res.data.employees || []);
+      }
+    } catch {
+      toast.error("Failed to load available employees");
+    } finally {
+      setLoadingNotInCompany(false);
+    }
+  };
+
+  const handleAddToCompany = async (employeeId) => {
+    try {
+      const companyId = admin?.company[0];
+      await addEmployeeToCompanyAPI(employeeId, companyId, token);
+      toast.success("Employee added to company");
+
+      // Remove from not-in-company list
+      setNotInCompanyEmployees((prev) =>
+        prev.filter((emp) => emp._id !== employeeId)
+      );
+
+      // Refresh current employees
+      fetchEmployees();
+    } catch {
+      toast.error("Failed to add employee");
+    }
+  };
+
+
+  useEffect(() => {
+    if (activeTab === "not-in-company" && notInCompanyEmployees.length === 0) {
+      fetchNotInCompanyEmployees();
+    }
+  }, [activeTab]);
 
 
   useEffect(() => {
@@ -153,132 +199,203 @@ const handleEmployeeUpdate = async () => {
           </button>
         </div>
 
-        {/* MOBILE VIEW */}
-        <div className="d-md-none">
-          {employees.map((emp) => (
-            <div key={emp._id} className="card mb-3 shadow-sm border-0">
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-start">
-                  <div>
-                    <h6 className="fw-bold mb-1">{emp.name}</h6>
-                    <p className="text-muted mb-1 small">
-                      {emp.type === "backdesk"
-                        ? "Agent"
-                        : emp.type === "onsite"
-                          ? "Staff"
-                          : emp.type.charAt(0).toUpperCase() +
-                          emp.type.slice(1)}
-                    </p>
-                    <span
-                      className={`badge ${emp.status === "active" ? "bg-success" : "bg-secondary"
-                        }`}
-                    >
-                      {emp.status.toUpperCase()}
-                    </span>
-                  </div>
+        <ul className="nav nav-tabs mb-3">
+          <li className="nav-item">
+            <button
+              className={`nav-link ${activeTab === "current" ? "active" : ""}`}
+              onClick={() => setActiveTab("current")}
+            >
+              Current
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${activeTab === "not-in-company" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("not-in-company");
+              }}
+            >
+              Not In Company
+            </button>
+          </li>
+        </ul>
 
-                  <div className="d-flex flex-column gap-2">
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => openEditModal(emp)}
-                    >
-                      Update
-                    </button>
-                    <button
-                      className={`btn btn-sm ${emp.status === "active"
-                          ? "btn-outline-secondary"
-                          : "btn-outline-success"
-                        }`}
-                      onClick={() => toggleStatus(emp._id, emp.status)}
-                    >
-                      {emp.status === "active" ? "Deactivate" : "Activate"}
-                    </button>
-                  </div>
-                </div>
 
-                <hr className="my-2" />
+        {activeTab === "current" && (
+          <>
+            {/* MOBILE VIEW */}
+            <div className="d-md-none">
+              {employees.map((emp) => (
+                <div key={emp._id} className="card mb-3 shadow-sm border-0">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-start">
+                      <div>
+                        <h6 className="fw-bold mb-1">{emp.name}</h6>
+                        <p className="text-muted mb-1 small">
+                          {emp.type === "backdesk"
+                            ? "Agent"
+                            : emp.type === "onsite"
+                              ? "Staff"
+                              : emp.type.charAt(0).toUpperCase() +
+                              emp.type.slice(1)}
+                        </p>
+                        <span
+                          className={`badge ${emp.status === "active" ? "bg-success" : "bg-secondary"
+                            }`}
+                        >
+                          {emp.status.toUpperCase()}
+                        </span>
+                      </div>
 
-                <p className="small mb-1">
-                  <strong>Username:</strong> {emp.username}
-                </p>
-                <p className="small mb-1">
-                  <strong>Contact:</strong> {emp.contact || "-"}
-                </p>
-                <p className="small mb-0">
-                  <strong>Email:</strong> {emp.email}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* DESKTOP & TABLET */}
-        <div className="d-none d-md-block">
-          <div className="table-responsive">
-            <table className="table table-hover align-middle text-center">
-              <thead className="table-dark">
-                <tr>
-                  <th>#</th>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Username</th>
-                  <th>Contact</th>
-                  <th>Email</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map((emp, i) => (
-                  <tr key={emp._id}>
-                    <td>{i + 1}</td>
-                    <td className="fw-semibold">{emp.name}</td>
-                    <td>
-                      {emp.type === "backdesk"
-                        ? "Agent"
-                        : emp.type === "onsite"
-                          ? "Staff"
-                          : emp.type.charAt(0).toUpperCase() +
-                          emp.type.slice(1)}
-                    </td>
-                    <td>{emp.username}</td>
-                    <td>{emp.contact || "-"}</td>
-                    <td>{emp.email}</td>
-                    <td>
-                      <span
-                        className={`badge ${emp.status === "active" ? "bg-success" : "bg-secondary"
-                          }`}
-                      >
-                        {emp.status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="d-flex gap-2 justify-content-center">
-                      <button
-                        className="btn btn-sm btn-outline-primary"
-                        onClick={() => openEditModal(emp)}
-                      >
-                        Update
-                      </button>
-                      <button
-                        className={`btn btn-sm ${emp.status === "active"
+                      <div className="d-flex flex-column gap-2">
+                        <button
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => openEditModal(emp)}
+                        >
+                          Update
+                        </button>
+                        <button
+                          className={`btn btn-sm ${emp.status === "active"
                             ? "btn-outline-secondary"
                             : "btn-outline-success"
-                          }`}
-                        onClick={() => toggleStatus(emp._id, emp.status)}
-                      >
-                        {emp.status === "active" ? "Deactivate" : "Activate"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                            }`}
+                          onClick={() => toggleStatus(emp._id, emp.status)}
+                        >
+                          {emp.status === "active" ? "Deactivate" : "Activate"}
+                        </button>
+                      </div>
+                    </div>
 
-        {employees.length === 0 && (
-          <div className="text-center text-muted mt-5">No employees found.</div>
+                    <hr className="my-2" />
+
+                    <p className="small mb-1">
+                      <strong>Username:</strong> {emp.username}
+                    </p>
+                    <p className="small mb-1">
+                      <strong>Contact:</strong> {emp.contact || "-"}
+                    </p>
+                    <p className="small mb-0">
+                      <strong>Email:</strong> {emp.email}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* DESKTOP & TABLET */}
+            <div className="d-none d-md-block">
+              <div className="table-responsive">
+                <table className="table table-hover align-middle text-center">
+                  <thead className="table-dark">
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Role</th>
+                      <th>Username</th>
+                      <th>Contact</th>
+                      <th>Email</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employees.map((emp, i) => (
+                      <tr key={emp._id}>
+                        <td>{i + 1}</td>
+                        <td className="fw-semibold">{emp.name}</td>
+                        <td>
+                          {emp.type === "backdesk"
+                            ? "Agent"
+                            : emp.type === "onsite"
+                              ? "Staff"
+                              : emp.type.charAt(0).toUpperCase() +
+                              emp.type.slice(1)}
+                        </td>
+                        <td>{emp.username}</td>
+                        <td>{emp.contact || "-"}</td>
+                        <td>{emp.email}</td>
+                        <td>
+                          <span
+                            className={`badge ${emp.status === "active" ? "bg-success" : "bg-secondary"
+                              }`}
+                          >
+                            {emp.status.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="d-flex gap-2 justify-content-center">
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => openEditModal(emp)}
+                          >
+                            Update
+                          </button>
+                          <button
+                            className={`btn btn-sm ${emp.status === "active"
+                              ? "btn-outline-secondary"
+                              : "btn-outline-success"
+                              }`}
+                            onClick={() => toggleStatus(emp._id, emp.status)}
+                          >
+                            {emp.status === "active" ? "Deactivate" : "Activate"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {employees.length === 0 && (
+              <div className="text-center text-muted mt-5">No employees found.</div>
+            )}
+          </>
         )}
+        {/* OTHER AGENTS */}
+        {activeTab === "not-in-company" && (
+          <div className="table-responsive">
+            {loadingNotInCompany ? (
+              <p className="text-center">Loading...</p>
+            ) : (
+              <table className="table table-hover align-middle text-center">
+                <thead className="table-dark">
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {notInCompanyEmployees.length === 0 ? (
+                    <tr>
+                      <td colSpan="5">No employees available</td>
+                    </tr>
+                  ) : (
+                    notInCompanyEmployees.map((emp, i) => (
+                      <tr key={emp._id}>
+                        <td>{i + 1}</td>
+                        <td>{emp.name}</td>
+                        <td>{emp.type}</td>
+                        <td>{emp.email}</td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => handleAddToCompany(emp._id)}
+                          >
+                            Add to Company
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* EDIT EMPLOYEE MODAL */}
@@ -403,6 +520,8 @@ const handleEmployeeUpdate = async () => {
           </div>
         </div>
       )}
+
+
     </>
   );
 };

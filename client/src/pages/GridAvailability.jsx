@@ -761,7 +761,8 @@ function GridAvailability() {
       } else {
         cells.push(
           <td
-            key={`${row.date}-${current}`}
+            // key={`${row.date}-${current}`}
+            key={crypto.randomUUID()}
             className="bg-light text-muted"
             title="Not available"
           >

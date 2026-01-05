@@ -6,109 +6,6 @@ import { EmployeeModel } from "../models/employee.model.js";
 import { sendNotification } from "../services/notification.service.js";
 
 
-// export const createTransactionAndUpdateBooking = async (req, res, next) => {
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-
-//   try {
-//     const employeeId = req.user.id; // from token
-//     const { bookingId, type, amount, paymentProof, status } = req.body;
-//     // if(req.user.type === "backdesk"){
-//     //   throw new Error("Not allowed to Update Booking")
-//     // }
-
-//     // Step 1: Create Transaction
-//     let transaction = null;
-//     if (amount > 0) {
-//       transaction = await TransactionModel.create(
-//         [{
-//           bookingId,
-//           type,
-//           employeeId,
-//           amount,
-//           paymentProof: req.cloudinaryUrl || paymentProof,
-//           date: new Date().toISOString()
-//         }],
-//         { session }
-//       );
-//     }
-
-//     // Step 2: Update Booking
-//     const booking = await BookingModel.findById(bookingId).session(session);
-
-//     if (!booking) {
-//       throw new Error("Booking not found");
-//     }
-
-//     const updatedPendingAmount = booking.pendingAmount - amount;
-//     if (updatedPendingAmount < 0) {
-//       throw new Error("Amount cannot exceed pending amount");
-//     }
-
-//     if (status) {
-//       booking.status = status;
-//     }
-//     booking.pendingAmount = updatedPendingAmount;
-//     if (transaction != null)
-//       booking.transactionIds.push(transaction[0]._id);
-
-//     await booking.save({ session });
-
-//     if (booking.status === "cancelled") {
-//       await deleteAvailabilityForBooking(booking, session);
-//     }
-
-
-
-//     // Step 3: Populate customer, employee, and transactions
-//     const populatedBooking = await BookingModel.findById(booking._id)
-//       .populate("customerId")   // get full customer details
-//       .populate("employeeId")   // get employee details
-//       .populate("transactionIds") // get all transactions
-//       .session(session);
-
-//     // Step 4: Commit Transaction
-//     await session.commitTransaction();
-//     session.endSession();
-
-//     // ✅ Notify ONLY if booking was created by backdesk (agent)
-//     const bookingCreator = await EmployeeModel.findById(
-//       booking.employeeId
-//     ).select("type");
-
-//     if (
-//       status &&
-//       bookingCreator?.type === "backdesk" &&
-//       (req.user.type === "admin" || req.user.type === "onsite")
-//     ) {
-//       await sendNotification({
-//         company: req.user.company,
-//         roles: ["backdesk"], // 👈 only agent needs this info
-//         title: `Booking ${status.toUpperCase()}`,
-//         message: `Your booking has been ${status} by ${req.user.type}.`,
-//         type: "booking_status_updated",
-//         bookingId: booking._id,
-//         excludeUserId: req.user.id,
-//       });
-//     }
-
-
-//     console.log("Booking after update Tras : ", populatedBooking)
-//     // Step 5: Send populated booking to frontend
-//     res.status(201).json({
-//       success: true,
-//       message: "Transaction created & booking updated successfully",
-//       transaction: transaction ? transaction[0] : null,
-//       booking: populatedBooking,
-//     });
-
-//   } catch (error) {
-//     await session.abortTransaction();
-//     session.endSession();
-//     next(error);
-//   }
-// };
-
 export const createTransactionAndUpdateBooking = async (req, res, next) => {
   const session = await mongoose.startSession();
 
@@ -212,7 +109,7 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
         (req.user.type === "admin" || req.user.type === "onsite")
       ) {
         await sendNotification({
-          company: req.user.company,
+          company:populatedBooking.company,
           roles: ["backdesk"],
           title: `Booking ${incStatus.toUpperCase()}`,
           message: `Your booking has been ${incStatus} by ${req.user.type}.`,

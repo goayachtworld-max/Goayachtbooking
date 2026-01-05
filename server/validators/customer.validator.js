@@ -5,11 +5,6 @@ export const customerSchema = z.object({
   contact: z.string().regex(/^(?:\+91)?[6-9]\d{9}$/, "Must be a valid Indian number"),
   alternateContact: z.string().optional(),
   email: z.string().optional(),
-  bookingId: z.string().optional(), // will be added later
-  // govtIdImage: z.string().url("Govt ID image must be a valid URL"),
+  bookingId: z.string().optional(),
   govtIdNo: z.string().optional()
 });
-
-// .regex(/^(?:\+91)?[6-9]\d{9}$/, "Must be a valid Alternate Indian number"),
-// .email("Invalid email"),
-// .regex(/^[A-Za-z0-9]+$/, "Govt ID must be alphanumeric"),

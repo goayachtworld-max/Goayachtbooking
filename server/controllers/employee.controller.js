@@ -1,19 +1,24 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { EmployeeModel } from "../models/employee.model.js";
+import { CompanyModel } from "../models/company.model.js";
+import mongoose from "mongoose";
+
 
 // ✅ Create Employee
 export const createEmployee = async (req, res, next) => {
   try {
     const { username, password } = req.body;
+    console.log(req.body);
     const uname = username.toLowerCase();
     const pass = password;
     const hashedPassword = await bcrypt.hash(pass, 10);
+    console.log("Hashed Password ", hashedPassword)
 
     const employee = await EmployeeModel.create({
       ...req.body,
       password: hashedPassword,
-      company: req.user.company,
+      company: [req.user.company[0]],
       username:uname
     });
 
@@ -68,24 +73,21 @@ export const loginEmployee = async (req, res, next) => {
 // ✅ Get All Employees
 export const getEmployees = async (req, res, next) => {
   try {
-    // Fetch only required fields (hide password & company)
     const employees = await EmployeeModel.find(
-      { company: req.user.company },
-      "-password -company" // exclude password and company
+      { company: { $in: req.user.company } },
+      "-password -company"
     );
-
     res.status(200).json({ success: true, employees });
   } catch (error) {
     next(error);
   }
 };
 
-// ✅ Employees list for booking page
 export const getEmployeesForBooking = async (req, res, next) => {
   try {
-    const { type, id, company } = req.user;
+    const { type, id } = req.user;
 
-    let filter = { company, status: "active" };
+    let filter = { company: { $in: req.user.company }, status: "active" };
 
     // 🔒 Backdesk → only himself
     if (type === "backdesk") {
@@ -103,7 +105,6 @@ export const getEmployeesForBooking = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // Get Single Employee by ID
 export const getEmployeeById = async (req, res, next) => {
@@ -180,14 +181,49 @@ export const updateEmployeeProfile = async (req, res, next) => {
 };
 
 // Activate / Deactivate Employee
+// export const toggleEmployeeStatus = async (req, res, next) => {
+//   try {
+//     const employee = await EmployeeModel.findById(req.params.id);
+//     if (!employee) return res.status(404).json({ success: false, message: "Employee not found" });
+//     employee.status = employee.status === "active" ? "inactive" : "active";
+//     await employee.save();
+//     employee.password = null;
+//     res.json({ success: true, message: `Employee is now ${employee.status}`, employee });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 export const toggleEmployeeStatus = async (req, res, next) => {
   try {
-    const employee = await EmployeeModel.findById(req.params.id);
-    if (!employee) return res.status(404).json({ success: false, message: "Employee not found" });
-    employee.status = employee.status === "active" ? "inactive" : "active";
-    await employee.save();
-    employee.password = null;
-    res.json({ success: true, message: `Employee is now ${employee.status}`, employee });
+    const adminCompanyId = req.user.company[0];
+
+    if (!adminCompanyId) {
+      return res.status(400).json({
+        success: false,
+        message: "Admin company not found",
+      });
+    }
+
+    const employee = await EmployeeModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        $pull: { company: adminCompanyId }, // ❌ remove only this company
+      },
+      { new: true }
+    ).select("-password");
+
+    if (!employee) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Employee not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Employee removed from company successfully",
+      employee,
+    });
   } catch (error) {
     next(error);
   }
@@ -203,7 +239,6 @@ export const deleteEmployee = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const updateEmployeeProfileByAdmin = async (req, res) => {
   try {
@@ -254,5 +289,93 @@ export const updateEmployeeProfileByAdmin = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const addCompanyToEmployee = async (req, res, next) => {
+  try {
+    const adminId = req.user.id;
+    const { employeeId, companyId } = req.body;
+
+    // 1️⃣ Only admin / superAdmin allowed
+    if (!["admin", "superAdmin"].includes(req.user.type)) {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can add company to employee",
+      });
+    }
+
+    // 2️⃣ Validate ObjectIds
+    if (
+      !mongoose.Types.ObjectId.isValid(employeeId) ||
+      !mongoose.Types.ObjectId.isValid(companyId)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid employeeId or companyId",
+      });
+    }
+
+    // 4️⃣ Verify company exists
+    const company = await CompanyModel.findById(companyId);
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "Company not found",
+      });
+    }
+
+    // 5️⃣ Verify employee exists
+    const employeeExists = await EmployeeModel.findById(employeeId);
+    if (!employeeExists) {
+      return res.status(404).json({
+        success: false,
+        message: "Employee not found",
+      });
+    }
+
+    // 6️⃣ Add company using $addToSet (NO duplicates)
+    const updatedEmployee = await EmployeeModel.findByIdAndUpdate(
+      employeeId,
+      { $addToSet: { company: companyId } },
+      { new: true }
+    ).select("-password");
+
+    res.status(200).json({
+      success: true,
+      message: "Company added to employee successfully",
+      employee: updatedEmployee,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAvailableAgentsAndBackdesk = async (req, res, next) => {
+  try {
+    const adminCompanyId = req.user.company?.[0];
+
+    // 1️⃣ Ensure admin company exists
+    if (!adminCompanyId || !mongoose.Types.ObjectId.isValid(adminCompanyId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Admin company not found",
+      });
+    }
+
+    // 2️⃣ Fetch employees
+    const employees = await EmployeeModel.find({
+      type: { $in: ["agent", "backdesk"] },
+      isPrivate: false,
+      company: { $ne: adminCompanyId }, // ❌ NOT employee of admin company
+    }).select("-password");
+
+    res.status(200).json({
+      success: true,
+      count: employees.length,
+      employees,
+    });
+  } catch (error) {
+    next(error);
   }
 };

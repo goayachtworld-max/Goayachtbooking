@@ -15,6 +15,7 @@ import transactionRoutes from "./routes/transaction.routes.js";
 import slotRouter from "./routes/slot.routes.js";
 import { globalErrorHandler } from "./middleware/errorHandler.js";
 import notificationRouter from "./routes/notification.routes.js";
+import companyRouter from "./routes/company.route.js";
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.use("/api/availability", availabilityRoutes);
 app.use("/api/yacht", yachtRoutes);
 app.use("/api/slot", slotRouter);
 app.use("/api/notifications", notificationRouter);
+app.use("/api/company" , companyRouter);
 
 app.use(globalErrorHandler);
 

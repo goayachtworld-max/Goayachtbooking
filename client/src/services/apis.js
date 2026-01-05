@@ -9,6 +9,8 @@ export const employee = {
   UPDATE_EMPLOYEE_PROFILE_API: `${BASE_URL}/employees/update-profile`,
   UPDATE_EMPLOYEE_BY_ADMIN_API: `${BASE_URL}/employees/update-by-admin`,
   GET_EMPLOYEES_FOR_BOOKING_API: `${BASE_URL}/employees/bookingpage`,
+  GET_EMPLOYEES_NOT_IN_COMPANY: `${BASE_URL}/employees/not-in-company`,
+  ADD_EMPLOYEE_TO_COMPANY : `${BASE_URL}/employees/add-to-company`
 };
 
 export const customer = {

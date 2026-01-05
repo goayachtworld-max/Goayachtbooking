@@ -112,6 +112,18 @@ export const lockSlot = async (req, res, next) => {
         });
     }
 
+    const yacht = await YachtModel.findOne({
+      _id: yachtId,
+      company: { $in: req.user.company }
+    });
+
+    if (!yacht) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized yacht access"
+      });
+    }
+
     const { available, conflictSlot, reason } = await checkSlotAvailability({
       yachtId,
       date,
@@ -128,11 +140,6 @@ export const lockSlot = async (req, res, next) => {
           success: false,
           message: "You already have a lock on this slot.",
         });
-
-    // const [year, month, day] = date.split("-");
-    // const [endHour, endMinute] = endTime.split(":");
-    // const slotEndTime = new Date(year, month - 1, day, endHour, endMinute);
-    // const deleteAfter = new Date(slotEndTime.getTime() + lockDurationMinutes * 60 * 1000);
     const deleteAfter = new Date(Date.now() + lockDurationMinutes * 60 * 1000);
 
     const lockedSlot = await AvailabilityModel.create({
@@ -175,6 +182,18 @@ export const releaseSlot = async (req, res, next) => {
           message: "yachtId, date, startTime, and endTime are required.",
         });
     }
+    const yacht = await YachtModel.findOne({
+      _id: yachtId,
+      company: { $in: req.user.company }
+    });
+
+    if (!yacht) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized yacht access"
+      });
+    }
+
 
     const slot = await AvailabilityModel.findOne({
       yachtId,
@@ -190,7 +209,7 @@ export const releaseSlot = async (req, res, next) => {
       return res
         .status(400)
         .json({ success: false, message: "Slot is not locked." });
-    if ((String(slot.appliedBy) !== String(employeeId)) && employeeType!=="admin" ) {
+    if ((String(slot.appliedBy) !== String(employeeId)) && employeeType !== "admin") {
       console.log("Locked by another emp");
       return res
         .status(403)
@@ -235,7 +254,10 @@ export const getAvailabilitySummary = async (req, res, next) => {
     }
 
     // Fetch yachts
-    const yachts = await YachtModel.find({ company, status: "active" }).select(
+    const yachts = await YachtModel.find({
+      company: { $in: req.user.company },
+      status: "active"
+    }).select(
       "_id name capacity sellingPrice status yachtPhotos"
     );
     if (!yachts.length) {
@@ -250,7 +272,7 @@ export const getAvailabilitySummary = async (req, res, next) => {
     const bookings = await BookingModel.find({
       yachtId: { $in: yachtIds },
       date: { $gte: start, $lte: end },
-     status: { $in: ["pending", "initiated", "confirmed"] }
+      status: { $in: ["pending", "initiated", "confirmed"] }
     });
 
     // Map yachts -> date -> booked info
@@ -344,8 +366,10 @@ export const getDayAvailability = async (req, res, next) => {
     // ===========================================
     // ✅ GET YACHT + ONLY SLOTS MATCHING THIS DATE
     // ===========================================
-    const yacht = await YachtModel.findById(yachtId)
-      .select("name slots")
+    const yacht = await YachtModel.findOne({
+      _id: yachtId,
+      company: { $in: req.user.company }
+    }).select("name slots")
       .populate({
         path: "slots",
         match: {

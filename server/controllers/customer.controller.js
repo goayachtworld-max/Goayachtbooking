@@ -30,26 +30,11 @@ export const createCustomer = async (req, res, next) => {
   }
 };
 
-// export const createCustomer = async (req, res, next) => {
-//   console.log("Create Customer")
-//   try {
-//     console.log("Cloudinary img ", req.cloudinaryUrl)
-//     const customer = await CustomerModel.create({
-//       ...req.body,
-//       company: req.user.company,
-//       govtIdImage: req.cloudinaryUrl // Attach uploaded image URL
-//     });
-//     console.log("Customer - ", customer);
-//     res.status(201).json(customer);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 
 export const getCustomers = async (req, res, next) => {
   console.log("Get all Customers")
   try {
-    const customers = await CustomerModel.find();
+    const customers = await CustomerModel.find({ company: { $in: req.user.company } });
     res.json(customers);
   } catch (error) {
     next(error);
@@ -60,13 +45,12 @@ export const getCustomerByContact = async (req, res, next) => {
   try {
     const { contact } = req.params; // 👈 Expecting contact in URL
     console.log("Get by contact ", contact)
-    const customer = await CustomerModel.findOne({ contact });
+    const customer = await CustomerModel.findOne({
+      contact,
+      company: { $in: req.user.company }
+    });
 
-    // if (!customer) {
-    //   return res.status(404).json({ error: "Customer not found" });
-    // }
-
-    res.json({"customer":customer});
+    res.json({ "customer": customer });
   } catch (error) {
     next(error);
   }
@@ -85,7 +69,7 @@ export const searchCustomersByName = async (req, res, next) => {
 
     const customers = await CustomerModel.find({
       name: { $regex: name, $options: "i" },
-      company: req.user.company
+      company: { $in: req.user.company }
     })
       .limit(5)
       .select("name contact email govtIdNo");

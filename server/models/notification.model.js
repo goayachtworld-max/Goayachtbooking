@@ -2,13 +2,12 @@ import mongoose from "mongoose";
 
 const notificationSchema = new mongoose.Schema({
   company: {
-    type: String,
-    required: true,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company', 
+    required: true
   },
-
   title: String,
   message: String,
-
   type: {
     type: String,
     enum: [
@@ -17,17 +16,14 @@ const notificationSchema = new mongoose.Schema({
       "payment_received",
     ],
   },
-
   bookingId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Booking",
   },
-
   recipients: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
   }],
-
   readBy: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",

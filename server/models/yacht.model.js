@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const yachtSchema = new mongoose.Schema(
   {
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: true
+    },
     name: { type: String, required: true },
     capacity: { type: Number, required: true }, // max pax
     runningCost: { type: Number, required: true },
@@ -38,10 +43,6 @@ const yachtSchema = new mongoose.Schema(
         "Special Slot Time must be in HH:MM format",
       ],
     }],
-    company: {
-      type: String,
-      required: true,
-    },
     slots: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -54,7 +55,6 @@ const yachtSchema = new mongoose.Schema(
     registrationNumber: { type: String },
     size: { type: String },
     captain: { type: String },
-    company: { type: String },
     driverName: { type: String },
     totalCrew: { type: Number },
     sailingArea: { type: String, enum: ["Seaside", "Backwaters"] },
