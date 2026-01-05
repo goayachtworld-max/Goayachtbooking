@@ -14,23 +14,42 @@ jobs:
       FTP_PORT: 21
 
     steps:
+      # 📦 Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 🟢 Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
+      # 📥 Install frontend dependencies
       - name: Install dependencies
         working-directory: ./client
         run: npm install
 
+      # 🏗️ Build frontend
       - name: Build project
         working-directory: ./client
         run: npm run build
 
-      # 🔍 PRINT VALUES (SAFE)
+      # ✅ Verify build output exists
+      - name: Verify build output
+        run: |
+          echo "Checking build output..."
+          if [ ! -d "client/dist" ]; then
+            echo "❌ client/dist does not exist"
+            exit 1
+          fi
+          if [ -z "$(ls -A client/dist)" ]; then
+            echo "❌ client/dist is empty"
+            exit 1
+          fi
+          echo "✅ client/dist exists and has files"
+          ls -la client/dist
+
+      # 🔍 Print deploy values (safe)
       - name: Print deploy values
         run: |
           echo "---- DEPLOY DEBUG ----"
@@ -41,13 +60,15 @@ jobs:
           echo "FTP_USERNAME set? -> ${{ secrets.FTP_USERNAME != '' }}"
           echo "FTP_PASSWORD set? -> ${{ secrets.FTP_PASSWORD != '' }}"
 
-      # 🚀 DEPLOY
+      # 🚀 Deploy to cPanel via FTP
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ env.FTP_PORT }}
-          local-dir: ${{ env.LOCAL_DIR }}
-          server-dir: ${{ env.SERVER_DIR }}
+          port: 21
+          local-dir: client/dist/
+          server-dir: /
+          dangerous-clean-slate: true
+          log-level: verbose
