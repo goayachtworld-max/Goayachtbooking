@@ -47,6 +47,14 @@ function CustomerForm() {
     setLoading(true);
     setError("");
 
+    const indianPhoneRegex = /^(?:\+91-?|\+91)?[789]\d{9}$/;
+
+    if (!indianPhoneRegex.test(formData.contact)) {
+      setLoading(false);
+      setError("Please enter a valid Indian mobile number");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("authToken");
 
@@ -96,7 +104,7 @@ function CustomerForm() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4>Create Customer</h4>
         <button className="btn btn-secondary" onClick={handleBack}>
-        Back
+          Back
         </button>
       </div>
 

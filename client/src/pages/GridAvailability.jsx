@@ -58,6 +58,17 @@ const getDatesBetween = (start, end) => {
   return dates;
 };
 
+const employee = JSON.parse(localStorage.getItem("user") || "{}");
+
+console.log("Logged user:", employee);
+
+const isAdminOrOnsite =
+  employee.type === "admin" || employee.type === "onsite";
+
+const isOwner = (slot) =>
+  slot.appliedBy && slot.appliedBy === employee._id;
+
+
 const buildSlotsForYacht = (yachtObj) => {
   if (
     !yachtObj ||
@@ -249,6 +260,8 @@ function GridAvailability() {
         const yachtList =
           res?.data?.yachts || res?.yachts || res?.data || [];
         setYachts(Array.isArray(yachtList) ? yachtList : []);
+
+        console.log("Here are yatchs : ", yachtList)
       } catch {
         toast.error("Failed to load yachts");
       }
@@ -315,6 +328,7 @@ function GridAvailability() {
               date,
               custName: bookedOverlap.custName || bookedOverlap.customerName || "",
               empName: bookedOverlap.empName || bookedOverlap.employeeName || "",
+              appliedBy: bookedOverlap.appliedBy || null,
             };
           }
 
@@ -330,6 +344,7 @@ function GridAvailability() {
               ...slot,
               date,
               empName: lockedOverlap.empName || lockedOverlap.employeeName || "",
+              appliedBy: lockedOverlap.appliedBy || null
             };
           }
 
@@ -429,6 +444,7 @@ function GridAvailability() {
               : "booked",
           custName: bookedOverlap.custName || "",
           empName: bookedOverlap.empName || "",
+          appliedBy: bookedOverlap.appliedBy || null,
         };
       }
 
@@ -446,6 +462,7 @@ function GridAvailability() {
           date,
           type: "locked",
           empName: lockedOverlap.empName || "",
+          appliedBy: lockedOverlap.appliedBy || null
         };
       }
 
@@ -717,54 +734,155 @@ function GridAvailability() {
     setIsConfirming(false);
   };
 
+  // const renderRowCells = (row) => {
+  //   const cells = [];
+  //   let colIndex = 0;
+  //   while (colIndex < timeHeaders.length) {
+  //     const current = timeHeaders[colIndex];
+  //     const slot = row.slots.find((s) => s.start === current);
+  //     if (slot) {
+  //       const span = Math.max(1, getColSpan(slot.start, slot.end));
+  //       const past = isPastSlot(slot, row.date);
+  //       const unauthorized =
+  //         !isAdminOrOnsite &&
+  //         (slot.type === "locked" || slot.type === "booked" || slot.type === "pending") &&
+  //         !isOwner(slot);
+
+  //       let cursorStyle = "pointer";
+  //       if (past || unauthorized) cursorStyle = "not-allowed";
+  //       let cellClass = "";
+  //       if (past) cellClass = "bg-secondary text-white opacity-40";
+  //       else if (slot.type === "booked") cellClass = "bg-danger text-white";
+  //       else if (slot.type === "locked") cellClass = "bg-warning text-dark";
+  //       else if (slot.type === "pending") cellClass = "bg-info text-dark";
+  //       else cellClass = "bg-success text-white";
+
+  //       const title =
+  //         slot.type === "booked" || slot.type === "pending"
+  //           ? `Booked\nUser Name: ${slot.empName}\nBooking Name: ${slot.custName}`
+  //           : slot.type === "locked"
+  //             ? `Locked by: ${slot.empName}`
+  //             : `${slot.start} - ${slot.end}`;
+
+  //       cells.push(
+  //         <td
+  //           key={`${row.date}-${current}`}
+  //           colSpan={span}
+  //           title={title}
+  //           className={`slot-cell ${slot.type} ${past ? "opacity-40" : ""}`}
+  //           style={{ cursor: past ? "not-allowed" : "pointer" }}
+  //           // onClick={() => {
+  //           //   if (!past) {
+  //           //     const typeToOpen = slot.type === "pending" ? "booked" : slot.type;
+  //           //     handleSlotClick(slot, typeToOpen);
+  //           //   }
+  //           // }}
+
+  //           onClick={() => {
+  //             if (past) return;
+
+  //             // 🚫 AGENT/BACKDESK CANNOT OPEN OTHERS' SLOTS
+  //             if (unauthorized) return;
+  //             if (
+  //               !isAdminOrOnsite &&
+  //               (slot.type === "locked" ||
+  //                 slot.type === "booked" ||
+  //                 slot.type === "pending") &&
+  //               !isOwner(slot)
+  //             ) {
+  //               return; // ❌ NOTHING happens
+  //             }
+
+  //             const typeToOpen =
+  //               slot.type === "pending" ? "booked" : slot.type;
+
+  //             handleSlotClick(slot, typeToOpen);
+  //           }}
+
+  //         >
+  //           {to12HourFormat(slot.start)} – {to12HourFormat(slot.end)}
+  //         </td>
+  //       );
+  //       colIndex += span;
+  //     } else {
+  //       cells.push(
+  //         <td
+  //           // key={`${row.date}-${current}`}
+  //           key={crypto.randomUUID()}
+  //           className="bg-light text-muted"
+  //           title="Not available"
+  //         >
+  //           —
+  //         </td>
+  //       );
+  //       colIndex += 1;
+  //     }
+  //   }
+  //   return cells;
+  // };
+
   const renderRowCells = (row) => {
     const cells = [];
     let colIndex = 0;
+
     while (colIndex < timeHeaders.length) {
       const current = timeHeaders[colIndex];
       const slot = row.slots.find((s) => s.start === current);
+
       if (slot) {
         const span = Math.max(1, getColSpan(slot.start, slot.end));
         const past = isPastSlot(slot, row.date);
-        let cellClass = "";
-        if (past) cellClass = "bg-secondary text-white opacity-40";
-        else if (slot.type === "booked") cellClass = "bg-danger text-white";
-        else if (slot.type === "locked") cellClass = "bg-warning text-dark";
-        else if (slot.type === "pending") cellClass = "bg-info text-dark";
-        else cellClass = "bg-success text-white";
 
-        const title =
-          slot.type === "booked" || slot.type === "pending"
+        // restricted for non-admin/backdesk users
+        const unauthorized =
+          !isAdminOrOnsite &&
+          (slot.type === "locked" || slot.type === "booked" || slot.type === "pending") &&
+          !isOwner(slot);
+
+        // cursor & tooltip
+        const cursorStyle = past || unauthorized ? "not-allowed" : "pointer";
+        const titleText = past || unauthorized
+          ? "Not allowed"
+          : slot.type === "booked" || slot.type === "pending"
             ? `Booked\nUser Name: ${slot.empName}\nBooking Name: ${slot.custName}`
             : slot.type === "locked"
               ? `Locked by: ${slot.empName}`
               : `${slot.start} - ${slot.end}`;
 
+        // class names for CSS hover disable
+        const cellClass = `
+        slot-cell 
+        ${slot.type} 
+        ${past ? "past" : ""} 
+        ${unauthorized ? "unauthorized" : ""}
+      `;
+
         cells.push(
           <td
             key={`${row.date}-${current}`}
             colSpan={span}
-            title={title}
-            className={`slot-cell ${slot.type} ${past ? "opacity-40" : ""}`}
-            style={{ cursor: past ? "not-allowed" : "pointer" }}
+            title={titleText}
+            className={cellClass}
+            style={{ cursor: cursorStyle }}
             onClick={() => {
-              if (!past) {
-                const typeToOpen = slot.type === "pending" ? "booked" : slot.type;
-                handleSlotClick(slot, typeToOpen);
-              }
+              if (past || unauthorized) return; // block click
+              const typeToOpen = slot.type === "pending" ? "booked" : slot.type;
+              handleSlotClick(slot, typeToOpen);
             }}
           >
             {to12HourFormat(slot.start)} – {to12HourFormat(slot.end)}
           </td>
         );
+
         colIndex += span;
       } else {
+        // empty cell
         cells.push(
           <td
-            // key={`${row.date}-${current}`}
             key={crypto.randomUUID()}
             className="bg-light text-muted"
             title="Not available"
+            style={{ cursor: "not-allowed" }}
           >
             —
           </td>
@@ -772,6 +890,7 @@ function GridAvailability() {
         colIndex += 1;
       }
     }
+
     return cells;
   };
 
@@ -821,6 +940,32 @@ function GridAvailability() {
             </button>
           </div>
         </div>
+{/* 
+        {yacht!=null && (
+          <div>
+            <div>B2B Price : {yacht?.runningCost }</div>
+            <div>B2C Price : {yacht?.sellingPrice }</div>
+          </div>
+        )} */}
+
+        {yacht && (
+  <div className="mb-3 d-flex gap-4 align-items-center">
+    <div>
+      <span className="text-muted me-1">B2B:</span>
+      <span className="fw-semibold text-primary">
+        ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
+      </span>
+    </div>
+
+    <div>
+      <span className="text-muted me-1">B2C:</span>
+      <span className="fw-semibold text-success">
+        ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
+      </span>
+    </div>
+  </div>
+)}
+
 
         {loading ? (
           <div className="text-center py-5">Loading availability...</div>
@@ -888,31 +1033,33 @@ function GridAvailability() {
                       </p>
 
                       {/* Editable time fields */}
-                      <div className="text-start">
-                        <label className="form-label">Start time</label>
-                        <input
-                          type="time"
-                          className="form-control mb-2"
-                          value={editStart || ""}
-                          disabled={!canEditSlot}
-                          onChange={(e) => setEditStart(e.target.value)}
-                        />
+                      {employee?.type == "admin" && (
+                        <div className="text-start">
+                          <label className="form-label">Start time</label>
+                          <input
+                            type="time"
+                            className="form-control mb-2"
+                            value={editStart || ""}
+                            disabled={!canEditSlot}
+                            onChange={(e) => setEditStart(e.target.value)}
+                          />
 
-                        <label className="form-label">End time</label>
-                        <input
-                          type="time"
-                          className="form-control"
-                          value={editEnd || ""}
-                          disabled={!canEditSlot}
-                          onChange={(e) => setEditEnd(e.target.value)}
-                        />
+                          <label className="form-label">End time</label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            value={editEnd || ""}
+                            disabled={!canEditSlot}
+                            onChange={(e) => setEditEnd(e.target.value)}
+                          />
 
-                        {!canEditSlot && (
-                          <div className="form-text text-muted mt-2">
-                            This slot cannot be edited
-                          </div>
-                        )}
-                      </div>
+                          {!canEditSlot && (
+                            <div className="form-text text-muted mt-2">
+                              This slot cannot be edited
+                            </div>
+                          )}
+                        </div>)}
+
                     </>
                   )}
                 </div>

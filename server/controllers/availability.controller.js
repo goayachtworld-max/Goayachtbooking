@@ -392,7 +392,7 @@ export const getDayAvailability = async (req, res, next) => {
       date,
       status: { $in: ["pending", "initiated", "confirmed"] }
     })
-      .select("startTime endTime status")
+      .select("startTime endTime status employeeId customerId")
       .populate({ path: "customerId", select: "name" })
       .populate({ path: "employeeId", select: "name" });
 
@@ -400,6 +400,7 @@ export const getDayAvailability = async (req, res, next) => {
       start: b.startTime,
       end: b.endTime,
       status: b.status,
+      appliedBy: b.employeeId?._id, 
       empName: b.employeeId.name,
       custName: b.customerId.name
     }));

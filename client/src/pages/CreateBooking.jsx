@@ -499,7 +499,9 @@ function CreateBooking() {
             <label className="form-label fw-bold">Quoted Amount</label>
             <input
               type="number"
-              className={`form-control border text-dark ${isAmountInvalid ? "border-danger is-invalid" : "border-dark"
+              // className={`form-control border text-dark ${isAmountInvalid ? "border-danger is-invalid" : "border-dark"
+              //   }`}
+              className={`form-control border text-dark ${isAmountInvalid ? "border-warning" : "border-dark"
                 }`}
               name="totalAmount"
               value={formData.totalAmount}

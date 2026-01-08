@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { createEmployeeAPI } from "../services/operations/authAPI";
 import { toast } from "react-hot-toast";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+
 
 function CreateEmployee() {
   const [formData, setFormData] = useState({
@@ -16,6 +18,9 @@ function CreateEmployee() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 
   // const handleChange = (e) => {
   //   const { name, value } = e.target;
@@ -51,6 +56,13 @@ function CreateEmployee() {
     // Normalize contact number
     let contact = formData.contact.trim();
     if (contact.startsWith("0")) contact = contact.slice(1);
+    const indianPhoneRegex = /^(?:\+91-?|\+91)?[789]\d{9}$/;
+
+    if (!indianPhoneRegex.test(contact)) {
+      setLoading(false);
+      setError("Please enter a valid Indian mobile number");
+      return;
+    }
 
 
     try {
@@ -195,7 +207,7 @@ function CreateEmployee() {
         </div>
 
         {/* Password */}
-        <div className="col-12 col-md-6">
+        {/* <div className="col-12 col-md-6">
           <label className="form-label fw-bold">Password</label>
           <input
             type="password"
@@ -206,10 +218,34 @@ function CreateEmployee() {
             placeholder="Enter password"
             required
           />
+        </div> */}
+        <div className="col-12 col-md-6">
+          <label className="form-label fw-bold">Password</label>
+
+          <div className="input-group">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="form-control border border-dark text-dark"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter password"
+              required
+            />
+
+            <span
+              className="input-group-text bg-white border border-dark"
+              style={{ cursor: "pointer" }}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
         </div>
 
+
         {/* Confirm Password */}
-        <div className="col-12 col-md-6">
+        {/* <div className="col-12 col-md-6">
           <label className="form-label fw-bold">Confirm Password</label>
           <input
             type="password"
@@ -220,7 +256,32 @@ function CreateEmployee() {
             placeholder="Re-enter password"
             required
           />
+        </div> */}
+        <div className="col-12 col-md-6">
+          <label className="form-label fw-bold">Confirm Password</label>
+
+          <div className="input-group">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              className="form-control border border-dark text-dark"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Re-enter password"
+              required
+            />
+
+            <span
+              className="input-group-text bg-white border border-dark"
+              style={{ cursor: "pointer" }}
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
         </div>
+
+
 
         {/* Status */}
         <div className="col-12 col-md-6">
@@ -238,7 +299,7 @@ function CreateEmployee() {
 
         {/* Private User */}
         <div className="col-12 col-md-6">
-          <label className="form-label fw-bold">Private User</label>
+          <label className="form-label fw-bold">User Visiblity</label>
 
           <select
             className="form-select border border-dark text-dark"
@@ -251,8 +312,8 @@ function CreateEmployee() {
               })
             }
           >
-            <option value="false">No (Public)</option>
-            <option value="true">Yes (Private)</option>
+            <option value="false">Global</option>
+            <option value="true">Local</option>
           </select>
 
         </div>

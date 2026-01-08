@@ -882,7 +882,7 @@ function DayAvailability() {
                       Locked slot: <strong>{to12HourFormat(selectedSlot.start)}</strong> —{" "}
                       <strong>{to12HourFormat(selectedSlot.end)}</strong>
                     </div>
-                    <div className="mt-2 fs-6">Locked by: {selectedSlot.empName}</div>
+                    {/* <div className="mt-2 fs-6">Locked by: {selectedSlot.empName}</div> */}
                   </>
                 )}
               </div>
@@ -927,7 +927,7 @@ function DayAvailability() {
                     <strong>{to12HourFormat(selectedSlot.end)}</strong>
                   </div>
 
-                  {selectedSlot.custName && (
+                  {/* {selectedSlot.custName && (
                     <div className="mt-2 fw-semibold text-primary">
                       Booking Name: {selectedSlot.custName}
                     </div>
@@ -935,7 +935,7 @@ function DayAvailability() {
 
                   {selectedSlot.empName && (
                     <div className="mt-1 fw-bold text-secondary">User Name: {selectedSlot.empName}</div>
-                  )}
+                  )} */}
                 </>
               )}
             </div>
