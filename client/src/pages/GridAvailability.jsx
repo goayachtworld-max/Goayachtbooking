@@ -59,6 +59,7 @@ const getDatesBetween = (start, end) => {
 };
 
 const employee = JSON.parse(localStorage.getItem("user") || "{}");
+const user = JSON.parse(localStorage.getItem("user") || "{}");
 
 console.log("Logged user:", employee);
 
@@ -1033,7 +1034,7 @@ function GridAvailability() {
                       </p>
 
                       {/* Editable time fields */}
-                      {employee?.type == "admin" && (
+                      {user?.type == "admin" && (
                         <div className="text-start">
                           <label className="form-label">Start time</label>
                           <input

@@ -32,5 +32,9 @@
   object-fit: cover;
 }
 
+th[role="button"] {
+  cursor: pointer;
+  user-select: none;
+}
 
 /* This css is used in allYacht and createYacht */

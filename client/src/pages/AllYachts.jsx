@@ -7,6 +7,7 @@ import {
 } from "../services/operations/yautAPI";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; // FontAwesome icons
+import { FaSortUp, FaSortDown } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import "./createYacht.css"
 
@@ -24,6 +25,31 @@ const AllYachts = () => {
   const [newImages, setNewImages] = useState([]); // File[]
   const [removedImages, setRemovedImages] = useState([]); // string URLs
   const [imagePreviews, setImagePreviews] = useState([]);
+
+  const [sortConfig, setSortConfig] = useState({
+    key: null,        // "name" | "capacity" | "runningCost"
+    direction: "asc", // "asc" | "desc"
+  });
+
+  const SortIcon = ({ column }) => {
+  const isActive = sortConfig.key === column;
+
+  return (
+    <span className="ms-1">
+      {isActive ? (
+        sortConfig.direction === "asc" ? (
+          <FaSortUp color="#fff" />
+        ) : (
+          <FaSortDown color="#fff" />
+        )
+      ) : (
+        <FaSortUp color="#6c757d" /> // inactive (Bootstrap gray)
+      )}
+    </span>
+  );
+};
+
+
 
   const navigate = useNavigate();
 
@@ -91,6 +117,19 @@ const AllYachts = () => {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
+
+  const handleSort = (key) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        // toggle direction
+        return {
+          key,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+      return { key, direction: "asc" };
+    });
   };
 
   // ------------------------------------------------------------------
@@ -337,115 +376,115 @@ const AllYachts = () => {
   // };
 
   const handleEditSave = async () => {
-  if (!selectedYacht) return;
+    if (!selectedYacht) return;
 
-  const { runningCost, sellingPrice, maxSellingPrice, name } = selectedYacht;
+    const { runningCost, sellingPrice, maxSellingPrice, name } = selectedYacht;
 
-  // ---------------- VALIDATIONS ----------------
-  if (!name || !sellingPrice || !maxSellingPrice) {
-    toast.error("Please fill all required fields.");
-    return;
-  }
-
-  if (Number(sellingPrice) <= Number(runningCost)) {
-    toast.error(
-      "Selling Price must be greater than (Sailing + Anchorage) Running Cost."
-    );
-    return;
-  }
-
-  if (Number(maxSellingPrice) <= Number(sellingPrice)) {
-    toast.error("Max Selling Price must be greater than Selling Price.");
-    return;
-  }
-
-  try {
-    setLoading(true);
-    const token = localStorage.getItem("authToken");
-
-    // ---------------- SPECIAL SLOTS ----------------
-    const specialSlotTimes = [
-      selectedYacht.specialSlot1,
-      selectedYacht.specialSlot2,
-    ].filter(Boolean);
-
-    // ---------------- DURATION ----------------
-    const durationMinutes = Number(selectedYacht.duration) || 0;
-    const durationHHMM = minutesToHHMM(durationMinutes);
-
-    // ---------------- FORM DATA ----------------
-    const formData = new FormData();
-
-    // append normal fields
-    formData.append("name", selectedYacht.name);
-    formData.append("capacity", selectedYacht.capacity);
-    formData.append("sailingCost", selectedYacht.sailingCost);
-    formData.append("anchorageCost", selectedYacht.anchorageCost);
-    formData.append(
-      "runningCost",
-      Number(selectedYacht.sailingCost) +
-        Number(selectedYacht.anchorageCost)
-    );
-    formData.append("sellingPrice", selectedYacht.sellingPrice);
-    formData.append("maxSellingPrice", selectedYacht.maxSellingPrice);
-    formData.append("sailStartTime", selectedYacht.sailStartTime);
-    formData.append("sailEndTime", selectedYacht.sailEndTime);
-    formData.append("duration", durationHHMM);
-    formData.append("status", selectedYacht.status);
-
-    formData.append(
-      "specialSlotTimes",
-      JSON.stringify(specialSlotTimes)
-    );
-
-    // ---------------- NEW IMAGES ----------------
-    newImages.forEach((file) => {
-      formData.append("yachtPhotos", file);
-    });
-
-    // ---------------- REMOVED IMAGES ----------------
-    if (removedImages.length > 0) {
-      formData.append(
-        "removedPhotos",
-        JSON.stringify(removedImages)
-      );
+    // ---------------- VALIDATIONS ----------------
+    if (!name || !sellingPrice || !maxSellingPrice) {
+      toast.error("Please fill all required fields.");
+      return;
     }
 
-    // ---------------- API CALL ----------------
-    const res = await updateYacht(
-      selectedYacht._id,
-      formData,
-      token
-    );
+    if (Number(sellingPrice) <= Number(runningCost)) {
+      toast.error(
+        "Selling Price must be greater than (Sailing + Anchorage) Running Cost."
+      );
+      return;
+    }
 
-    const updatedYacht = res?.data?.yacht;
+    if (Number(maxSellingPrice) <= Number(sellingPrice)) {
+      toast.error("Max Selling Price must be greater than Selling Price.");
+      return;
+    }
 
-    // ---------------- UPDATE LOCAL STATE ----------------
-    setYachts((prev) =>
-      prev.map((y) =>
-        y._id === updatedYacht._id
-          ? {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("authToken");
+
+      // ---------------- SPECIAL SLOTS ----------------
+      const specialSlotTimes = [
+        selectedYacht.specialSlot1,
+        selectedYacht.specialSlot2,
+      ].filter(Boolean);
+
+      // ---------------- DURATION ----------------
+      const durationMinutes = Number(selectedYacht.duration) || 0;
+      const durationHHMM = minutesToHHMM(durationMinutes);
+
+      // ---------------- FORM DATA ----------------
+      const formData = new FormData();
+
+      // append normal fields
+      formData.append("name", selectedYacht.name);
+      formData.append("capacity", selectedYacht.capacity);
+      formData.append("sailingCost", selectedYacht.sailingCost);
+      formData.append("anchorageCost", selectedYacht.anchorageCost);
+      formData.append(
+        "runningCost",
+        Number(selectedYacht.sailingCost) +
+        Number(selectedYacht.anchorageCost)
+      );
+      formData.append("sellingPrice", selectedYacht.sellingPrice);
+      formData.append("maxSellingPrice", selectedYacht.maxSellingPrice);
+      formData.append("sailStartTime", selectedYacht.sailStartTime);
+      formData.append("sailEndTime", selectedYacht.sailEndTime);
+      formData.append("duration", durationHHMM);
+      formData.append("status", selectedYacht.status);
+
+      formData.append(
+        "specialSlotTimes",
+        JSON.stringify(specialSlotTimes)
+      );
+
+      // ---------------- NEW IMAGES ----------------
+      newImages.forEach((file) => {
+        formData.append("yachtPhotos", file);
+      });
+
+      // ---------------- REMOVED IMAGES ----------------
+      if (removedImages.length > 0) {
+        formData.append(
+          "removedPhotos",
+          JSON.stringify(removedImages)
+        );
+      }
+
+      // ---------------- API CALL ----------------
+      const res = await updateYacht(
+        selectedYacht._id,
+        formData,
+        token
+      );
+
+      const updatedYacht = res?.data?.yacht;
+
+      // ---------------- UPDATE LOCAL STATE ----------------
+      setYachts((prev) =>
+        prev.map((y) =>
+          y._id === updatedYacht._id
+            ? {
               ...updatedYacht,
               images:
                 updatedYacht.yachtPhotos?.length > 0
                   ? updatedYacht.yachtPhotos
                   : ["/default-yacht.jpg"],
             }
-          : y
-      )
-    );
+            : y
+        )
+      );
 
-    toast.success("Yacht details updated successfully!");
-  } catch (err) {
-    console.error("❌ Error updating yacht:", err);
-    setError(
-      err?.response?.data?.message || "Failed to update yacht"
-    );
-  } finally {
-    setLoading(false);
-    setShowEditModal(false);
-  }
-};
+      toast.success("Yacht details updated successfully!");
+    } catch (err) {
+      console.error("❌ Error updating yacht:", err);
+      setError(
+        err?.response?.data?.message || "Failed to update yacht"
+      );
+    } finally {
+      setLoading(false);
+      setShowEditModal(false);
+    }
+  };
 
   const closeAllModals = () => {
     setShowViewModal(false);
@@ -489,33 +528,70 @@ const AllYachts = () => {
             <thead className="table-dark">
               <tr>
                 <th className="d-none d-sm-table-cell">#</th>
-                <th>Yacht Name</th>
-                <th className="d-none d-md-table-cell">Capacity</th>
-                <th className="d-none d-lg-table-cell">Running Cost (₹)</th>
+                {/* <th>Yacht Name</th> */}
+                <th
+                  role="button"
+                  onClick={() => handleSort("name")}
+                >
+                  Yacht Name <SortIcon column="name" />
+                </th>
+                {/* <th className="d-none d-md-table-cell">Capacity</th> */}
+                <th
+                  className="d-none d-md-table-cell"
+                  role="button"
+                  onClick={() => handleSort("capacity")}
+                >
+                  Capacity <SortIcon column="capacity" />
+                </th>
+                {/* <th className="d-none d-lg-table-cell">Running Cost (₹)</th> */}
+                <th
+                  className="d-none d-lg-table-cell"
+                  role="button"
+                  onClick={() => handleSort("runningCost")}
+                >
+                  Running Cost (₹) <SortIcon column="runningCost" />
+                </th>
                 <th className="d-none d-sm-table-cell">Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {yachts.map((yacht, index) => (
-                <tr key={yacht._id}>
-                  <td className="d-none d-sm-table-cell">{index + 1}</td>
-                  <td className="fw-semibold">{yacht.name}</td>
-                  <td className="d-none d-md-table-cell">{yacht.capacity}</td>
-                  <td className="d-none d-lg-table-cell">
-                    {yacht.runningCost?.toLocaleString() || "-"}
-                  </td>
-                  <td className="d-none d-sm-table-cell">
-                    <span
-                      className={`badge ${yacht.status === "active" ? "bg-success" : "bg-secondary"
-                        }`}
-                    >
-                      {yacht.status?.charAt(0).toUpperCase() +
-                        yacht.status?.slice(1).toLowerCase()}
-                    </span>
-                  </td>
-                  <td>
-                    {/* <div className="d-flex flex-wrap justify-content-center gap-2">
+              {[...yachts]
+                .sort((a, b) => {
+                  if (!sortConfig.key) return 0;
+
+                  const aVal = a[sortConfig.key];
+                  const bVal = b[sortConfig.key];
+
+                  if (typeof aVal === "string") {
+                    return sortConfig.direction === "asc"
+                      ? aVal.localeCompare(bVal)
+                      : bVal.localeCompare(aVal);
+                  }
+
+                  return sortConfig.direction === "asc"
+                    ? Number(aVal) - Number(bVal)
+                    : Number(bVal) - Number(aVal);
+                })
+                .map((yacht, index) => (
+                  <tr key={yacht._id}>
+                    <td className="d-none d-sm-table-cell">{index + 1}</td>
+                    <td className="fw-semibold">{yacht.name}</td>
+                    <td className="d-none d-md-table-cell">{yacht.capacity}</td>
+                    <td className="d-none d-lg-table-cell">
+                      {yacht.runningCost?.toLocaleString() || "-"}
+                    </td>
+                    <td className="d-none d-sm-table-cell">
+                      <span
+                        className={`badge ${yacht.status === "active" ? "bg-success" : "bg-secondary"
+                          }`}
+                      >
+                        {yacht.status?.charAt(0).toUpperCase() +
+                          yacht.status?.slice(1).toLowerCase()}
+                      </span>
+                    </td>
+                    <td>
+                      {/* <div className="d-flex flex-wrap justify-content-center gap-2">
                       <button
                         className="btn btn-sm btn-info"
                         onClick={() => {
@@ -552,41 +628,41 @@ const AllYachts = () => {
                         Delete
                       </button>
                     </div> */}
-                    <div className="d-flex justify-content-center gap-2">
-  <button
-    className="btn btn-sm btn-info"
-    onClick={() => { setSelectedYacht(yacht); setShowViewModal(true); }}
-  >
-    <FaEye />
-  </button>
+                      <div className="d-flex justify-content-center gap-2">
+                        <button
+                          className="btn btn-sm btn-info"
+                          onClick={() => { setSelectedYacht(yacht); setShowViewModal(true); }}
+                        >
+                          <FaEye />
+                        </button>
 
-  <button
-    className="btn btn-sm btn-warning"
-    onClick={() => { 
-      setSelectedYacht({ ...yacht, duration: toMinutes(yacht.duration) });
-      setImagePreviews(yacht.yachtPhotos || []);
-      setNewImages([]);
-      setRemovedImages([]);
-      setShowEditModal(true);
-    }}
-  >
-    <FaEdit />
-  </button>
+                        <button
+                          className="btn btn-sm btn-warning"
+                          onClick={() => {
+                            setSelectedYacht({ ...yacht, duration: toMinutes(yacht.duration) });
+                            setImagePreviews(yacht.yachtPhotos || []);
+                            setNewImages([]);
+                            setRemovedImages([]);
+                            setShowEditModal(true);
+                          }}
+                        >
+                          <FaEdit />
+                        </button>
 
-  <button
-    className="btn btn-sm btn-danger"
-    onClick={() => { setSelectedYacht(yacht); setShowDeleteModal(true); }}
-  >
-    <FaTrash />
-  </button>
-</div>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => { setSelectedYacht(yacht); setShowDeleteModal(true); }}
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
 
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                ))}
             </tbody>
 
-            
+
           </table>
         </div>
       ) : (
