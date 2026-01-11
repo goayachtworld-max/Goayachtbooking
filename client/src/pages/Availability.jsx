@@ -22,12 +22,16 @@ function Availability() {
   const [filterBudget, setFilterBudget] = useState(params.get("budget") || "");
   const [filterDate] = useState(new Date().toISOString().split("T")[0]);
 
+  const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
+
   useEffect(() => {
     const p = new URLSearchParams();
-    p.set("capacity", filterCapacity);
-    p.set("budget", filterBudget);
+    if (filterCapacity) p.set("capacity", filterCapacity);
+    if (filterBudget) p.set("budget", filterBudget);
+    if (searchQuery) p.set("search", searchQuery);
     navigate({ search: p.toString() }, { replace: true });
-  }, [filterCapacity, filterBudget, navigate]);
+  }, [filterCapacity, filterBudget, searchQuery, navigate]);
+
 
   const fetchAvailability = useCallback(
     async (customDate) => {
@@ -54,7 +58,7 @@ function Availability() {
         setSelectedWeek(weekLabel);
 
         const res = await getAvailabilitySummary(startDate, endDate, token);
-
+        console.log("res : ", res);
         if (res?.success && res?.yachts) {
           const formatted = res.yachts.map((y) => ({
             yachtId: y.yachtId || y._id,
@@ -179,6 +183,18 @@ function Availability() {
               <option value="premium">Above ₹20,000</option>
             </select>
           </div>
+
+          <div>
+            <label className="form-label mb-1 fw-semibold">Search</label>
+            <input
+              type="text"
+              className="form-control shadow-sm"
+              placeholder="Search Yacht / Company"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
         </div>
 
         <button className="btn btn-secondary px-3 py-2 clear-btn" onClick={handleClear}>
@@ -254,24 +270,24 @@ function Availability() {
                             style={{ background: bg, cursor: "pointer" }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              
+
                               // Check if this is the "Other" day (3rd day)
                               const d = new Date(day.date);
                               const dayAfter = new Date();
                               dayAfter.setDate(new Date().getDate() + 2);
-                              
+
                               const same = (a, b) =>
                                 a.getFullYear() === b.getFullYear() &&
                                 a.getMonth() === b.getMonth() &&
                                 a.getDate() === b.getDate();
-                              
+
                               const isOtherDay = same(d, dayAfter);
-                              
+
                               if (isOtherDay) {
                                 // For "Other", navigate WITHOUT date
                                 navigate(`/availability/${encodeURIComponent(yacht.name)}`, {
-                                  state: { 
-                                    yachtId: yacht.yachtId, 
+                                  state: {
+                                    yachtId: yacht.yachtId,
                                     yachtName: yacht.name,
                                     requireDateSelection: true
                                   },
@@ -279,10 +295,10 @@ function Availability() {
                               } else {
                                 // For Today/Tomorrow, navigate WITH date
                                 navigate(`/availability/${encodeURIComponent(yacht.name)}/${day.date}`, {
-                                  state: { 
-                                    yachtId: yacht.yachtId, 
-                                    yachtName: yacht.name, 
-                                    day: day.date 
+                                  state: {
+                                    yachtId: yacht.yachtId,
+                                    yachtName: yacht.name,
+                                    day: day.date
                                   },
                                 });
                               }

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { fa } from 'zod/v4/locales';
 
 const employeeSchema = new mongoose.Schema({
   type: {
@@ -41,6 +42,11 @@ const employeeSchema = new mongoose.Schema({
     required: true,
     lowercase: true,
     match: [/^\S+@\S+\.\S+$/, 'Invalid email format']
+  },
+  profilePhoto: {
+    type: String,
+    default: null,
+    required: false
   },
   status: {
     type: String,

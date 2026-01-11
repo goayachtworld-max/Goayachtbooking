@@ -5,20 +5,30 @@ import { getIO } from "../socket.js";
 export const sendNotification = async ({
   company,
   roles,
+  recipientUserId,
   title,
   message,
   type,
   bookingId,
   excludeUserId,
 }) => {
-  const users = await EmployeeModel.find({
-    company,
-    type: { $in: roles },
-  }).select("_id");
+  let recipients = [];
 
-  const recipients = users
-    .map(u => u._id)
-    .filter(id => id.toString() !== excludeUserId?.toString());
+  // ✅ CASE 1: Direct user notification
+  if (recipientUserId) {
+    recipients = [recipientUserId];
+  }
+  // ✅ CASE 2: Role-based notification
+  else if (roles?.length) {
+    const users = await EmployeeModel.find({
+      company,
+      type: { $in: roles },
+    }).select("_id");
+
+    recipients = users
+      .map(u => u._id)
+      .filter(id => id.toString() !== excludeUserId?.toString());
+  }
 
   if (!recipients.length) return;
 
@@ -32,7 +42,6 @@ export const sendNotification = async ({
   });
 
   const io = getIO();
-
   recipients.forEach(userId => {
     io.to(userId.toString()).emit("notification:new", notification);
   });

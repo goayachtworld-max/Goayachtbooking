@@ -3,10 +3,11 @@ import { NotificationModel } from "../models/notification.model.js";
 export const getMyNotifications = async (req, res) => {
   const notifications = await NotificationModel.find({
     recipients: req.user.id,
-  })
+  }).populate("company")
     .sort({ createdAt: -1 })
     .limit(50);
 
+  // console.log("Noti : ", notifications)
   res.json({ success: true, notifications });
 };
 

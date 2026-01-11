@@ -258,8 +258,8 @@ export const getAvailabilitySummary = async (req, res, next) => {
       company: { $in: req.user.company },
       status: "active"
     }).select(
-      "_id name capacity sellingPrice status yachtPhotos"
-    );
+      "_id name capacity sellingPrice status yachtPhotos company"
+    ).populate("company");
     if (!yachts.length) {
       return res
         .status(404)
@@ -324,7 +324,8 @@ export const getAvailabilitySummary = async (req, res, next) => {
         sellingPrice: yacht.sellingPrice,
         availability: yachtData,
         status: yacht.status,
-        yachtPhotos: yacht.yachtPhotos
+        yachtPhotos: yacht.yachtPhotos,
+        company : yacht?.company?.name
       };
     });
 

@@ -6,12 +6,13 @@ import {
     markNotificationReadAPI,
 } from "../services/operations/notificationAPI";
 import "../styles/NavbarNotification.css";
+import { useNavigate } from "react-router-dom";
 
 export default function NotificationBell() {
     const [open, setOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const bellRef = useRef(null);
-
+    const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem("user"));
     const userId = user?._id;
 
@@ -57,11 +58,40 @@ export default function NotificationBell() {
         return () => document.removeEventListener("mousedown", handler);
     }, []);
 
+    const handleNotificationClick = async (notification) => {
+        const bookingId = notification.bookingId;
+
+        if (bookingId) {
+            const searchValue = bookingId.slice(-5);
+            // navigate(`/bookings?search=${searchValue}`, {
+            //     replace: false,
+            //     state: {
+            //         refresh: Date.now(),
+            //     },
+            // });
+
+            navigate("/bookings", {
+                state: {
+                    refresh: Date.now(),   // 🔥 FORCE refresh every click
+                    bookingId,             // optional (if you want auto-select later)
+                },
+            });
+        }
+
+        // mark as read
+        if (!notification.readBy?.includes(userId)) {
+            await markAsRead(notification._id);
+        }
+
+        setOpen(false); // optional: close dropdown
+    };
+
     /* ---------------- MARK AS READ ---------------- */
     const markAsRead = async (id) => {
         try {
             const token = localStorage.getItem("authToken");
             await markNotificationReadAPI(id, token);
+
 
             setNotifications((prev) =>
                 prev.map((n) =>
@@ -103,12 +133,13 @@ export default function NotificationBell() {
                             key={n._id}
                             className={`notification-item ${n.readBy?.includes(userId) ? "read" : "unread"
                                 }`}
-                            onClick={() => markAsRead(n._id)}
+                            onClick={() => handleNotificationClick(n)}
                         >
                             <strong>{n.title}</strong>
                             <p className="mb-0">{n.message}</p>
                         </div>
                     ))}
+
 
                 </div>
             )}

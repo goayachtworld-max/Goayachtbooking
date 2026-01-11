@@ -5,6 +5,7 @@ import { checkSlotAvailability } from "./availability.controller.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import { YachtModel } from "../models/yacht.model.js";
 import { sendNotification } from "../services/notification.service.js";
+import { EmployeeModel } from "../models/employee.model.js";
 
 export const createBooking = async (req, res, next) => {
   try {
@@ -12,14 +13,16 @@ export const createBooking = async (req, res, next) => {
 
     const { yachtId, date, startTime, endTime, customerId, quotedAmount, numPeople } = req.body;
     const employeeId = req.user.id;
-    console.log("User type : ", req.user.type)
+    console.log("User type : ", req.user)
 
     // 1️⃣ Fetch the yacht
-    const yacht = await YachtModel.findById(yachtId).select("_id company");
+    const yacht = await YachtModel.findById(yachtId).select("_id company name");
     if (!yacht) {
       return res.status(404).json({ success: false, message: "Yacht not found" });
     }
 
+    const employee = await EmployeeModel.findById(employeeId);
+  
     // ✅ Assign company from yacht
     const companyId = yacht.company;
     // ✅ 0️⃣ determine booking status by role
@@ -96,7 +99,7 @@ export const createBooking = async (req, res, next) => {
         company: companyId,
         roles: ["admin", "onsite"],
         title: "New Booking Pending",
-        message: "A booking created by backdesk is awaiting approval.",
+        message: `A booking created for ${yacht.name} - ${date} by ${employee.name}.`,
         type: "booking_created",
         bookingId: booking._id,
         excludeUserId: req.user.id,
@@ -190,6 +193,7 @@ export const getBookings = async (req, res) => {
       .populate("yachtId", "name")
       .populate("customerId", "name contact email")
       .populate("employeeId", "name type")
+      .populate("company : ", "name" )
       .sort({ date: 1, startTime: 1 });
 
     // ⏱ AUTO UPDATE tripStatus (response level)

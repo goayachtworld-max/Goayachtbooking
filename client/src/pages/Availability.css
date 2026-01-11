@@ -1,126 +1,80 @@
-/* Container Title */
-.availability-title {
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  color: #092a56;
-}
-
-/* Filter Bar */
-.filter-bar {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(6px);
-  border-radius: 16px;
-}
-
-.filter-select {
-  border-radius: 12px !important;
-  max-width: 110px;
-}
-
-.filter-capacity {
-  max-width: 65px;
-}
-
-.clear-btn {
-  border-radius: 12px;
-}
-
-/* Card Styling */
-.yacht-card {
-  cursor: pointer;
-  border-radius: 20px;
-  overflow: hidden;
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-}
-
-.yacht-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-}
-
-/* Yacht Image */
-.yacht-image {
-  height: 200px;
-  width: 100%;
-  object-fit: cover;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-/* Yacht Name */
-.yacht-name {
-  font-weight: 600;
-  color: #145da0;
-}
-
-/* Day Status Box */
-.day-box {
-  width: 31%;
-  color: #333;
-  font-size: 13px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-  padding: 8px;
-  text-align: center;
-}
-
-.day-free {
-  background: #28a745;
-  color: white;
-}
-
-.day-busy {
-  background: #ffd659;
-}
-
-.day-locked {
-  background: #d9d9d9;
-}
-
+/* ======================= */
+/* Container Title         */
+/* ======================= */
 .availability-title {
   font-weight: 700;
   letter-spacing: 0.3px;
   color: #1f3d63;
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
+/* ======================= */
+/* Filter Bar              */
+/* ======================= */
 .filter-box {
-  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.05);
   backdrop-filter: blur(6px);
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.capacity-select{
-  max-width: 80px;
-  border-radius: 12px;
+.filter-box label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  display: block;
 }
+
+.filter-box select,
+.filter-box input {
+  border-radius: 12px;
+  max-width: 150px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* Capacity & Budget specific widths */
+.capacity-select {
+  max-width: 80px;
+}
+
 .budget-select {
   max-width: 110px;
-  border-radius: 12px;
 }
 
 .clear-btn {
   border-radius: 12px;
+  height: 38px;
 }
 
+/* ======================= */
+/* Yacht Card              */
+/* ======================= */
 .card-yacht {
   cursor: pointer;
   border-radius: 20px;
   overflow: hidden;
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.244);
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.24);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .card-yacht:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
+/* ======================= */
+/* Yacht Image             */
+/* ======================= */
 .yacht-img {
   height: 200px;
   width: 100%;
@@ -128,16 +82,142 @@
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
+/* ======================= */
+/* Yacht Name & Info       */
+/* ======================= */
 .yacht-name {
   font-weight: 600;
   color: #145DA0;
+  margin-bottom: 0.25rem;
 }
 
+.yacht-info {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+/* ======================= */
+/* Day Status Boxes        */
+/* ======================= */
 .day-box {
   width: 31%;
-  color: #fff;
   font-size: 13px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  padding: 8px;
+  text-align: center;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.day-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+}
+
+.day-free {
+  background-color: #28a745;
+}
+
+.day-busy {
+  background-color: #ffd659;
+  color: #333;
+}
+
+.day-locked {
+  background-color: #d9d9d9;
+  color: #333;
+}
+
+/* ======================= */
+/* Responsive tweaks       */
+/* ======================= */
+@media (max-width: 768px) {
+  .day-box {
+    width: 48%;
+    margin-bottom: 0.5rem;
+  }
+
+  .filter-box select,
+  .filter-box input {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .day-box {
+    width: 100%;
+  }
+}
+
+
+/* Filter Bar */
+.filter-box {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(6px);
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Filters container inside filter-box */
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Individual filter wrapper */
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 80px;
+  flex: 1 1 auto;
+}
+
+.filter-item input,
+.filter-item select {
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  width: 100%;
+}
+
+/* Clear button alignment */
+.clear-btn {
+  height: 38px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+/* ======================= */
+/* Mobile Responsiveness   */
+/* ======================= */
+@media (max-width: 768px) {
+  .filter-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-controls {
+    flex-direction: column;
+  }
+
+  .filter-item {
+    width: 100%;
+  }
+
+  .clear-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
 }

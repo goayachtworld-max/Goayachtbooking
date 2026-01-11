@@ -35,7 +35,6 @@ export const loginEmployee = async (req, res, next) => {
     const { username, password } = req.body;
     const uname = username.toLowerCase();
     const pass = password;
-
     const employee = await EmployeeModel.findOne({ username:uname });
 
     if (!employee) {
@@ -43,7 +42,6 @@ export const loginEmployee = async (req, res, next) => {
       err.status = 404;
       throw err;
     }
-
     if(employee.status === "inactive"){
       const err = new Error("User is Deactivated, contact with Admin");
       err.status = 403;
@@ -119,29 +117,89 @@ export const getEmployeeById = async (req, res, next) => {
 };
 
 // Update Employee
+// export const updateEmployeeProfile = async (req, res, next) => {
+//   try {
+//     const { currentPassword, newPassword, ...otherUpdates } = req.body;
+
+//     // Find employee first
+//     const employee = await EmployeeModel.findById(req.params.id);
+//     if (!employee) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Employee not found" });
+//     }
+
+//     // 🟡 If password change is requested
+//     if (newPassword) {
+//       // Both must be present
+//       if (!currentPassword || !newPassword) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "Both current and new password are required",
+//         });
+//       }
+
+//       // Verify current password
+//       const isMatch = await bcrypt.compare(
+//         currentPassword,
+//         employee.password
+//       );
+
+//       if (!isMatch) {
+//         return res.status(401).json({
+//           success: false,
+//           message: "Current password is incorrect",
+//         });
+//       }
+
+//       // Hash new password
+//       const hashedPassword = await bcrypt.hash(newPassword, 10);
+//       employee.password = hashedPassword;
+//     }
+
+//     // 🟢 Update other profile fields
+//     Object.keys(otherUpdates).forEach((key) => {
+//       employee[key] = otherUpdates[key];
+//     });
+
+//     await employee.save();
+
+//     // Remove password before sending response
+//     const employeeObj = employee.toObject();
+//     delete employeeObj.password;
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Profile updated successfully",
+//       employee: employeeObj,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 export const updateEmployeeProfile = async (req, res, next) => {
   try {
-    const { currentPassword, newPassword, ...otherUpdates } = req.body;
+    const { currentPassword, newPassword } = req.body;
 
-    // Find employee first
+    console.log("Req body update emp profile : ",req.body)
     const employee = await EmployeeModel.findById(req.params.id);
     if (!employee) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Employee not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Employee not found",
+      });
     }
 
-    // 🟡 If password change is requested
+    /* 🔐 PASSWORD CHANGE */
     if (newPassword) {
-      // Both must be present
-      if (!currentPassword || !newPassword) {
+      if (!currentPassword) {
         return res.status(400).json({
           success: false,
-          message: "Both current and new password are required",
+          message: "Current password is required",
         });
       }
 
-      // Verify current password
       const isMatch = await bcrypt.compare(
         currentPassword,
         employee.password
@@ -154,22 +212,30 @@ export const updateEmployeeProfile = async (req, res, next) => {
         });
       }
 
-      // Hash new password
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      employee.password = hashedPassword;
+      employee.password = await bcrypt.hash(newPassword, 10);
     }
 
-    // 🟢 Update other profile fields
-    Object.keys(otherUpdates).forEach((key) => {
-      employee[key] = otherUpdates[key];
+    /* 🟢 ALLOWED PROFILE FIELDS ONLY */
+    const allowedUpdates = [
+      "name",
+      "contact",
+      "alternateContact",
+      "email",
+      "profilePhoto"
+    ];
+
+    allowedUpdates.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        employee[field] = req.body[field];
+      }
     });
 
     await employee.save();
 
-    // Remove password before sending response
     const employeeObj = employee.toObject();
     delete employeeObj.password;
 
+    console.log("After update : ", employeeObj)
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",
@@ -179,6 +245,7 @@ export const updateEmployeeProfile = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // Activate / Deactivate Employee
 // export const toggleEmployeeStatus = async (req, res, next) => {
@@ -240,57 +307,141 @@ export const deleteEmployee = async (req, res, next) => {
   }
 };
 
+// export const updateEmployeeProfileByAdmin = async (req, res) => {
+//   try {
+//     const { adminPassword, name, email, contact, newPassword, isPrivate } = req.body;
+
+//     // 1. Validate input
+//     if (!adminPassword) {
+//       return res.status(400).json({ success: false, message: "Admin password is required" });
+//     }
+//     // 2. Verify admin password
+//     const adminId = req.user.id; // Assuming admin is authenticated via middleware
+//     console.log("I'm admin : ", adminId)
+//     console.log("req.user : ", req.user);
+//     const admin = await EmployeeModel.findById(adminId);
+//     if (!admin) {
+//       return res.status(401).json({ success: false, message: "Admin not found" });
+//     }
+
+//     const isMatch = await bcrypt.compare(adminPassword, admin.password);
+//     if (!isMatch) {
+//       return res.status(401).json({ success: false, message: "Invalid admin password" });
+//     }
+
+//     // 3. Find employee
+//     const employee = await EmployeeModel.findById(req.params.id);
+//     if (!employee) {
+//       return res.status(404).json({ success: false, message: "Employee not found" });
+//     }
+
+//     // 4. Update fields
+//     if (name) employee.name = name;
+//     if (email) employee.email = email;
+//     if (contact) employee.contact = contact;
+
+//     // 5. Update password if provided
+//     if (newPassword) {
+//       if (newPassword.length < 6) {
+//         return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+//       }
+//       const hashedPassword = await bcrypt.hash(newPassword, 10);
+//       employee.password = hashedPassword
+//     }
+
+//     await employee.save();
+//     employee.password=null;
+
+//     res.json({ success: true, employee });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
 export const updateEmployeeProfileByAdmin = async (req, res) => {
   try {
-    const { adminPassword, name, email, contact, newPassword } = req.body;
+    const {
+      adminPassword,
+      name,
+      email,
+      contact,
+      newPassword,
+      isPrivate, // ✅ added
+    } = req.body;
 
-    // 1. Validate input
+    // 1. Validate admin password
     if (!adminPassword) {
-      return res.status(400).json({ success: false, message: "Admin password is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Admin password is required" });
     }
-    // 2. Verify admin password
-    const adminId = req.user.id; // Assuming admin is authenticated via middleware
-    console.log("I'm admin : ", adminId)
-    console.log("req.user : ", req.user);
+
+    // 2. Verify admin
+    const adminId = req.user.id;
     const admin = await EmployeeModel.findById(adminId);
     if (!admin) {
-      return res.status(401).json({ success: false, message: "Admin not found" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Admin not found" });
     }
 
     const isMatch = await bcrypt.compare(adminPassword, admin.password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: "Invalid admin password" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid admin password" });
     }
 
     // 3. Find employee
     const employee = await EmployeeModel.findById(req.params.id);
     if (!employee) {
-      return res.status(404).json({ success: false, message: "Employee not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Employee not found" });
     }
 
-    // 4. Update fields
-    if (name) employee.name = name;
-    if (email) employee.email = email;
-    if (contact) employee.contact = contact;
+    // 4. Update allowed fields
+    if (name !== undefined) employee.name = name;
+    if (email !== undefined) employee.email = email;
+    if (contact !== undefined) employee.contact = contact;
 
-    // 5. Update password if provided
+    // ✅ PRIVATE / PUBLIC PROFILE
+    if (isPrivate !== undefined) {
+      employee.isPrivate =
+        isPrivate === true || isPrivate === "true";
+    }
+
+    // 5. Password update (optional)
     if (newPassword) {
       if (newPassword.length < 6) {
-        return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters",
+        });
       }
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      employee.password = hashedPassword
+      employee.password = await bcrypt.hash(newPassword, 10);
     }
 
     await employee.save();
-    employee.password=null;
 
-    res.json({ success: true, employee });
+    const employeeObj = employee.toObject();
+    delete employeeObj.password;
+
+    res.json({
+      success: true,
+      message: "Employee updated successfully",
+      employee: employeeObj,
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
+
 
 export const addCompanyToEmployee = async (req, res, next) => {
   try {

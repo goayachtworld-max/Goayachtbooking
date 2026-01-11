@@ -8,7 +8,6 @@ function Navbar({ user, onLogout }) {
   const collapseRef = useRef(null);
   const [showProfile, setShowProfile] = useState(false);
   const location = useLocation();
-
   const token = localStorage.getItem("authToken");
   const [showEditProfile, setShowEditProfile] = useState(false);
 
@@ -18,12 +17,13 @@ function Navbar({ user, onLogout }) {
     contact: user?.contact || "",
     currentPassword: "",
     newPassword: "",
+    isPrivate: user?.isPrivate || false,
+    profilePhoto: user?.profilePhoto || null
   });
 
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [errors, setErrors] = useState({});
-
 
   // Collapse navbar on link click (for mobile)
   const handleNavLinkClick = () => {
@@ -72,21 +72,35 @@ function Navbar({ user, onLogout }) {
       }
 
       setErrors({});
+      let payload;
 
-      const payload = {
-        name: editForm.name,
-        email: editForm.email,
-        contact: editForm.contact,
-      };
+      if (editForm.profilePhoto) {
+        payload = new FormData();
+        payload.append("name", editForm.name);
+        payload.append("email", editForm.email);
+        payload.append("contact", editForm.contact);
+        payload.append("isPrivate", editForm.isPrivate);
+        payload.append("profilePhoto", editForm.profilePhoto);
 
-      if (editForm.currentPassword && editForm.newPassword) {
-        payload.currentPassword = editForm.currentPassword;
-        payload.newPassword = editForm.newPassword;
+        if (editForm.currentPassword && editForm.newPassword) {
+          payload.append("currentPassword", editForm.currentPassword);
+          payload.append("newPassword", editForm.newPassword);
+        }
+      } else {
+        payload = {
+          name: editForm.name,
+          email: editForm.email,
+          contact: editForm.contact,
+          isPrivate: editForm.isPrivate,
+        };
+
+        if (editForm.currentPassword && editForm.newPassword) {
+          payload.currentPassword = editForm.currentPassword;
+          payload.newPassword = editForm.newPassword;
+        }
       }
-      console.log("Inside call : ", payload)
 
       const response = await updateEmployeeProfileAPI(user._id, payload, token);
-
       const updatedEmployee = response.data.employee;
 
       // ✅ Update ONLY required fields in localStorage
@@ -99,6 +113,8 @@ function Navbar({ user, onLogout }) {
           name: updatedEmployee.name,
           email: updatedEmployee.email,
           contact: updatedEmployee.contact,
+          isPrivate: updatedEmployee.isPrivate,
+          profilePhoto: updatedEmployee.profilePhoto
         })
       );
 
@@ -251,13 +267,38 @@ function Navbar({ user, onLogout }) {
             {/* Profile + Logout */}
             <div className="d-flex align-items-center gap-2">
               {/* Profile Button */}
-              <button
+              {/* <button
                 className="btn bg-white rounded-circle text-primary fw-bold shadow-sm d-flex align-items-center justify-content-center"
                 style={{ width: "42px", height: "42px", fontSize: "15px" }}
                 onClick={() => setShowProfile(true)}
               >
                 {getInitials(user?.name)}
+              </button> */}
+              <button
+                className="btn bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center p-0"
+                style={{ width: "42px", height: "42px", overflow: "hidden" }}
+                onClick={() => setShowProfile(true)}
+              >
+                {user?.profilePhoto ? (
+                  <img
+                    src={user.profilePhoto}
+                    alt="profile"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : (
+                  <span
+                    className="text-primary fw-bold"
+                    style={{ fontSize: "15px" }}
+                  >
+                    {getInitials(user?.name)}
+                  </span>
+                )}
               </button>
+
 
               {/* Logout Icon */}
               <button
@@ -308,21 +349,26 @@ function Navbar({ user, onLogout }) {
 
               <div className="modal-body text-center">
                 <img
-                  src={`https://ui-avatars.com/api/?name=${user.name}&background=random`}
+                  src={
+                    user.profilePhoto
+                      ? user.profilePhoto
+                      : `https://ui-avatars.com/api/?name=${user.name}&background=random`
+                  }
                   alt="profile"
                   className="rounded-circle mb-3 shadow-sm"
                   width="100"
                   height="100"
                 />
 
+
                 <h5>{user.name}</h5>
                 <p className="text-muted mb-2">
                   {user.type === "backdesk"
-                        ? "Agent"
-                        : user.type === "onsite"
-                          ? "Staff"
-                          : user.type.charAt(0).toUpperCase() +
-                          user.type.slice(1)}
+                    ? "Agent"
+                    : user.type === "onsite"
+                      ? "Staff"
+                      : user.type.charAt(0).toUpperCase() +
+                      user.type.slice(1)}
                 </p>
 
                 <hr />
@@ -365,7 +411,6 @@ function Navbar({ user, onLogout }) {
         </div>
       )}
 
-      {/* Update Profile Modal */}
       {/* Update Profile Modal */}
       {showEditProfile && (
         <div
@@ -431,8 +476,34 @@ function Navbar({ user, onLogout }) {
                   <div className="text-danger small mb-3">{errors.contact}</div>
                 )}
 
-                <hr />
+                {/* <div className="form-check form-switch mb-3">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="privateProfile"
+                    checked={editForm.isPrivate}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, isPrivate: e.target.checked })
+                    }
+                  />
+                  <label className="form-check-label" htmlFor="privateProfile">
+                    {editForm.isPrivate ? "Private Profile" : "Public Profile"}
+                  </label>
+                </div> */}
 
+                <div className="mb-3 text-start">
+                  <label className="form-label fw-semibold">Profile Photo</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, profilePhoto: e.target.files[0] })
+                    }
+                  />
+                </div>
+
+                <hr />
                 {/* Current Password */}
                 <div className="input-group mb-2">
                   <input

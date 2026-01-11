@@ -203,17 +203,14 @@ export function adjustSlots({
     let gapStart = current.endMin;
     const gapEnd = nextSlot.startMin;
 
-    while (gapEnd - gapStart >= 30) {
-      const slotSize = Math.min(durationMinutes, gapEnd - gapStart);
-      if (slotSize < 30) break;
-
+    // ✅ FIXED: Only fill if gap fits EXACT yacht duration
+    while (gapEnd - gapStart >= durationMinutes) {
       filled.push({
         startMin: gapStart,
-        endMin: gapStart + slotSize,
+        endMin: gapStart + durationMinutes,  // ✅ Fixed yacht duration
         type: "free",
       });
-
-      gapStart += slotSize;
+      gapStart += durationMinutes;  // ✅ Move by fixed duration
     }
   }
 

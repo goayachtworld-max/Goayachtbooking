@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   getAllEmployeesAPI,
   updateEmployeeStatusAPI,
-  updateEmployeeProfileAPI,
   updateEmployeeProfileByAdminAPI,
   addEmployeeToCompanyAPI,
   getEmployeesNotInCompanyAPI,
@@ -75,10 +74,12 @@ const AllEmployees = () => {
       contact: emp.contact || "",
       currentPassword: "",
       newPassword: "",
+      isPrivate: emp.isPrivate ?? false, // ✅ IMPORTANT
     });
     setErrors({});
     setShowEditModal(true);
   };
+
 
   const handleEmployeeUpdate = async () => {
     const newErrors = {};
@@ -103,6 +104,7 @@ const AllEmployees = () => {
         email: editForm.email,
         contact: editForm.contact,
         adminPassword: editForm.currentPassword, // always required
+        isPrivate: editForm.isPrivate
       };
 
       if (editForm.newPassword) {
@@ -127,7 +129,7 @@ const AllEmployees = () => {
 
       toast.success("Employee updated successfully");
       setShowEditModal(false);
-      setEditForm({ name: "", email: "", contact: "", currentPassword: "", newPassword: "" });
+      setEditForm({ name: "", email: "", contact: "", currentPassword: "", newPassword: "", isPrivate: false });
     } catch {
       toast.error("Update failed");
     }
@@ -215,7 +217,7 @@ const AllEmployees = () => {
                 setActiveTab("not-in-company");
               }}
             >
-              Not In Company
+              Deactivated
             </button>
           </li>
         </ul>
@@ -250,6 +252,7 @@ const AllEmployees = () => {
                       <div className="d-flex flex-column gap-2">
                         <button
                           className="btn btn-sm btn-outline-primary"
+                          disabled={emp.type === "admin"}
                           onClick={() => openEditModal(emp)}
                         >
                           Update
@@ -259,6 +262,7 @@ const AllEmployees = () => {
                             ? "btn-outline-secondary"
                             : "btn-outline-success"
                             }`}
+                          disabled={emp.type === "admin"}
                           onClick={() => toggleStatus(emp._id, emp.status)}
                         >
                           {emp.status === "active" ? "Deactivate" : "Activate"}
@@ -325,6 +329,7 @@ const AllEmployees = () => {
                         <td className="d-flex gap-2 justify-content-center">
                           <button
                             className="btn btn-sm btn-outline-primary"
+                            disabled={emp.type === "admin"}
                             onClick={() => openEditModal(emp)}
                           >
                             Update
@@ -334,6 +339,7 @@ const AllEmployees = () => {
                               ? "btn-outline-secondary"
                               : "btn-outline-success"
                               }`}
+                            disabled={emp.type === "admin"}
                             onClick={() => toggleStatus(emp._id, emp.status)}
                           >
                             {emp.status === "active" ? "Deactivate" : "Activate"}
@@ -458,6 +464,24 @@ const AllEmployees = () => {
                   <div className="text-danger small mb-3">{errors.contact}</div>
                 )}
 
+                <div className="form-check form-switch mb-3">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="privateProfile"
+                    checked={editForm.isPrivate}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        isPrivate: e.target.checked, // ✅ boolean
+                      })
+                    }
+                  />
+                  <label className="form-check-label" htmlFor="privateProfile">
+                    {editForm.isPrivate ? "Private Profile" : "Public Profile"}
+                  </label>
+                </div>
+
                 <hr />
 
                 {/* Current Password */}
@@ -520,8 +544,6 @@ const AllEmployees = () => {
           </div>
         </div>
       )}
-
-
     </>
   );
 };

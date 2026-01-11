@@ -12,7 +12,9 @@ import {
   updateEmployeeProfileByAdmin,
   addCompanyToEmployee,
   getAvailableAgentsAndBackdesk
-} from "../controllers/employee.controller.js";import { employeeSchema } from "../validators/employee.validator.js";
+} from "../controllers/employee.controller.js";
+import { upload, uploadFileToCloudinaryV2, uploadToCloudinary } from "../middleware/upload.js";
+import { employeeSchema } from "../validators/employee.validator.js";
 import { validate } from "../middleware/validate.js";
 import { authMiddleware, onlyAdmin } from "../middleware/auth.js";
 
@@ -24,7 +26,28 @@ router.post("/createEmployee", authMiddleware, onlyAdmin, validate(employeeSchem
 router.get("/bookingpage",authMiddleware, getEmployeesForBooking);
 router.get("/not-in-company", authMiddleware, onlyAdmin, getAvailableAgentsAndBackdesk);
 router.get("/:id", authMiddleware, onlyAdmin, getEmployeeById);
-router.put("/update-profile/:id", authMiddleware, updateEmployeeProfile);
+// router.put("/update-profile/:id", authMiddleware, updateEmployeeProfile);
+router.put(
+  "/update-profile/:id",
+  authMiddleware,
+  upload.single("profilePhoto"),
+  async (req, res, next) => {
+    try {
+      if (req.file) {
+        const imageUrl = await uploadFileToCloudinaryV2(
+          req.file,
+          "yaut/employees"
+        );
+
+        req.body.profilePhoto = imageUrl;
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  },
+  updateEmployeeProfile
+);
 router.patch("/update-status/:id", authMiddleware, onlyAdmin, toggleEmployeeStatus);
 router.put("/update-by-admin/:id", authMiddleware, onlyAdmin, updateEmployeeProfileByAdmin);
 router.post("/add-to-company", authMiddleware, onlyAdmin,addCompanyToEmployee);

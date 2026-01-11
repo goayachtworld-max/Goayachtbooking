@@ -35,13 +35,6 @@ function App() {
   const navigate = useNavigate();
   const role = user?.type?.toLowerCase();
 
-  //  LOGOUT FUNCTION
-  // const logoutUser = () => {
-  //   setUser(null);
-  //   localStorage.removeItem("user");
-  //   localStorage.removeItem("authToken");
-  //   navigate("/");
-  // };
   const logoutUser = () => {
     socket.disconnect(); // 🔌 DISCONNECT SOCKET
     setUser(null);
@@ -50,15 +43,6 @@ function App() {
     navigate("/");
   };
 
-
-  //  LOGIN FUNCTION
-  // const handleLogin = (data) => {
-  //   setUser(data);
-  //   localStorage.setItem("user", JSON.stringify(data));
-
-  //   const token = data?.token || localStorage.getItem("authToken");
-  //   if (token) scheduleAutoLogout(token);
-  // };
   const handleLogin = (data) => {
     setUser(data);
     localStorage.setItem("user", JSON.stringify(data));

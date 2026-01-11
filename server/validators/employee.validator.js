@@ -11,5 +11,6 @@ export const employeeSchema = z.object({
   email: z.string().email("Invalid email"),
   type: z.enum(["admin", "backdesk", "onsite"]),
   status: z.enum(["active", "inactive"]).default("active"),
-  isPrivate : z.boolean().optional()
+  isPrivate : z.boolean().optional(),
+  profilePhoto: z.string().optional()
 });

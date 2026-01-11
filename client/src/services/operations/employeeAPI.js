@@ -47,8 +47,17 @@ export const updateEmployeeStatusAPI = async (id, status, token) => {
 
 
 export const updateEmployeeProfileAPI = async (employeeId, payload, token) => {
+  console.log("Inside update profile");
+  // ✅ Proper payload logging
+  if (payload instanceof FormData) {
+    console.log("Payload (FormData):");
+    for (let [key, value] of payload.entries()) {
+      console.log(`${key}:`, value);
+    }
+  } else {
+    console.log("Payload (JSON):", payload);
+  }
 
-  console.log("Inside update profile")
   try {
     const response = await apiConnector(
       "PUT",
@@ -60,7 +69,10 @@ export const updateEmployeeProfileAPI = async (employeeId, payload, token) => {
     );
     return response;
   } catch (error) {
-    console.error("❌ Failed to update employee Profile:", error.response?.data || error);
+    console.error(
+      "❌ Failed to update employee Profile:",
+      error.response?.data || error
+    );
     throw error;
   }
 };

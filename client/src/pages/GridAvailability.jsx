@@ -650,32 +650,6 @@ function GridAvailability() {
     }
   };
 
-  // const handleReleaseLock = async () => {
-  //   if (!selectedSlot || isReleasing) return;
-  //   setIsReleasing(true);
-
-  //   try {
-  //     const res = await releaseSlot(
-  //       yachtId,
-  //       selectedSlot.date,
-  //       selectedSlot.start,
-  //       selectedSlot.end,
-  //       token
-  //     );
-  //     if (res?.success) {
-  //       toast.success("Slot released successfully!");
-  //       window.bootstrap.Modal.getInstance(
-  //         document.getElementById("confirmModal")
-  //       )?.hide();
-  //       // loadGrid();
-  //     } else toast.error(res?.message || "Failed to release slot");
-  //   } catch {
-  //     toast.error("Error releasing slot");
-  //   } finally {
-  //     setIsReleasing(false);
-  //   }
-  // };
-
   const handleReleaseLock = async () => {
     if (!selectedSlot || isReleasing) return;
 
@@ -735,93 +709,6 @@ function GridAvailability() {
     setIsConfirming(false);
   };
 
-  // const renderRowCells = (row) => {
-  //   const cells = [];
-  //   let colIndex = 0;
-  //   while (colIndex < timeHeaders.length) {
-  //     const current = timeHeaders[colIndex];
-  //     const slot = row.slots.find((s) => s.start === current);
-  //     if (slot) {
-  //       const span = Math.max(1, getColSpan(slot.start, slot.end));
-  //       const past = isPastSlot(slot, row.date);
-  //       const unauthorized =
-  //         !isAdminOrOnsite &&
-  //         (slot.type === "locked" || slot.type === "booked" || slot.type === "pending") &&
-  //         !isOwner(slot);
-
-  //       let cursorStyle = "pointer";
-  //       if (past || unauthorized) cursorStyle = "not-allowed";
-  //       let cellClass = "";
-  //       if (past) cellClass = "bg-secondary text-white opacity-40";
-  //       else if (slot.type === "booked") cellClass = "bg-danger text-white";
-  //       else if (slot.type === "locked") cellClass = "bg-warning text-dark";
-  //       else if (slot.type === "pending") cellClass = "bg-info text-dark";
-  //       else cellClass = "bg-success text-white";
-
-  //       const title =
-  //         slot.type === "booked" || slot.type === "pending"
-  //           ? `Booked\nUser Name: ${slot.empName}\nBooking Name: ${slot.custName}`
-  //           : slot.type === "locked"
-  //             ? `Locked by: ${slot.empName}`
-  //             : `${slot.start} - ${slot.end}`;
-
-  //       cells.push(
-  //         <td
-  //           key={`${row.date}-${current}`}
-  //           colSpan={span}
-  //           title={title}
-  //           className={`slot-cell ${slot.type} ${past ? "opacity-40" : ""}`}
-  //           style={{ cursor: past ? "not-allowed" : "pointer" }}
-  //           // onClick={() => {
-  //           //   if (!past) {
-  //           //     const typeToOpen = slot.type === "pending" ? "booked" : slot.type;
-  //           //     handleSlotClick(slot, typeToOpen);
-  //           //   }
-  //           // }}
-
-  //           onClick={() => {
-  //             if (past) return;
-
-  //             // 🚫 AGENT/BACKDESK CANNOT OPEN OTHERS' SLOTS
-  //             if (unauthorized) return;
-  //             if (
-  //               !isAdminOrOnsite &&
-  //               (slot.type === "locked" ||
-  //                 slot.type === "booked" ||
-  //                 slot.type === "pending") &&
-  //               !isOwner(slot)
-  //             ) {
-  //               return; // ❌ NOTHING happens
-  //             }
-
-  //             const typeToOpen =
-  //               slot.type === "pending" ? "booked" : slot.type;
-
-  //             handleSlotClick(slot, typeToOpen);
-  //           }}
-
-  //         >
-  //           {to12HourFormat(slot.start)} – {to12HourFormat(slot.end)}
-  //         </td>
-  //       );
-  //       colIndex += span;
-  //     } else {
-  //       cells.push(
-  //         <td
-  //           // key={`${row.date}-${current}`}
-  //           key={crypto.randomUUID()}
-  //           className="bg-light text-muted"
-  //           title="Not available"
-  //         >
-  //           —
-  //         </td>
-  //       );
-  //       colIndex += 1;
-  //     }
-  //   }
-  //   return cells;
-  // };
-
   const renderRowCells = (row) => {
     const cells = [];
     let colIndex = 0;
@@ -843,7 +730,7 @@ function GridAvailability() {
         // cursor & tooltip
         const cursorStyle = past || unauthorized ? "not-allowed" : "pointer";
         const titleText = past || unauthorized
-          ? "Not allowed"
+          ? `${slot.type}`
           : slot.type === "booked" || slot.type === "pending"
             ? `Booked\nUser Name: ${slot.empName}\nBooking Name: ${slot.custName}`
             : slot.type === "locked"
@@ -941,7 +828,7 @@ function GridAvailability() {
             </button>
           </div>
         </div>
-{/* 
+        {/* 
         {yacht!=null && (
           <div>
             <div>B2B Price : {yacht?.runningCost }</div>
@@ -950,22 +837,22 @@ function GridAvailability() {
         )} */}
 
         {yacht && (
-  <div className="mb-3 d-flex gap-4 align-items-center">
-    <div>
-      <span className="text-muted me-1">B2B:</span>
-      <span className="fw-semibold text-primary">
-        ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
-      </span>
-    </div>
+          <div className="mb-3 d-flex gap-4 align-items-center">
+            <div>
+              <span className="text-muted me-1">B2B:</span>
+              <span className="fw-semibold text-primary">
+                ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
+              </span>
+            </div>
 
-    <div>
-      <span className="text-muted me-1">B2C:</span>
-      <span className="fw-semibold text-success">
-        ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
-      </span>
-    </div>
-  </div>
-)}
+            <div>
+              <span className="text-muted me-1">B2C:</span>
+              <span className="fw-semibold text-success">
+                ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
+              </span>
+            </div>
+          </div>
+        )}
 
 
         {loading ? (

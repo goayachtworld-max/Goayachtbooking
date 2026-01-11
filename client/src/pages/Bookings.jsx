@@ -27,7 +27,6 @@ function Bookings({ user }) {
   // employee=John Doe~65ab123
   const employeeParam = params.get("employee");
   const parsedEmployeeId = employeeParam?.split("~")[1] || "";
-
   const [filterEmployee, setFilterEmployee] = useState(parsedEmployeeId);
 
   // ---------------- COLORS ----------------
@@ -64,15 +63,19 @@ function Bookings({ user }) {
   };
 
   // ---------------- FETCH EMPLOYEES ----------------
-  const fetchEmployees = async () => {
-    try {
-      const token = localStorage.getItem("authToken");
-      const res = await getEmployeesForBookingAPI(token);
-      setEmployees(res?.data?.employees || []);
-    } catch (e) {
-      console.error("❌ Failed to load employees", e);
-    }
-  };
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        const res = await getEmployeesForBookingAPI(token);
+        setEmployees(res?.data?.employees || []);
+      } catch (e) {
+        console.error("❌ Failed to load employees", e);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
 
   // ---------------- FETCH BOOKINGS ----------------
   const fetchBookings = async (filters = {}) => {
@@ -102,7 +105,7 @@ function Bookings({ user }) {
     navigate({ search: p.toString() }, { replace: true });
   }, [searchQuery, filterDate, filterStatus, filterEmployee, employees]);
 
-  // ---------------- FILTER CHANGE → FETCH ----------------
+  // ---------------- FILTER / REFRESH → FETCH ----------------
   useEffect(() => {
     const filters = {};
     if (filterDate) filters.date = filterDate;
@@ -110,14 +113,19 @@ function Bookings({ user }) {
     if (filterEmployee) filters.employeeId = filterEmployee;
 
     fetchBookings(filters);
-    fetchEmployees();
-  }, [filterDate, filterStatus, filterEmployee]);
+  }, [
+    filterDate,
+    filterStatus,
+    filterEmployee,
+    location.state?.refresh, // 🔥 notification refresh
+  ]);
 
-  // ---------------- INITIAL LOAD ----------------
-  // useEffect(() => {
-  //   fetchEmployees();
-  //   fetchBookings();
-  // }, []);
+  // ---------------- AUTO SEARCH FROM NOTIFICATION ----------------
+  useEffect(() => {
+    if (location.state?.bookingId) {
+      setSearchQuery(location.state.bookingId.slice(-5));
+    }
+  }, [location.state?.refresh]);
 
   // ---------------- ACTIONS ----------------
   const handleClear = () => {
@@ -144,10 +152,10 @@ function Bookings({ user }) {
       booking.customerId?.name?.toLowerCase().includes(q) ||
       booking.customerId?.contact?.includes(q) ||
       booking._id.toLowerCase().includes(q) ||
+       booking.company?.name?.toLowerCase().includes(q) ||  
       booking._id.slice(-5).toLowerCase().includes(q)
     );
   });
-
   return (
     <div className="container mt-5">
       {/* Header */}

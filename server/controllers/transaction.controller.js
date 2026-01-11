@@ -79,6 +79,8 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
       .populate("customerId")
       .populate("employeeId")
       .populate("transactionIds")
+      .populate("company")
+      .populate("yachtId")
       .session(session);
 
     // -----------------------------
@@ -102,17 +104,20 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
     if (incStatus) {
       const bookingCreator = await EmployeeModel.findById(
         populatedBooking.employeeId
-      ).select("type");
+      ).select("type name");
 
       if (
         bookingCreator?.type === "backdesk" &&
         (req.user.type === "admin" || req.user.type === "onsite")
       ) {
+        const date = new Date(populatedBooking.date);
+        const formattedDate = date.toISOString().split('T')[0];
         await sendNotification({
-          company:populatedBooking.company,
-          roles: ["backdesk"],
+          company: populatedBooking.company,
+          // roles: ["backdesk"],
+          recipientUserId: bookingCreator._id,
           title: `Booking ${incStatus.toUpperCase()}`,
-          message: `Your booking has been ${incStatus} by ${req.user.type}.`,
+          message: `Booking for ${populatedBooking?.yachtId?.name} - ${formattedDate} ${incStatus} by ${bookingCreator.name} company -${[populatedBooking.company?.name]} `,
           type: "booking_status_updated",
           bookingId: populatedBooking._id,
           excludeUserId: req.user.id,

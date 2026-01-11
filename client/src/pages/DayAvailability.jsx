@@ -353,14 +353,14 @@ function DayAvailability() {
       console.log("dayres : ", dayRes)
       // 3️⃣ Check if DB has manually saved slots for this date
       const storedSlotEntry =
-        dayRes?.slots && Array.isArray(dayRes.slots) && dayRes.slots.length > 0
+        dayRes?.slots && Array.isArray(dayRes.slots)
           ? dayRes.slots[0] // slot document for that date
           : null;
 
       console.log("storedSlotEntry : ", storedSlotEntry);
       let finalBaseSlots = [];
 
-      if (storedSlotEntry && storedSlotEntry.slots?.length > 0) {
+      if (storedSlotEntry) {
         // 🟦 CASE A: Use stored slots from DB
         finalBaseSlots = storedSlotEntry.slots.map((s) => ({
           start: s.start,
@@ -550,7 +550,7 @@ function DayAvailability() {
 
   // Validation: ensure start < end and no overlaps
   const validateEditedDaySlots = () => {
-    if (!editedDaySlots || editedDaySlots.length === 0) {
+    if (!editedDaySlots) {
       toast.error("Add at least one slot");
       return false;
     }
@@ -977,11 +977,11 @@ function DayAvailability() {
                 <div className="text-muted small">Avoid overlaps when editing.</div>
               </div>
 
-              {editedDaySlots.length === 0 && (
+              {/* {editedDaySlots.length === 0 && (
                 <div className="text-center text-muted py-4">
                   No slots yet — add one to begin.
                 </div>
-              )}
+              )} */}
 
               {/* List */}
               <div className="slot-list">
