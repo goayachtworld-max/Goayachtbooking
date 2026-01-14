@@ -145,6 +145,19 @@ function Availability() {
     })
     .sort((a, b) => b.score - a.score);
 
+  // ---------------- SMART SEARCH (FRONTEND) ----------------
+  const filteredAvailability = rankedAvailability.filter((yacht) => {
+    if (!searchQuery) return true;
+
+    const q = searchQuery.toLowerCase();
+
+    return (
+      yacht.name?.toLowerCase().includes(q) ||          // Yacht name
+      yacht.company?.name?.toLowerCase().includes(q) || // Company name
+      yacht.company?.toLowerCase().includes(q)          // If company is string
+    );
+  });
+
   return (
     <div className="container mt-4 mb-4">
       <h3 className="text-center mb-4 availability-title">
@@ -211,7 +224,7 @@ function Availability() {
         ) : availability.length === 0 ? (
           <div className="text-center text-muted mt-5">No yachts found</div>
         ) : (
-          rankedAvailability.map((yacht, index) => {
+          filteredAvailability.map((yacht, index) => {
             const nextThreeDays = yacht.days.slice(0, 3);
             const today = new Date().toISOString().split("T")[0];
 

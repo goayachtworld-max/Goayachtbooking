@@ -35,6 +35,7 @@
   margin: 0 auto;
   display: flex;
   gap: 20px;
+  min-height: 60vh;
 }
 
 /*  Desktop + Tablet: side by side */

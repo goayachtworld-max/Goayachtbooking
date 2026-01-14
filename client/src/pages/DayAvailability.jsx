@@ -583,22 +583,35 @@ function DayAvailability() {
       }
     }
 
-    // Optionally ensure slots fall inside yacht sail window
-    // if (yacht && yacht.sailStartTime && yacht.sailEndTime) {
-    //   const sailStart = hhmmToMinutes(yacht.sailStartTime);
-    //   const sailEnd = hhmmToMinutes(yacht.sailEndTime);
-    //   for (let sl of normalized) {
-    //     if (sl.startMin < sailStart || sl.endMin > sailEnd) {
-    //       toast.error(
-    //         `Slots must be within yacht sail window ${yacht.sailStartTime} - ${yacht.sailEndTime}`
-    //       );
-    //       return false;
-    //     }
-    //   }
-    // }
-
     return true;
   };
+
+  const handleResetDayUI = () => {
+    if (!yacht) {
+      toast.error("Yacht data not loaded");
+      return;
+    }
+
+    const defaultSlots = buildSlotsForYacht(yacht);
+
+    setEditedDaySlots(
+      defaultSlots.map((s) => ({
+        start: s.start,
+        end: s.end,
+        status: "free",
+      }))
+    );
+
+    toast.success("Slots reset to default. Click Save to apply.");
+  };
+
+  const handleDeleteAllUI = () => {
+    // if (!window.confirm("This will stop all sales for this day. Continue?")) return;
+
+    setEditedDaySlots([]); // 🔥 clear UI slots
+    toast.success("All slots removed. Click Save to apply.");
+  };
+
 
   const handleSaveEditedDaySlots = async () => {
     if (!currentDay || !currentDay.date) {
@@ -966,122 +979,136 @@ function DayAvailability() {
             <div className="modal-body p-3" style={{ maxHeight: "70vh", overflowY: "auto" }}>
 
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <button
-                  type="button"
-                  className="btn btn-success btn-sm"
-                  onClick={() => handleAddEditedSlot(null)}
-                >
-                  + Add Slot
-                </button>
+              <button
+                type="button"
+                className="btn btn-success btn-sm"
+                onClick={() => handleAddEditedSlot(null)}
+              >
+                + Add Slot
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm "
+                onClick={handleResetDayUI}
+              >
+                🔄 Reset
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm"
+                onClick={handleDeleteAllUI}
+              >
+                ⛔ Stop Sale
+              </button>
 
-                <div className="text-muted small">Avoid overlaps when editing.</div>
-              </div>
+              <div className="text-muted small">Avoid overlaps when editing.</div>
+            </div>
 
-              {/* {editedDaySlots.length === 0 && (
+            {/* {editedDaySlots.length === 0 && (
                 <div className="text-center text-muted py-4">
                   No slots yet — add one to begin.
                 </div>
               )} */}
 
-              {/* List */}
-              <div className="slot-list">
-                {editedDaySlots.map((slot, index) => {
-                  const isBooked = slot.status === "booked";
+            {/* List */}
+            <div className="slot-list">
+              {editedDaySlots.map((slot, index) => {
+                const isBooked = slot.status === "booked";
 
-                  // Determine row color
-                  let rowClass = "slot-row ";
-                  if (slot.status === "free") rowClass += "slot-free";
-                  else if (slot.status === "locked") rowClass += "slot-locked";
-                  else if (slot.status === "booked") rowClass += "slot-booked";
+                // Determine row color
+                let rowClass = "slot-row ";
+                if (slot.status === "free") rowClass += "slot-free";
+                else if (slot.status === "locked") rowClass += "slot-locked";
+                else if (slot.status === "booked") rowClass += "slot-booked";
 
-                  return (
-                    <div key={index} className={rowClass}>
+                return (
+                  <div key={index} className={rowClass}>
 
-                      {/* Time Fields */}
-                      <input
-                        type="time"
-                        className="form-control form-control-sm time-input"
+                    {/* Time Fields */}
+                    <input
+                      type="time"
+                      className="form-control form-control-sm time-input"
+                      disabled={isBooked}
+                      value={slot.start}
+                      onChange={(e) =>
+                        handleEditedSlotChange(index, "start", e.target.value)
+                      }
+                    />
+
+                    <span className="time-separator">—</span>
+
+                    <input
+                      type="time"
+                      className="form-control form-control-sm time-input"
+                      disabled={isBooked}
+                      value={slot.end}
+                      onChange={(e) =>
+                        handleEditedSlotChange(index, "end", e.target.value)
+                      }
+                    />
+
+                    {/* Controls */}
+                    <div className="slot-controls ms-auto">
+
+                      {/* Up */}
+                      <button
+                        className="icon-btn"
+                        disabled={index === 0}
+                        onClick={() => handleMoveSlot(index, -1)}
+                      >
+                        ↑
+                      </button>
+
+                      {/* Down */}
+                      <button
+                        className="icon-btn"
+                        disabled={index === editedDaySlots.length - 1}
+                        onClick={() => handleMoveSlot(index, +1)}
+                      >
+                        ↓
+                      </button>
+
+                      {/* Delete */}
+                      <button
+                        className="icon-btn text-danger"
                         disabled={isBooked}
-                        value={slot.start}
-                        onChange={(e) =>
-                          handleEditedSlotChange(index, "start", e.target.value)
-                        }
-                      />
-
-                      <span className="time-separator">—</span>
-
-                      <input
-                        type="time"
-                        className="form-control form-control-sm time-input"
-                        disabled={isBooked}
-                        value={slot.end}
-                        onChange={(e) =>
-                          handleEditedSlotChange(index, "end", e.target.value)
-                        }
-                      />
-
-                      {/* Controls */}
-                      <div className="slot-controls ms-auto">
-
-                        {/* Up */}
-                        <button
-                          className="icon-btn"
-                          disabled={index === 0}
-                          onClick={() => handleMoveSlot(index, -1)}
-                        >
-                          ↑
-                        </button>
-
-                        {/* Down */}
-                        <button
-                          className="icon-btn"
-                          disabled={index === editedDaySlots.length - 1}
-                          onClick={() => handleMoveSlot(index, +1)}
-                        >
-                          ↓
-                        </button>
-
-                        {/* Delete */}
-                        <button
-                          className="icon-btn text-danger"
-                          disabled={isBooked}
-                          onClick={() => handleRemoveEditedSlot(index)}
-                        >
-                          🗑
-                        </button>
-                      </div>
-
+                        onClick={() => handleRemoveEditedSlot(index)}
+                      >
+                        🗑
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
 
-            </div>
-
-            {/* Footer */}
-            <div className="modal-footer">
-              <button className="btn btn-secondary" data-bs-dismiss="modal" disabled={isSavingDaySlots}>
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleSaveEditedDaySlots}
-                disabled={isSavingDaySlots}
-              >
-                {isSavingDaySlots ? "Saving..." : "Save Changes"}
-              </button>
+                  </div>
+                );
+              })}
             </div>
 
           </div>
+
+          {/* Footer */}
+          <div className="modal-footer">
+            <button className="btn btn-secondary" data-bs-dismiss="modal" disabled={isSavingDaySlots}>
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={handleSaveEditedDaySlots}
+              disabled={isSavingDaySlots}
+            >
+              {isSavingDaySlots ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+
         </div>
       </div>
+    </div>
 
 
-      {/* Add fadeIn animation */}
-      <style>{`
+      {/* Add fadeIn animation */ }
+  <style>{`
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
       `}</style>
-    </div>
+    </div >
   );
 }
 

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getBookingsAPI } from "../services/operations/bookingAPI";
 import { getEmployeesForBookingAPI } from "../services/operations/employeeAPI";
+import { FiSliders } from "react-icons/fi";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Bookings.css";
 
@@ -152,8 +154,9 @@ function Bookings({ user }) {
       booking.customerId?.name?.toLowerCase().includes(q) ||
       booking.customerId?.contact?.includes(q) ||
       booking._id.toLowerCase().includes(q) ||
-       booking.company?.name?.toLowerCase().includes(q) ||  
-      booking._id.slice(-5).toLowerCase().includes(q)
+      booking.company?.name?.toLowerCase().includes(q) ||  
+      booking._id.slice(-5).toLowerCase().includes(q)||
+      booking.yachtId.name.toLowerCase().includes(q)
     );
   });
   return (
@@ -221,14 +224,39 @@ function Bookings({ user }) {
       )}
 
       {/* Mobile */}
-      {isMobile && (
+      {/* {isMobile && (
         <button
           className="btn btn-outline-primary w-100 mb-3"
           onClick={() => setShowFilters(true)}
         >
           🔍 Filters & Search
         </button>
-      )}
+      )} */}
+
+{isMobile && (
+  <div className="d-flex align-items-center gap-2 mb-3">
+    {/* Search Bar (≈90%) */}
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Search name / ticket / phone"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      style={{ flex: 1 }}
+    />
+
+    {/* Filter Icon (no border) */}
+    <button
+      className="btn p-0 d-flex align-items-center justify-content-center"
+      style={{ width: "40px", height: "40px" }}
+      onClick={() => setShowFilters(true)}
+    >
+      <FiSliders size={22} />
+    </button>
+  </div>
+)}
+
+
 
       {isMobile && showFilters && (
         <div
