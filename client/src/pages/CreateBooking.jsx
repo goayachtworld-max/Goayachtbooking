@@ -387,30 +387,6 @@ function CreateBooking() {
             />
           </div>
 
-          {/* Email */}
-          {/* <div className="col-md-6">
-            <label className="form-label fw-bold">Customer Email</label>
-            <input
-              type="email"
-              className="form-control border border-dark text-dark"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-          </div> */}
-
-          {/* Govt ID */}
-          {/* <div className="col-md-6">
-            <label className="form-label fw-bold">Govt ID Number</label>
-            <input
-              type="text"
-              className="form-control border border-dark text-dark"
-              name="govtId"
-              value={formData.govtId}
-              onChange={handleChange}
-            />
-          </div> */}
-
           {/* Date */}
           <div className="col-md-6">
             <label className="form-label fw-bold">Date of Ride</label>

@@ -1,0 +1,147 @@
+/* ================================
+   Wrapper
+================================ */
+.wrapper {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* ================================
+   Table Base
+================================ */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 900px;
+}
+
+/* ================================
+   Cells
+================================ */
+.cell {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* ================================
+   Sticky Date Column
+================================ */
+.stickyCol {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #ffffff;
+  font-weight: 700;
+  min-width: 70px;
+  text-align: left;
+  border-right: 1px solid #e5e7eb;
+}
+
+/* ================================
+   Header
+================================ */
+.header {
+  background: #f8fafc;
+  font-weight: 600;
+  font-size: 13px;
+  color: #475569;
+}
+
+/* ================================
+   Timeline Cell
+================================ */
+.timelineCell {
+  position: relative;
+  /* height: 64px; */
+}
+
+/* ================================
+   Slot Base
+================================ */
+.slot {
+  position: absolute;
+  top: 0;
+  bottom: 0;          /* ✅ fills full height */
+  border-radius: 10px;
+  padding: 0 12px;    /* horizontal padding only */
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* ================================
+   Slot States
+================================ */
+.free {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: #ffffff;
+}
+
+.booked {
+  background: linear-gradient(135deg, #ff6b6b, #e74c3c);
+  color: #ffffff;
+}
+
+.locked {
+  background: linear-gradient(135deg, #f9ca24, #f39c12);
+  color: #333333;
+}
+
+.pending {
+  background: linear-gradient(135deg, #74b9ff, #0984e3);
+  color: #ffffff;
+}
+
+/* ================================
+   Past Slot
+================================ */
+.past {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ================================
+   Hover
+================================ */
+.slot:hover {
+  transform: translateY(-1px);
+}
+
+/* ================================
+   Mobile
+================================ */
+@media (max-width: 768px) {
+  .table {
+    min-width: 700px;
+  }
+
+  .slot {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
+/* GridAvailability.module.css */
+.modal-content input,
+.modal-content select,
+.modal-content textarea {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+  box-sizing: border-box;
+}
+
+.table tbody tr {
+  height: 50px;   /* or whatever row height you want */
+}

@@ -5,6 +5,7 @@ import { getAvailabilitySummary } from "../services/operations/availabilityAPI";
 import { useNavigate, useLocation } from "react-router-dom";
 import { generateTextImage } from "../utils/generateTextImage";
 import "./Availability.css";
+import { FiSliders } from "react-icons/fi";
 // import "../styles/Availability.module.css" //-- same css addded from .//Availability.css but not working
 
 function Availability() {
@@ -23,6 +24,21 @@ function Availability() {
   const [filterDate] = useState(new Date().toISOString().split("T")[0]);
 
   const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 550);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Screen resize effect
+  useEffect(() => {
+    const onResize = () => {
+      const mobile = window.innerWidth < 550;
+      setIsMobile(mobile);
+      if (!mobile) setShowFilters(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
 
   useEffect(() => {
     const p = new URLSearchParams();
@@ -159,61 +175,82 @@ function Availability() {
   });
 
   return (
-    <div className="container mt-4 mb-4">
-      <h3 className="text-center mb-4 availability-title">
+    <div className="container mt-2 mb-4">
+      <h3 className="text-center mb-2 availability-title">
         Yacht Availability
       </h3>
 
       {/* FILTER BAR */}
-      <div className="d-flex flex-wrap justify-content-between align-items-end mb-4 py-2 px-1 rounded-4 filter-box">
-        <div className="d-flex flex-wrap gap-1">
-          <div>
-            <label className="form-label mb-1 fw-semibold">Capacity</label>
-            <select
-              className="form-select shadow-sm capacity-select"
-              value={filterCapacity}
-              onChange={(e) => setFilterCapacity(e.target.value)}
-            >
-              <option value="">All</option>
-              <option value="small">1–5</option>
-              <option value="medium">6–10</option>
-              <option value="large">11–20</option>
-              <option value="xlarge">21+</option>
-            </select>
+      {!isMobile && (
+        <div className="d-flex flex-wrap justify-content-between align-items-end mb-4 py-2 px-1 rounded-4 filter-box">
+          <div className="d-flex flex-wrap gap-1">
+            <div>
+              <label className="form-label mb-1 fw-semibold">Capacity</label>
+              <select
+                className="form-select shadow-sm capacity-select"
+                value={filterCapacity}
+                onChange={(e) => setFilterCapacity(e.target.value)}
+              >
+                <option value="">All</option>
+                <option value="small">1–5</option>
+                <option value="medium">6–10</option>
+                <option value="large">11–20</option>
+                <option value="xlarge">21+</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="form-label mb-1 fw-semibold">Budget</label>
+              <select
+                className="form-select shadow-sm budget-select"
+                value={filterBudget}
+                onChange={(e) => setFilterBudget(e.target.value)}
+              >
+                <option value="">All</option>
+                <option value="low">Under ₹5,000</option>
+                <option value="mid">₹5,000 – ₹10,000</option>
+                <option value="high">₹10,000 – ₹20,000</option>
+                <option value="premium">Above ₹20,000</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="form-label mb-1 fw-semibold">Search</label>
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                placeholder="Search Yacht / Company"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
           </div>
 
-          <div>
-            <label className="form-label mb-1 fw-semibold">Budget</label>
-            <select
-              className="form-select shadow-sm budget-select"
-              value={filterBudget}
-              onChange={(e) => setFilterBudget(e.target.value)}
-            >
-              <option value="">All</option>
-              <option value="low">Under ₹5,000</option>
-              <option value="mid">₹5,000 – ₹10,000</option>
-              <option value="high">₹10,000 – ₹20,000</option>
-              <option value="premium">Above ₹20,000</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="form-label mb-1 fw-semibold">Search</label>
-            <input
-              type="text"
-              className="form-control shadow-sm"
-              placeholder="Search Yacht / Company"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
+          <button className="btn btn-secondary px-3 py-2 clear-btn" onClick={handleClear}>
+            Clear
+          </button>
         </div>
-
-        <button className="btn btn-secondary px-3 py-2 clear-btn" onClick={handleClear}>
-          Clear
-        </button>
-      </div>
+      )}
+      {isMobile && (
+        <div className="d-flex align-items-center gap-2 mb-3">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search Yacht / Company"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <button
+            className="btn p-0 d-flex align-items-center justify-content-center"
+            style={{ width: "40px", height: "40px" }}
+            onClick={() => setShowFilters(true)}
+          >
+            <FiSliders size={22} />
+          </button>
+        </div>
+      )}
 
       {/* MAIN GRID */}
       <div className="row g-4">
@@ -357,6 +394,66 @@ function Availability() {
           })
         )}
       </div>
+
+      {isMobile && showFilters && (
+        <div
+          className="mobile-filter-backdrop"
+          onClick={() => setShowFilters(false)}
+        >
+          <div
+            className="mobile-filter-drawer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              type="text"
+              className="form-control mb-2"
+              placeholder="Search Yacht / Company"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+
+            <select
+              className="form-select mb-2"
+              value={filterCapacity}
+              onChange={(e) => setFilterCapacity(e.target.value)}
+            >
+              <option value="">All Capacities</option>
+              <option value="small">1–5</option>
+              <option value="medium">6–10</option>
+              <option value="large">11–20</option>
+              <option value="xlarge">21+</option>
+            </select>
+
+            <select
+              className="form-select mb-2"
+              value={filterBudget}
+              onChange={(e) => setFilterBudget(e.target.value)}
+            >
+              <option value="">All Budgets</option>
+              <option value="low">Under ₹5,000</option>
+              <option value="mid">₹5,000 – ₹10,000</option>
+              <option value="high">₹10,000 – ₹20,000</option>
+              <option value="premium">Above ₹20,000</option>
+            </select>
+
+            <div className="d-flex gap-2 mt-2">
+              <button
+                className="btn btn-secondary flex-fill"
+                onClick={handleClear}
+              >
+                Clear
+              </button>
+              <button
+                className="btn btn-primary flex-fill"
+                onClick={() => setShowFilters(false)}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

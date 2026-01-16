@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styles from "../styles/Navbar.module.css";
 import toast from "react-hot-toast";
@@ -131,6 +131,30 @@ function Navbar({ user, onLogout }) {
       toast.error("Profile update failed ❌");
     }
   };
+  // Collapse navbar when clicked outside
+useEffect(() => {
+  const handleOutsideClick = (event) => {
+    const collapseEl = collapseRef.current;
+    if (
+      collapseEl &&
+      collapseEl.classList.contains("show") &&
+      !collapseEl.contains(event.target) &&
+      !event.target.classList.contains("navbar-toggler")
+    ) {
+      const bsCollapse = new window.bootstrap.Collapse(collapseEl, {
+        toggle: true,
+      });
+      bsCollapse.hide();
+    }
+  };
+
+  document.addEventListener("click", handleOutsideClick);
+
+  return () => {
+    document.removeEventListener("click", handleOutsideClick);
+  };
+}, []);
+
 
   const isActive = (path) => location.pathname === path;
 

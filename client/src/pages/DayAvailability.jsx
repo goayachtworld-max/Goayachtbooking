@@ -45,10 +45,22 @@ function DayAvailability() {
   const [isSavingDaySlots, setIsSavingDaySlots] = useState(false);
 
   const token = localStorage.getItem("authToken");
-  const user = JSON.parse(localStorage.getItem("user"));
-  console.log("Here is user", user)
+  const employee = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userRole = user.type;
   const isAdmin = userRole === "admin";
+
+
+
+  // Admin or onsite users have full access
+  const isAdminOrOnsite = employee.type === "admin" || employee.type === "onsite";
+
+  // Helper to check if this user created/applied this slot
+ const isOwner = (slot) =>
+ {
+  console.log("slot is : ", slot)
+    return slot.appliedBy && slot.appliedBy === employee._id;
+ }
 
   // Handle initial state based on whether date selection is required
   useEffect(() => {
@@ -283,12 +295,14 @@ function DayAvailability() {
         bookingStatus: b.status,
         custName: b.custName || "",
         empName: b.empName || "",
+        appliedBy: b.appliedBy || null,
       })),
       ...locked.map((l) => ({
         start: l.startTime || l.start,
         end: l.endTime || l.end,
         type: "locked",
         empName: l.empName || "",
+        appliedBy: l.appliedBy
       })),
     ];
 
@@ -311,6 +325,7 @@ function DayAvailability() {
           bookingStatus: bookedOverlap.bookingStatus,
           custName: bookedOverlap.custName,
           empName: bookedOverlap.empName,
+          appliedBy: bookedOverlap.appliedBy
         };
       }
 
@@ -319,6 +334,7 @@ function DayAvailability() {
         ...slot,
         type: "locked",
         empName: lockedOverlap.empName,
+        appliedBy: lockedOverlap.appliedBy
       };
     });
   };
@@ -349,7 +365,6 @@ function DayAvailability() {
 
       const booked = dayRes.bookedSlots || [];
       const locked = dayRes.lockedSlots || [];
-
       console.log("dayres : ", dayRes)
       // 3️⃣ Check if DB has manually saved slots for this date
       const storedSlotEntry =
@@ -808,19 +823,25 @@ function DayAvailability() {
                           ? "bg-warning text-dark"                 // 🟡 locked
                           : "bg-success text-white";               // 🟢 free
 
+                    const unauthorized =
+                      !isAdminOrOnsite &&
+                      (slot.type === "locked" ||
+                        slot.type === "booked" ||
+                        slot.type === "pending") &&
+                      !isOwner(slot);
 
                     const cursorStyle =
-                      disabled && slot.type !== "booked" ? "not-allowed" : "pointer";
-
+                      disabled || unauthorized ? "not-allowed" : "pointer";
                     return (
                       <div
                         key={idx}
                         className={`slot-btn px-3 py-2 rounded fw-semibold text-center ${slotClass}`}
                         style={{ cursor: cursorStyle }}
                         onClick={() => {
-                          if (disabled && slot.type !== "booked") return;
+                          if (disabled || unauthorized) return; // 🔐 ACCESS BLOCK
                           handleSlotClick(slot);
                         }}
+
                       >
                         {to12HourFormat(slot.start)} — {to12HourFormat(slot.end)}
                       </div>
@@ -847,7 +868,7 @@ function DayAvailability() {
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content rounded-4">
             <form onSubmit={handleLockSlot}>
-              <div className="modal-header bg-warning bg-opacity-25">
+              <div className="modal-header bg-warning">
                 <h5 className="modal-title">Lock Time Slot</h5>
                 <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
               </div>
@@ -883,7 +904,7 @@ function DayAvailability() {
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content rounded-4">
             <form onSubmit={handleConfirmBooking}>
-              <div className="modal-header bg-primary bg-opacity-10">
+              <div className="modal-header bg-primary">
                 <h5 className="modal-title">Create Booking</h5>
                 <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
               </div>
@@ -927,7 +948,7 @@ function DayAvailability() {
       <div className="modal fade" id="bookedModal" tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content rounded-4">
-            <div className="modal-header bg-danger bg-opacity-10">
+            <div className="modal-header bg-danger">
               <h5 className="modal-title">Booked Slot Details</h5>
               <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -979,133 +1000,133 @@ function DayAvailability() {
             <div className="modal-body p-3" style={{ maxHeight: "70vh", overflowY: "auto" }}>
 
               <div className="d-flex justify-content-between align-items-center mb-3">
-              <button
-                type="button"
-                className="btn btn-success btn-sm"
-                onClick={() => handleAddEditedSlot(null)}
-              >
-                + Add Slot
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-secondary btn-sm "
-                onClick={handleResetDayUI}
-              >
-                🔄 Reset
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-danger btn-sm"
-                onClick={handleDeleteAllUI}
-              >
-                ⛔ Stop Sale
-              </button>
+                <button
+                  type="button"
+                  className="btn btn-success btn-sm"
+                  onClick={() => handleAddEditedSlot(null)}
+                >
+                  + Add Slot
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm "
+                  onClick={handleResetDayUI}
+                >
+                  🔄 Reset
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={handleDeleteAllUI}
+                >
+                  ⛔ Stop Sale
+                </button>
 
-              <div className="text-muted small">Avoid overlaps when editing.</div>
-            </div>
+                <div className="text-muted small">Avoid overlaps when editing.</div>
+              </div>
 
-            {/* {editedDaySlots.length === 0 && (
+              {/* {editedDaySlots.length === 0 && (
                 <div className="text-center text-muted py-4">
                   No slots yet — add one to begin.
                 </div>
               )} */}
 
-            {/* List */}
-            <div className="slot-list">
-              {editedDaySlots.map((slot, index) => {
-                const isBooked = slot.status === "booked";
+              {/* List */}
+              <div className="slot-list">
+                {editedDaySlots.map((slot, index) => {
+                  const isBooked = slot.status === "booked";
 
-                // Determine row color
-                let rowClass = "slot-row ";
-                if (slot.status === "free") rowClass += "slot-free";
-                else if (slot.status === "locked") rowClass += "slot-locked";
-                else if (slot.status === "booked") rowClass += "slot-booked";
+                  // Determine row color
+                  let rowClass = "slot-row ";
+                  if (slot.status === "free") rowClass += "slot-free";
+                  else if (slot.status === "locked") rowClass += "slot-locked";
+                  else if (slot.status === "booked") rowClass += "slot-booked";
 
-                return (
-                  <div key={index} className={rowClass}>
+                  return (
+                    <div key={index} className={rowClass}>
 
-                    {/* Time Fields */}
-                    <input
-                      type="time"
-                      className="form-control form-control-sm time-input"
-                      disabled={isBooked}
-                      value={slot.start}
-                      onChange={(e) =>
-                        handleEditedSlotChange(index, "start", e.target.value)
-                      }
-                    />
-
-                    <span className="time-separator">—</span>
-
-                    <input
-                      type="time"
-                      className="form-control form-control-sm time-input"
-                      disabled={isBooked}
-                      value={slot.end}
-                      onChange={(e) =>
-                        handleEditedSlotChange(index, "end", e.target.value)
-                      }
-                    />
-
-                    {/* Controls */}
-                    <div className="slot-controls ms-auto">
-
-                      {/* Up */}
-                      <button
-                        className="icon-btn"
-                        disabled={index === 0}
-                        onClick={() => handleMoveSlot(index, -1)}
-                      >
-                        ↑
-                      </button>
-
-                      {/* Down */}
-                      <button
-                        className="icon-btn"
-                        disabled={index === editedDaySlots.length - 1}
-                        onClick={() => handleMoveSlot(index, +1)}
-                      >
-                        ↓
-                      </button>
-
-                      {/* Delete */}
-                      <button
-                        className="icon-btn text-danger"
+                      {/* Time Fields */}
+                      <input
+                        type="time"
+                        className="form-control form-control-sm time-input"
                         disabled={isBooked}
-                        onClick={() => handleRemoveEditedSlot(index)}
-                      >
-                        🗑
-                      </button>
-                    </div>
+                        value={slot.start}
+                        onChange={(e) =>
+                          handleEditedSlotChange(index, "start", e.target.value)
+                        }
+                      />
 
-                  </div>
-                );
-              })}
+                      <span className="time-separator">—</span>
+
+                      <input
+                        type="time"
+                        className="form-control form-control-sm time-input"
+                        disabled={isBooked}
+                        value={slot.end}
+                        onChange={(e) =>
+                          handleEditedSlotChange(index, "end", e.target.value)
+                        }
+                      />
+
+                      {/* Controls */}
+                      <div className="slot-controls ms-auto">
+
+                        {/* Up */}
+                        <button
+                          className="icon-btn"
+                          disabled={index === 0}
+                          onClick={() => handleMoveSlot(index, -1)}
+                        >
+                          ↑
+                        </button>
+
+                        {/* Down */}
+                        <button
+                          className="icon-btn"
+                          disabled={index === editedDaySlots.length - 1}
+                          onClick={() => handleMoveSlot(index, +1)}
+                        >
+                          ↓
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          className="icon-btn text-danger"
+                          disabled={isBooked}
+                          onClick={() => handleRemoveEditedSlot(index)}
+                        >
+                          🗑
+                        </button>
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="modal-footer">
+              <button className="btn btn-secondary" data-bs-dismiss="modal" disabled={isSavingDaySlots}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveEditedDaySlots}
+                disabled={isSavingDaySlots}
+              >
+                {isSavingDaySlots ? "Saving..." : "Save Changes"}
+              </button>
             </div>
 
           </div>
-
-          {/* Footer */}
-          <div className="modal-footer">
-            <button className="btn btn-secondary" data-bs-dismiss="modal" disabled={isSavingDaySlots}>
-              Cancel
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={handleSaveEditedDaySlots}
-              disabled={isSavingDaySlots}
-            >
-              {isSavingDaySlots ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
-
         </div>
       </div>
-    </div>
 
 
-      {/* Add fadeIn animation */ }
-  <style>{`
+      {/* Add fadeIn animation */}
+      <style>{`
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
       `}</style>
     </div >

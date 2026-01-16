@@ -132,7 +132,12 @@ function CreateEmployee() {
 
   return (
     <div className="container my-4 px-3">
-      <h4 className="mb-4 text-center">Create User</h4>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h4>Create User</h4>
+        <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+          ← Back
+        </button>
+      </div>
       <form className="row g-3" onSubmit={handleSubmit}>
         {/* Role */}
         <div className="col-12">
@@ -151,7 +156,7 @@ function CreateEmployee() {
         </div>
 
         {/* Name */}
-        <div className="col-6">
+        <div className="col-md-6">
           <label className="form-label fw-bold">Full Name</label>
           <input
             type="text"
@@ -165,7 +170,7 @@ function CreateEmployee() {
         </div>
 
         {/* Contact */}
-        <div className="col-6">
+        <div className="col-md-6">
           <label className="form-label fw-bold">Contact Number</label>
           <input
             type="tel"
@@ -179,7 +184,7 @@ function CreateEmployee() {
         </div>
 
         {/* Email */}
-        <div className="col-6">
+        <div className="col-md-6">
           <label className="form-label fw-bold">Email Address</label>
           <input
             type="email"

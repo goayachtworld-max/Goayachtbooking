@@ -35,6 +35,13 @@ const AllEmployees = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("authToken");
   const admin = JSON.parse(localStorage.getItem("user"));
+  const getRoleName = (type) => {
+    if (type === "backdesk") return "Agent";
+    if (type === "onsite") return "Staff";
+    if (type === "admin") return "Admin";
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  };
+
 
   const fetchEmployees = async () => {
     try {
@@ -227,64 +234,63 @@ const AllEmployees = () => {
           <>
             {/* MOBILE VIEW */}
             <div className="d-md-none">
-              {employees.map((emp) => (
+              {(activeTab === "current" ? employees : notInCompanyEmployees).map((emp, i) => (
                 <div key={emp._id} className="card mb-3 shadow-sm border-0">
                   <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-start">
+                    <div className="d-flex justify-content-between align-items-end">
+                      {/* Left side */}
                       <div>
                         <h6 className="fw-bold mb-1">{emp.name}</h6>
-                        <p className="text-muted mb-1 small">
-                          {emp.type === "backdesk"
-                            ? "Agent"
-                            : emp.type === "onsite"
-                              ? "Staff"
-                              : emp.type.charAt(0).toUpperCase() +
-                              emp.type.slice(1)}
-                        </p>
-                        <span
-                          className={`badge ${emp.status === "active" ? "bg-success" : "bg-secondary"
-                            }`}
-                        >
-                          {emp.status.toUpperCase()}
+                        <p className="text-muted mb-1 small">{getRoleName(emp.type)}</p>
+                        <span className={`badge ${emp.status === "active" ? "bg-success" : "bg-secondary"}`}>
+                          {(emp.status || "inactive").toUpperCase()}
                         </span>
                       </div>
 
-                      <div className="d-flex flex-column gap-2">
-                        <button
-                          className="btn btn-sm btn-outline-primary"
-                          disabled={emp.type === "admin"}
-                          onClick={() => openEditModal(emp)}
-                        >
-                          Update
-                        </button>
-                        <button
-                          className={`btn btn-sm ${emp.status === "active"
-                            ? "btn-outline-secondary"
-                            : "btn-outline-success"
-                            }`}
-                          disabled={emp.type === "admin"}
-                          onClick={() => toggleStatus(emp._id, emp.status)}
-                        >
-                          {emp.status === "active" ? "Deactivate" : "Activate"}
-                        </button>
-                      </div>
+                      {/* Right side buttons */}
+                      {activeTab === "current" && (
+                        <div className="d-flex flex-column gap-2">
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            disabled={emp.type === "admin"}
+                            onClick={() => openEditModal(emp)}
+                          >
+                            Update
+                          </button>
+                          <button
+                            className={`btn btn-sm ${emp.status === "active"
+                              ? "btn-outline-secondary"
+                              : "btn-outline-success"}`}
+                            disabled={emp.type === "admin"}
+                            onClick={() => toggleStatus(emp._id, emp.status)}
+                          >
+                            {emp.status === "active" ? "Deactivate" : "Activate"}
+                          </button>
+                        </div>
+                      )}
+
+                      {activeTab === "not-in-company" && (
+                        <div>
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => handleAddToCompany(emp._id)}
+                          >
+                            Add to Company
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <hr className="my-2" />
 
-                    <p className="small mb-1">
-                      <strong>Username:</strong> {emp.username}
-                    </p>
-                    <p className="small mb-1">
-                      <strong>Contact:</strong> {emp.contact || "-"}
-                    </p>
-                    <p className="small mb-0">
-                      <strong>Email:</strong> {emp.email}
-                    </p>
+                    <p className="small mb-1"><strong>Username:</strong> {emp.username || "-"}</p>
+                    <p className="small mb-1"><strong>Contact:</strong> {emp.contact || "-"}</p>
+                    <p className="small mb-0"><strong>Email:</strong> {emp.email}</p>
                   </div>
                 </div>
               ))}
             </div>
+
 
             {/* DESKTOP & TABLET */}
             <div className="d-none d-md-block">
@@ -359,48 +365,90 @@ const AllEmployees = () => {
         )}
         {/* OTHER AGENTS */}
         {activeTab === "not-in-company" && (
-          <div className="table-responsive">
-            {loadingNotInCompany ? (
-              <p className="text-center">Loading...</p>
-            ) : (
-              <table className="table table-hover align-middle text-center">
-                <thead className="table-dark">
-                  <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Email</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {notInCompanyEmployees.length === 0 ? (
-                    <tr>
-                      <td colSpan="5">No employees available</td>
-                    </tr>
-                  ) : (
-                    notInCompanyEmployees.map((emp, i) => (
-                      <tr key={emp._id}>
-                        <td>{i + 1}</td>
-                        <td>{emp.name}</td>
-                        <td>{emp.type}</td>
-                        <td>{emp.email}</td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-success"
-                            onClick={() => handleAddToCompany(emp._id)}
-                          >
-                            Add to Company
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            )}
+  <>
+    {/* MOBILE VIEW */}
+    <div className="d-md-none">
+      {loadingNotInCompany ? (
+        <p className="text-center">Loading...</p>
+      ) : notInCompanyEmployees.length === 0 ? (
+        <p className="text-center text-muted">No employees available</p>
+      ) : (
+        notInCompanyEmployees.map((emp) => (
+          <div key={emp._id} className="card mb-3 shadow-sm border-0">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-end">
+                {/* Left info */}
+                <div>
+                  <h6 className="fw-bold mb-1">{emp.name}</h6>
+                  <p className="text-muted mb-1 small">
+                    {getRoleName(emp.type)}
+                  </p>
+                  <span className="badge bg-secondary">
+                    DEACTIVATED
+                  </span>
+                </div>
+
+                {/* Action */}
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => handleAddToCompany(emp._id)}
+                >
+                  Add
+                </button>
+              </div>
+
+              <hr className="my-2" />
+
+              <p className="small mb-1">
+                <strong>Email:</strong> {emp.email}
+              </p>
+            </div>
           </div>
-        )}
+        ))
+      )}
+    </div>
+
+    {/* DESKTOP VIEW (unchanged) */}
+    <div className="d-none d-md-block table-responsive">
+      <table className="table table-hover align-middle text-center">
+        <thead className="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Email</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {notInCompanyEmployees.length === 0 ? (
+            <tr>
+              <td colSpan="5">No employees available</td>
+            </tr>
+          ) : (
+            notInCompanyEmployees.map((emp, i) => (
+              <tr key={emp._id}>
+                <td>{i + 1}</td>
+                <td>{emp.name}</td>
+                <td>{getRoleName(emp.type)}</td>
+                <td>{emp.email}</td>
+                <td>
+                  <button
+                    className="btn btn-sm btn-success"
+                    onClick={() => handleAddToCompany(emp._id)}
+                  >
+                    Add to Company
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  </>
+)}
+
 
       </div>
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-hot-toast";
-import "./GridAvailability.css";
+import styles from "./GridAvailability.module.css";
 
 import {
   getAllYachtsDetailsAPI,
@@ -44,7 +44,7 @@ const to12HourFormat = (time24) => {
   hour = hour % 24;
   const period = hour >= 12 ? "PM" : "AM";
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
+  return `${hour12}:${String(minute).padStart(2, "0")} `;
 };
 
 const getDatesBetween = (start, end) => {
@@ -57,17 +57,6 @@ const getDatesBetween = (start, end) => {
   }
   return dates;
 };
-
-const employee = JSON.parse(localStorage.getItem("user") || "{}");
-const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-console.log("Logged user:", employee);
-
-const isAdminOrOnsite =
-  employee.type === "admin" || employee.type === "onsite";
-
-const isOwner = (slot) =>
-  slot.appliedBy && slot.appliedBy === employee._id;
 
 
 const buildSlotsForYacht = (yachtObj) => {
@@ -207,11 +196,18 @@ const buildSlotsForYacht = (yachtObj) => {
   }));
 };
 
-const roundDownTo30 = (minutes) => minutes - (minutes % 30);
-const roundUpTo30 = (minutes) => (minutes % 30 === 0 ? minutes : minutes + (30 - (minutes % 30)));
-const getColSpan = (start, end) => (hhmmToMinutes(end) - hhmmToMinutes(start)) / 30;
-
 function GridAvailability() {
+  const employee = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  console.log("Logged user:", employee);
+
+  const isAdminOrOnsite =
+    employee.type === "admin" || employee.type === "onsite";
+
+  const isOwner = (slot) =>
+    slot.appliedBy && slot.appliedBy === employee._id;
+
   const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem("authToken");
@@ -226,7 +222,6 @@ function GridAvailability() {
   const [yachts, setYachts] = useState([]);
   const [yacht, setYacht] = useState(null);
   const [dates, setDates] = useState([]);
-  const [timeHeaders, setTimeHeaders] = useState([]); // 30-min incremental headers
   const [grid, setGrid] = useState([]); // [{date, slots: [{start,end,type,custName,empName}]}]
   const [loading, setLoading] = useState(false);
 
@@ -238,6 +233,12 @@ function GridAvailability() {
 
   const [editStart, setEditStart] = useState(null);
   const [editEnd, setEditEnd] = useState(null);
+
+  const [timelineRange, setTimelineRange] = useState({
+    start: 0,
+    end: 0,
+    total: 1,
+  });
 
   useEffect(() => {
     if (selectedSlot) {
@@ -277,9 +278,11 @@ function GridAvailability() {
 
   const loadGrid = async () => {
     if (!yachtId || !fromDate || !toDate) return;
+
     try {
       setLoading(true);
 
+      // 🔹 yacht details (unchanged)
       const yachtRes = await getYachtById(yachtId, token);
       const yachtData = yachtRes?.data?.yacht ?? yachtRes;
       setYacht(yachtData);
@@ -291,101 +294,122 @@ function GridAvailability() {
       let globalMin = Infinity;
       let globalMax = -Infinity;
 
-      const availabilityByDate = {};
-
       for (const date of dateList) {
+        // 🔹 day availability (unchanged)
         const res = await getDayAvailability(yachtId, date, token);
         const day = res?.data || res || {};
-        availabilityByDate[date] = day;
 
         const booked = day.bookedSlots || [];
         const locked = day.lockedSlots || [];
 
+        // 🔹 base slots (unchanged)
         let baseSlots = [];
-        if (Array.isArray(day.slots) && day.slots.length > 0 && Array.isArray(day.slots[0].slots)) {
-          baseSlots = day.slots[0].slots.map((s) => ({ start: s.start, end: s.end }));
+        if (
+          Array.isArray(day.slots) &&
+          day.slots.length > 0 &&
+          Array.isArray(day.slots[0].slots)
+        ) {
+          baseSlots = day.slots[0].slots.map((s) => ({
+            start: s.start,
+            end: s.end,
+          }));
         } else {
           baseSlots = buildSlotsForYacht(yachtData);
         }
 
-        baseSlots.forEach(s => {
+        // 🔹 compute timeline range
+        baseSlots.forEach((s) => {
           const sMin = hhmmToMinutes(s.start);
           const eMin = hhmmToMinutes(s.end);
           if (sMin < globalMin) globalMin = sMin;
           if (eMin > globalMax) globalMax = eMin;
         });
 
+        // 🔹 enrich slots (unchanged)
         const enriched = baseSlots.map((slot) => {
           const bookedOverlap = booked.find(
             (b) =>
-              hhmmToMinutes(b.startTime || b.start) < hhmmToMinutes(slot.end) &&
-              hhmmToMinutes(b.endTime || b.end) > hhmmToMinutes(slot.start)
+              hhmmToMinutes(b.startTime || b.start) <
+              hhmmToMinutes(slot.end) &&
+              hhmmToMinutes(b.endTime || b.end) >
+              hhmmToMinutes(slot.start)
           );
 
           if (bookedOverlap) {
             return {
-              type: bookedOverlap.status === "pending" ? "pending" : "booked",
               ...slot,
               date,
-              custName: bookedOverlap.custName || bookedOverlap.customerName || "",
-              empName: bookedOverlap.empName || bookedOverlap.employeeName || "",
+              type:
+                bookedOverlap.status === "pending"
+                  ? "pending"
+                  : "booked",
+              custName:
+                bookedOverlap.custName ||
+                bookedOverlap.customerName ||
+                "",
+              empName:
+                bookedOverlap.empName ||
+                bookedOverlap.employeeName ||
+                "",
               appliedBy: bookedOverlap.appliedBy || null,
             };
           }
 
           const lockedOverlap = locked.find(
             (l) =>
-              hhmmToMinutes(l.startTime || l.start) < hhmmToMinutes(slot.end) &&
-              hhmmToMinutes(l.endTime || l.end) > hhmmToMinutes(slot.start)
+              hhmmToMinutes(l.startTime || l.start) <
+              hhmmToMinutes(slot.end) &&
+              hhmmToMinutes(l.endTime || l.end) >
+              hhmmToMinutes(slot.start)
           );
 
           if (lockedOverlap) {
             return {
-              type: "locked",
               ...slot,
               date,
-              empName: lockedOverlap.empName || lockedOverlap.employeeName || "",
-              appliedBy: lockedOverlap.appliedBy || null
+              type: "locked",
+              empName:
+                lockedOverlap.empName ||
+                lockedOverlap.employeeName ||
+                "",
+              appliedBy: lockedOverlap.appliedBy || null,
             };
           }
 
-          return { type: "free", ...slot, date };
+          return { ...slot, date, type: "free" };
         });
 
         rows.push({ date, slots: enriched });
       }
 
-      // if there were no slots at all (globalMin remains Infinity), fallback to yacht sail window
-      if (!isFinite(globalMin)) {
+      // 🔹 fallback timeline range
+      if (!isFinite(globalMin) || !isFinite(globalMax)) {
         if (yachtData?.sailStartTime && yachtData?.sailEndTime) {
           globalMin = hhmmToMinutes(yachtData.sailStartTime);
           globalMax = hhmmToMinutes(yachtData.sailEndTime);
           if (globalMax <= globalMin) globalMax += 1440;
         } else {
-          // fallback common range
           globalMin = hhmmToMinutes("06:00");
           globalMax = hhmmToMinutes("22:00");
         }
       }
 
-      // round to 30-min steps
-      const startHeader = roundDownTo30(globalMin);
-      const endHeader = roundUpTo30(globalMax);
+      // 🔹 REQUIRED for renderTimelineRow
+      setTimelineRange({
+        start: globalMin,
+        end: globalMax,
+        total: globalMax - globalMin || 1,
+      });
 
-      const headers = [];
-      for (let m = startHeader; m < endHeader; m += 30) {
-        headers.push(minutesToHHMM(m));
-      }
-
-      setTimeHeaders(headers);
       setGrid(rows);
     } catch (err) {
+      console.error(err);
       toast.error("Failed to load grid");
     } finally {
       setLoading(false);
     }
   };
-  // 🔹 update only one slot in grid
+
   const updateGridSlot = (date, start, end, patch) => {
     setGrid((prev) =>
       prev.map((row) =>
@@ -522,78 +546,6 @@ function GridAvailability() {
       if (el) new window.bootstrap.Modal(el).show();
     }, 50);
   };
-
-  // const handleSaveAndLock = async (e) => {
-  //   e.preventDefault();
-  //   if (!selectedSlot || isLocking) return;
-
-  //   setIsLocking(true);
-
-  //   const isEdited =
-  //     editStart !== selectedSlot.start ||
-  //     editEnd !== selectedSlot.end;
-
-  //   try {
-  //     // 🟢 CASE 1: NO EDIT → JUST LOCK
-  //     if (!isEdited) {
-  //       await lockSlot(
-  //         yachtId,
-  //         selectedDate,
-  //         selectedSlot.start,
-  //         selectedSlot.end,
-  //         token
-  //       );
-
-  //       toast.success("Slot locked successfully");
-
-  //       window.bootstrap.Modal.getInstance(
-  //         document.getElementById("lockModal")
-  //       )?.hide();
-
-  //       loadGrid();
-  //       return;
-  //     }
-
-  //     // 🟡 CASE 2: EDITED → ADJUST + UPDATE + LOCK
-  //     const updatedSlots = adjustSlots({
-  //       allSlots: daySlots,
-  //       targetIndex: selectedIndex,
-  //       newStart: editStart,
-  //       newEnd: editEnd,
-  //       durationMinutes: hhmmToMinutes(yacht.duration)
-  //     });
-
-  //     // update timeline
-  //     await updateDaySlots(
-  //       yachtId,
-  //       selectedDate,
-  //       updatedSlots.map(({ start, end }) => ({ start, end })),
-  //       token
-  //     );
-
-  //     // lock edited slot
-  //     await lockSlot(
-  //       yachtId,
-  //       selectedDate,
-  //       editStart,
-  //       editEnd,
-  //       token
-  //     );
-
-  //     toast.success("Slot updated & locked successfully");
-
-  //     window.bootstrap.Modal.getInstance(
-  //       document.getElementById("lockModal")
-  //     )?.hide();
-
-  //     // loadGrid();
-  //   } catch (err) {
-  //     toast.error(err.message || "Failed to lock slot");
-  //   } finally {
-  //     setIsLocking(false);
-  //   }
-  // };
-
   const handleSaveAndLock = async (e) => {
     e.preventDefault();
     if (!selectedSlot || isLocking) return;
@@ -709,78 +661,73 @@ function GridAvailability() {
     setIsConfirming(false);
   };
 
-  const renderRowCells = (row) => {
-    const cells = [];
-    let colIndex = 0;
 
-    while (colIndex < timeHeaders.length) {
-      const current = timeHeaders[colIndex];
-      const slot = row.slots.find((s) => s.start === current);
+  const renderTimelineRow = (row) => {
+    
+    return (
+      <td className={styles.timelineCell}
+        style={{
+          position: "relative",
+          height: "100%",
+          width: "100%",
+          minWidth: 600,
+        }}
+      >
+        {row.slots.map((slot, idx) => {
+          let startMin = hhmmToMinutes(slot.start);
+          let endMin = hhmmToMinutes(slot.end);
 
-      if (slot) {
-        const span = Math.max(1, getColSpan(slot.start, slot.end));
-        const past = isPastSlot(slot, row.date);
+          if (endMin <= startMin) endMin += 1440;
 
-        // restricted for non-admin/backdesk users
-        const unauthorized =
-          !isAdminOrOnsite &&
-          (slot.type === "locked" || slot.type === "booked" || slot.type === "pending") &&
-          !isOwner(slot);
+          startMin -= timelineRange.start;
+          endMin -= timelineRange.start;
 
-        // cursor & tooltip
-        const cursorStyle = past || unauthorized ? "not-allowed" : "pointer";
-        const titleText = past || unauthorized
-          ? `${slot.type}`
-          : slot.type === "booked" || slot.type === "pending"
-            ? `Booked\nUser Name: ${slot.empName}\nBooking Name: ${slot.custName}`
-            : slot.type === "locked"
-              ? `Locked by: ${slot.empName}`
-              : `${slot.start} - ${slot.end}`;
+          const left = (startMin / timelineRange.total) * 100;
+          const width = ((endMin - startMin) / timelineRange.total) * 100;
 
-        // class names for CSS hover disable
-        const cellClass = `
-        slot-cell 
-        ${slot.type} 
-        ${past ? "past" : ""} 
-        ${unauthorized ? "unauthorized" : ""}
-      `;
+          const past = isPastSlot(slot, row.date);
 
-        cells.push(
-          <td
-            key={`${row.date}-${current}`}
-            colSpan={span}
-            title={titleText}
-            className={cellClass}
-            style={{ cursor: cursorStyle }}
-            onClick={() => {
-              if (past || unauthorized) return; // block click
-              const typeToOpen = slot.type === "pending" ? "booked" : slot.type;
-              handleSlotClick(slot, typeToOpen);
-            }}
-          >
-            {to12HourFormat(slot.start)} – {to12HourFormat(slot.end)}
-          </td>
-        );
+          // 🔐 ACCESS CONTROL (same as renderRowCells)
+          const unauthorized =
+            !isAdminOrOnsite &&
+            (slot.type === "locked" ||
+              slot.type === "booked" ||
+              slot.type === "pending") &&
+            !isOwner(slot);
 
-        colIndex += span;
-      } else {
-        // empty cell
-        cells.push(
-          <td
-            key={crypto.randomUUID()}
-            className="bg-light text-muted"
-            title="Not available"
-            style={{ cursor: "not-allowed" }}
-          >
-            —
-          </td>
-        );
-        colIndex += 1;
-      }
-    }
 
-    return cells;
+          return (
+            <div
+              key={idx}
+              className={[
+                styles.slot,
+                styles[slot.type],   // free | booked | locked | pending
+                past ? styles.past : ""
+              ].join(" ")}
+              style={{
+                position: "absolute",
+                left: `${left}%`,
+                width: `${width}%`,
+                height: `{100%}`,
+                cursor: past || unauthorized ? "not-allowed" : "pointer",
+              }}
+              onClick={() => {
+                if (past || unauthorized) return; // 🚫 BLOCK ACCESS
+                const typeToOpen =
+                  slot.type === "pending" ? "booked" : slot.type;
+                handleSlotClick(slot, typeToOpen);
+              }}
+
+              title={`${to12HourFormat(slot.start)} - ${to12HourFormat(slot.end)}`}
+            >
+              {to12HourFormat(slot.start)} – {to12HourFormat(slot.end)}
+            </div>
+          );
+        })}
+      </td>
+    );
   };
+
 
   return (
     <div className="container-fluid py-4">
@@ -858,35 +805,24 @@ function GridAvailability() {
         {loading ? (
           <div className="text-center py-5">Loading availability...</div>
         ) : grid.length > 0 ? (
-          <div className="availability-wrapper">
-            <table className="table text-center align-middle">
-              {/* <thead className="table-light sticky-top">
-              <tr>
-                <th className="sticky-col">Date</th>
-                {timeHeaders.map((t, i) => (
-                  <th key={i}>{to12HourFormat(t)}</th>
-                ))}
-              </tr>
-            </thead> */}
+          <div className={styles.wrapper}>
+            <table className={`table ${styles.table} text-center align-middle`}>
 
               <thead className="table-light sticky-top">
                 <tr>
-                  <th className="sticky-col">Date</th>
-                  {timeHeaders.map((t, i) =>
-                    t.endsWith(":00") ? (
-                      <th key={i} colSpan={2} className="hour-header">
-                        {to12HourFormat(t)}
-                      </th>
-                    ) : null
-                  )}
+                  <th className={styles.stickyCol}>Date</th>
+                  <th>Timeline</th>
                 </tr>
               </thead>
+
 
               <tbody>
                 {grid.map((row, i) => (
                   <tr key={i}>
-                    <td className="sticky-col fw-semibold">{row.date}</td>
-                    {renderRowCells(row)}
+                    <td className={`${styles.stickyCol} fw-semibold`}>
+                      {new Date(row.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                    </td>
+                    {renderTimelineRow(row)}
                   </tr>
                 ))}
               </tbody>
@@ -901,7 +837,7 @@ function GridAvailability() {
             <div className="modal-content rounded-4">
               <form onSubmit={handleSaveAndLock}>
                 {/* HEADER */}
-                <div className="modal-header bg-warning bg-opacity-25">
+                <div className="modal-header bg-warning ">
                   <h5 className="modal-title">Lock Time Slot</h5>
                   <button
                     type="button"
@@ -979,7 +915,7 @@ function GridAvailability() {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content rounded-4">
               <form onSubmit={handleConfirmBooking}>
-                <div className="modal-header bg-primary bg-opacity-10">
+                <div className="modal-header bg-primary">
                   <h5 className="modal-title">Confirm Booking</h5>
                   <button
                     type="button"
@@ -1023,7 +959,7 @@ function GridAvailability() {
         <div className="modal fade" id="bookedModal" tabIndex="-1">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content rounded-4">
-              <div className="modal-header bg-danger bg-opacity-10">
+              <div className="modal-header bg-danger">
                 <h5 className="modal-title">Booked Slot Details</h5>
                 <button
                   type="button"

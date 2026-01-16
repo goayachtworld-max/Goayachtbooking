@@ -13,210 +13,97 @@ const toHHMM = (m) =>
 const overlaps = (a, b) =>
   a.start < b.end && a.end > b.start;
 
-// /**
-//  * Adjusts adjacent FREE slots when a FREE slot is edited
-//  */
-// export function adjustSlots({
-//   allSlots,     // [{ start, end, type }]
-//   targetIndex,
-//   newStart,
-//   newEnd,
-// }) {
-//   const editedStart = toMin(newStart);
-//   const editedEnd = toMin(newEnd);
-
-//   if (editedEnd <= editedStart) {
-//     throw new Error("End time must be after start time");
-//   }
-
-//   const normalized = allSlots.map((s) => ({
-//     ...s,
-//     startMin: toMin(s.start),
-//     endMin: toMin(s.end),
-//   }));
-
-//   const target = normalized[targetIndex];
-
-//   // ❌ Only FREE slots are editable
-//   if (IMMUTABLE_TYPES.includes(target.type)) {
-//     throw new Error("This slot cannot be edited");
-//   }
-
-//   // ❌ No overlap with immutable slots
-//   for (let i = 0; i < normalized.length; i++) {
-//     if (i === targetIndex) continue;
-
-//     const s = normalized[i];
-//     if (IMMUTABLE_TYPES.includes(s.type)) {
-//       if (
-//         overlaps(
-//           { start: editedStart, end: editedEnd },
-//           { start: s.startMin, end: s.endMin }
-//         )
-//       ) {
-//         throw new Error(
-//           `Overlaps ${s.type} slot (${s.start}–${s.end})`
-//         );
-//       }
-//     }
-//   }
-
-//   // ✅ Apply edited slot
-//   target.startMin = editedStart;
-//   target.endMin = editedEnd;
-
-//   // 🔄 Adjust previous FREE slot
-//   const prev = normalized[targetIndex - 1];
-//   if (prev && !IMMUTABLE_TYPES.includes(prev.type)) {
-//     if (prev.endMin > editedStart) {
-//       prev.endMin = editedStart;
-//       if (prev.endMin <= prev.startMin) {
-//         throw new Error("Previous slot collapses");
-//       }
-//     }
-//   }
-
-//   // 🔄 Adjust next FREE slot
-//   const next = normalized[targetIndex + 1];
-//   if (next && !IMMUTABLE_TYPES.includes(next.type)) {
-//     if (next.startMin < editedEnd) {
-//       next.startMin = editedEnd;
-//       if (next.endMin <= next.startMin) {
-//         throw new Error("Next slot collapses");
-//       }
-//     }
-//   }
-
-//   return normalized.map((s) => ({
-//     ...s,
-//     start: toHHMM(s.startMin),
-//     end: toHHMM(s.endMin),
-//   }));
-// }
-
-
 export function adjustSlots({
-  allSlots,          // [{ start, end, type }]
+  allSlots,
   targetIndex,
   newStart,
   newEnd,
-  durationMinutes,   // yacht duration in minutes
+  durationMinutes,
 }) {
-  if (!Array.isArray(allSlots)) {
-    throw new Error("Invalid slots data");
-  }
-
+  console.log("adjust slots --------------------------------------")
   const editedStart = toMin(newStart);
   const editedEnd = toMin(newEnd);
+  console.log({
+  allSlots,
+  targetIndex,
+  newStart,
+  newEnd,
+  durationMinutes,
+})
 
   if (editedEnd <= editedStart) {
     throw new Error("End time must be after start time");
   }
 
-  // ----------------------------------
-  // Normalize slots
-  // ----------------------------------
-  const normalized = allSlots.map((s) => ({
+  // Normalize
+  let normalized = allSlots.map((s) => ({
     ...s,
     startMin: toMin(s.start),
     endMin: toMin(s.end),
   }));
 
   const target = normalized[targetIndex];
-  if (!target) {
-    throw new Error("Invalid slot selection");
-  }
+  if (!target) throw new Error("Invalid slot");
 
-  // ❌ Immutable slot protection
   if (IMMUTABLE_TYPES.includes(target.type)) {
     throw new Error("This slot cannot be edited");
   }
 
-  // ❌ Overlap with immutable slots
-  for (let i = 0; i < normalized.length; i++) {
-    if (i === targetIndex) continue;
-    const s = normalized[i];
-
-    if (IMMUTABLE_TYPES.includes(s.type)) {
-      if (
-        overlaps(
-          { start: editedStart, end: editedEnd },
-          { start: s.startMin, end: s.endMin }
-        )
-      ) {
-        throw new Error(
-          `Overlaps ${s.type} slot (${s.start}–${s.end})`
-        );
-      }
+  // ❌ Prevent overlap with immutable slots
+  for (const s of normalized) {
+    if (
+      IMMUTABLE_TYPES.includes(s.type) &&
+      overlaps(
+        { start: editedStart, end: editedEnd },
+        { start: s.startMin, end: s.endMin }
+      )
+    ) {
+      throw new Error(`Overlaps ${s.type} slot (${s.start}-${s.end})`);
     }
   }
 
-  // ----------------------------------
-  // Apply edited slot
-  // ----------------------------------
+  // ✅ Apply edited slot
   target.startMin = editedStart;
   target.endMin = editedEnd;
 
-  // ----------------------------------
-  // Adjust previous FREE slot
-  // ----------------------------------
-  const prev = normalized[targetIndex - 1];
-  if (prev && !IMMUTABLE_TYPES.includes(prev.type)) {
-    if (prev.endMin > editedStart) {
-      prev.endMin = editedStart;
-      if (prev.endMin <= prev.startMin) {
-        normalized.splice(targetIndex - 1, 1);
-      }
-    }
-  }
+  // ✅ Remove ALL overlapping FREE slots (except target)
+  normalized = normalized.filter(
+    (s) =>
+      s === target ||
+      IMMUTABLE_TYPES.includes(s.type) ||
+      !overlaps(
+        { start: editedStart, end: editedEnd },
+        { start: s.startMin, end: s.endMin }
+      )
+  );
 
-  // ----------------------------------
-  // Adjust next FREE slot
-  // ----------------------------------
-  const next = normalized[targetIndex + 1];
-  if (next && !IMMUTABLE_TYPES.includes(next.type)) {
-    if (next.startMin < editedEnd) {
-      next.startMin = editedEnd;
-      if (next.endMin <= next.startMin) {
-        normalized.splice(targetIndex + 1, 1);
-      }
-    }
-  }
-
-  // ----------------------------------
-  // SORT slots
-  // ----------------------------------
+  // Sort
   normalized.sort((a, b) => a.startMin - b.startMin);
 
-  // ----------------------------------
-  // 🧩 FILL GAPS WITH FREE SLOTS
-  // ----------------------------------
+  // 🧩 Fill gaps strictly by yacht duration
   const filled = [];
 
   for (let i = 0; i < normalized.length; i++) {
-    const current = normalized[i];
-    filled.push(current);
+    const curr = normalized[i];
+    filled.push(curr);
 
-    const nextSlot = normalized[i + 1];
-    if (!nextSlot) continue;
+    const next = normalized[i + 1];
+    if (!next) continue;
 
-    let gapStart = current.endMin;
-    const gapEnd = nextSlot.startMin;
+    let gapStart = curr.endMin;
+    const gapEnd = next.startMin;
 
-    // ✅ FIXED: Only fill if gap fits EXACT yacht duration
     while (gapEnd - gapStart >= durationMinutes) {
       filled.push({
         startMin: gapStart,
-        endMin: gapStart + durationMinutes,  // ✅ Fixed yacht duration
+        endMin: gapStart + durationMinutes,
         type: "free",
+        date: curr.date,
       });
-      gapStart += durationMinutes;  // ✅ Move by fixed duration
+      gapStart += durationMinutes;
     }
   }
 
-  // ----------------------------------
-  // CLEAN + RETURN
-  // ----------------------------------
   return filled.map((s) => ({
     ...s,
     start: toHHMM(s.startMin),

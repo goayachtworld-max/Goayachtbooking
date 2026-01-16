@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { socket } from "../socket";
 import {
@@ -19,6 +20,22 @@ export default function NotificationBell() {
     const unreadCount = notifications.filter(
         (n) => !n.readBy?.includes(userId)
     ).length;
+
+    const location = useLocation();
+
+    const handleBellClick = () => {
+        setOpen((prev) => !prev);
+
+        // 🔥 If already on /bookings (or /bookings/anything)
+        if (location.pathname.startsWith("/bookings")) {
+            navigate(".", {
+                replace: true,
+                state: {
+                    refresh: Date.now(), // force refresh
+                },
+            });
+        }
+    };
 
 
     /* ---------------- FETCH EXISTING ---------------- */
@@ -109,8 +126,9 @@ export default function NotificationBell() {
         <div className="nav-notification" ref={bellRef}>
             <button
                 className="btn btn-link position-relative"
-                onClick={() => setOpen((prev) => !prev)}
+                onClick={handleBellClick}
             >
+
                 <Bell size={30} fill="rgb(245, 245, 142)" />
 
                 {unreadCount > 0 && (
