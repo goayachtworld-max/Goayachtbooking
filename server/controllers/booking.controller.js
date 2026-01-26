@@ -6,75 +6,225 @@ import { sendEmail } from "../utils/sendEmail.js";
 import { YachtModel } from "../models/yacht.model.js";
 import { sendNotification } from "../services/notification.service.js";
 import { EmployeeModel } from "../models/employee.model.js";
+import { email } from "zod";
+
+// export const createBooking = async (req, res, next) => {
+//   try {
+//     console.log("In Booking", req.body);
+
+//     const { yachtId, date, startTime, endTime, customerId, quotedAmount, numPeople, onBehalfEmployeeId } = req.body;
+//     let employeeId = req.user.id;
+//     console.log("User type : ", req.user)
+
+//     // 1️⃣ Fetch the yacht
+//     const yacht = await YachtModel.findById(yachtId).select("_id company name");
+//     if (!yacht) {
+//       return res.status(404).json({ success: false, message: "Yacht not found" });
+//     }
+
+//     const employee = await EmployeeModel.findById(employeeId);
+
+//     // ✅ Assign company from yacht
+//     const companyId = yacht.company;
+//     // ✅ 0️⃣ determine booking status by role
+//     let bookingStatus = "pending";
+//     let tripS = "pending";
+
+//     if (
+//       req.user.type === "admin" ||
+//       req.user.type === "staff" ||
+//       req.user.type === "onsite"
+//     ) {
+//       bookingStatus = "confirmed";
+//       tripS = "initiated";
+//     }
+
+//     // 1️⃣ determine trip end datetime 
+//     const [year, month, day] = date.split("-");
+//     const [endHour, endMinute] = endTime.split(":");
+//     const tripEnd = new Date(year, month - 1, day, endHour, endMinute);
+
+//     // 2️⃣ check slot availability 
+//     const { available, conflictSlot, reason } = await checkSlotAvailability({
+//       yachtId,
+//       date,
+//       startTime,
+//       endTime,
+//       employeeId,
+//     });
+
+//     if (!available) {
+//       return res.status(400).json({ success: false, message: reason });
+//     }
+
+//     let createdBy = null;
+//     let isOnBehalf = false;
+//     if (req.user.type === "admin" && onBehalfEmployeeId !== employeeId) {
+//       createdBy = employeeId;
+//       employeeId = onBehalfEmployeeId;
+//       isOnBehalf = true
+//     }
+//     // 3️⃣ create booking
+//     const booking = await BookingModel.create({
+//       ...req.body,
+//       employeeId,
+//       createdBy,
+//       company: companyId,
+//       pendingAmount: quotedAmount,
+//       status: bookingStatus,
+//       tripStatus: tripS,
+//       isOnBehalf
+//     });
+//     console.log(booking)
+
+//     // 4️⃣ update customer 
+//     await CustomerModel.findByIdAndUpdate(
+//       booking.customerId,
+//       { bookingId: booking._id },
+//       { new: true }
+//     );
+
+//     // 5️⃣ update availability slot
+//     if (conflictSlot) {
+//       conflictSlot.status = "booked";
+//       conflictSlot.appliedBy = employeeId;
+//       conflictSlot.bookingId = booking._id;
+//       conflictSlot.deleteAfter = tripEnd;
+//       await conflictSlot.save();
+//     } else {
+//       await AvailabilityModel.create({
+//         yachtId,
+//         date,
+//         startTime,
+//         endTime,
+//         status: "booked",
+//         appliedBy: employeeId,
+//         bookingId: booking._id,
+//         deleteAfter: tripEnd,
+//       });
+//     }
+
+//     if (booking.status === "pending" && req.user.type === "backdesk") {
+//       await sendNotification({
+//         company: companyId,
+//         roles: ["admin", "onsite"],
+//         title: "Booking Pending",
+//         message: `${yacht.name}
+// ${date} ${startTime} – ${endTime}`,
+//         type: "booking_created",
+//         bookingId: booking._id,
+//         excludeUserId: req.user.id,
+//       });
+
+//       console.log("Notification send - Create booking")
+//     }
+
+//     res.status(201).json({ success: true, booking });
+//   } catch (error) {
+//     console.error("Booking creation error:", error);
+//     next(error);
+//   }
+// };
 
 export const createBooking = async (req, res, next) => {
   try {
-    console.log("In Booking", req.body);
+    const {
+      yachtId,
+      date,
+      startTime,
+      endTime,
+      customerId,
+      quotedAmount,
+      numPeople,
+      onBehalfEmployeeId,
+      extraDetails
+    } = req.body;
 
-    const { yachtId, date, startTime, endTime, customerId, quotedAmount, numPeople } = req.body;
-    const employeeId = req.user.id;
-    console.log("User type : ", req.user)
+    console.log("inc booking body : ", req.body)
+    const loggedInEmployeeId = req.user.id;
+    let employeeId = loggedInEmployeeId;
+    let createdBy = null;
+    let isOnBehalf = false;
 
-    // 1️⃣ Fetch the yacht
+    // 1️⃣ Fetch yacht
     const yacht = await YachtModel.findById(yachtId).select("_id company name");
     if (!yacht) {
       return res.status(404).json({ success: false, message: "Yacht not found" });
     }
 
-    const employee = await EmployeeModel.findById(employeeId);
-  
-    // ✅ Assign company from yacht
     const companyId = yacht.company;
-    // ✅ 0️⃣ determine booking status by role
-    let bookingStatus = "pending";
-    let tripS = "pending";
 
+    // 2️⃣ Handle on-behalf logic (ADMIN ONLY)
     if (
-      req.user.type === "admin" ||
-      req.user.type === "staff" ||
-      req.user.type === "onsite"
+      req.user.type === "admin" &&
+      onBehalfEmployeeId &&
+      onBehalfEmployeeId !== loggedInEmployeeId
     ) {
-      bookingStatus = "confirmed";
-      tripS = "initiated";
+      const targetEmployee = await EmployeeModel.findOne({
+        _id: onBehalfEmployeeId,
+        company: companyId
+      });
+
+      if (!targetEmployee) {
+        return res.status(403).json({
+          success: false,
+          message: "Invalid employee selected"
+        });
+      }
+
+      createdBy = loggedInEmployeeId;
+      employeeId = onBehalfEmployeeId;
+      isOnBehalf = true;
     }
 
-    // 1️⃣ determine trip end datetime 
+    // 3️⃣ Booking & trip status
+    let bookingStatus = "pending";
+    let tripStatus = "pending";
+
+    if (["admin", "staff", "onsite"].includes(req.user.type)) {
+      bookingStatus = "confirmed";
+      tripStatus = "initiated";
+    }
+
+    // 4️⃣ Trip end datetime
     const [year, month, day] = date.split("-");
     const [endHour, endMinute] = endTime.split(":");
     const tripEnd = new Date(year, month - 1, day, endHour, endMinute);
 
-    // 2️⃣ check slot availability 
-    const { available, conflictSlot, reason } = await checkSlotAvailability({
-      yachtId,
-      date,
-      startTime,
-      endTime,
-      employeeId,
-    });
+    // 5️⃣ Slot availability (NOW correct employeeId)
+    const { available, conflictSlot, reason } =
+      await checkSlotAvailability({
+        yachtId,
+        date,
+        startTime,
+        endTime,
+        employeeId
+      });
 
     if (!available) {
       return res.status(400).json({ success: false, message: reason });
     }
 
-    // 3️⃣ create booking
+    // 6️⃣ Create booking
     const booking = await BookingModel.create({
-      ...req.body,
+      customerId,
       employeeId,
+      createdBy,
+      isOnBehalf,
+      yachtId,
       company: companyId,
+      date,
+      startTime,
+      endTime,
+      quotedAmount,
       pendingAmount: quotedAmount,
       status: bookingStatus,
-      tripStatus: tripS,
+      tripStatus,
+      numPeople,
+      extraDetails,
     });
-    console.log(booking)
 
-    // 4️⃣ update customer 
-    await CustomerModel.findByIdAndUpdate(
-      booking.customerId,
-      { bookingId: booking._id },
-      { new: true }
-    );
-
-    // 5️⃣ update availability slot
+    // 7️⃣ Update availability
     if (conflictSlot) {
       conflictSlot.status = "booked";
       conflictSlot.appliedBy = employeeId;
@@ -90,7 +240,7 @@ export const createBooking = async (req, res, next) => {
         status: "booked",
         appliedBy: employeeId,
         bookingId: booking._id,
-        deleteAfter: tripEnd,
+        deleteAfter: tripEnd
       });
     }
 
@@ -98,19 +248,21 @@ export const createBooking = async (req, res, next) => {
       await sendNotification({
         company: companyId,
         roles: ["admin", "onsite"],
-        title: "New Booking Pending",
-        message: `A booking created for ${yacht.name} - ${date} by ${employee.name}.`,
+        title: "Booking Pending",
+        message: `${yacht.name}
+${date} ${startTime} – ${endTime}`,
         type: "booking_created",
         bookingId: booking._id,
         excludeUserId: req.user.id,
       });
-      console.log("Notification send - Create booking")
     }
 
+    console.log("booking : ", booking)
     res.status(201).json({ success: true, booking });
-  } catch (error) {
-    console.error("Booking creation error:", error);
-    next(error);
+
+  } catch (err) {
+    console.error("Create booking error:", err);
+    next(err);
   }
 };
 
@@ -155,7 +307,6 @@ export const updateBooking = async (req, res, next) => {
   }
 };
 
-
 export const getBookings = async (req, res) => {
   try {
     const { date, status, employeeId: filterEmployee } = req.query;
@@ -190,10 +341,10 @@ export const getBookings = async (req, res) => {
     }
 
     const bookings = await BookingModel.find(filter)
-      .populate("yachtId", "name")
+      .populate("yachtId", "name boardingLocation")
       .populate("customerId", "name contact email")
       .populate("employeeId", "name type")
-      .populate("company : ", "name" )
+      .populate("company : ", "name")
       .sort({ date: 1, startTime: 1 });
 
     // ⏱ AUTO UPDATE tripStatus (response level)
@@ -223,7 +374,6 @@ export const getBookings = async (req, res) => {
     });
   }
 };
-
 
 export const getBookingById = async (req, res) => {
   try {

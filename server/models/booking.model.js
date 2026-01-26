@@ -8,14 +8,23 @@ const bookingSchema = new mongoose.Schema({
         required: true
     },
     company: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Company',
-      required: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company',
+        required: true
     },
     employeeId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Employee', // 👈 Points to Employee model
         required: true
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Employee",
+        default: null
+    },
+    isOnBehalf: {
+        type: Boolean,
+        default: false
     },
     transactionIds: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -57,20 +66,23 @@ const bookingSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending','confirmed', 'cancelled'],
+        enum: ['pending', 'confirmed', 'cancelled'],
     },
-    tripStatus:{
+    tripStatus: {
         type: String,
         enum: ['pending', 'initiated', 'success', 'cancelled'],
     },
     numPeople: {
         type: Number,
         min: 0,
-        required : true
+        required: true
+    },
+    extraDetails:{
+        type:String,
     }
 }, {
     timestamps: true,
-    strictPopulate: false 
+    strictPopulate: false
 });
 
 export const BookingModel = mongoose.model('Booking', bookingSchema);

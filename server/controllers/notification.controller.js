@@ -11,6 +11,19 @@ export const getMyNotifications = async (req, res) => {
   res.json({ success: true, notifications });
 };
 
+// controller
+export const markAllNotificationsRead = async (req, res) => {
+  const userId = req.user.id;
+
+  await NotificationModel.updateMany(
+    { recipients: userId, readBy: { $ne: userId } },
+    { $addToSet: { readBy: userId } }
+  );
+
+  res.json({ success: true });
+};
+
+
 export const markAsRead = async (req, res) => {
   const { id } = req.params;
 

@@ -234,7 +234,9 @@ const AllEmployees = () => {
           <>
             {/* MOBILE VIEW */}
             <div className="d-md-none">
-              {(activeTab === "current" ? employees : notInCompanyEmployees).map((emp, i) => (
+              {(activeTab === "current" ? employees : notInCompanyEmployees)
+              .filter(emp => emp.status === "active")
+              .map((emp, i) => (
                 <div key={emp._id} className="card mb-3 shadow-sm border-0">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-end">
@@ -309,7 +311,9 @@ const AllEmployees = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {employees.map((emp, i) => (
+                    {employees
+                    .filter(emp => emp.status === "active")
+                    .map((emp, i) => (
                       <tr key={emp._id}>
                         <td>{i + 1}</td>
                         <td className="fw-semibold">{emp.name}</td>

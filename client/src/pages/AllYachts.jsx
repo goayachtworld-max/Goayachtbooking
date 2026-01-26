@@ -500,43 +500,6 @@ const AllYachts = () => {
                       </span>
                     </td>
                     <td>
-                      {/* <div className="d-flex flex-wrap justify-content-center gap-2">
-                      <button
-                        className="btn btn-sm btn-info"
-                        onClick={() => {
-                          setSelectedYacht(yacht);
-                          setShowViewModal(true);
-                        }}
-                      >
-                        View
-                      </button>
-
-                      <button
-                        className="btn btn-sm btn-warning"
-                        onClick={() => {
-                          setSelectedYacht({
-                            ...yacht,
-                            duration: toMinutes(yacht.duration),
-                          });
-                          setImagePreviews(yacht.yachtPhotos || []);
-                          setNewImages([]);
-                          setRemovedImages([]);
-                          setShowEditModal(true);
-                        }}
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => {
-                          setSelectedYacht(yacht);
-                          setShowDeleteModal(true);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div> */}
                       <div className="d-flex justify-content-center gap-2">
                         <button
                           className="btn btn-sm btn-info"

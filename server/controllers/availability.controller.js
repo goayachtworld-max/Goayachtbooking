@@ -1,6 +1,7 @@
 import { AvailabilityModel } from "../models/availability.model.js";
 import { BookingModel } from "../models/booking.model.js";
 import { YachtModel } from "../models/yacht.model.js";
+import { sendNotification } from "../services/notification.service.js";
 
 // -------------------------
 // Helper: Convert HH:mm to minutes
@@ -152,6 +153,40 @@ export const lockSlot = async (req, res, next) => {
       deleteAfter,
     });
 
+    // 🔔 Role-based notification for slot lock
+    let notifyRoles = [];
+
+    if (req.user.type === "backdesk") {
+      notifyRoles = ["admin", "onsite"];
+    }
+
+    if (req.user.type === "admin") {
+      notifyRoles = ["onsite"];
+    }
+
+    if (notifyRoles.length > 0) {
+      await sendNotification({
+        company: yacht.company,
+        roles: notifyRoles,
+        title: "Slot Locked",
+        message: `${yacht.name}
+${date} ${startTime} – ${endTime}`,
+        type: "slot_locked",
+        excludeUserId: req.user.id,
+        slot: {
+          availabilityId: lockedSlot._id,
+          yachtId: yacht._id,
+          yachtName: yacht.name,
+          date,
+          startTime,
+          endTime,
+        },
+      });
+
+
+      console.log("Notification sent for slot lock");
+    }
+
     res
       .status(201)
       .json({
@@ -258,7 +293,7 @@ export const getAvailabilitySummary = async (req, res, next) => {
       company: { $in: req.user.company },
       status: "active"
     }).select(
-      "_id name capacity sellingPrice status yachtPhotos company"
+      "_id name capacity sellingPrice status yachtPhotos company runningCost"
     ).populate("company");
     if (!yachts.length) {
       return res
@@ -322,10 +357,11 @@ export const getAvailabilitySummary = async (req, res, next) => {
         yachtName: yacht.name,
         capacity: yacht.capacity,
         sellingPrice: yacht.sellingPrice,
+        runningCost : yacht.runningCost,
         availability: yachtData,
         status: yacht.status,
         yachtPhotos: yacht.yachtPhotos,
-        company : yacht?.company?.name
+        company: yacht?.company?.name
       };
     });
 
@@ -401,7 +437,7 @@ export const getDayAvailability = async (req, res, next) => {
       start: b.startTime,
       end: b.endTime,
       status: b.status,
-      appliedBy: b.employeeId?._id, 
+      appliedBy: b.employeeId?._id,
       empName: b.employeeId.name,
       custName: b.customerId.name
     }));
@@ -444,19 +480,15 @@ export const getDayAvailability = async (req, res, next) => {
 };
 
 export const deleteAvailabilityForBooking = async (booking, session = null) => {
-  if (!booking) return;
+  if (!booking?._id) return;
 
   const query = {
-    yachtId: booking.yachtId,
-    date: booking.date,
-    startTime: booking.startTime,
-    endTime: booking.endTime,
-    status: "booked",
+    bookingId: booking._id,
   };
 
-  if (session) {
-    await AvailabilityModel.deleteMany(query).session(session);
-  } else {
-    await AvailabilityModel.deleteMany(query);
-  }
+  const result = session
+    ? await AvailabilityModel.deleteMany(query).session(session)
+    : await AvailabilityModel.deleteMany(query);
+
+  console.log("Deleted availability count:", result.deletedCount);
 };

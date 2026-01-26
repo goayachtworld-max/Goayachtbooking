@@ -11,6 +11,7 @@ export const sendNotification = async ({
   type,
   bookingId,
   excludeUserId,
+  lockedId
 }) => {
   let recipients = [];
 
@@ -37,8 +38,10 @@ export const sendNotification = async ({
     title,
     message,
     type,
-    bookingId,
+    bookingId: bookingId || undefined,
     recipients,
+    createdBy: excludeUserId,
+    lockedId: lockedId || null
   });
 
   const io = getIO();

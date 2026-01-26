@@ -21,6 +21,7 @@ function CreateYacht() {
     customDuration: "",
     specialSlot1: null,
     specialSlot2: null,
+    boardingLocation: "",
     photos: [],
     status: "active",
   });
@@ -97,26 +98,6 @@ function CreateYacht() {
     setPhotoPreviews(previews);
   };
 
-  // photo upload validation
-  // const handlePhotoUpload = (e) => {
-  //   const files = Array.from(e.target.files || []);
-  //   if (files.length === 0) {
-  //     setYacht((prev) => ({ ...prev, photos: [] }));
-  //     setPhotoError("");
-  //     return;
-  //   }
-
-  //   for (const file of files) {
-  //     if (file.size > 1 * 1024 * 1024) {
-  //       setPhotoError("Each photo must be less than 1 MB.");
-  //       return;
-  //     }
-  //   }
-
-  //   setPhotoError("");
-  //   setYacht((prev) => ({ ...prev, photos: files }));
-  // };
-
   const convertMinutesToHHMM = (mins) => {
     const h = String(Math.floor(mins / 60)).padStart(2, "0");
     const m = String(mins % 60).padStart(2, "0");
@@ -174,6 +155,7 @@ function CreateYacht() {
         ...prev,
         runningCost: prev.anchorageCost + prev.sailingCost
       }));
+
       const formData = new FormData();
       formData.append("name", yacht.name);
       formData.append("capacity", yacht.capacity);
@@ -201,6 +183,10 @@ function CreateYacht() {
         for (const file of yacht.photos) {
           formData.append("yachtPhotos", file);
         }
+      }
+
+      if (yacht.boardingLocation?.trim()) {
+        formData.append("boardingLocation", yacht.boardingLocation.trim());
       }
 
       await createYachtAPI(formData, token);
@@ -331,6 +317,17 @@ function CreateYacht() {
             />
           </div>
 
+          {/* Status */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">
+              Status <span className="text-danger">*</span>
+            </label>
+            <select className="form-select border border-dark" name="status" value={yacht.status} onChange={handleChange}>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+
           {/* Duration */}
           <div className="col-md-6">
             <label className="form-label fw-bold">
@@ -401,17 +398,6 @@ function CreateYacht() {
             </select>
           </div>
 
-          {/* Status */}
-          <div className="col-md-6">
-            <label className="form-label fw-bold">
-              Status <span className="text-danger">*</span>
-            </label>
-            <select className="form-select border border-dark" name="status" value={yacht.status} onChange={handleChange}>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-
           {/* Photos */}
           <div className="col-md-6">
             <label className="form-label fw-bold">Upload Photos (optional)</label>
@@ -425,6 +411,21 @@ function CreateYacht() {
             {photoError && <div className="text-danger small mt-1">{photoError}</div>}
             <div className="form-text">Max size: 1 MB per image</div>
           </div>
+          {/* Boarding Location (Optional) */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">
+              Boarding Location
+            </label>
+            <input
+              type="text"
+              name="boardingLocation"
+              className="form-control border border-dark"
+              placeholder="e.g. West Goa"
+              value={yacht.boardingLocation}
+              onChange={handleChange}
+            />
+          </div>
+
 
           {photoPreviews.length > 0 && (
             <div className="row mt-3 g-3">

@@ -24,3 +24,15 @@ export const markNotificationReadAPI = async (id, token) => {
     }
   );
 };
+
+/* ---------------- MARK ALL AS READ ---------------- */
+export const markAllNotificationsReadAPI = async (token) => {
+  return apiConnector(
+    "PATCH",
+    notification.MARK_ALL_AS_READ_API,
+    null,
+    {
+      Authorization: `Bearer ${token}`,
+    }
+  );
+};

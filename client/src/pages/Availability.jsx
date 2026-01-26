@@ -6,7 +6,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { generateTextImage } from "../utils/generateTextImage";
 import "./Availability.css";
 import { FiSliders } from "react-icons/fi";
-// import "../styles/Availability.module.css" //-- same css addded from .//Availability.css but not working
 
 function Availability() {
   const navigate = useNavigate();
@@ -83,6 +82,7 @@ function Availability() {
             capacity: y.capacity,
             status: y.status,
             sellingPrice: y.sellingPrice || y.maxSellingPrice || 0,
+            runningCost: y.runningCost,
             yachtPhotos:
               y.yachtPhotos?.length > 0
                 ? y.yachtPhotos
@@ -300,8 +300,9 @@ function Availability() {
                     <h5 className="mb-1 yacht-name">{yacht.name}</h5>
 
                     <p className="text-muted small mb-2">
-                      Capacity: <strong>{yacht.capacity}</strong> | Price:{" "}
-                      <strong>₹{yacht.sellingPrice}</strong>
+                      👥: <strong>{yacht.capacity}</strong> | 
+                      B2B: <strong>₹{yacht?.runningCost}</strong> | 
+                      B2C: <strong>₹{yacht?.sellingPrice}</strong>
                     </p>
 
                     <div className="d-flex justify-content-between mt-3">

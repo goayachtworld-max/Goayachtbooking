@@ -4,6 +4,7 @@ import { Bell } from "lucide-react";
 import { socket } from "../socket";
 import {
     getNotificationsAPI,
+    markAllNotificationsReadAPI,
     markNotificationReadAPI,
 } from "../services/operations/notificationAPI";
 import "../styles/NavbarNotification.css";
@@ -80,13 +81,6 @@ export default function NotificationBell() {
 
         if (bookingId) {
             const searchValue = bookingId.slice(-5);
-            // navigate(`/bookings?search=${searchValue}`, {
-            //     replace: false,
-            //     state: {
-            //         refresh: Date.now(),
-            //     },
-            // });
-
             navigate("/bookings", {
                 state: {
                     refresh: Date.now(),   // 🔥 FORCE refresh every click
@@ -101,6 +95,24 @@ export default function NotificationBell() {
         }
 
         setOpen(false); // optional: close dropdown
+    };
+
+    const handleMarkAllRead = async () => {
+        try {
+            const token = localStorage.getItem("authToken");
+            await markAllNotificationsReadAPI(token);
+
+            // 🔥 Update UI instantly
+            setNotifications((prev) =>
+                prev.map((n) =>
+                    n.readBy?.includes(userId)
+                        ? n
+                        : { ...n, readBy: [...(n.readBy || []), userId] }
+                )
+            );
+        } catch (err) {
+            console.error("Failed to mark all as read", err);
+        }
     };
 
     /* ---------------- MARK AS READ ---------------- */
@@ -128,7 +140,6 @@ export default function NotificationBell() {
                 className="btn btn-link position-relative"
                 onClick={handleBellClick}
             >
-
                 <Bell size={30} fill="rgb(245, 245, 142)" />
 
                 {unreadCount > 0 && (
@@ -140,27 +151,48 @@ export default function NotificationBell() {
 
             {open && (
                 <div className="notification-dropdown shadow">
+
+                    {/* ---------- HEADER ---------- */}
+                    <div className="notification-header">
+                        <span className="notification-title">Notifications</span>
+
+                        {unreadCount > 0 && (
+                            <button
+                                className="mark-all-btn"
+                                onClick={handleMarkAllRead}
+                            >
+                                Mark all read
+                            </button>
+                        )}
+                    </div>
+
+                    {/* ---------- EMPTY STATE ---------- */}
                     {notifications.length === 0 && (
                         <p className="text-muted text-center m-2">
                             No notifications
                         </p>
                     )}
 
+                    {/* ---------- NOTIFICATION LIST ---------- */}
                     {notifications.map((n) => (
                         <div
                             key={n._id}
-                            className={`notification-item ${n.readBy?.includes(userId) ? "read" : "unread"
-                                }`}
+                            className={`notification-item
+              ${n.readBy?.includes(userId) ? "read" : "unread"}
+              ${n.type === "booking_created" ? "pending" : ""}
+              ${n.type === "slot_locked" ? "locked" : ""}
+              ${n.type === "booking_status_updated" && n.title.includes("CONFIRMED") ? "booked" : ""}
+              ${n.type === "booking_status_updated" && n.title.includes("CANCELLED") ? "cancelled" : ""}
+            `}
                             onClick={() => handleNotificationClick(n)}
                         >
                             <strong>{n.title}</strong>
                             <p className="mb-0">{n.message}</p>
                         </div>
                     ))}
-
-
                 </div>
             )}
         </div>
     );
+
 }

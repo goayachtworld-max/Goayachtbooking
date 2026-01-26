@@ -9,12 +9,16 @@ import {
 import { getAllYachtsAPI } from "../services/operations/yautAPI";
 import { toast } from "react-hot-toast";
 import { createTransactionAndUpdateBooking } from "../services/operations/transactionAPI";
+import { getEmployeesForBookingAPI } from "../services/operations/employeeAPI";
 
 function CreateBooking() {
   const navigate = useNavigate();
   const location = useLocation();
   const prefill = location.state || {};
 
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isAdmin = user?.type === "admin";
   const [formData, setFormData] = useState({
     name: "",
     contact: "",
@@ -27,6 +31,8 @@ function CreateBooking() {
     endTime: prefill.endTime || "",
     numPeople: "",
     advanceAmount: "",
+    onBehalfEmployeeId: user?._id,
+    extraDetails: ""
   });
 
   const [yachts, setYachts] = useState([]);
@@ -38,6 +44,21 @@ function CreateBooking() {
   const [customerSuggestions, setCustomerSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const typingTimeoutRef = useRef(null);
+  const [employees, setEmployees] = useState([]);
+  const [showExtraDetails, setShowExtraDetails] = useState(false);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const fetchEmployees = async () => {
+      const token = localStorage.getItem("authToken");
+      const res = await getEmployeesForBookingAPI(token);
+      setEmployees(res?.data?.employees || []);
+    };
+
+    fetchEmployees();
+  }, []);
+
 
   const hhmmToMinutes = (time = "00:00") => {
     const [h, m] = time.split(":").map(Number);
@@ -227,14 +248,18 @@ function CreateBooking() {
 
       const bookingPayload = {
         customerId,
-        employeeId: "replace_with_employee_id",
+        employeeId: user?._id,
         yachtId: formData.yachtId,
         date: formData.date,
         startTime: formData.startTime,
         endTime: formData.endTime,
         quotedAmount: Number(formData.totalAmount),
         numPeople: Number(formData.numPeople),
+        onBehalfEmployeeId: formData.onBehalfEmployeeId || null,
+        extraDetails: formData.extraDetails
       };
+
+      console.log("Booking payload : ", bookingPayload)
 
       const response = await createBookingAPI(bookingPayload, token);
       const booking = response.data.booking;
@@ -333,7 +358,7 @@ function CreateBooking() {
       </style>
 
       <div className={`container my-4 px-3 ${loading ? "blur" : ""}`}>
-        <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-2">
           <h4>Create Booking</h4>
           <button className="btn btn-secondary" onClick={() => navigate(-1)}>
             ← Back
@@ -342,7 +367,7 @@ function CreateBooking() {
 
         {error && <div className="alert alert-danger">{error}</div>}
 
-        <form className="row g-2" onSubmit={handleSubmit}>
+        <form className="row g-1" onSubmit={handleSubmit}>
           {/* Full Name */}
           <div className="col-md-6 position-relative">
             <label className="form-label fw-bold">Full Name</label>
@@ -421,8 +446,30 @@ function CreateBooking() {
             )}
           </div>
 
+          {/* On Behalf of */}
+          {isAdmin && (
+            <div className="col-6">
+              <label className="form-label fw-bold">
+                On Behalf Of
+              </label>
+
+              <select
+                className="form-select border border-dark text-dark"
+                name="onBehalfEmployeeId"
+                value={formData.onBehalfEmployeeId}
+                onChange={handleChange}
+              >
+                {employees.map((emp) => (
+                  <option key={emp._id} value={emp._id}>
+                    {emp.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Yacht */}
-          <div className="col-12">
+          <div className="col-6">
             <label className="form-label fw-bold">Select Yacht</label>
             <select
               className="form-select border border-dark text-dark"
@@ -441,7 +488,7 @@ function CreateBooking() {
           </div>
 
           {/* Start Time */}
-          <div className="col-md-6">
+          {/* <div className="col-md-6">
             <label className="form-label fw-bold">Start Time</label>
             <select
               className="form-select border border-dark text-dark"
@@ -458,21 +505,43 @@ function CreateBooking() {
               ))}
             </select>
           </div>
-
-          {/* End Time */}
+          
           <div className="col-md-6">
             <label className="form-label fw-bold">End Time</label>
             <input
               type="text"
-              className="form-control border border-dark text-dark"
+              className="form-control"
               value={to12Hour(formData.endTime)}
               readOnly
             />
+
+          </div> */}
+
+          <div className="col-md-6">
+            <label className="form-label fw-bold">
+              Time Slot
+            </label>
+
+            <select
+              className="form-select border border-dark text-dark"
+              name="startTime"
+              value={formData.startTime}
+              onChange={handleStartSelect}
+              required
+            >
+              <option value="">-- Select Time Slot --</option>
+
+              {startTimeOptions.map((opt, i) => (
+                <option key={i} value={opt.start}>
+                  {to12Hour(opt.start)} – {to12Hour(opt.end)}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Quoted Amount */}
           <div className="col-md-6">
-            <label className="form-label fw-bold">Quoted Amount</label>
+            <label className="form-label fw-bold">Amount</label>
             <input
               type="number"
               // className={`form-control border text-dark ${isAmountInvalid ? "border-danger is-invalid" : "border-dark"
@@ -493,7 +562,7 @@ function CreateBooking() {
 
           {/* Advance */}
           <div className="col-md-6">
-            <label className="form-label fw-bold">Advance Amount</label>
+            <label className="form-label fw-bold">Advance</label>
             <input
               type="number"
               className="form-control border border-dark text-dark"
@@ -501,6 +570,31 @@ function CreateBooking() {
               value={formData.advanceAmount}
               onChange={handleChange}
             />
+          </div>
+
+          {/* Extra Details / Notes */}
+          <div className="col-12 mb-3">
+            {!showExtraDetails ? (
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => setShowExtraDetails(true)}
+              >
+                +
+              </button>
+            ) : (
+              <div>
+                <label className="form-label fw-bold">Extra Details / Notes</label>
+                <textarea
+                  className="form-control border border-dark text-dark"
+                  name="extraDetails"
+                  value={formData.extraDetails}
+                  onChange={handleChange}
+                  rows={3}
+                  placeholder="Add any extra information here..."
+                />
+              </div>
+            )}
           </div>
 
           <div className="col-12 text-center">

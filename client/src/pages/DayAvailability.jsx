@@ -56,11 +56,10 @@ function DayAvailability() {
   const isAdminOrOnsite = employee.type === "admin" || employee.type === "onsite";
 
   // Helper to check if this user created/applied this slot
- const isOwner = (slot) =>
- {
-  console.log("slot is : ", slot)
+  const isOwner = (slot) => {
+    console.log("slot is : ", slot)
     return slot.appliedBy && slot.appliedBy === employee._id;
- }
+  }
 
   // Handle initial state based on whether date selection is required
   useEffect(() => {
@@ -621,11 +620,13 @@ function DayAvailability() {
   };
 
   const handleDeleteAllUI = () => {
-    // if (!window.confirm("This will stop all sales for this day. Continue?")) return;
+    setEditedDaySlots((prev) =>
+      prev.filter((slot) => slot.status === "booked")
+    );
 
-    setEditedDaySlots([]); // 🔥 clear UI slots
-    toast.success("All slots removed. Click Save to apply.");
+    toast.success("Sale stopped.");
   };
+
 
 
   const handleSaveEditedDaySlots = async () => {
@@ -785,9 +786,12 @@ function DayAvailability() {
           <div className="card shadow-sm border-0 rounded-4 p-3">
             <div className="d-flex align-items-center justify-content-between mb-2">
               <h5 className="fw-semibold mb-0 text-secondary">
-                🕒 Available Time Slots
+                Time Slots
               </h5>
 
+              <div className="fw-bold mb-0 text-primary" >
+                B2B:<strong> {yacht?.runningCost}</strong> | B2C:<strong> {yacht?.sellingPrice}</strong>
+              </div>
               {isAdmin && (
                 <button
                   className="btn btn-outline-primary btn-sm"

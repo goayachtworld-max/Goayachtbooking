@@ -110,23 +110,29 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
         bookingCreator?.type === "backdesk" &&
         (req.user.type === "admin" || req.user.type === "onsite")
       ) {
+        let formattedUserType = "Admin"
+        if(req.user.type === "onsite"){
+          formattedUserType = "Staff"
+        }
         const date = new Date(populatedBooking.date);
         const formattedDate = date.toISOString().split('T')[0];
         await sendNotification({
           company: populatedBooking.company,
-          // roles: ["backdesk"],
           recipientUserId: bookingCreator._id,
           title: `Booking ${incStatus.toUpperCase()}`,
-          message: `Booking for ${populatedBooking?.yachtId?.name} - ${formattedDate} ${incStatus} by ${bookingCreator.name} company -${[populatedBooking.company?.name]} `,
+          message: `${populatedBooking.yachtId.name}
+${formattedDate} ${populatedBooking.startTime} – ${populatedBooking.endTime}
+Customer: ${populatedBooking.customerId.name}
+— ${incStatus} by ${formattedUserType}`,
           type: "booking_status_updated",
           bookingId: populatedBooking._id,
           excludeUserId: req.user.id,
         });
+
       }
     }
   } catch (notifyError) {
     console.error("⚠️ Notification error:", notifyError.message);
-    // Notification failure should NOT break API success
   }
 
   // -----------------------------

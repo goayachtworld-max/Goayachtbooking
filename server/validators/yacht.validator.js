@@ -69,4 +69,5 @@ export const yachtSchema = z.object({
     },
     z.array(z.string())
   ).optional(),
+  boardingLocation: z.string().optional()
 });

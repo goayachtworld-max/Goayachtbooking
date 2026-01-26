@@ -12,7 +12,6 @@ export const createCompany = async (req, res, next) => {
         message: "name, code and adminId are required"
       });
     }
-
     // 2️⃣ Verify admin exists & role
     // const admin = await EmployeeModel.findById(adminId).select("_id type status");
     // if (!admin) {

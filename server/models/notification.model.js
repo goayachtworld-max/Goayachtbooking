@@ -11,6 +11,7 @@ const notificationSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: [
+      "slot_locked",
       "booking_created",
       "booking_status_updated",
       "payment_received",
@@ -19,6 +20,10 @@ const notificationSchema = new mongoose.Schema({
   bookingId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Booking",
+  },
+  lockedId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Availability",
   },
   recipients: [{
     type: mongoose.Schema.Types.ObjectId,

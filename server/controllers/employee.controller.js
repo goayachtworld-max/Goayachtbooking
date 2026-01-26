@@ -19,7 +19,7 @@ export const createEmployee = async (req, res, next) => {
       ...req.body,
       password: hashedPassword,
       company: [req.user.company[0]],
-      username:uname
+      username: uname
     });
 
     employee.password = null;
@@ -35,14 +35,14 @@ export const loginEmployee = async (req, res, next) => {
     const { username, password } = req.body;
     const uname = username.toLowerCase();
     const pass = password;
-    const employee = await EmployeeModel.findOne({ username:uname });
+    const employee = await EmployeeModel.findOne({ username: uname });
 
     if (!employee) {
       const err = new Error("Employee not found");
       err.status = 404;
       throw err;
     }
-    if(employee.status === "inactive"){
+    if (employee.status === "inactive") {
       const err = new Error("User is Deactivated, contact with Admin");
       err.status = 403;
       throw err;
@@ -85,7 +85,12 @@ export const getEmployeesForBooking = async (req, res, next) => {
   try {
     const { type, id } = req.user;
 
-    let filter = { company: { $in: req.user.company }, status: "active" };
+    let filter = {
+      company: { $in: req.user.company },
+      status: "active",
+      type: { $in: ["admin", "backdesk"] }
+    };
+
 
     // 🔒 Backdesk → only himself
     if (type === "backdesk") {
@@ -97,6 +102,7 @@ export const getEmployeesForBooking = async (req, res, next) => {
       filter,
       "_id name type"
     ).sort({ name: 1 });
+    console.log("Emp : ", employees)
 
     res.json({ success: true, employees });
   } catch (error) {
@@ -182,7 +188,7 @@ export const updateEmployeeProfile = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
-    console.log("Req body update emp profile : ",req.body)
+    console.log("Req body update emp profile : ", req.body)
     const employee = await EmployeeModel.findById(req.params.id);
     if (!employee) {
       return res.status(404).json({

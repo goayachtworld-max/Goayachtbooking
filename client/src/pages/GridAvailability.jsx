@@ -730,7 +730,7 @@ function GridAvailability() {
 
 
   return (
-    <div className="container-fluid py-4">
+    <div className="container-fluid py-1">
       <div className="mx-auto" style={{ maxWidth: "85vw" }}>
 
         <h4 className="fw-bold mb-4">Calendar View</h4>
@@ -775,13 +775,6 @@ function GridAvailability() {
             </button>
           </div>
         </div>
-        {/* 
-        {yacht!=null && (
-          <div>
-            <div>B2B Price : {yacht?.runningCost }</div>
-            <div>B2C Price : {yacht?.sellingPrice }</div>
-          </div>
-        )} */}
 
         {yacht && (
           <div className="mb-3 d-flex gap-4 align-items-center">

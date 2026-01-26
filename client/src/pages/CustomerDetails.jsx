@@ -30,9 +30,9 @@ const TripProgress = ({ tripStatus }) => {
   const progressPercent = (activeIndex / (TRIP_STEPS.length - 1)) * 100;
 
   return (
-    <div className="mb-3">
+    <div className="mb-1">
       {/* Progress bar */}
-      <div className="progress mb-3" style={{ height: "8px" }}>
+      <div className="progress mb-3" style={{ height: "6px" }}>
         <div
           className="progress-bar bg-success"
           style={{ width: `${progressPercent}%` }}
@@ -46,17 +46,15 @@ const TripProgress = ({ tripStatus }) => {
           return (
             <div key={step.key} className="text-center flex-fill">
               <div
-                className={`rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center fw-bold ${
-                  completed ? "bg-success text-white" : "bg-light text-muted"
-                }`}
-                style={{ width: 34, height: 34 }}
+                className={`rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center fw-bold ${completed ? "bg-success text-white" : "bg-light text-muted"
+                  }`}
+                style={{ width: 20, height: 20 }}
               >
                 {completed ? "✓" : index + 1}
               </div>
               <small
-                className={`fw-semibold ${
-                  completed ? "text-success" : "text-muted"
-                }`}
+                className={`fw-semibold ${completed ? "text-success" : "text-muted"
+                  }`}
               >
                 {step.label}
               </small>
@@ -109,14 +107,14 @@ function CustomerDetails() {
     <div
       className="container-fluid d-flex justify-content-center align-items-start"
       style={{
-        height: "calc(100vh - 70px)", // adjust if navbar height differs
+        minHeight: "calc(100vh - 70px)", // adjust if navbar height differs
         overflow: "hidden",
         paddingTop: "12px",
       }}
     >
       <div className="col-12 col-md-8 col-lg-6">
         {/* Header */}
-        <div className="text-center mb-2">
+        <div className="text-center mb-1">
           <h5 className="fw-bold mb-1">Booking Details</h5>
           <span className="badge bg-dark">
             Ticket #{ticketId}
@@ -168,6 +166,15 @@ function CustomerDetails() {
               <p className="m-0">
                 <strong>Balance:</strong> ₹{booking.pendingAmount ?? 0}
               </p>
+
+              {booking?.extraDetails && <> 
+                <hr className="my-2" />
+                <p className="m-0">
+                  <strong>Extra Details : </strong>
+                  <span>{booking.extraDetails}</span>
+                </p>
+              </>}
+
             </div>
 
             <div className="text-center mt-3">

@@ -27,6 +27,7 @@ import { Toaster, toast } from "react-hot-toast";
 import { socket } from "./socket";
 import "./styles/NavbarNotification.css"
 import NotificationBell from "./pages/NotificationBell";
+import EditBookingDetails from "./components/EditBookingDetails";
 
 
 function App() {
@@ -151,155 +152,160 @@ function App() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
       {user && <Navbar user={user} onLogout={logoutUser} />}
-      {user && <NotificationBell className="nav-notification"/>}
+      {user && <NotificationBell className="nav-notification" />}
       {/* <div className="mt-1">hi</div> */}
       <div className="app-content">
-      <Routes>
-        {/* Root Route → Redirect based on user role */}
-        <Route
-          path="/"
-          element={
-            user ? (
-              role === "admin" ? (
-                <Navigate to="/admin" />
+        <Routes>
+          {/* Root Route → Redirect based on user role */}
+          <Route
+            path="/"
+            element={
+              user ? (
+                role === "admin" ? (
+                  <Navigate to="/admin" />
+                ) : (
+                  <Navigate to="/bookings" />
+                )
               ) : (
-                <Navigate to="/bookings" />
+                <Login onLogin={handleLogin} />
               )
-            ) : (
-              <Login onLogin={handleLogin} />
-            )
-          }
-        />
+            }
+          />
 
-        {/* Protected Routes */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute user={user}>
-              {role === "admin" ? <AdminDashboard /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          {/* Protected Routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute user={user}>
+                {role === "admin" ? <AdminDashboard /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/bookings"
-          element={
-            <ProtectedRoute user={user}>
-              <Bookings user={user} />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/bookings"
+            element={
+              <ProtectedRoute user={user}>
+                <Bookings user={user} />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/collections"
-          element={
-            <ProtectedRoute user={user}>
-              {role === "admin" ? <Collections /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/collections"
+            element={
+              <ProtectedRoute user={user}>
+                {role === "admin" ? <Collections /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/availability"
-          element={
-            <ProtectedRoute user={user}>
-              {["admin", "backdesk"].includes(role) ? <Availability /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/grid-availability"
-          element={
-            <ProtectedRoute user={user}>
-              {["admin", "backdesk", "onsite"].includes(role) ? <GridAvailability /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/availability"
+            element={
+              <ProtectedRoute user={user}>
+                {["admin", "backdesk"].includes(role) ? <Availability /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/grid-availability"
+            element={
+              <ProtectedRoute user={user}>
+                {["admin", "backdesk", "onsite"].includes(role) ? <GridAvailability /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/availability/:yachtName/:date?"
-          element={
-            <ProtectedRoute user={user}>
-              {["admin", "backdesk"].includes(role) ? <DayAvailability /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/availability/:yachtName/:date?"
+            element={
+              <ProtectedRoute user={user}>
+                {["admin", "backdesk"].includes(role) ? <DayAvailability /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/create-customer"
-          element={
-            <ProtectedRoute user={user}>
-              {["admin", "backdesk"].includes(role) ? <CreateCustomer /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/create-customer"
+            element={
+              <ProtectedRoute user={user}>
+                {["admin", "backdesk"].includes(role) ? <CreateCustomer /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/customer-details"
-          element={
-            <ProtectedRoute user={user}>
-              {["admin", "backdesk", "onsite"].includes(role) ? <CustomerDetails /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/customer-details"
+            element={
+              <ProtectedRoute user={user}>
+                {["admin", "backdesk", "onsite"].includes(role) ? <CustomerDetails /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/create-employee"
-          element={
-            <ProtectedRoute user={user}>
-              {role === "admin" ? <CreateEmployee /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/create-employee"
+            element={
+              <ProtectedRoute user={user}>
+                {role === "admin" ? <CreateEmployee /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/create-yacht"
-          element={
-            <ProtectedRoute user={user}>
-              {role === "admin" ? <CreateYacht /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/create-yacht"
+            element={
+              <ProtectedRoute user={user}>
+                {role === "admin" ? <CreateYacht /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/all-yachts"
-          element={
-            <ProtectedRoute user={user}>
-              {["admin", "backdesk"].includes(role) ? <AllYachts /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/all-yachts"
+            element={
+              <ProtectedRoute user={user}>
+                {["admin", "backdesk"].includes(role) ? <AllYachts /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/all-employees"
-          element={
-            <ProtectedRoute user={user}>
-              {["admin", "backdesk"].includes(role) ? <AllEmployees /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/all-employees"
+            element={
+              <ProtectedRoute user={user}>
+                {["admin", "backdesk"].includes(role) ? <AllEmployees /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/create-booking"
-          element={
-            <ProtectedRoute user={user}>
-              {["admin", "backdesk"].includes(role) ? <CreateBooking /> : <NotFound />}
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/create-booking"
+            element={
+              <ProtectedRoute user={user}>
+                {["admin", "backdesk"].includes(role) ? <CreateBooking /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/update-booking"
-          element={
+          <Route
+            path="/update-booking"
+            element={
+              <ProtectedRoute user={user}>
+                {["admin", "onsite"].includes(role) ? <UpdateBooking /> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/edit-booking" element={
             <ProtectedRoute user={user}>
-              {["admin", "backdesk", "onsite"].includes(role) ? <UpdateBooking /> : <NotFound />}
+              {["admin", "backdesk", "onsite"].includes(role) ? <EditBookingDetails/> : <NotFound />}
             </ProtectedRoute>
-          }
-        />
+          } />
 
-        {/* Fallback Route */}
-        <Route path="*" element={<NotFound user={user} />} />
-      </Routes>
+          {/* Fallback Route */}
+          <Route path="*" element={<NotFound user={user} />} />
+        </Routes>
       </div>
     </>
   );

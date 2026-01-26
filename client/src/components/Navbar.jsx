@@ -198,18 +198,6 @@ useEffect(() => {
             ref={collapseRef}
           >
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-              {user?.type === "admin" && (
-                <li className="nav-item">
-                  <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/admin") ? styles.activeTab : ""
-                      }`}
-                    to="/admin"
-                    onClick={handleNavLinkClick}
-                  >
-                    Dashboard
-                  </Link>
-                </li>
-              )}
 
               <li className="nav-item">
                 <Link

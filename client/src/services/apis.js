@@ -51,4 +51,5 @@ export const yaut = {
 export const notification = {
   GET_NOTIFICATIONS_API: `${BASE_URL}/notifications`,
   MARK_AS_READ_API: (id) => `${BASE_URL}/notifications/${id}/read`,
+  MARK_ALL_AS_READ_API: `${BASE_URL}/notifications/mark-all-read`,
 };

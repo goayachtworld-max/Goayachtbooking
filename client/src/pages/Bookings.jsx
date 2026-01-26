@@ -3,6 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { getBookingsAPI } from "../services/operations/bookingAPI";
 import { getEmployeesForBookingAPI } from "../services/operations/employeeAPI";
 import { FiSliders } from "react-icons/fi";
+import { Eye, Pencil } from "lucide-react";
+import jsPDF from "jspdf";
+import toast from "react-hot-toast";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Bookings.css";
@@ -30,6 +33,8 @@ function Bookings({ user }) {
   const employeeParam = params.get("employee");
   const parsedEmployeeId = employeeParam?.split("~")[1] || "";
   const [filterEmployee, setFilterEmployee] = useState(parsedEmployeeId);
+
+
 
   // ---------------- COLORS ----------------
   const statusColorMap = {
@@ -137,6 +142,51 @@ function Bookings({ user }) {
     setFilterEmployee("");
   };
 
+  const generateBoardingPass = (booking) => {
+    const formatDate = (dateStr) => {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    };
+
+    const formatTime = (time24) => {
+      let [h, m] = time24.split(":").map(Number);
+      const period = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      return `${h}:${m.toString().padStart(2, "0")} ${period}`;
+    };
+
+    const tokenPaid = booking.quotedAmount - booking.pendingAmount;
+
+    const boardingPassText = `
+Thank you for booking with ${booking.company?.name}
+
+Ticket #: ${booking._id.slice(-5).toUpperCase()}
+
+👤 Guest Name: ${booking.customerId?.name}
+📞 Contact No.: ${booking.customerId?.contact}
+👥 Group Size: ${booking.numPeople} Pax
+⛵ Yacht Name: ${booking.yachtId?.name}
+🗓️ Trip Date: ${formatDate(booking.date)} 
+⏰ Time: ${formatTime(
+      booking.startTime
+    )} to ${formatTime(booking.endTime)}
+
+Balance Pending: ₹${booking.pendingAmount}/-
+
+📍 Boarding Location
+🔗 ${booking.yachtId.boardingLocation || "Location not provided"}
+  `.trim();
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(boardingPassText);
+
+    toast.success("Boarding Pass copied to clipboard");
+  };
+
   const handleViewDetails = (booking) =>
     navigate("/customer-details", { state: { booking } });
 
@@ -146,23 +196,62 @@ function Bookings({ user }) {
     navigate("/update-booking", { state: { booking } });
 
   // ---------------- SMART SEARCH (FRONTEND) ----------------
-  const filteredBookings = bookings.filter((booking) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
+  // const filteredBookings = bookings.filter((booking) => {
+  //   if (!searchQuery) return true;
+  //   const q = searchQuery.toLowerCase();
 
-    return (
-      booking.customerId?.name?.toLowerCase().includes(q) ||
-      booking.customerId?.contact?.includes(q) ||
-      booking._id.toLowerCase().includes(q) ||
-      booking.company?.name?.toLowerCase().includes(q) ||  
-      booking._id.slice(-5).toLowerCase().includes(q)||
-      booking.yachtId.name.toLowerCase().includes(q)
-    );
-  });
+  //   return (
+  //     booking.customerId?.name?.toLowerCase().includes(q) ||
+  //     booking.customerId?.contact?.includes(q) ||
+  //     booking._id.toLowerCase().includes(q) ||
+  //     booking.company?.name?.toLowerCase().includes(q) ||
+  //     booking._id.slice(-5).toLowerCase().includes(q) ||
+  //     booking.yachtId.name.toLowerCase().includes(q)
+  //   );
+  // });
+
+  const filteredBookings = bookings
+    // 1️⃣ Status logic (smart default)
+    .filter((booking) => {
+      // If user selected a status → respect it
+      if (filterStatus) {
+        return booking.status === filterStatus;
+      }
+
+      // No status selected → hide cancelled by default
+      return booking.status !== "cancelled";
+    })
+
+    // 2️⃣ Search filter
+    .filter((booking) => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+
+      return (
+        booking.customerId?.name?.toLowerCase().includes(q) ||
+        booking.customerId?.contact?.includes(q) ||
+        booking._id.toLowerCase().includes(q) ||
+        booking.company?.name?.toLowerCase().includes(q) ||
+        booking._id.slice(-5).toLowerCase().includes(q) ||
+        booking.yachtId?.name?.toLowerCase().includes(q)
+      );
+    })
+
+    // 3️⃣ Sort: Date → Time → Yacht
+    .sort((a, b) => {
+      const dateDiff = new Date(a.date) - new Date(b.date);
+      if (dateDiff !== 0) return dateDiff;
+
+      const timeDiff = a.startTime.localeCompare(b.startTime);
+      if (timeDiff !== 0) return timeDiff;
+
+      return a.yachtId?.name.localeCompare(b.yachtId?.name);
+    });
+
   return (
-    <div className="container mt-5">
+    <div className="container mt-1">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex justify-content-between align-items-center mb-1">
         <h2>Bookings</h2>
         {(user?.type === "admin" || user?.type === "backdesk") && (
           <button className="btn btn-success" onClick={handleCreateBooking}>
@@ -223,40 +312,28 @@ function Bookings({ user }) {
         </div>
       )}
 
-      {/* Mobile */}
-      {/* {isMobile && (
-        <button
-          className="btn btn-outline-primary w-100 mb-3"
-          onClick={() => setShowFilters(true)}
-        >
-          🔍 Filters & Search
-        </button>
-      )} */}
+      {isMobile && (
+        <div className="d-flex align-items-center gap-2 mb-3">
+          {/* Search Bar (≈90%) */}
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search name / ticket / phone"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ flex: 1 }}
+          />
 
-{isMobile && (
-  <div className="d-flex align-items-center gap-2 mb-3">
-    {/* Search Bar (≈90%) */}
-    <input
-      type="text"
-      className="form-control"
-      placeholder="Search name / ticket / phone"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      style={{ flex: 1 }}
-    />
-
-    {/* Filter Icon (no border) */}
-    <button
-      className="btn p-0 d-flex align-items-center justify-content-center"
-      style={{ width: "40px", height: "40px" }}
-      onClick={() => setShowFilters(true)}
-    >
-      <FiSliders size={22} />
-    </button>
-  </div>
-)}
-
-
+          {/* Filter Icon (no border) */}
+          <button
+            className="btn p-0 d-flex align-items-center justify-content-center"
+            style={{ width: "40px", height: "40px" }}
+            onClick={() => setShowFilters(true)}
+          >
+            <FiSliders size={22} />
+          </button>
+        </div>
+      )}
 
       {isMobile && showFilters && (
         <div
@@ -325,7 +402,7 @@ function Bookings({ user }) {
       {loading ? (
         <p className="text-center text-muted">Loading bookings...</p>
       ) : (
-        <div className="row mt-2">
+        <div className="row">
           {filteredBookings.length > 0 ? (
             filteredBookings.map((booking) => {
               const statusColor =
@@ -342,18 +419,28 @@ function Bookings({ user }) {
                           <h6 className="mb-0 fw-semibold text-dark">
                             {booking.customerId?.name}
                           </h6>
-                          <small className="text-muted">
-                            Ticket #{booking._id.slice(-5).toUpperCase()}
+
+                          {/* Ticket + Call on same line */}
+                          <small className="d-flex align-items-center gap-3">
+                            <small className="text-muted">
+                              Ticket #{booking._id.slice(-5).toUpperCase()}
+                            </small>
+
+                            <a
+                              href={`tel:${booking?.customerId?.contact}`}
+                              className="text-decoration-none text-dark d-inline-flex align-items-center gap-1"
+                            >
+                              📞 {booking?.customerId?.contact}
+                            </a>
                           </small>
                         </div>
 
                         <span
                           className={`badge bg-${statusColor} bg-opacity-10 text-${statusColor}`}
                         >
-                          {booking.status}
+                          {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
                         </span>
                       </div>
-
                       <hr className="my-2" />
 
                       <div className="small text-muted booking-info">
@@ -369,9 +456,59 @@ function Bookings({ user }) {
                         <div className="fw-semibold text-dark">
                           💰 Balance: {booking.pendingAmount}
                         </div>
+                        {/* {booking.employeeId?.type == "backdesk" && user.type != "backdesk" && */}
+                        <div className="fw-semibold text-dark">
+                          🧑‍💼 Agent: {booking.employeeId?.name}
+                        </div>
+                        {/* } */}
+                      </div>
+                      <div className="d-flex gap-2 mt-1 align-items-center">
+                        {/* VIEW (icon only) */}
+                        <button
+                          className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+                          title="View Booking"
+                          style={{ width: 34, height: 34 }}
+                          onClick={() => handleViewDetails(booking)}
+                        >
+                          <Eye size={16} />
+                        </button>
+
+                        {/* EDIT (icon only) */}
+                        {(user?.type === "admin" || user?.type === "backdesk") && (
+                          <button
+                            className="btn btn-sm btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+                            title="Edit Booking Details"
+                            style={{ width: 34, height: 34 }}
+                            onClick={() =>
+                              navigate("/edit-booking", { state: { booking } })
+                            }
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        )}
+
+                        { booking.status == "confirmed" && <button
+                          className="btn btn-sm btn-outline-success flex-grow-1 rounded-pill"
+                          title="Boarding Pass"
+                          onClick={() => generateBoardingPass(booking)}
+                        >
+                          Boarding Pass
+                        </button>
+            }
+
+                        {/* UPDATE (take remaining space) */}
+                        {(user?.type === "admin" || user?.type === "onsite") && (
+                          <button
+                            className="btn btn-sm btn-outline-info flex-grow-1 rounded-pill"
+                            title="Update Payment / Status"
+                            onClick={() => handleUpdateBooking(booking)}
+                          >
+                            Update
+                          </button>
+                        )}
                       </div>
 
-                      <div className="d-flex gap-2 mt-3">
+                      {/* <div className="d-flex gap-2 mt-3">
                         <button
                           className="btn btn-sm btn-outline-primary flex-fill rounded-pill"
                           onClick={() => handleViewDetails(booking)}
@@ -381,14 +518,14 @@ function Bookings({ user }) {
 
                         {(user?.type === "admin" ||
                           user?.type === "onsite") && (
-                          <button
-                            className="btn btn-sm btn-outline-info flex-fill rounded-pill"
-                            onClick={() => handleUpdateBooking(booking)}
-                          >
-                            Update
-                          </button>
-                        )}
-                      </div>
+                            <button
+                              className="btn btn-sm btn-outline-info flex-fill rounded-pill"
+                              onClick={() => handleUpdateBooking(booking)}
+                            >
+                              Update
+                            </button>
+                          )}
+                      </div> */}
                     </div>
                   </div>
                 </div>
