@@ -42,6 +42,7 @@ export const getAllYachts = async (req, res, next) => {
     // Format response
     const formatted = yachts.map((yacht) => ({
       id: yacht._id,
+      _id:yacht._id,
       name: yacht.name,
       sailStartTime: yacht.sailStartTime,
       sailEndTime: yacht.sailEndTime,

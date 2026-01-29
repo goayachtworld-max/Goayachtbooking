@@ -19,7 +19,7 @@ export const authMiddleware = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const employee = await EmployeeModel.findById(decoded.id)
-      .select("_id type company isPrivate status");
+      .select("_id type company isPrivate status lastSeenAt");
 
     if (!employee) {
       return res.status(401).json({
@@ -33,6 +33,17 @@ export const authMiddleware = async (req, res, next) => {
         success: false,
         message: "Employee is inactive"
       });
+    }
+    const THIRTY_MIN = 30 * 60 * 1000;
+    const now = Date.now();
+    if (
+      !employee.lastSeenAt ||
+      now - new Date(employee.lastSeenAt).getTime() > THIRTY_MIN
+    ) {
+      await EmployeeModel.updateOne(
+        { _id: decoded.id },
+        { lastSeenAt: new Date() }
+      );
     }
 
     req.user = {

@@ -81,3 +81,35 @@ export const searchCustomersByName = async (req, res, next) => {
   }
 };
 
+export const updateCustomerInfo = async (req, res, next) => {
+  try {
+    const { customerId } = req.params;
+    const { name, contact, email, alternateContact } = req.body;
+
+    const customer = await CustomerModel.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found"
+      });
+    }
+
+    if (name !== undefined) customer.name = name;
+    if (contact !== undefined) customer.contact = contact;
+    if (email !== undefined) customer.email = email;
+    if (alternateContact !== undefined)
+      customer.alternateContact = alternateContact;
+
+    await customer.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Customer updated successfully",
+      customer
+    });
+
+  } catch (err) {
+    console.error("Update customer error:", err);
+    next(err);
+  }
+};

@@ -2,12 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getAllYachtsAPI } from "../services/operations/yautAPI";
 import toast from "react-hot-toast";
+import { rescheduleBookingAPI } from "../services/operations/bookingAPI";
+import { updateCustomerAPI } from "../services/operations/customerAPI";
 
 function EditBookingDetails() {
     const navigate = useNavigate();
     const { state } = useLocation();
     const booking = state?.booking;
 
+    console.log("Here is booking : ", booking);
     if (!booking) {
         navigate("/bookings");
         return null;
@@ -21,6 +24,8 @@ function EditBookingDetails() {
     /* ===== USER ROLE ===== */
     const user = JSON.parse(localStorage.getItem("user"));
     const isAdmin = user?.type === "admin";
+    const isBackdesk = user?.type === "backdesk";
+
 
     /* ===== BOOKING STATE (ADMIN ONLY) ===== */
     const [bookingData, setBookingData] = useState({
@@ -51,30 +56,95 @@ function EditBookingDetails() {
         setCustomerData((p) => ({ ...p, [name]: value }));
     };
 
+    const isCustomerChanged = () => {
+        const c = booking.customerId;
+
+        return (
+            customerData.name !== (c.name || "") ||
+            customerData.contact !== (c.contact || "") ||
+            customerData.alternateContact !== (c.alternateContact || "") ||
+            customerData.email !== (c.email || "")
+        );
+    };
+
+    const isBookingChanged = () => {
+        return (
+            bookingData.yachtId !== booking.yachtId._id ||
+            bookingData.date !== booking.date.split("T")[0] ||
+            bookingData.startTime !== booking.startTime ||
+            bookingData.endTime !== booking.endTime
+        );
+    };
+
+    const isSubmitDisabled = () => {
+        // Customer required fields
+        if (!customerData.name || !customerData.contact) return true;
+
+        // Admin booking required fields
+        if (isAdmin) {
+            if (
+                !bookingData.yachtId ||
+                !bookingData.date ||
+                !bookingData.startTime ||
+                !bookingData.endTime
+            ) {
+                return true;
+            }
+        }
+
+        // Nothing changed
+        if (!isCustomerChanged() && !isBookingChanged()) return true;
+
+        return false;
+    };
+
+
     /* ===== SUBMIT ===== */
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        const token = localStorage.getItem("authToken");
+
         try {
-            // 1️⃣ Update existing customer
-            //   await updateCustomerAPI(
-            //     booking.customerId._id,
-            //     customerData
-            //   );
+            // 🔹 Update customer only if changed
+            if (isCustomerChanged()) {
+                await updateCustomerAPI(
+                    booking.customerId._id,
+                    {
+                        name: customerData.name,
+                        contact: customerData.contact,
+                        alternateContact: customerData.alternateContact,
+                        email: customerData.email,
+                    },
+                    token
+                );
+            }
 
-            //   // 2️⃣ Update booking date/time (ADMIN ONLY)
-            //   if (isAdmin) {
-            //     await updateBookingAPI(
-            //       booking._id,
-            //       bookingData
-            //     );
-            //   }
+            // 🔹 Reschedule booking only if changed (ADMIN ONLY)
+            if (isAdmin && isBookingChanged()) {
+                await rescheduleBookingAPI(
+                    booking._id,
+                    {
+                        yachtId: bookingData.yachtId,
+                        date: bookingData.date,
+                        startTime: bookingData.startTime,
+                        endTime: bookingData.endTime,
+                    },
+                    token
+                );
+            }
 
+            toast.success("Booking updated successfully");
             navigate(-1);
+
         } catch (err) {
             console.error("Update failed:", err);
+            toast.error(
+                err?.response?.data?.message || "Failed to update booking"
+            );
         }
     };
+
     const hhmmToMinutes = (t) => {
         const [h, m] = t.split(":").map(Number);
         return h * 60 + m;
@@ -98,6 +168,7 @@ function EditBookingDetails() {
         const specialSlots = yacht.specialSlots || [];
 
         const timeToMin = (t) => {
+            if (!t) return 0;
             const [h, m] = t.split(":").map(Number);
             return h * 60 + m;
         };
@@ -109,42 +180,59 @@ function EditBookingDetails() {
         };
 
         const slotsForDate = yacht.slots?.find(
-            (s) =>
-                new Date(s.date).toDateString() ===
+            (slotGroup) =>
+                new Date(slotGroup.date).toDateString() ===
                 new Date(selectedDate).toDateString()
         );
 
-        if (slotsForDate?.slots?.length) {
+        if (slotsForDate && slotsForDate.slots?.length > 0) {
             return slotsForDate.slots
                 .map((s) => ({ start: s.start, end: s.end }))
                 .sort((a, b) => timeToMin(a.start) - timeToMin(b.start));
         }
 
-        let duration =
-            typeof durationRaw === "string"
-                ? hhmmToMinutes(durationRaw)
-                : Number(durationRaw);
+        let duration = 0;
+        if (typeof durationRaw === "string" && durationRaw.includes(":")) {
+            const [h, m] = durationRaw.split(":").map(Number);
+            duration = h * 60 + (m || 0);
+        } else {
+            duration = Number(durationRaw);
+        }
 
-        let startMin = timeToMin(sailStart);
+        const startMin = timeToMin(sailStart);
         let endMin = timeToMin(sailEnd);
-        if (endMin <= startMin) endMin += 1440;
+        const specialMins = specialSlots.map(timeToMin).sort((a, b) => a - b);
+
+        if (endMin <= startMin) endMin += 24 * 60;
+        if (sailEnd === "00:00") endMin = 24 * 60 - 1;
 
         const slots = [];
         let cursor = startMin;
 
         while (cursor < endMin) {
             const next = cursor + duration;
-            slots.push({ start: minToTime(cursor), end: minToTime(next) });
-            cursor = next;
+            const hit = specialMins.find((sp) => sp > cursor && sp < next);
+
+            if (hit) {
+                slots.push({ start: cursor, end: hit });
+                cursor = hit;
+            } else {
+                slots.push({ start: cursor, end: next });
+                cursor = next;
+            }
         }
 
-        return slots;
+        return slots.map((s) => ({
+            start: minToTime(s.start),
+            end: minToTime(s.end),
+        }));
     };
 
     useEffect(() => {
-        if (!isAdmin) return;
+        if (!isAdmin || !yachts.length || !bookingData.yachtId) return;
 
-        const yacht = yachts.find((y) => y.id === bookingData.yachtId);
+        const yacht = yachts.find((y) => y._id === bookingData.yachtId);
+        console.log("yachts : ", yacht)
         if (!yacht) return;
 
         setRunningCost(yacht.runningCost || 0);
@@ -160,107 +248,149 @@ function EditBookingDetails() {
         }
     }, [bookingData.yachtId, bookingData.date, yachts, isAdmin]);
 
-
     useEffect(() => {
         if (!isAdmin || !bookingData.date) return;
 
-        const token = localStorage.getItem("authToken");
-        getAllYachtsAPI(token, bookingData.date).then(res =>
-            setYachts(res?.data?.yachts || [])
-        );
-    }, [bookingData.date]);
+        const fetchYachts = async () => {
+            try {
+                const token = localStorage.getItem("authToken");
+                const date = bookingData.date;
+
+                const res = await getAllYachtsAPI(token, date);
+
+                const yachtList = Array.isArray(res?.data?.yachts)
+                    ? res.data.yachts
+                    : [];
+
+                setYachts(yachtList);
+            } catch (err) {
+                console.error("Failed to fetch yachts:", err);
+                setYachts([]); // safe fallback
+            }
+        };
+
+        fetchYachts();
+    }, [bookingData.date, isAdmin]);
+
+    useEffect(() => {
+        if (!isAdmin) return;
+
+        // If yachts are empty, KEEP current yacht
+        if (!yachts.length) {
+            setBookingData((p) => ({
+                ...p,
+                yachtId: booking.yachtId._id,
+            }));
+            return;
+        }
+
+        const bookedYachtId = booking.yachtId._id;
+        console.log("yachts are : ", yachts)
+        const exists = yachts.some((y) => y.id === bookedYachtId);
+
+        if (exists && bookingData.yachtId !== bookedYachtId) {
+            setBookingData((p) => ({
+                ...p,
+                yachtId: bookedYachtId,
+            }));
+        }
+    }, [yachts, isAdmin]);
 
 
+
+    const ticketId = booking._id
+        ? booking._id.slice(-5).toUpperCase()
+        : "-----";
 
     return (
-        <div className="container mt-4">
-            <div className="card shadow-sm mx-auto" style={{ maxWidth: 650 }}>
+        <div className="container mt-3">
+            <div className="card shadow-sm mx-auto" style={{ maxWidth: 680 }}>
                 <div className="card-body">
-                    <h5 className="mb-3">Edit Booking Details</h5>
 
-                    <form onSubmit={handleSubmit} className="row g-3">
-                        <div className="col-12 col-md-6">
-                            <label className="form-label fw-bold">Customer Name</label>
-                            <input
-                                className="form-control"
-                                name="name"
+                    {/* ===== HEADER ===== */}
+                    <div className="text-center mb-2">
+                        <h5 className="fw-bold mb-1">Booking Details</h5>
+                        <span className="badge bg-dark">
+                            Ticket #{ticketId}
+                        </span>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="row g-2">
+
+                        {/* ===== CUSTOMER DETAILS ===== */}
+                        <h6 className="fw-bold mt-2">Customer Information</h6>
+
+                        <div className="col-md-6">
+                            <label className="form-label">Name</label>
+                            <input className="form-control" name="name"
                                 value={customerData.name}
-                                onChange={handleCustomerChange}
-                            />
+                                onChange={handleCustomerChange} />
                         </div>
 
-                        <div className="col-12 col-md-6">
-                            <label className="form-label fw-bold">Email</label>
-                            <input
-                                className="form-control"
-                                name="email"
+                        <div className="col-md-6">
+                            <label className="form-label">Email</label>
+                            <input className="form-control" name="email"
                                 value={customerData.email}
-                                placeholder="example@gmail.com"
-                                onChange={handleCustomerChange}
-                            />
+                                onChange={handleCustomerChange} />
                         </div>
 
-                        <div className="col-12 col-md-6">
-                            <label className="form-label fw-bold">Contact</label>
-                            <input
-                                className="form-control"
-                                name="contact"
+                        <div className="col-md-6">
+                            <label className="form-label">Contact</label>
+                            <input className="form-control" name="contact"
                                 value={customerData.contact}
-                                onChange={handleCustomerChange}
-                            />
+                                onChange={handleCustomerChange} />
                         </div>
 
-                        <div className="col-12 col-md-6">
-                            <label className="form-label fw-bold">
-                                Alternate Contact
-                            </label>
-                            <input
-                                className="form-control"
-                                name="alternateContact"
+                        <div className="col-md-6">
+                            <label className="form-label">Alternate Contact</label>
+                            <input className="form-control" name="alternateContact"
                                 value={customerData.alternateContact}
-                                onChange={handleCustomerChange}
-                            />
+                                onChange={handleCustomerChange} />
                         </div>
 
-                        {/* <div className="col-12">
-              <label className="form-label fw-bold">
-                Govt ID Number
-              </label>
-              <input
-                className="form-control"
-                name="govtIdNo"
-                value={customerData.govtIdNo}
-                onChange={handleCustomerChange}
-              />
-            </div> */}
+                        {/* ===== BOOKING DETAILS ===== */}
+                        <h6 className="fw-bold">Booking Information</h6>
 
-                        <hr className="my-3" />
-                        {/* ===== DATE & TIME ===== */}
-                        <div className="col-12 ">
+                        <div className="col-12">
                             <label className="form-label fw-bold">Yacht</label>
-                            <select
-                                className="form-select"
-                                name="yachtId"
-                                value={bookingData.yachtId}
-                                onChange={(e) =>
-                                    setBookingData((p) => ({
-                                        ...p,
-                                        yachtId: e.target.value,
-                                        startTime: "",
-                                        endTime: "",
-                                    }))
-                                }
-                                disabled={!isAdmin}
-                            >
-                                {yachts.map((y, index) => (
-                                    <option key={y.name} value={y._id}>
-                                        {y.name}
+
+                            {isAdmin ? (
+                                <select
+                                    className="form-select"
+                                    name="yachtId"
+                                    value={bookingData.yachtId || ""}
+                                    onChange={(e) =>
+                                        setBookingData((p) => ({
+                                            ...p,
+                                            yachtId: e.target.value,
+                                            startTime: "",
+                                            endTime: "",
+                                        }))
+                                    }
+                                >
+                                    <option value="" disabled>
+                                        -- Select Yacht --
                                     </option>
-                                ))}
-                            </select>
+
+                                    {yachts.map((y) => (
+                                        <option key={y._id} value={y._id}>
+                                            {y.name}
+                                        </option>
+                                    ))}
+                                </select>
+
+                            ) : (
+                                <input
+                                    className="form-control"
+                                    value={booking?.yachtId?.name}
+                                    disabled
+                                />
+                            )}
                         </div>
-                        <div className="col-12 col-md-6">
-                            <label className="form-label fw-bold">Date</label>
+
+
+                        <div className="col-md-6">
+                            <label className="form-label">Date</label>
                             <input
                                 type="date"
                                 className="form-control"
@@ -270,75 +400,50 @@ function EditBookingDetails() {
                                 onChange={isAdmin ? handleBookingChange : undefined}
                                 disabled={!isAdmin}
                             />
+
                         </div>
 
-                        {/* <div className="col-12 col-md-6">
-                            <label className="form-label fw-bold">Start Time</label>
-                            <select
-                                className="form-select"
-                                value={bookingData.startTime}
-                                onChange={(e) => {
-                                    const slot = startTimeOptions.find(
-                                        (s) => s.start === e.target.value
-                                    );
-                                    setBookingData((p) => ({
-                                        ...p,
-                                        startTime: e.target.value,
-                                        endTime: slot?.end || "",
-                                    }));
-                                }}
-                                disabled={!isAdmin}
-                            >
-                                <option value="">-- Select --</option>
-                                {startTimeOptions.map((s, i) => (
-                                    <option key={i} value={s.start}>
-                                        {to12Hour(s.start)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="col-12 col-md-6">
-                            <label className="form-label fw-bold">End Time</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={to12Hour(bookingData.endTime)}
-                                readOnly
-                            />
-
-                        </div> */}
-
-                        <div className="col-12 col-md-6">
+                        <div className="col-md-6">
                             <label className="form-label fw-bold">Time Slot</label>
-                            <select
-                                className="form-select"
-                                value={bookingData.startTime}
-                                onChange={(e) => {
-                                    // Find the slot by start time
-                                    const slot = startTimeOptions.find((s) => s.start === e.target.value);
-                                    setBookingData((p) => ({
-                                        ...p,
-                                        startTime: slot?.start || "",
-                                        endTime: slot?.end || "",
-                                    }));
-                                }}
-                                disabled={!isAdmin}
-                            >
-                                <option value="">-- Select Time Slot --</option>
-                                {startTimeOptions.map((s, i) => (
-                                    <option key={i} value={s.start}>
-                                        {to12Hour(s.start)} - {to12Hour(s.end)}
-                                    </option>
-                                ))}
-                            </select>
+
+                            {isAdmin ? (
+                                <select
+                                    className="form-select"
+                                    value={bookingData.startTime}
+                                    onChange={(e) => {
+                                        const slot = startTimeOptions.find(
+                                            (s) => s.start === e.target.value
+                                        );
+                                        setBookingData((p) => ({
+                                            ...p,
+                                            startTime: slot?.start || "",
+                                            endTime: slot?.end || "",
+                                        }));
+                                    }}
+                                >
+                                    <option value="">-- Select Time Slot --</option>
+                                    {startTimeOptions.map((s, i) => (
+                                        <option key={`${s.start}-${s.end}`} value={s.start}>
+                                            {to12Hour(s.start)} – {to12Hour(s.end)}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <input
+                                    className="form-control"
+                                    value={`${to12Hour(bookingData.startTime)} - ${to12Hour(
+                                        bookingData.endTime
+                                    )}`}
+                                    disabled
+                                />
+                            )}
                         </div>
 
                         {/* ===== ACTIONS ===== */}
-                        <div className="col-12 d-flex gap-2 mt-3">
+                        <div className="col-12 d-flex gap-2 mt-4">
                             <button
                                 type="button"
-                                className="btn btn-secondary flex-fill"
+                                className="btn btn-outline-secondary flex-fill"
                                 onClick={() => navigate(-1)}
                             >
                                 Cancel
@@ -347,15 +452,18 @@ function EditBookingDetails() {
                             <button
                                 type="submit"
                                 className="btn btn-primary flex-fill"
+                                disabled={isSubmitDisabled()}
                             >
                                 Save Changes
                             </button>
                         </div>
+
                     </form>
                 </div>
             </div>
         </div>
     );
 }
+
 
 export default EditBookingDetails;

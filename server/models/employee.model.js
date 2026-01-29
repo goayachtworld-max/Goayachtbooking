@@ -56,6 +56,14 @@ const employeeSchema = new mongoose.Schema({
   isPrivate: {
     type: Boolean,
     default: false   // 👈 public by default
+  },
+  lastLoginAt: {
+    type: Date,
+    default: null
+  },
+  lastSeenAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true // 👈 adds createdAt & updatedAt automatically

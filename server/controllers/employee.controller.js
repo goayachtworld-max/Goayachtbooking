@@ -60,7 +60,8 @@ export const loginEmployee = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-
+    employee.lastLoginAt = new Date();
+    await employee.save();
     employee.password = null;
     res.json({ success: true, token, employee });
   } catch (error) {

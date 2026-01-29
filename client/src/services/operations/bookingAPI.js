@@ -47,3 +47,15 @@ export const updateBookingAPI = async (id, payload, token) => {
   });
   return response.data;
 };
+
+export const rescheduleBookingAPI = async (bookingId, payload, token) => {
+  return apiConnector(
+    "PUT",
+    `${booking.RESCHEDULE_BOOKING_API}/${bookingId}`,
+    payload,
+    {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }
+  );
+};

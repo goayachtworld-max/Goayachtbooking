@@ -1,5 +1,5 @@
 import express from "express";
-import { createCustomer, getCustomerByContact, getCustomers, searchCustomersByName } from "../controllers/customer.controller.js";
+import { createCustomer, getCustomerByContact, getCustomers, searchCustomersByName, updateCustomerInfo } from "../controllers/customer.controller.js";
 import { customerSchema } from "../validators/customer.validator.js";
 import { validate } from "../middleware/validate.js";
 import { upload, uploadToCloudinary } from "../middleware/upload.js";
@@ -26,5 +26,6 @@ router.post(
 router.get("/contact/:contact", authMiddleware, getCustomerByContact);
 router.get("/", authMiddleware, getCustomers);
 router.get("/search", authMiddleware, searchCustomersByName);
+router.put("/:customerId", authMiddleware, updateCustomerInfo);
 
 export default router;

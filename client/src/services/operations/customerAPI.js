@@ -37,3 +37,16 @@ export const searchCustomersByNameAPI = async (name, token) => {
     throw error;
   }
 };
+
+
+export const updateCustomerAPI = async (customerId, payload, token) => {
+  return apiConnector(
+    "PUT",
+    `${customer.UPDATE_CUSTOMER_API}/${customerId}`,
+    payload,
+    {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }
+  );
+};

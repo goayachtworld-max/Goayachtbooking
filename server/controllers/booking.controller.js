@@ -266,6 +266,7 @@ ${date} ${startTime} – ${endTime}`,
   }
 };
 
+// Used for updating status
 export const updateBooking = async (req, res, next) => {
   try {
     const { transactionId, amount, status } = req.body;
@@ -342,7 +343,7 @@ export const getBookings = async (req, res) => {
 
     const bookings = await BookingModel.find(filter)
       .populate("yachtId", "name boardingLocation")
-      .populate("customerId", "name contact email")
+      .populate("customerId", "name contact email alternateContact")
       .populate("employeeId", "name type")
       .populate("company : ", "name")
       .sort({ date: 1, startTime: 1 });
@@ -397,5 +398,97 @@ export const getBookingById = async (req, res) => {
     res.json(booking);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// Used to update YachtRelatedInfo
+export const updateBookingYachtInfo = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;
+    const { yachtId, date, startTime, endTime } = req.body;
+
+    // 1️⃣ Fetch booking
+    const booking = await BookingModel.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    // 2️⃣ Fetch yacht
+    const yacht = await YachtModel.findById(yachtId).select("_id company name");
+    if (!yacht) {
+      return res.status(404).json({ success: false, message: "Yacht not found" });
+    }
+
+    // 3️⃣ Permission check (basic)
+    if (
+      req.user.type !== "admin" &&
+      booking.employeeId.toString() !== req.user.id
+    ) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    // 4️⃣ Trip end datetime
+    const [year, month, day] = date.split("-");
+    const [endHour, endMinute] = endTime.split(":");
+    const tripEnd = new Date(year, month - 1, day, endHour, endMinute);
+
+    // 5️⃣ Check slot availability (ignore current booking)
+    const { available, conflictSlot, reason } =
+      await checkSlotAvailability({
+        yachtId,
+        date,
+        startTime,
+        endTime,
+        employeeId: booking.employeeId,
+        ignoreBookingId: booking._id // IMPORTANT
+      });
+
+    if (!available) {
+      return res.status(400).json({ success: false, message: reason });
+    }
+
+    // 6️⃣ Remove old availability slot
+    await AvailabilityModel.findOneAndDelete({
+      bookingId: booking._id
+    });
+
+    // 7️⃣ Update booking
+    booking.yachtId = yachtId;
+    booking.company = yacht.company;
+    booking.date = date;
+    booking.startTime = startTime;
+    booking.endTime = endTime;
+
+    await booking.save();
+
+    // 8️⃣ Create or update new availability slot
+    if (conflictSlot) {
+      conflictSlot.status = "booked";
+      conflictSlot.appliedBy = booking.employeeId;
+      conflictSlot.bookingId = booking._id;
+      conflictSlot.deleteAfter = tripEnd;
+      await conflictSlot.save();
+    } else {
+      await AvailabilityModel.create({
+        yachtId,
+        date,
+        startTime,
+        endTime,
+        status: "booked",
+        appliedBy: booking.employeeId,
+        bookingId: booking._id,
+        deleteAfter: tripEnd
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Booking updated successfully",
+      booking
+    });
+
+  } catch (err) {
+    console.error("Update booking error:", err);
+    next(err);
   }
 };
