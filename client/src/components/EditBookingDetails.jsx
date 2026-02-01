@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getAllYachtsAPI } from "../services/operations/yautAPI";
 import toast from "react-hot-toast";
-import { rescheduleBookingAPI } from "../services/operations/bookingAPI";
+import { rescheduleBookingAPI, updateBookingExtrasAPI } from "../services/operations/bookingAPI";
 import { updateCustomerAPI } from "../services/operations/customerAPI";
 
 function EditBookingDetails() {
@@ -19,6 +19,7 @@ function EditBookingDetails() {
     const [yachts, setYachts] = useState([]);
     const [startTimeOptions, setStartTimeOptions] = useState([]);
     const [runningCost, setRunningCost] = useState(0);
+
 
 
     /* ===== USER ROLE ===== */
@@ -44,6 +45,54 @@ function EditBookingDetails() {
         email: booking?.customerId?.email || "",
         govtIdNo: booking?.customerId?.govtIdNo || "",
     });
+    const parseExtrasFromNotes = (notes = "") => {
+        return notes
+            .split("\n")
+            .filter((l) => l.startsWith("- "))
+            .map((l) => l.replace("- ", "").trim());
+    };
+
+    const [selectedExtras, setSelectedExtras] = useState(
+        parseExtrasFromNotes(booking?.extraDetails)
+    );
+
+    const [extraDetails, setExtraDetails] = useState(
+        booking?.extraDetails || ""
+    );
+
+    const [showExtraNotes, setShowExtraNotes] = useState(
+        Boolean(extraDetails)
+    );
+
+    const extraOptions = {
+        inclusions: [
+            "Soft Drink",
+            "Ice Cube",
+            "Water Bottles",
+            "Bluetooth Speaker",
+            "Captain & Crew",
+        ],
+        paidServices: [
+            "DSLR Photography",
+            "Drone - Photography & Videography",
+        ],
+    };
+    const handleExtraToggle = (label) => {
+        setSelectedExtras((prev) => {
+            const updated = prev.includes(label)
+                ? prev.filter((i) => i !== label)
+                : [...prev, label];
+
+            setExtraDetails(
+                updated.length
+                    ? `- ${updated.join("\n- ")}`
+                    : ""
+            );
+
+            return updated;
+        });
+    };
+
 
     /* ===== HANDLERS ===== */
     const handleBookingChange = (e) => {
@@ -76,6 +125,13 @@ function EditBookingDetails() {
         );
     };
 
+    const isExtrasChanged = () => {
+        const originalExtras = parseExtrasFromNotes(booking?.extraDetails || "");
+        // Compare arrays
+        if (originalExtras.length !== selectedExtras.length) return true;
+        return !selectedExtras.every((item) => originalExtras.includes(item));
+    };
+
     const isSubmitDisabled = () => {
         // Customer required fields
         if (!customerData.name || !customerData.contact) return true;
@@ -93,7 +149,7 @@ function EditBookingDetails() {
         }
 
         // Nothing changed
-        if (!isCustomerChanged() && !isBookingChanged()) return true;
+        if (!isCustomerChanged() && !isBookingChanged() && !isExtrasChanged()) return true;
 
         return false;
     };
@@ -119,6 +175,14 @@ function EditBookingDetails() {
                     token
                 );
             }
+            if (isExtrasChanged()) {
+                console.log("extra api is called")
+                await updateBookingExtrasAPI(
+                    booking._id,
+                    { extraDetails },
+                    token
+                );
+            }
 
             // 🔹 Reschedule booking only if changed (ADMIN ONLY)
             if (isAdmin && isBookingChanged()) {
@@ -129,6 +193,7 @@ function EditBookingDetails() {
                         date: bookingData.date,
                         startTime: bookingData.startTime,
                         endTime: bookingData.endTime,
+                        extraDetails
                     },
                     token
                 );
@@ -347,6 +412,69 @@ function EditBookingDetails() {
                                 value={customerData.alternateContact}
                                 onChange={handleCustomerChange} />
                         </div>
+
+                        {/* ===== EXTRA INCLUSIONS ===== */}
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                            <h6 className="fw-bold mb-0">Extra Details</h6>
+
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => setShowExtraNotes((p) => !p)}
+                            >
+                                {showExtraNotes ? "−" : "+"}
+                            </button>
+                        </div>
+
+                        {showExtraNotes && (
+                            <div className="border rounded p-1">
+                                <h6 className="fw-bold mt-3">Extra Inclusions</h6>
+                                <div className="row">
+                                    {extraOptions.inclusions.map((item) => (
+                                        <div className="col-md-6" key={item}>
+                                            <div className="form-check">
+                                                <input
+                                                    className="form-check-input"
+                                                    type="checkbox"
+                                                    checked={selectedExtras.includes(item)}
+                                                    onChange={() => handleExtraToggle(item)}
+                                                />
+                                                <label className="form-check-label">{item}</label>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <hr />
+
+                                <h6 className="fw-bold">Paid Services</h6>
+                                <div className="row">
+                                    {extraOptions.paidServices.map((item) => (
+                                        <div className="col-md-6" key={item}>
+                                            <div className="form-check">
+                                                <input
+                                                    className="form-check-input"
+                                                    type="checkbox"
+                                                    checked={selectedExtras.includes(item)}
+                                                    onChange={() => handleExtraToggle(item)}
+                                                />
+                                                <label className="form-check-label">{item}</label>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <textarea
+                                    className="form-control mt-2"
+                                    value={extraDetails}
+                                    onChange={(e) => {
+                                        setExtraDetails(e.target.value);
+                                    }}
+                                    rows={4}
+                                    placeholder="Extra notes..."
+                                />
+                            </div>)}
+
 
                         {/* ===== BOOKING DETAILS ===== */}
                         <h6 className="fw-bold">Booking Information</h6>

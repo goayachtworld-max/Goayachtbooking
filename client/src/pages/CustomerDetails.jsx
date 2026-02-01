@@ -167,13 +167,34 @@ function CustomerDetails() {
                 <strong>Balance:</strong> ₹{booking.pendingAmount ?? 0}
               </p>
 
-              {booking?.extraDetails && <> 
+              {/* {booking?.extraDetails && <> 
                 <hr className="my-2" />
                 <p className="m-0">
                   <strong>Extra Details : </strong>
                   <span>{booking.extraDetails}</span>
                 </p>
-              </>}
+              </>} */}
+              {booking?.extraDetails && (
+                <>
+                  <hr className="my-2" />
+                  <strong>Extra Details : </strong>
+                  <ul className="mb-0">
+                    {booking.extraDetails
+                      .split("\n")
+                      .filter(line => line.startsWith("-"))
+                      .map((item, index) => (
+                        <li key={index}>{item.replace(/^- /, "")}</li>
+                      ))}
+                  </ul>
+                  {booking.extraDetails
+                    .split("\n")
+                    .filter(line => !line.startsWith("-"))
+                    .map((line, idx) => (
+                      <div key={idx}>{line}</div>
+                    ))}
+                </>
+              )}
+
 
             </div>
 

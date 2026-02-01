@@ -59,3 +59,18 @@ export const rescheduleBookingAPI = async (bookingId, payload, token) => {
     }
   );
 };
+
+// services/operations/bookingAPI.js
+
+export const updateBookingExtrasAPI = async (bookingId, payload, token) => {
+  return apiConnector(
+    "PATCH", // Using PATCH since we are updating only a part of the booking
+    `${booking.UPDATE_EXTRA_DETAILS_BOOKING_API}/extra-details/${bookingId}`,
+    payload,
+    {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }
+  );
+};
+

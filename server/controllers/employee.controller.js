@@ -268,35 +268,73 @@ export const updateEmployeeProfile = async (req, res, next) => {
 //   }
 // };
 
+// export const toggleEmployeeStatus = async (req, res, next) => {
+//   try {
+//     const adminCompanyId = req.user.company[0];
+
+//     if (!adminCompanyId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Admin company not found",
+//       });
+//     }
+
+//     const employee = await EmployeeModel.findByIdAndUpdate(
+//       req.params.id,
+//       {
+//         $pull: { company: adminCompanyId }, // ❌ remove only this company
+//       },
+//       { new: true }
+//     ).select("-password");
+
+//     if (!employee) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Employee not found" });
+//     }
+
+//     res.json({
+//       success: true,
+//       message: "Employee removed from company successfully",
+//       employee,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 export const toggleEmployeeStatus = async (req, res, next) => {
   try {
     const adminCompanyId = req.user.company[0];
 
-    if (!adminCompanyId) {
-      return res.status(400).json({
-        success: false,
-        message: "Admin company not found",
+    const employee = await EmployeeModel.findById(req.params.id);
+    if (!employee) {
+      return res.status(404).json({ success: false, message: "Employee not found" });
+    }
+
+    // 🔐 Private employee → toggle status only
+    if (employee.isPrivate) {
+      employee.status = employee.status === "active" ? "inactive" : "active";
+      await employee.save();
+
+      return res.json({
+        success: true,
+        message: "Private employee status updated",
+        employee,
       });
     }
 
-    const employee = await EmployeeModel.findByIdAndUpdate(
+    // 🌐 Public employee → remove company
+    const updatedEmployee = await EmployeeModel.findByIdAndUpdate(
       req.params.id,
-      {
-        $pull: { company: adminCompanyId }, // ❌ remove only this company
-      },
+      { $pull: { company: adminCompanyId } },
       { new: true }
     ).select("-password");
-
-    if (!employee) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Employee not found" });
-    }
 
     res.json({
       success: true,
       message: "Employee removed from company successfully",
-      employee,
+      employee: updatedEmployee,
     });
   } catch (error) {
     next(error);
@@ -450,9 +488,67 @@ export const updateEmployeeProfileByAdmin = async (req, res) => {
 };
 
 
+// export const addCompanyToEmployee = async (req, res, next) => {
+//   try {
+//     const adminId = req.user.id;
+//     const { employeeId, companyId } = req.body;
+
+//     // 1️⃣ Only admin / superAdmin allowed
+//     if (!["admin", "superAdmin"].includes(req.user.type)) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Only admin can add company to employee",
+//       });
+//     }
+
+//     // 2️⃣ Validate ObjectIds
+//     if (
+//       !mongoose.Types.ObjectId.isValid(employeeId) ||
+//       !mongoose.Types.ObjectId.isValid(companyId)
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid employeeId or companyId",
+//       });
+//     }
+
+//     // 4️⃣ Verify company exists
+//     const company = await CompanyModel.findById(companyId);
+//     if (!company) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Company not found",
+//       });
+//     }
+
+//     // 5️⃣ Verify employee exists
+//     const employeeExists = await EmployeeModel.findById(employeeId);
+//     if (!employeeExists) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Employee not found",
+//       });
+//     }
+
+//     // 6️⃣ Add company using $addToSet (NO duplicates)
+//     const updatedEmployee = await EmployeeModel.findByIdAndUpdate(
+//       employeeId,
+//       { $addToSet: { company: companyId } },
+//       { new: true }
+//     ).select("-password");
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Company added to employee successfully",
+//       employee: updatedEmployee,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 export const addCompanyToEmployee = async (req, res, next) => {
   try {
-    const adminId = req.user.id;
     const { employeeId, companyId } = req.body;
 
     // 1️⃣ Only admin / superAdmin allowed
@@ -474,7 +570,7 @@ export const addCompanyToEmployee = async (req, res, next) => {
       });
     }
 
-    // 4️⃣ Verify company exists
+    // 3️⃣ Verify company exists
     const company = await CompanyModel.findById(companyId);
     if (!company) {
       return res.status(404).json({
@@ -483,19 +579,35 @@ export const addCompanyToEmployee = async (req, res, next) => {
       });
     }
 
-    // 5️⃣ Verify employee exists
-    const employeeExists = await EmployeeModel.findById(employeeId);
-    if (!employeeExists) {
+    // 4️⃣ Verify employee exists
+    const employee = await EmployeeModel.findById(employeeId);
+    if (!employee) {
       return res.status(404).json({
         success: false,
         message: "Employee not found",
       });
     }
 
-    // 6️⃣ Add company using $addToSet (NO duplicates)
+    // 🔐 PRIVATE EMPLOYEE LOGIC
+    if (employee.isPrivate) {
+      employee.company = [companyId]; // must be single company
+      employee.status = "active";     // activate if inactive
+
+      await employee.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Private employee activated and assigned to company",
+        employee,
+      });
+    }
+
+    // 🌐 PUBLIC EMPLOYEE LOGIC
     const updatedEmployee = await EmployeeModel.findByIdAndUpdate(
       employeeId,
-      { $addToSet: { company: companyId } },
+      {
+        $addToSet: { company: companyId },
+      },
       { new: true }
     ).select("-password");
 
@@ -508,6 +620,7 @@ export const addCompanyToEmployee = async (req, res, next) => {
     next(error);
   }
 };
+
 
 export const getAvailableAgentsAndBackdesk = async (req, res, next) => {
   try {
@@ -522,11 +635,26 @@ export const getAvailableAgentsAndBackdesk = async (req, res, next) => {
     }
 
     // 2️⃣ Fetch employees
+    // const employees = await EmployeeModel.find({
+    //   type: { $in: ["agent", "backdesk"] },
+    //   isPrivate: false,
+    //   company: { $ne: adminCompanyId }, // ❌ NOT employee of admin company
+    // }).select("-password");
     const employees = await EmployeeModel.find({
       type: { $in: ["agent", "backdesk"] },
-      isPrivate: false,
-      company: { $ne: adminCompanyId }, // ❌ NOT employee of admin company
+      $or: [
+        {
+          isPrivate: false,
+          company: { $ne: adminCompanyId },
+        },
+        {
+          isPrivate: true,
+          company: adminCompanyId,
+          status: "inactive",
+        },
+      ],
     }).select("-password");
+
 
     res.status(200).json({
       success: true,

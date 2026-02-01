@@ -152,6 +152,7 @@ export const createBooking = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Yacht not found" });
     }
 
+    console.log("Yacht" , yacht)
     const companyId = yacht.company;
 
     // 2️⃣ Handle on-behalf logic (ADMIN ONLY)
@@ -175,6 +176,8 @@ export const createBooking = async (req, res, next) => {
       createdBy = loggedInEmployeeId;
       employeeId = onBehalfEmployeeId;
       isOnBehalf = true;
+
+      console.log("On behalf of" , isOnBehalf)
     }
 
     // 3️⃣ Booking & trip status
@@ -191,6 +194,7 @@ export const createBooking = async (req, res, next) => {
     const [endHour, endMinute] = endTime.split(":");
     const tripEnd = new Date(year, month - 1, day, endHour, endMinute);
 
+    console.log("Before avail")
     // 5️⃣ Slot availability (NOW correct employeeId)
     const { available, conflictSlot, reason } =
       await checkSlotAvailability({
@@ -198,12 +202,14 @@ export const createBooking = async (req, res, next) => {
         date,
         startTime,
         endTime,
-        employeeId
+        employeeId,
+        userType: req.user.type
       });
 
     if (!available) {
       return res.status(400).json({ success: false, message: reason });
     }
+    console.log("avail ", available)
 
     // 6️⃣ Create booking
     const booking = await BookingModel.create({
@@ -223,6 +229,7 @@ export const createBooking = async (req, res, next) => {
       numPeople,
       extraDetails,
     });
+    console.log("booking", booking)
 
     // 7️⃣ Update availability
     if (conflictSlot) {
@@ -405,7 +412,7 @@ export const getBookingById = async (req, res) => {
 export const updateBookingYachtInfo = async (req, res, next) => {
   try {
     const { bookingId } = req.params;
-    const { yachtId, date, startTime, endTime } = req.body;
+    const { yachtId, date, startTime, endTime} = req.body;
 
     // 1️⃣ Fetch booking
     const booking = await BookingModel.findById(bookingId);
@@ -489,6 +496,41 @@ export const updateBookingYachtInfo = async (req, res, next) => {
 
   } catch (err) {
     console.error("Update booking error:", err);
+    next(err);
+  }
+};
+
+// controllers/bookingController.js
+
+export const updateBookingExtraDetails = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;
+    const { extraDetails } = req.body;
+
+    console.log("Extra update is called")
+
+    if (extraDetails === undefined) {
+      return res.status(400).json({ success: false, message: "Extra details required" });
+    }
+
+    // 1️⃣ Fetch booking
+    const booking = await BookingModel.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    // Update only extraDetails
+    booking.extraDetails = extraDetails;
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Extra details updated successfully",
+      booking
+    });
+
+  } catch (err) {
+    console.error("Update extra details error:", err);
     next(err);
   }
 };

@@ -21,6 +21,7 @@ export const checkSlotAvailability = async ({
   startTime,
   endTime,
   employeeId,
+  userType
 }) => {
   if (!yachtId || !date || !startTime || !endTime) {
     return {
@@ -50,12 +51,20 @@ export const checkSlotAvailability = async ({
             "Slot already booked in availability. Please check the availability",
         };
       }
+      // if (
+      //   slot.status === "locked" &&
+      //   String(slot.appliedBy) !== String(employeeId)
+      // ) {
+      //   return { available: false, reason: "Slot locked by another employee." };
+      // }
       if (
         slot.status === "locked" &&
-        String(slot.appliedBy) !== String(employeeId)
+        String(slot.appliedBy) !== String(employeeId) &&
+        userType !== "admin"
       ) {
         return { available: false, reason: "Slot locked by another employee." };
       }
+
       if (
         slot.status === "locked" &&
         String(slot.appliedBy) === String(employeeId)
@@ -357,7 +366,7 @@ export const getAvailabilitySummary = async (req, res, next) => {
         yachtName: yacht.name,
         capacity: yacht.capacity,
         sellingPrice: yacht.sellingPrice,
-        runningCost : yacht.runningCost,
+        runningCost: yacht.runningCost,
         availability: yachtData,
         status: yacht.status,
         yachtPhotos: yacht.yachtPhotos,

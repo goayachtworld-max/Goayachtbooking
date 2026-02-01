@@ -47,6 +47,44 @@ function CreateBooking() {
   const [employees, setEmployees] = useState([]);
   const [showExtraDetails, setShowExtraDetails] = useState(false);
 
+  const extraOptions = {
+    inclusions: [
+      "Soft Drink",
+      "Ice Cube",
+      "Water Bottles",
+      "Bluetooth Speaker",
+      "Captain & Crew",
+    ],
+    paidServices: [
+      "DSLR Photography",
+      "Drone - Photography & Videography",
+    ],
+  };
+
+  const [selectedExtras, setSelectedExtras] = useState([]);
+  const handleExtraToggle = (label) => {
+    setSelectedExtras((prev) => {
+      let updated;
+
+      if (prev.includes(label)) {
+        updated = prev.filter((i) => i !== label);
+      } else {
+        updated = [...prev, label];
+      }
+
+      // Auto-update textarea notes
+      setFormData((p) => ({
+        ...p,
+        extraDetails: updated.length
+          ? `- ${updated.join("\n- ")}`
+          : "",
+      }));
+
+      return updated;
+    });
+  };
+
+
   useEffect(() => {
     if (!isAdmin) return;
 
@@ -448,7 +486,7 @@ function CreateBooking() {
 
           {/* On Behalf of */}
           {isAdmin && (
-            <div className="col-6">
+            <div className="col-md-6">
               <label className="form-label fw-bold">
                 On Behalf Of
               </label>
@@ -469,7 +507,7 @@ function CreateBooking() {
           )}
 
           {/* Yacht */}
-          <div className="col-6">
+          <div className="col-md-6">
             <label className="form-label fw-bold">Select Yacht</label>
             <select
               className="form-select border border-dark text-dark"
@@ -573,7 +611,7 @@ function CreateBooking() {
           </div>
 
           {/* Extra Details / Notes */}
-          <div className="col-12 mb-3">
+          {/* <div className="col-12 mb-3">
             {!showExtraDetails ? (
               <button
                 type="button"
@@ -595,7 +633,70 @@ function CreateBooking() {
                 />
               </div>
             )}
+          </div>*/}
+
+          <div className="col-12 mb-3">
+            {!showExtraDetails ? (
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => setShowExtraDetails(true)}
+              >
+                +
+              </button>
+            ) : (
+              <div className="border rounded p-2">
+                <label className="form-label fw-bold">Extra Inclusions</label>
+
+                <div className="row">
+                  {extraOptions.inclusions.map((item) => (
+                    <div className="col-12 col-md-6" key={item}>
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          checked={selectedExtras.includes(item)}
+                          onChange={() => handleExtraToggle(item)}
+                        />
+                        <label className="form-check-label">{item}</label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+
+                <hr />
+
+                <label className="form-label fw-bold">Extra Paid Services</label>
+
+                <div className="row">
+                  {extraOptions.paidServices.map((item) => (
+                    <div className="col-12 col-md-6" key={item}>
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          checked={selectedExtras.includes(item)}
+                          onChange={() => handleExtraToggle(item)}
+                        />
+                        <label className="form-check-label">{item}</label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+
+                <textarea
+                  className="form-control border border-dark text-dark mt-2"
+                  name="extraDetails"
+                  value={formData.extraDetails}
+                  readOnly
+                  rows={4}
+                />
+              </div>
+            )}
           </div>
+
 
           <div className="col-12 text-center">
             <button type="submit" className="btn btn-primary w-100" disabled={loading}>

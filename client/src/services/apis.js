@@ -24,7 +24,8 @@ export const booking = {
   GET_BOOKINGS_API: `${BASE_URL}/bookings`,
   CREATE_BOOKING_API: `${BASE_URL}/bookings`,
   UPDATE_BOOKING_API: (id) => `${BASE_URL}/bookings/${id}`,
-  RESCHEDULE_BOOKING_API: `${BASE_URL}/bookings/reschedule`
+  RESCHEDULE_BOOKING_API: `${BASE_URL}/bookings/reschedule`,
+  UPDATE_EXTRA_DETAILS_BOOKING_API: `${BASE_URL}/bookings`
 };
 
 export const transaction = {

@@ -32,22 +32,22 @@ const AllYachts = () => {
   });
 
   const SortIcon = ({ column }) => {
-  const isActive = sortConfig.key === column;
+    const isActive = sortConfig.key === column;
 
-  return (
-    <span className="ms-1">
-      {isActive ? (
-        sortConfig.direction === "asc" ? (
-          <FaSortUp color="#fff" />
+    return (
+      <span className="ms-1">
+        {isActive ? (
+          sortConfig.direction === "asc" ? (
+            <FaSortUp color="#fff" />
+          ) : (
+            <FaSortDown color="#fff" />
+          )
         ) : (
-          <FaSortDown color="#fff" />
-        )
-      ) : (
-        <FaSortUp color="#6c757d" /> // inactive (Bootstrap gray)
-      )}
-    </span>
-  );
-};
+          <FaSortUp color="#6c757d" /> // inactive (Bootstrap gray)
+        )}
+      </span>
+    );
+  };
 
 
 
@@ -345,6 +345,11 @@ const AllYachts = () => {
         "specialSlotTimes",
         JSON.stringify(specialSlotTimes)
       );
+      formData.append(
+        "boardingLocation",
+        selectedYacht.boardingLocation || ""
+      );
+
 
       // ---------------- NEW IMAGES ----------------
       newImages.forEach((file) => {
@@ -842,6 +847,23 @@ const AllYachts = () => {
                   </div>
                   {/* ---------------- END SPECIAL SLOT SECTION ---------------- */}
                 </div>
+              </div>
+
+              {/* Boarding Location */}
+              <div className="col-12 col-md-6">
+                <label className="form-label fw-bold">Boarding Location</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter boarding location"
+                  value={selectedYacht.boardingLocation || ""}
+                  onChange={(e) =>
+                    setSelectedYacht((prev) => ({
+                      ...prev,
+                      boardingLocation: e.target.value,
+                    }))
+                  }
+                />
               </div>
 
               {/* ================= IMAGES ================= */}

@@ -142,26 +142,76 @@ function Bookings({ user }) {
     setFilterEmployee("");
   };
 
-  const generateBoardingPass = (booking) => {
-    const formatDate = (dateStr) => {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-    };
+//   const generateBoardingPass = (booking) => {
+//     const formatDate = (dateStr) => {
+//       const d = new Date(dateStr);
+//       return d.toLocaleDateString("en-GB", {
+//         day: "numeric",
+//         month: "short",
+//         year: "numeric",
+//       });
+//     };
 
-    const formatTime = (time24) => {
-      let [h, m] = time24.split(":").map(Number);
-      const period = h >= 12 ? "PM" : "AM";
-      h = h % 12 || 12;
-      return `${h}:${m.toString().padStart(2, "0")} ${period}`;
-    };
+//     const formatTime = (time24) => {
+//       let [h, m] = time24.split(":").map(Number);
+//       const period = h >= 12 ? "PM" : "AM";
+//       h = h % 12 || 12;
+//       return `${h}:${m.toString().padStart(2, "0")} ${period}`;
+//     };
 
-    const tokenPaid = booking.quotedAmount - booking.pendingAmount;
+//     const tokenPaid = booking.quotedAmount - booking.pendingAmount;
 
-    const boardingPassText = `
+//     const boardingPassText = `
+// Thank you for booking with ${booking.company?.name}
+
+// Ticket #: ${booking._id.slice(-5).toUpperCase()}
+
+// 👤 Guest Name: ${booking.customerId?.name}
+// 📞 Contact No.: ${booking.customerId?.contact}
+// 👥 Group Size: ${booking.numPeople} Pax
+// ⛵ Yacht Name: ${booking.yachtId?.name}
+// 🗓️ Trip Date: ${formatDate(booking.date)} 
+// ⏰ Time: ${formatTime(
+//       booking.startTime
+//     )} to ${formatTime(booking.endTime)}
+
+// Balance Pending: ₹${booking.pendingAmount}/-
+
+// 📍 Boarding Location
+// 🔗 ${booking.yachtId.boardingLocation || "Location not provided"}
+//   `.trim();
+
+//     // Copy to clipboard
+//     navigator.clipboard.writeText(boardingPassText);
+
+//     toast.success("Boarding Pass copied to clipboard");
+//   };
+
+const generateBoardingPass = (booking) => {
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (time24) => {
+    let [h, m] = time24.split(":").map(Number);
+    const period = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return `${h}:${m.toString().padStart(2, "0")} ${period}`;
+  };
+
+  const tokenPaid = booking.quotedAmount - booking.pendingAmount;
+
+  // Prepare extra details with proper formatting
+  const extraDetailsText = booking.extraDetails
+    ? `\n📦 Extra Details:\n${booking.extraDetails}`
+    : "";
+
+  const boardingPassText = `
 Thank you for booking with ${booking.company?.name}
 
 Ticket #: ${booking._id.slice(-5).toUpperCase()}
@@ -171,21 +221,20 @@ Ticket #: ${booking._id.slice(-5).toUpperCase()}
 👥 Group Size: ${booking.numPeople} Pax
 ⛵ Yacht Name: ${booking.yachtId?.name}
 🗓️ Trip Date: ${formatDate(booking.date)} 
-⏰ Time: ${formatTime(
-      booking.startTime
-    )} to ${formatTime(booking.endTime)}
+⏰ Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}
 
 Balance Pending: ₹${booking.pendingAmount}/-
+Extra Details : ${booking.extraDetails}
 
 📍 Boarding Location
 🔗 ${booking.yachtId.boardingLocation || "Location not provided"}
   `.trim();
 
-    // Copy to clipboard
-    navigator.clipboard.writeText(boardingPassText);
+  // Copy to clipboard
+  navigator.clipboard.writeText(boardingPassText);
 
-    toast.success("Boarding Pass copied to clipboard");
-  };
+  toast.success("Boarding Pass copied to clipboard");
+};
 
   const handleViewDetails = (booking) =>
     navigate("/customer-details", { state: { booking } });
