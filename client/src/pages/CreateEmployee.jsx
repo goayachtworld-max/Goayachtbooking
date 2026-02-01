@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createEmployeeAPI } from "../services/operations/authAPI";
 import { toast } from "react-hot-toast";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-
+import { useNavigate } from "react-router-dom";
 
 function CreateEmployee() {
   const [formData, setFormData] = useState({
@@ -20,7 +20,7 @@ function CreateEmployee() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const navigate = useNavigate();
 
   // const handleChange = (e) => {
   //   const { name, value } = e.target;
@@ -214,18 +214,6 @@ function CreateEmployee() {
         {/* Password */}
         {/* <div className="col-12 col-md-6">
           <label className="form-label fw-bold">Password</label>
-          <input
-            type="password"
-            className="form-control border border-dark text-dark"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Enter password"
-            required
-          />
-        </div> */}
-        <div className="col-12 col-md-6">
-          <label className="form-label fw-bold">Password</label>
 
           <div className="input-group">
             <input
@@ -246,23 +234,34 @@ function CreateEmployee() {
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
+        </div> */}
+        <div className="col-12 col-md-6">
+          <label className="form-label fw-bold">Password</label>
+
+          <div className="position-relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="form-control border border-dark text-dark pe-5"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter password"
+              required
+            />
+
+            <span
+              className="position-absolute top-50 end-0 translate-middle-y me-3"
+              style={{ cursor: "pointer" }}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
         </div>
 
 
         {/* Confirm Password */}
         {/* <div className="col-12 col-md-6">
-          <label className="form-label fw-bold">Confirm Password</label>
-          <input
-            type="password"
-            className="form-control border border-dark text-dark"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            placeholder="Re-enter password"
-            required
-          />
-        </div> */}
-        <div className="col-12 col-md-6">
           <label className="form-label fw-bold">Confirm Password</label>
 
           <div className="input-group">
@@ -280,6 +279,31 @@ function CreateEmployee() {
               className="input-group-text bg-white border border-dark"
               style={{ cursor: "pointer" }}
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
+        </div> */}
+        <div className="col-12 col-md-6">
+          <label className="form-label fw-bold">Confirm Password</label>
+
+          <div className="position-relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              className="form-control border border-dark text-dark pe-5"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Re-enter password"
+              required
+            />
+
+            <span
+              className="position-absolute top-50 end-0 translate-middle-y me-3"
+              style={{ cursor: "pointer" }}
+              onClick={() =>
+                setShowConfirmPassword(!showConfirmPassword)
+              }
             >
               {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
             </span>

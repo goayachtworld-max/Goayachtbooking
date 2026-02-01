@@ -12,6 +12,12 @@ export const createBookingAPI = async (payload, token) => {
     }
   );
 };
+export const getPublicBookingByIdAPI = async (bookingId) => {
+  return apiConnector(
+    "GET",
+    booking.GET_PUBLIC_BOOKING_BY_TKT_API(bookingId)
+  );
+};
 
 // export const getBookingsAPI = async (token) => {
 //   return apiConnector(

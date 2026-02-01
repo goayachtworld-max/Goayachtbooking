@@ -281,7 +281,21 @@ function Availability() {
                   }
                 >
                   {images.length > 1 ? (
-                    <Carousel indicators={false} controls={true} interval={2500}>
+                    <Carousel
+                      indicators={false}
+                      controls
+                      interval={2500}
+                      onClick={(e) => {
+                        // If click is NOT on arrows → allow navigation
+                        if (
+                          e.target.closest(".carousel-control-prev") ||
+                          e.target.closest(".carousel-control-next")
+                        ) {
+                          e.stopPropagation();
+                        }
+                      }}
+                      onTouchStart={(e) => e.stopPropagation()} // prevent swipe navigation
+                    >
                       {images.map((img, i) => (
                         <Carousel.Item key={i}>
                           <img
@@ -293,15 +307,20 @@ function Availability() {
                       ))}
                     </Carousel>
                   ) : (
-                    <img src={images[0]} alt={yacht.name} className="yacht-img" />
+                    <img
+                      src={images[0]}
+                      alt={yacht.name}
+                      className="yacht-img"
+                    />
                   )}
+
 
                   <div className="card-body p-3">
                     <h5 className="mb-1 yacht-name">{yacht.name}</h5>
 
                     <p className="text-muted small mb-2">
-                      👥: <strong>{yacht.capacity}</strong> | 
-                      B2B: <strong>₹{yacht?.runningCost}</strong> | 
+                      👥: <strong>{yacht.capacity}</strong> |
+                      B2B: <strong>₹{yacht?.runningCost}</strong> |
                       B2C: <strong>₹{yacht?.sellingPrice}</strong>
                     </p>
 

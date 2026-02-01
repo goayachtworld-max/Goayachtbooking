@@ -142,76 +142,76 @@ function Bookings({ user }) {
     setFilterEmployee("");
   };
 
-//   const generateBoardingPass = (booking) => {
-//     const formatDate = (dateStr) => {
-//       const d = new Date(dateStr);
-//       return d.toLocaleDateString("en-GB", {
-//         day: "numeric",
-//         month: "short",
-//         year: "numeric",
-//       });
-//     };
+  //   const generateBoardingPass = (booking) => {
+  //     const formatDate = (dateStr) => {
+  //       const d = new Date(dateStr);
+  //       return d.toLocaleDateString("en-GB", {
+  //         day: "numeric",
+  //         month: "short",
+  //         year: "numeric",
+  //       });
+  //     };
 
-//     const formatTime = (time24) => {
-//       let [h, m] = time24.split(":").map(Number);
-//       const period = h >= 12 ? "PM" : "AM";
-//       h = h % 12 || 12;
-//       return `${h}:${m.toString().padStart(2, "0")} ${period}`;
-//     };
+  //     const formatTime = (time24) => {
+  //       let [h, m] = time24.split(":").map(Number);
+  //       const period = h >= 12 ? "PM" : "AM";
+  //       h = h % 12 || 12;
+  //       return `${h}:${m.toString().padStart(2, "0")} ${period}`;
+  //     };
 
-//     const tokenPaid = booking.quotedAmount - booking.pendingAmount;
+  //     const tokenPaid = booking.quotedAmount - booking.pendingAmount;
 
-//     const boardingPassText = `
-// Thank you for booking with ${booking.company?.name}
+  //     const boardingPassText = `
+  // Thank you for booking with ${booking.company?.name}
 
-// Ticket #: ${booking._id.slice(-5).toUpperCase()}
+  // Ticket #: ${booking._id.slice(-5).toUpperCase()}
 
-// 👤 Guest Name: ${booking.customerId?.name}
-// 📞 Contact No.: ${booking.customerId?.contact}
-// 👥 Group Size: ${booking.numPeople} Pax
-// ⛵ Yacht Name: ${booking.yachtId?.name}
-// 🗓️ Trip Date: ${formatDate(booking.date)} 
-// ⏰ Time: ${formatTime(
-//       booking.startTime
-//     )} to ${formatTime(booking.endTime)}
+  // 👤 Guest Name: ${booking.customerId?.name}
+  // 📞 Contact No.: ${booking.customerId?.contact}
+  // 👥 Group Size: ${booking.numPeople} Pax
+  // ⛵ Yacht Name: ${booking.yachtId?.name}
+  // 🗓️ Trip Date: ${formatDate(booking.date)} 
+  // ⏰ Time: ${formatTime(
+  //       booking.startTime
+  //     )} to ${formatTime(booking.endTime)}
 
-// Balance Pending: ₹${booking.pendingAmount}/-
+  // Balance Pending: ₹${booking.pendingAmount}/-
 
-// 📍 Boarding Location
-// 🔗 ${booking.yachtId.boardingLocation || "Location not provided"}
-//   `.trim();
+  // 📍 Boarding Location
+  // 🔗 ${booking.yachtId.boardingLocation || "Location not provided"}
+  //   `.trim();
 
-//     // Copy to clipboard
-//     navigator.clipboard.writeText(boardingPassText);
+  //     // Copy to clipboard
+  //     navigator.clipboard.writeText(boardingPassText);
 
-//     toast.success("Boarding Pass copied to clipboard");
-//   };
+  //     toast.success("Boarding Pass copied to clipboard");
+  //   };
 
-const generateBoardingPass = (booking) => {
-  const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
+  const generateBoardingPass = (booking) => {
+    const formatDate = (dateStr) => {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    };
 
-  const formatTime = (time24) => {
-    let [h, m] = time24.split(":").map(Number);
-    const period = h >= 12 ? "PM" : "AM";
-    h = h % 12 || 12;
-    return `${h}:${m.toString().padStart(2, "0")} ${period}`;
-  };
+    const formatTime = (time24) => {
+      let [h, m] = time24.split(":").map(Number);
+      const period = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      return `${h}:${m.toString().padStart(2, "0")} ${period}`;
+    };
 
-  const tokenPaid = booking.quotedAmount - booking.pendingAmount;
+    const tokenPaid = booking.quotedAmount - booking.pendingAmount;
 
-  // Prepare extra details with proper formatting
-  const extraDetailsText = booking.extraDetails
-    ? `\n📦 Extra Details:\n${booking.extraDetails}`
-    : "";
+    // Prepare extra details with proper formatting
+    const extraDetailsText = booking.extraDetails
+      ? `\n📦 Extra Details:\n${booking.extraDetails}`
+      : "";
 
-  const boardingPassText = `
+    const boardingPassText = `
 Thank you for booking with ${booking.company?.name}
 
 Ticket #: ${booking._id.slice(-5).toUpperCase()}
@@ -230,11 +230,11 @@ Extra Details : ${booking.extraDetails}
 🔗 ${booking.yachtId.boardingLocation || "Location not provided"}
   `.trim();
 
-  // Copy to clipboard
-  navigator.clipboard.writeText(boardingPassText);
+    // Copy to clipboard
+    navigator.clipboard.writeText(boardingPassText);
 
-  toast.success("Boarding Pass copied to clipboard");
-};
+    toast.success("Boarding Pass copied to clipboard");
+  };
 
   const handleViewDetails = (booking) =>
     navigate("/customer-details", { state: { booking } });
@@ -301,7 +301,12 @@ Extra Details : ${booking.extraDetails}
     <div className="container mt-1">
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-1">
-        <h2>Bookings</h2>
+        <div className="d-flex justify-content-between gap-2 align-items-center">
+          <h2>Bookings</h2>
+          <span
+            className={`badge bg-success bg-opacity-10 text-success`}
+          >{filteredBookings.length}</span>
+        </div>
         {(user?.type === "admin" || user?.type === "backdesk") && (
           <button className="btn btn-success" onClick={handleCreateBooking}>
             + Create Booking
@@ -315,7 +320,7 @@ Extra Details : ${booking.extraDetails}
           <input
             type="text"
             className="form-control"
-            placeholder="Search Name / Ticket / Phone"
+            placeholder="Search Name/Ticket/Phone/Company"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ maxWidth: "260px" }}
@@ -536,14 +541,14 @@ Extra Details : ${booking.extraDetails}
                           </button>
                         )}
 
-                        { booking.status == "confirmed" && <button
+                        {booking.status == "confirmed" && <button
                           className="btn btn-sm btn-outline-success flex-grow-1 rounded-pill"
                           title="Boarding Pass"
                           onClick={() => generateBoardingPass(booking)}
                         >
                           Boarding Pass
                         </button>
-            }
+                        }
 
                         {/* UPDATE (take remaining space) */}
                         {(user?.type === "admin" || user?.type === "onsite") && (

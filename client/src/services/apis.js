@@ -25,7 +25,8 @@ export const booking = {
   CREATE_BOOKING_API: `${BASE_URL}/bookings`,
   UPDATE_BOOKING_API: (id) => `${BASE_URL}/bookings/${id}`,
   RESCHEDULE_BOOKING_API: `${BASE_URL}/bookings/reschedule`,
-  UPDATE_EXTRA_DETAILS_BOOKING_API: `${BASE_URL}/bookings`
+  UPDATE_EXTRA_DETAILS_BOOKING_API: `${BASE_URL}/bookings`,
+  GET_PUBLIC_BOOKING_BY_TKT_API: (id) => `${BASE_URL}/bookings/public/${id}`,
 };
 
 export const transaction = {

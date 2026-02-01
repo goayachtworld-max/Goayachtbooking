@@ -77,9 +77,18 @@ const bookingSchema = new mongoose.Schema({
         min: 0,
         required: true
     },
-    extraDetails:{
-        type:String,
+    extraDetails: {
+        type: String,
+    },
+    ticketNo: {
+        type: String,
+        unique: true,
+        sparse: true,
+        length: 5,
+        uppercase: true,
+        index: true
     }
+
 }, {
     timestamps: true,
     strictPopulate: false

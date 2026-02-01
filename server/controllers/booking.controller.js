@@ -152,7 +152,7 @@ export const createBooking = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Yacht not found" });
     }
 
-    console.log("Yacht" , yacht)
+    console.log("Yacht", yacht)
     const companyId = yacht.company;
 
     // 2️⃣ Handle on-behalf logic (ADMIN ONLY)
@@ -177,7 +177,7 @@ export const createBooking = async (req, res, next) => {
       employeeId = onBehalfEmployeeId;
       isOnBehalf = true;
 
-      console.log("On behalf of" , isOnBehalf)
+      console.log("On behalf of", isOnBehalf)
     }
 
     // 3️⃣ Booking & trip status
@@ -408,11 +408,61 @@ export const getBookingById = async (req, res) => {
   }
 };
 
+export const getPublicBookingByTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ticketNo = id
+    console.log("tkt : ",ticketNo)
+    if (!ticketNo || ticketNo.length !== 5) {
+      return res.status(400).json({ success: false, message: "Invalid ticket number" });
+    }
+
+    const ticket = ticketNo.toUpperCase();
+    console.log("Searching ticket:", ticket);
+
+    // 1️⃣ Try new system (FAST)
+    let booking = await BookingModel.findOne({ ticketNo: ticket })
+      .populate("customerId yachtId");
+
+    if (booking) {
+      return res.json({ success: true, booking });
+    }
+
+    // 2️⃣ Fallback for old bookings
+    const fallback = await BookingModel.aggregate([
+      { $addFields: { idStr: { $toString: "$_id" } } },
+      { $match: { idStr: { $regex: `${ticket}$`, $options: "i" } } },
+      { $limit: 1 }
+    ]);
+
+    if (!fallback.length) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    booking = await BookingModel.findById(fallback[0]._id)
+      .populate("customerId yachtId");
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    console.log("Fallback booking found:", booking._id);
+
+    res.json({ success: true, booking });
+
+  } catch (err) {
+    console.error("Error in getPublicBookingByTicket:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+
 // Used to update YachtRelatedInfo
 export const updateBookingYachtInfo = async (req, res, next) => {
   try {
     const { bookingId } = req.params;
-    const { yachtId, date, startTime, endTime} = req.body;
+    const { yachtId, date, startTime, endTime } = req.body;
 
     // 1️⃣ Fetch booking
     const booking = await BookingModel.findById(bookingId);

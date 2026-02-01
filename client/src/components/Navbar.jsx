@@ -132,28 +132,28 @@ function Navbar({ user, onLogout }) {
     }
   };
   // Collapse navbar when clicked outside
-useEffect(() => {
-  const handleOutsideClick = (event) => {
-    const collapseEl = collapseRef.current;
-    if (
-      collapseEl &&
-      collapseEl.classList.contains("show") &&
-      !collapseEl.contains(event.target) &&
-      !event.target.classList.contains("navbar-toggler")
-    ) {
-      const bsCollapse = new window.bootstrap.Collapse(collapseEl, {
-        toggle: true,
-      });
-      bsCollapse.hide();
-    }
-  };
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      const collapseEl = collapseRef.current;
+      if (
+        collapseEl &&
+        collapseEl.classList.contains("show") &&
+        !collapseEl.contains(event.target) &&
+        !event.target.classList.contains("navbar-toggler")
+      ) {
+        const bsCollapse = new window.bootstrap.Collapse(collapseEl, {
+          toggle: true,
+        });
+        bsCollapse.hide();
+      }
+    };
 
-  document.addEventListener("click", handleOutsideClick);
+    document.addEventListener("click", handleOutsideClick);
 
-  return () => {
-    document.removeEventListener("click", handleOutsideClick);
-  };
-}, []);
+    return () => {
+      document.removeEventListener("click", handleOutsideClick);
+    };
+  }, []);
 
 
   const isActive = (path) => location.pathname === path;
@@ -178,8 +178,9 @@ useEffect(() => {
             style={{ letterSpacing: "0.5px", fontSize: "1.2rem" }}
             to="/"
           >
-            Boating Assistance
+            {user.type === "admin" ? "Dashboard" : "Boating Assistance"}
           </Link>
+
 
           {/* Toggler */}
           <button
