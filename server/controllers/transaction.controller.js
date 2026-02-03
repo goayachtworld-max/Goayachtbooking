@@ -121,9 +121,7 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
           recipientUserId: bookingCreator._id,
           title: `Booking ${incStatus.toUpperCase()}`,
           message: `${populatedBooking.yachtId.name}
-${formattedDate} ${populatedBooking.startTime} – ${populatedBooking.endTime}
-Customer: ${populatedBooking.customerId.name}
-— ${incStatus} by ${formattedUserType}`,
+${formattedDate} ${populatedBooking.startTime} – ${populatedBooking.endTime}`,
           type: "booking_status_updated",
           bookingId: populatedBooking._id,
           excludeUserId: req.user.id,

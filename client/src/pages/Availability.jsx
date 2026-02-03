@@ -321,7 +321,7 @@ function Availability() {
                     <p className="text-muted small mb-2">
                       👥: <strong>{yacht.capacity}</strong> |
                       B2B: <strong>₹{yacht?.runningCost}</strong> |
-                      B2C: <strong>₹{yacht?.sellingPrice}</strong>
+                      Price: <strong>₹{yacht?.sellingPrice}</strong>
                     </p>
 
                     <div className="d-flex justify-content-between mt-3">

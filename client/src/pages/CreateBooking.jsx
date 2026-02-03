@@ -54,6 +54,7 @@ function CreateBooking() {
       "Water Bottles",
       "Bluetooth Speaker",
       "Captain & Crew",
+      "Snacks"
     ],
     paidServices: [
       "DSLR Photography",
@@ -61,27 +62,24 @@ function CreateBooking() {
     ],
   };
 
-  const [selectedExtras, setSelectedExtras] = useState([]);
+  const defaultInclusions = [
+    "Soft Drink",
+    "Ice Cube",
+    "Water Bottles",
+    "Bluetooth Speaker",
+    "Captain & Crew",
+  ];
+
+  const [selectedExtras, setSelectedExtras] = useState(defaultInclusions);
+
+  const [manualNotes, setManualNotes] = useState("");
+
   const handleExtraToggle = (label) => {
-    setSelectedExtras((prev) => {
-      let updated;
-
-      if (prev.includes(label)) {
-        updated = prev.filter((i) => i !== label);
-      } else {
-        updated = [...prev, label];
-      }
-
-      // Auto-update textarea notes
-      setFormData((p) => ({
-        ...p,
-        extraDetails: updated.length
-          ? `- ${updated.join("\n- ")}`
-          : "",
-      }));
-
-      return updated;
-    });
+    setSelectedExtras((prev) =>
+      prev.includes(label)
+        ? prev.filter((i) => i !== label)
+        : [...prev, label]
+    );
   };
 
 
@@ -284,6 +282,13 @@ function CreateBooking() {
         customerId = res?.data?._id;
       }
 
+      const extraDetails = `
+Inclusions / Services:
+${selectedExtras.map((i) => `- ${i}`).join("\n")}
+
+${manualNotes ? `Notes:\n${manualNotes}` : ""}
+`.trim();
+
       const bookingPayload = {
         customerId,
         employeeId: user?._id,
@@ -294,7 +299,8 @@ function CreateBooking() {
         quotedAmount: Number(formData.totalAmount),
         numPeople: Number(formData.numPeople),
         onBehalfEmployeeId: formData.onBehalfEmployeeId || null,
-        extraDetails: formData.extraDetails
+        // extraDetails: formData.extraDetails
+        extraDetails
       };
 
       console.log("Booking payload : ", bookingPayload)
@@ -686,13 +692,26 @@ function CreateBooking() {
                 </div>
 
 
-                <textarea
+                {/* <textarea
                   className="form-control border border-dark text-dark mt-2"
-                  name="extraDetails"
-                  value={formData.extraDetails}
-                  readOnly
-                  rows={4}
+                  rows={5}
+                  placeholder="Add any extra notes here (special requests, snacks, decorations, etc.)"
+                  value={
+                    formData.extraDetails +
+                    (manualNotes ? `\n\nNotes:\n${manualNotes}` : "")
+                  }
+                  onChange={(e) => setManualNotes(e.target.value.replace(formData.extraDetails, "").trimStart())}
+                /> */}
+
+                <label className="form-label fw-bold">Extra Notes</label>
+                <textarea
+                  className="form-control border border-dark text-dark"
+                  rows={3}
+                  placeholder="Add any extra notes (snacks, decoration, special request, etc.)"
+                  value={manualNotes}
+                  onChange={(e) => setManualNotes(e.target.value)}
                 />
+
               </div>
             )}
           </div>

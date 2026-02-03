@@ -97,6 +97,86 @@ function Login({ onLogin }) {
     }
   };
 
+  const generateBoardingPassText = (booking) => {
+    const formatDate = (dateStr) => {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    };
+
+    const formatTime = (time24) => {
+      let [h, m] = time24.split(":").map(Number);
+      const period = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      return `${h}.${m.toString().padStart(2, "0")} ${period}`;
+    };
+
+    const tokenPaid = booking.quotedAmount - booking.pendingAmount;
+
+    const inclusions = booking.extraDetails
+      ? booking.extraDetails
+        .split("\n")
+        .filter((i) =>
+          ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"]
+            .some((k) => i.includes(k))
+        )
+      : [];
+
+    const paidServices = booking.extraDetails
+      ? booking.extraDetails
+        .split("\n")
+        .filter((i) =>
+          ["Drone", "DSLR"].some((k) => i.includes(k))
+        )
+      : [];
+
+    return `
+# Ticket Number: ${booking._id.slice(-5).toUpperCase()}
+Booking Status: ${booking.status.toUpperCase()}
+
+👤 Guest Name: ${booking.customerId?.name}
+📞 Contact No.: ${booking.customerId?.contact}
+👥 Group Size: ${booking.numPeople} Pax
+⛵ Yacht Name: ${booking.yachtId?.name}
+🗓️ Trip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(
+      booking.startTime
+    )} to ${formatTime(booking.endTime)}
+(1 Hour Sailing + 1 Hour Anchor)
+
+Booking Price: ₹${booking.quotedAmount}/-
+Token Paid: ₹${tokenPaid}/-
+Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)
+
+📍 Boarding Location
+🔗 ${booking.yachtId?.boardingLocation || "Location not provided"}
+
+Inclusions:
+${inclusions.length
+        ? inclusions.map((i) => `• ${i.replace("-", "").trim()}`).join("\n")
+        : "• As discussed"
+      }
+Extra Paid Services:
+${paidServices.length
+        ? paidServices.map((i) => `• ${i.replace("-", "").trim()}`).join("\n")
+        : "• None"
+      }
+
+Disclaimer:
+• Reporting time is 30 minutes prior to departure
+• No refund for late arrival or no-show
+• Subject to weather and government regulations
+`.trim();
+  };
+
+  const copyBoardingPass = (booking) => {
+    const text = generateBoardingPassText(booking);
+    navigator.clipboard.writeText(text);
+    toast.success("Boarding Pass copied to clipboard");
+  };
+
   return (
     <>
       {/* {showModal && (
@@ -129,7 +209,7 @@ Extra Details: ${boardingPassBooking.extraDetails || "None"}
           </div>
         </div>
       )} */}
-      {showModal && (
+      {/* {showModal && (
         <div
           className={styles.modalOverlay}
           onClick={() => setShowModal(false)}
@@ -212,8 +292,37 @@ Extra Details: ${boardingPassBooking.extraDetails || "None"}
 
           </div>
         </div>
-      )}
+      )} */}
 
+      {showModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
+          <div
+            className={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className={styles.modalTitle}>Boarding Pass</h3>
+
+            <pre className={styles.boardingPassText}>
+              {generateBoardingPassText(boardingPassBooking)}
+            </pre>
+
+            <div className={styles.actions}>
+              <button
+                onClick={() => copyBoardingPass(boardingPassBooking)}
+              >
+                Copy
+              </button>
+
+              <button
+                className={styles.closeBtn}
+                onClick={() => setShowModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div
         style={{

@@ -52,9 +52,22 @@ function EditBookingDetails() {
             .map((l) => l.replace("- ", "").trim());
     };
 
+
     const [selectedExtras, setSelectedExtras] = useState(
         parseExtrasFromNotes(booking?.extraDetails)
     );
+
+    const extractNotesOnly = (text = "") => {
+        const idx = text.indexOf("Notes:");
+        if (idx === -1) return "";
+        return text.slice(idx + 6).trim();
+    };
+
+
+    const [manualNotes, setManualNotes] = useState(
+        extractNotesOnly(booking?.extraDetails)
+    );
+
 
     const [extraDetails, setExtraDetails] = useState(
         booking?.extraDetails || ""
@@ -71,28 +84,36 @@ function EditBookingDetails() {
             "Water Bottles",
             "Bluetooth Speaker",
             "Captain & Crew",
+            "Snacks"
         ],
         paidServices: [
             "DSLR Photography",
             "Drone - Photography & Videography",
         ],
     };
+    // const handleExtraToggle = (label) => {
+    //     setSelectedExtras((prev) => {
+    //         const updated = prev.includes(label)
+    //             ? prev.filter((i) => i !== label)
+    //             : [...prev, label];
+
+    //         setExtraDetails(
+    //             updated.length
+    //                 ? `- ${updated.join("\n- ")}`
+    //                 : ""
+    //         );
+
+    //         return updated;
+    //     });
+    // };
+
     const handleExtraToggle = (label) => {
-        setSelectedExtras((prev) => {
-            const updated = prev.includes(label)
+        setSelectedExtras((prev) =>
+            prev.includes(label)
                 ? prev.filter((i) => i !== label)
-                : [...prev, label];
-
-            setExtraDetails(
-                updated.length
-                    ? `- ${updated.join("\n- ")}`
-                    : ""
-            );
-
-            return updated;
-        });
+                : [...prev, label]
+        );
     };
-
 
     /* ===== HANDLERS ===== */
     const handleBookingChange = (e) => {
@@ -127,10 +148,14 @@ function EditBookingDetails() {
 
     const isExtrasChanged = () => {
         const originalExtras = parseExtrasFromNotes(booking?.extraDetails || "");
-        // Compare arrays
+        const originalNotes = extractNotesOnly(booking?.extraDetails || "");
+
+        if (originalNotes !== manualNotes) return true;
         if (originalExtras.length !== selectedExtras.length) return true;
-        return !selectedExtras.every((item) => originalExtras.includes(item));
+
+        return !selectedExtras.every((e) => originalExtras.includes(e));
     };
+
 
     const isSubmitDisabled = () => {
         // Customer required fields
@@ -162,6 +187,13 @@ function EditBookingDetails() {
         const token = localStorage.getItem("authToken");
 
         try {
+            const extraDetails = `
+Inclusions / Services:
+${selectedExtras.map((i) => `- ${i}`).join("\n")}
+
+${manualNotes ? `Notes:\n${manualNotes}` : ""}
+`.trim();
+
             // 🔹 Update customer only if changed
             if (isCustomerChanged()) {
                 await updateCustomerAPI(
@@ -177,6 +209,7 @@ function EditBookingDetails() {
             }
             if (isExtrasChanged()) {
                 console.log("extra api is called")
+
                 await updateBookingExtrasAPI(
                     booking._id,
                     { extraDetails },
@@ -337,29 +370,29 @@ function EditBookingDetails() {
         fetchYachts();
     }, [bookingData.date, isAdmin]);
 
-    useEffect(() => {
-        if (!isAdmin) return;
+    // useEffect(() => {
+    //     if (!isAdmin) return;
 
-        // If yachts are empty, KEEP current yacht
-        if (!yachts.length) {
-            setBookingData((p) => ({
-                ...p,
-                yachtId: booking.yachtId._id,
-            }));
-            return;
-        }
+    //     // If yachts are empty, KEEP current yacht
+    //     if (!yachts.length) {
+    //         setBookingData((p) => ({
+    //             ...p,
+    //             yachtId: booking.yachtId._id,
+    //         }));
+    //         return;
+    //     }
 
-        const bookedYachtId = booking.yachtId._id;
-        console.log("yachts are : ", yachts)
-        const exists = yachts.some((y) => y.id === bookedYachtId);
+    //     const bookedYachtId = booking.yachtId._id;
+    //     console.log("yachts are : ", yachts)
+    //     const exists = yachts.some((y) => y.id === bookedYachtId);
 
-        if (exists && bookingData.yachtId !== bookedYachtId) {
-            setBookingData((p) => ({
-                ...p,
-                yachtId: bookedYachtId,
-            }));
-        }
-    }, [yachts, isAdmin]);
+    //     if (exists && bookingData.yachtId !== bookedYachtId) {
+    //         setBookingData((p) => ({
+    //             ...p,
+    //             yachtId: bookedYachtId,
+    //         }));
+    //     }
+    // }, [yachts, isAdmin]);
 
 
 
@@ -466,23 +499,22 @@ function EditBookingDetails() {
 
                                 <textarea
                                     className="form-control mt-2"
-                                    value={extraDetails}
-                                    onChange={(e) => {
-                                        setExtraDetails(e.target.value);
-                                    }}
                                     rows={4}
                                     placeholder="Extra notes..."
+                                    value={manualNotes}
+                                    onChange={(e) => setManualNotes(e.target.value)}
                                 />
+
                             </div>)}
 
 
                         {/* ===== BOOKING DETAILS ===== */}
                         <h6 className="fw-bold">Booking Information</h6>
-
+{/* 
                         <div className="col-12">
-                            <label className="form-label fw-bold">Yacht</label>
+                            <label className="form-label fw-bold">Yacht</label> */}
 
-                            {isAdmin ? (
+                            {/* {isAdmin ? (
                                 <select
                                     className="form-select"
                                     name="yachtId"
@@ -513,8 +545,17 @@ function EditBookingDetails() {
                                     value={booking?.yachtId?.name}
                                     disabled
                                 />
-                            )}
-                        </div>
+                            )} */}
+                            <div className="col-12">
+                                <label className="form-label fw-bold">Yacht</label>
+                                <input
+                                    className="form-control"
+                                    value={booking?.yachtId?.name || ""}
+                                    readOnly
+                                />
+                            </div>
+
+                        {/* </div> */}
 
 
                         <div className="col-md-6">

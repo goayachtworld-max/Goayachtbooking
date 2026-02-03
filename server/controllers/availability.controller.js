@@ -166,11 +166,7 @@ export const lockSlot = async (req, res, next) => {
     let notifyRoles = [];
 
     if (req.user.type === "backdesk") {
-      notifyRoles = ["admin", "onsite"];
-    }
-
-    if (req.user.type === "admin") {
-      notifyRoles = ["onsite"];
+      notifyRoles = ["admin"];
     }
 
     if (notifyRoles.length > 0) {

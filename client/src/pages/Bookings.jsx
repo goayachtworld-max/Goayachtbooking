@@ -161,21 +161,28 @@ function Bookings({ user }) {
 
   //     const tokenPaid = booking.quotedAmount - booking.pendingAmount;
 
+  //     // Prepare extra details with proper formatting
+  //     const extraDetailsText = booking.extraDetails
+  //       ? `\n📦 Extra Details:\n${booking.extraDetails}`
+  //       : "";
+
   //     const boardingPassText = `
   // Thank you for booking with ${booking.company?.name}
 
   // Ticket #: ${booking._id.slice(-5).toUpperCase()}
+  // Booking Status: ${booking.status}
 
   // 👤 Guest Name: ${booking.customerId?.name}
   // 📞 Contact No.: ${booking.customerId?.contact}
   // 👥 Group Size: ${booking.numPeople} Pax
   // ⛵ Yacht Name: ${booking.yachtId?.name}
   // 🗓️ Trip Date: ${formatDate(booking.date)} 
-  // ⏰ Time: ${formatTime(
-  //       booking.startTime
-  //     )} to ${formatTime(booking.endTime)}
+  // ⏰ Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}
 
-  // Balance Pending: ₹${booking.pendingAmount}/-
+  // Balance Pending: ₹${booking.pendingAmount}/- ( to be collected before boarding)
+
+  // Inclusion: 
+  // ${booking.extraDetails}
 
   // 📍 Boarding Location
   // 🔗 ${booking.yachtId.boardingLocation || "Location not provided"}
@@ -201,40 +208,70 @@ function Bookings({ user }) {
       let [h, m] = time24.split(":").map(Number);
       const period = h >= 12 ? "PM" : "AM";
       h = h % 12 || 12;
-      return `${h}:${m.toString().padStart(2, "0")} ${period}`;
+      return `${h}.${m.toString().padStart(2, "0")} ${period}`;
     };
 
     const tokenPaid = booking.quotedAmount - booking.pendingAmount;
 
-    // Prepare extra details with proper formatting
-    const extraDetailsText = booking.extraDetails
-      ? `\n📦 Extra Details:\n${booking.extraDetails}`
-      : "";
+    // Split inclusions & paid services if you store them together
+    const inclusions = booking.extraDetails
+      ? booking.extraDetails
+        .split("\n")
+        .filter((i) =>
+          ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"]
+            .some((k) => i.includes(k))
+        )
+      : [];
+
+    const paidServices = booking.extraDetails
+      ? booking.extraDetails
+        .split("\n")
+        .filter((i) =>
+          ["Drone", "DSLR"].some((k) => i.includes(k))
+        )
+      : [];
 
     const boardingPassText = `
 Thank you for booking with ${booking.company?.name}
 
-Ticket #: ${booking._id.slice(-5).toUpperCase()}
+# Ticket Number: ${booking._id.slice(-5).toUpperCase()}
+
+Booking Status: ${booking.status.toUpperCase()}
 
 👤 Guest Name: ${booking.customerId?.name}
 📞 Contact No.: ${booking.customerId?.contact}
 👥 Group Size: ${booking.numPeople} Pax
 ⛵ Yacht Name: ${booking.yachtId?.name}
-🗓️ Trip Date: ${formatDate(booking.date)} 
-⏰ Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}
 
-Balance Pending: ₹${booking.pendingAmount}/-
-Extra Details : ${booking.extraDetails}
+🗓️ Trip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(
+      booking.startTime
+    )} to ${formatTime(booking.endTime)}
+(1 Hour Sailing + 1 Hour Anchor)
+
+Booking Price: ₹${booking.quotedAmount}/-
+
+Token Paid: ₹${tokenPaid}/-
+Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)
 
 📍 Boarding Location
-🔗 ${booking.yachtId.boardingLocation || "Location not provided"}
-  `.trim();
+🔗 ${booking.yachtId?.boardingLocation || "Location not provided"}
 
-    // Copy to clipboard
+Inclusions:
+${inclusions.length ? inclusions.map((i) => `• ${i.replace("-", "").trim()}`).join("\n") : "• As discussed"}
+
+Extra Paid Services:
+${paidServices.length ? paidServices.map((i) => `• ${i.replace("-", "").trim()}`).join("\n") : "• None"}
+
+Disclaimer:
+• Reporting time is 30 minutes prior to departure
+• No refund for late arrival or no-show
+• Subject to weather and government regulations
+`.trim();
+
     navigator.clipboard.writeText(boardingPassText);
-
     toast.success("Boarding Pass copied to clipboard");
   };
+
 
   const handleViewDetails = (booking) =>
     navigate("/customer-details", { state: { booking } });

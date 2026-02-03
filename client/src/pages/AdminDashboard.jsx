@@ -16,10 +16,10 @@ function AdminDashboard({ user }) {
   });
 
   // ---------------- HELPERS ----------------
-  const isSameDay = (d1, d2) =>
+  const isSameDay = (d1, d2, bookinStatus) =>
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate();
+    d1.getDate() === d2.getDate() && bookinStatus != "cancelled";
 
   // ---------------- FETCH DASHBOARD DATA ----------------
   useEffect(() => {
@@ -43,8 +43,8 @@ function AdminDashboard({ user }) {
         bookings.forEach((b) => {
           const bookingDate = new Date(b.date);
           const createdAt = new Date(b.createdAt);
-
-          if (isSameDay(bookingDate, today)) todayCount++;
+          const bookinStatus = b.status;
+          if (isSameDay(bookingDate, today, bookinStatus)) todayCount++;
 
           if (
             bookingDate > today &&

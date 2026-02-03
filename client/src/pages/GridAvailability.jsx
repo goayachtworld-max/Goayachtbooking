@@ -786,7 +786,7 @@ function GridAvailability() {
             </div>
 
             <div>
-              <span className="text-muted me-1">B2C:</span>
+              <span className="text-muted me-1">Price:</span>
               <span className="fw-semibold text-success">
                 ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
               </span>

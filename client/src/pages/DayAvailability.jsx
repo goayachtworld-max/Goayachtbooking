@@ -785,12 +785,12 @@ function DayAvailability() {
         <div className="availability-right">
           <div className="card shadow-sm border-0 rounded-4 p-3">
             <div className="d-flex align-items-center justify-content-between mb-2">
-              <h5 className="fw-semibold mb-0 text-secondary">
-                Time Slots
-              </h5>
+              {/* <h5 className="fw-semibold mb-0 text-secondary">
+                Slots
+              </h5> */}
 
               <div className="fw-bold mb-0 text-primary" >
-                B2B:<strong> {yacht?.runningCost}</strong> | B2C:<strong> {yacht?.sellingPrice}</strong>
+                B2B:<strong> {yacht?.runningCost}</strong> | Price:<strong> {yacht?.sellingPrice}</strong>
               </div>
               {isAdmin && (
                 <button
