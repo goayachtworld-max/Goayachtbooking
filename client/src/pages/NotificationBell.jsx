@@ -79,14 +79,20 @@ export default function NotificationBell() {
     const handleNotificationClick = async (notification) => {
         const bookingId = notification.bookingId;
 
+
         if (bookingId) {
-            const searchValue = bookingId.slice(-5);
             navigate("/bookings", {
                 state: {
-                    refresh: Date.now(),   // 🔥 FORCE refresh every click
-                    bookingId,             // optional (if you want auto-select later)
+                    refresh: Date.now(),
+                    bookingId,
+                    status: notification.title.toUpperCase().includes("CANCELLED")
+                        ? "cancelled"
+                        : notification.title.toUpperCase().includes("CONFIRMED")
+                            ? "confirmed"
+                            : "",
                 },
             });
+
         }
 
         // mark as read
@@ -178,14 +184,27 @@ export default function NotificationBell() {
                         <div
                             key={n._id}
                             className={`notification-item
-              ${n.readBy?.includes(userId) ? "read" : "unread"}
-              ${n.type === "booking_created" ? "pending" : ""}
-              ${n.type === "slot_locked" ? "locked" : ""}
-              ${n.type === "booking_status_updated" && n.title.includes("CONFIRMED") ? "booked" : ""}
-              ${n.type === "booking_status_updated" && n.title.includes("CANCELLED") ? "cancelled" : ""}
-            `}
+    ${n.readBy?.some(id => id.toString() === userId) ? "read" : "unread"}
+    ${n.title.toUpperCase().includes("CONFIRMED") &&
+                                    (n.type === "booking_created" || n.type === "booking_status_updated")
+                                    ? "booked"
+                                    : ""
+                                }
+    ${n.type === "booking_created" &&
+                                    !n.title.toUpperCase().includes("CONFIRMED")
+                                    ? "pending"
+                                    : ""
+                                }
+    ${n.type === "slot_locked" ? "locked" : ""}
+    ${n.type === "booking_status_updated" &&
+                                    n.title.toUpperCase().includes("CANCELLED")
+                                    ? "cancelled"
+                                    : ""
+                                }
+  `}
                             onClick={() => handleNotificationClick(n)}
                         >
+
                             <strong>{n.title}</strong>
                             <p className="mb-0">{n.message}</p>
                         </div>

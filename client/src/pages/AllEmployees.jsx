@@ -75,7 +75,7 @@ const AllEmployees = () => {
     }
 
     // Tooltip content
-    const tooltipText = `Last Login: ${loginDate.toLocaleString()}${lastSeenAt ?` 
+    const tooltipText = `Last Login: ${loginDate.toLocaleString()}${lastSeenAt ? ` 
 Last Seen: ${new Date(lastSeenAt).toLocaleString()}` : ""}`;
 
     return (
@@ -235,12 +235,17 @@ Last Seen: ${new Date(lastSeenAt).toLocaleString()}` : ""}`;
     }
   };
 
-
   useEffect(() => {
-    if (activeTab === "not-in-company" && notInCompanyEmployees.length === 0) {
+    if (activeTab === "current") {
+      setLoading(true);
+      fetchEmployees();
+    }
+
+    if (activeTab === "not-in-company") {
       fetchNotInCompanyEmployees();
     }
   }, [activeTab]);
+
 
 
   useEffect(() => {

@@ -12,6 +12,7 @@ function AdminDashboard({ user }) {
     confirmed: 0,
     pending: 0,
     cancelled: 0,
+    completed: 0,
     specialSlotsAvailable: 0,
   });
 
@@ -39,24 +40,43 @@ function AdminDashboard({ user }) {
         let confirmed = 0;
         let pending = 0;
         let cancelled = 0;
+        let completed = 0;
 
         bookings.forEach((b) => {
           const bookingDate = new Date(b.date);
           const createdAt = new Date(b.createdAt);
-          const bookinStatus = b.status;
-          if (isSameDay(bookingDate, today, bookinStatus)) todayCount++;
 
-          if (
-            bookingDate > today &&
-            bookingDate <= next7Days
-          )
+          const isCompleted = isBookingCompleted(b);
+
+          // ✅ COMPLETED COUNT
+          if (isCompleted && b.status !== "cancelled") {
+            completed++;
+            return;
+          }
+          // ❌ Ignore cancelled bookings for today/upcoming
+          if (b.status === "cancelled") {
+            cancelled++;
+            return;
+          }
+
+          // ✅ TODAY (only active bookings)
+          if (isSameDay(bookingDate, today)) {
+            todayCount++;
+          }
+
+          // ✅ UPCOMING (next 7 days, future only)
+          if (bookingDate > today && bookingDate <= next7Days) {
             upcomingCount++;
+          }
 
-          if (isSameDay(createdAt, today)) createdToday++;
+          // ✅ CREATED TODAY
+          if (isSameDay(createdAt, today)) {
+            createdToday++;
+          }
 
+          // ✅ STATUS COUNTS
           if (b.status === "confirmed") confirmed++;
           if (b.status === "pending") pending++;
-          if (b.status === "cancelled") cancelled++;
         });
 
         setStats({
@@ -66,6 +86,7 @@ function AdminDashboard({ user }) {
           confirmed,
           pending,
           cancelled,
+          completed,
           specialSlotsAvailable: 0, // 🔧 hook when yacht slots logic is ready
         });
       } catch (err) {
@@ -75,6 +96,17 @@ function AdminDashboard({ user }) {
 
     fetchDashboardData();
   }, []);
+
+  const isBookingCompleted = (booking) => {
+    if (!booking.date || !booking.endTime) return false;
+
+    const bookingEnd = new Date(booking.date);
+    const [h, m] = booking.endTime.split(":").map(Number);
+
+    bookingEnd.setHours(h, m, 0, 0);
+    return bookingEnd < new Date();
+  };
+
 
   // ---------------- CARD COMPONENT ----------------
   const StatCard = ({ title, value, color, onClick }) => (
@@ -151,6 +183,12 @@ function AdminDashboard({ user }) {
             onClick={() => navigate("/bookings?status=confirmed")}
           />
 
+          <StatCard
+            title="Completed Bookings"
+            value={stats.completed}
+            color="secondary"
+            onClick={() => navigate("/bookings?status=completed")}
+          />
 
 
           {/* <StatCard

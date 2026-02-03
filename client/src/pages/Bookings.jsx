@@ -116,7 +116,11 @@ function Bookings({ user }) {
   useEffect(() => {
     const filters = {};
     if (filterDate) filters.date = filterDate;
-    if (filterStatus) filters.status = filterStatus;
+    // if (filterStatus) filters.status = filterStatus;
+    if (filterStatus && filterStatus !== "completed") {
+      filters.status = filterStatus;
+    }
+
     if (filterEmployee) filters.employeeId = filterEmployee;
 
     fetchBookings(filters);
@@ -129,10 +133,14 @@ function Bookings({ user }) {
 
   // ---------------- AUTO SEARCH FROM NOTIFICATION ----------------
   useEffect(() => {
-    if (location.state?.bookingId) {
-      setSearchQuery(location.state.bookingId.slice(-5));
+    if (location.state?.bookingId || location.state?.status) {
+      setSearchQuery(location.state.bookingId?.slice(-5) || "");
+      setFilterStatus(location.state.status || "");
+
+      navigate(".", { replace: true, state: {} });
     }
   }, [location.state?.refresh]);
+
 
   // ---------------- ACTIONS ----------------
   const handleClear = () => {
@@ -142,57 +150,16 @@ function Bookings({ user }) {
     setFilterEmployee("");
   };
 
-  //   const generateBoardingPass = (booking) => {
-  //     const formatDate = (dateStr) => {
-  //       const d = new Date(dateStr);
-  //       return d.toLocaleDateString("en-GB", {
-  //         day: "numeric",
-  //         month: "short",
-  //         year: "numeric",
-  //       });
-  //     };
+  const isBookingCompleted = (booking) => {
+    if (!booking.date || !booking.endTime) return false;
 
-  //     const formatTime = (time24) => {
-  //       let [h, m] = time24.split(":").map(Number);
-  //       const period = h >= 12 ? "PM" : "AM";
-  //       h = h % 12 || 12;
-  //       return `${h}:${m.toString().padStart(2, "0")} ${period}`;
-  //     };
+    const bookingEnd = new Date(booking.date);
+    const [h, m] = booking.endTime.split(":").map(Number);
 
-  //     const tokenPaid = booking.quotedAmount - booking.pendingAmount;
+    bookingEnd.setHours(h, m, 0, 0);
 
-  //     // Prepare extra details with proper formatting
-  //     const extraDetailsText = booking.extraDetails
-  //       ? `\n📦 Extra Details:\n${booking.extraDetails}`
-  //       : "";
-
-  //     const boardingPassText = `
-  // Thank you for booking with ${booking.company?.name}
-
-  // Ticket #: ${booking._id.slice(-5).toUpperCase()}
-  // Booking Status: ${booking.status}
-
-  // 👤 Guest Name: ${booking.customerId?.name}
-  // 📞 Contact No.: ${booking.customerId?.contact}
-  // 👥 Group Size: ${booking.numPeople} Pax
-  // ⛵ Yacht Name: ${booking.yachtId?.name}
-  // 🗓️ Trip Date: ${formatDate(booking.date)} 
-  // ⏰ Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}
-
-  // Balance Pending: ₹${booking.pendingAmount}/- ( to be collected before boarding)
-
-  // Inclusion: 
-  // ${booking.extraDetails}
-
-  // 📍 Boarding Location
-  // 🔗 ${booking.yachtId.boardingLocation || "Location not provided"}
-  //   `.trim();
-
-  //     // Copy to clipboard
-  //     navigator.clipboard.writeText(boardingPassText);
-
-  //     toast.success("Boarding Pass copied to clipboard");
-  //   };
+    return bookingEnd < new Date();
+  };
 
   const generateBoardingPass = (booking) => {
     const formatDate = (dateStr) => {
@@ -281,31 +248,62 @@ Disclaimer:
   const handleUpdateBooking = (booking) =>
     navigate("/update-booking", { state: { booking } });
 
-  // ---------------- SMART SEARCH (FRONTEND) ----------------
-  // const filteredBookings = bookings.filter((booking) => {
-  //   if (!searchQuery) return true;
-  //   const q = searchQuery.toLowerCase();
+  // const filteredBookings = bookings
+  //   .filter((booking) => {
+  //     // If user selected a status → respect it
+  //     if (filterStatus) {
+  //       return booking.status === filterStatus;
+  //     }
 
-  //   return (
-  //     booking.customerId?.name?.toLowerCase().includes(q) ||
-  //     booking.customerId?.contact?.includes(q) ||
-  //     booking._id.toLowerCase().includes(q) ||
-  //     booking.company?.name?.toLowerCase().includes(q) ||
-  //     booking._id.slice(-5).toLowerCase().includes(q) ||
-  //     booking.yachtId.name.toLowerCase().includes(q)
-  //   );
-  // });
+  //     // No status selected → hide cancelled by default
+  //     return booking.status !== "cancelled";
+  //   })
+  //   // 2️⃣ Search filter
+  //   .filter((booking) => {
+  //     if (!searchQuery) return true;
+  //     const q = searchQuery.toLowerCase();
+
+  //     return (
+  //       booking.customerId?.name?.toLowerCase().includes(q) ||
+  //       booking.customerId?.contact?.includes(q) ||
+  //       booking._id.toLowerCase().includes(q) ||
+  //       booking.company?.name?.toLowerCase().includes(q) ||
+  //       booking._id.slice(-5).toLowerCase().includes(q) ||
+  //       booking.yachtId?.name?.toLowerCase().includes(q)
+  //     );
+  //   })
+  //   // 3️⃣ Sort: Date → Time → Yacht
+  //   .sort((a, b) => {
+  //     const dateDiff = new Date(a.date) - new Date(b.date);
+  //     if (dateDiff !== 0) return dateDiff;
+
+  //     const timeDiff = a.startTime.localeCompare(b.startTime);
+  //     if (timeDiff !== 0) return timeDiff;
+
+  //     return a.yachtId?.name.localeCompare(b.yachtId?.name);
+  //   });
 
   const filteredBookings = bookings
-    // 1️⃣ Status logic (smart default)
+    // 1️⃣ Status logic (including virtual "completed")
     .filter((booking) => {
-      // If user selected a status → respect it
+      // COMPLETED (virtual)
+      if (filterStatus === "completed") {
+        return (
+          booking.status !== "cancelled" &&
+          isBookingCompleted(booking)
+        );
+      }
+
+      // REAL STATUS selected
       if (filterStatus) {
         return booking.status === filterStatus;
       }
 
-      // No status selected → hide cancelled by default
-      return booking.status !== "cancelled";
+      // DEFAULT → hide cancelled & completed
+      return (
+        booking.status !== "cancelled" &&
+        !isBookingCompleted(booking)
+      );
     })
 
     // 2️⃣ Search filter
@@ -317,13 +315,12 @@ Disclaimer:
         booking.customerId?.name?.toLowerCase().includes(q) ||
         booking.customerId?.contact?.includes(q) ||
         booking._id.toLowerCase().includes(q) ||
-        booking.company?.name?.toLowerCase().includes(q) ||
         booking._id.slice(-5).toLowerCase().includes(q) ||
         booking.yachtId?.name?.toLowerCase().includes(q)
       );
     })
 
-    // 3️⃣ Sort: Date → Time → Yacht
+    // 3️⃣ Sort
     .sort((a, b) => {
       const dateDiff = new Date(a.date) - new Date(b.date);
       if (dateDiff !== 0) return dateDiff;
@@ -333,6 +330,7 @@ Disclaimer:
 
       return a.yachtId?.name.localeCompare(b.yachtId?.name);
     });
+
 
   return (
     <div className="container mt-1">
@@ -385,7 +383,7 @@ Disclaimer:
             ))}
           </select>
 
-          <select
+          {/* <select
             className="form-select"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -395,7 +393,20 @@ Disclaimer:
             <option value="pending">Pending</option>
             <option value="confirmed">Confirmed</option>
             <option value="cancelled">Cancelled</option>
+          </select> */}
+          <select
+            className="form-select"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            style={{ maxWidth: "140px" }}
+          >
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
           </select>
+
 
           <button className="btn btn-secondary" onClick={handleClear}>
             Clear
@@ -435,13 +446,13 @@ Disclaimer:
             className="mobile-filter-drawer"
             onClick={(e) => e.stopPropagation()}
           >
-            <input
+            {/* <input
               type="text"
               className="form-control mb-2"
               placeholder="Search Name / Ticket / Phone"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            /> */}
 
             <input
               type="date"
@@ -463,7 +474,7 @@ Disclaimer:
               ))}
             </select>
 
-            <select
+            {/* <select
               className="form-select mb-3"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -472,7 +483,19 @@ Disclaimer:
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
               <option value="cancelled">Cancelled</option>
+            </select> */}
+            <select
+              className="form-select mb-3"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
             </select>
+
 
             <div className="d-flex gap-2">
               <button className="btn btn-secondary flex-fill" onClick={handleClear}>
@@ -565,7 +588,7 @@ Disclaimer:
                         </button>
 
                         {/* EDIT (icon only) */}
-                        {(user?.type === "admin" || user?.type === "backdesk") && (
+                        {(user?.type === "admin" || user?.type === "backdesk")&& !isBookingCompleted(booking) && (
                           <button
                             className="btn btn-sm btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
                             title="Edit Booking Details"
@@ -598,25 +621,6 @@ Disclaimer:
                           </button>
                         )}
                       </div>
-
-                      {/* <div className="d-flex gap-2 mt-3">
-                        <button
-                          className="btn btn-sm btn-outline-primary flex-fill rounded-pill"
-                          onClick={() => handleViewDetails(booking)}
-                        >
-                          View
-                        </button>
-
-                        {(user?.type === "admin" ||
-                          user?.type === "onsite") && (
-                            <button
-                              className="btn btn-sm btn-outline-info flex-fill rounded-pill"
-                              onClick={() => handleUpdateBooking(booking)}
-                            >
-                              Update
-                            </button>
-                          )}
-                      </div> */}
                     </div>
                   </div>
                 </div>

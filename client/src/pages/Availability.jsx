@@ -424,13 +424,13 @@ function Availability() {
             className="mobile-filter-drawer"
             onClick={(e) => e.stopPropagation()}
           >
-            <input
+            {/* <input
               type="text"
               className="form-control mb-2"
               placeholder="Search Yacht / Company"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            /> */}
 
             <select
               className="form-select mb-2"

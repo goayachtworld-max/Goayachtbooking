@@ -118,6 +118,7 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
         const formattedDate = date.toISOString().split('T')[0];
         await sendNotification({
           company: populatedBooking.company,
+          roles: ["onsite"],
           recipientUserId: bookingCreator._id,
           title: `Booking ${incStatus.toUpperCase()}`,
           message: `${populatedBooking.yachtId.name}

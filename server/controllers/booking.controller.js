@@ -250,19 +250,28 @@ export const createBooking = async (req, res, next) => {
         deleteAfter: tripEnd
       });
     }
+    let roles;
+    let title;
+    if (booking.status === "confirmed" && req.user.type === "admin") {
+      roles = ["onsite"];
+      title = "Booking CONFIRMED";
+    }
 
     if (booking.status === "pending" && req.user.type === "backdesk") {
-      await sendNotification({
-        company: companyId,
-        roles: ["admin", "onsite"],
-        title: "Booking Pending",
-        message: `${yacht.name}
-${date} ${startTime} – ${endTime}`,
-        type: "booking_created",
-        bookingId: booking._id,
-        excludeUserId: req.user.id,
-      });
+      roles = ["admin", "onsite"];
+      title = "Booking PENDING";
     }
+
+    await sendNotification({
+      company: companyId,
+      roles: roles,
+      title: title,
+      message: `${yacht.name}
+${date} ${startTime} – ${endTime}`,
+      type: "booking_created",
+      bookingId: booking._id,
+      excludeUserId: req.user.id,
+    });
 
     console.log("booking : ", booking)
     res.status(201).json({ success: true, booking });
@@ -412,7 +421,7 @@ export const getPublicBookingByTicket = async (req, res) => {
   try {
     const { id } = req.params;
     const ticketNo = id
-    console.log("tkt : ",ticketNo)
+    console.log("tkt : ", ticketNo)
     if (!ticketNo || ticketNo.length !== 5) {
       return res.status(400).json({ success: false, message: "Invalid ticket number" });
     }

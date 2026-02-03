@@ -146,8 +146,6 @@ Booking Status: ${booking.status.toUpperCase()}
     )} to ${formatTime(booking.endTime)}
 (1 Hour Sailing + 1 Hour Anchor)
 
-Booking Price: ₹${booking.quotedAmount}/-
-Token Paid: ₹${tokenPaid}/-
 Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)
 
 📍 Boarding Location

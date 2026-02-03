@@ -13,23 +13,28 @@ export const sendNotification = async ({
   excludeUserId,
   lockedId
 }) => {
-  let recipients = [];
+  const recipientSet = new Set();
 
-  // ✅ CASE 1: Direct user notification
+  // ✅ CASE 1: Direct user
   if (recipientUserId) {
-    recipients = [recipientUserId];
+    recipientSet.add(recipientUserId.toString());
   }
-  // ✅ CASE 2: Role-based notification
-  else if (roles?.length) {
+
+  // ✅ CASE 2: Role-based users
+  if (roles?.length) {
     const users = await EmployeeModel.find({
       company,
       type: { $in: roles },
     }).select("_id");
 
-    recipients = users
-      .map(u => u._id)
-      .filter(id => id.toString() !== excludeUserId?.toString());
+    users.forEach(u => {
+      if (u._id.toString() !== excludeUserId?.toString()) {
+        recipientSet.add(u._id.toString());
+      }
+    });
   }
+
+  const recipients = [...recipientSet];
 
   if (!recipients.length) return;
 
@@ -46,6 +51,6 @@ export const sendNotification = async ({
 
   const io = getIO();
   recipients.forEach(userId => {
-    io.to(userId.toString()).emit("notification:new", notification);
+    io.to(userId).emit("notification:new", notification);
   });
 };
