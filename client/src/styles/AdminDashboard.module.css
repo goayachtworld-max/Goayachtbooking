@@ -1,81 +1,163 @@
 .dashboardWrapper {
   min-height: calc(100vh - 60px);
-  display: flex;
-  justify-content: center;
-  /* padding: 24px; */
+  padding: 1rem 0.5rem;
   margin-top: 3px;
-  background: linear-gradient(135deg, #f3faff, #e7f5ff);
+  background: linear-gradient(135deg, #f8fbff 0%, #e3f2fd 100%);
+  overflow-x: hidden;
 }
 
 .content {
+  max-width: 1400px;
+  margin: 0 auto;
   width: 100%;
-  max-width: 1200px;
 }
 
 .title {
-  text-align: center;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #003d66;
-  margin-bottom: 0.25rem;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #003d66 0%, #1565c0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
 }
 
 .subTitle {
-  text-align: center;
-  color: #4a6070;
-  margin-bottom: 2rem;
-  font-size: 1rem;
+  color: #64748b;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
 }
 
-/* Card styles */
-.card {
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 16px;
-  box-shadow: 0 6px 20px rgba(0, 60, 120, 0.1);
-  transition: box-shadow 0.25s ease;
+/* Stats Row - Mobile scrollable */
+.statsRow {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+  padding-bottom: 0.5rem;
 }
 
-/* Remove hover lift - only subtle shadow on hover */
-.card:hover {
-  box-shadow: 0 8px 22px rgba(0, 60, 120, 0.12);
+.statsRow::-webkit-scrollbar {
+  height: 6px;
 }
 
-.cardBody {
-  padding: 20px;
-  text-align: center;
+.statsRow::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
 }
 
-.cardBody h5 {
-  font-weight: 600;
-  color: #003d66;
-  margin-bottom: 0.5rem;
+.statsRow::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 
-.cardBody p {
-  font-size: 0.95rem;
-  color: #4a6070;
-  margin-bottom: 1rem;
+.statCard {
+  border: none !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 120px;
+}
+
+.statCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
+}
+
+.cardTitle {
+  font-size: 0.85rem !important;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.colorPrimary { color: #3b82f6 !important; }
+.colorInfo { color: #0ea5e9 !important; }
+.colorDanger { color: #ef4444 !important; }
+.colorWarning { color: #f59e0b !important; }
+.colorSecondary { color: #6b7280 !important; }
+.colorSuccess { color: #10b981 !important; }
+.colorDark { color: #1f2937 !important; }
+
+/* Management Cards */
+.mgmtCard {
+  border: none !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(20px);
+  transition: all 0.3s ease;
+}
+
+.mgmtCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15) !important;
+}
+
+.icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
 }
 
 .cardBtn {
-  padding: 8px 18px;
-  border-radius: 12px;
+  border-radius: 16px;
   font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-size: 0.95rem;
+  padding: 12px 24px;
+  transition: all 0.3s ease;
+  border: none;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cardBtn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 60, 120, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
-/* Quick Actions */
+/* Quick Actions - Mobile Grid */
 .quickActions {
   margin-top: 3rem;
-  text-align: center;
+  padding: 2rem 1rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 24px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.quickActions h5 {
-  font-weight: 600;
-  color: #003d66;
+/* Responsive Typography */
+@media (max-width: 768px) {
+  .dashboardWrapper {
+    padding: 0.75rem 0.25rem;
+  }
+  
+  .title {
+    margin-bottom: 1rem;
+  }
+  
+  .statsRow {
+    padding: 0 0.25rem;
+  }
+  
+  .statCard {
+    min-width: 160px;
+    flex: 0 0 auto;
+  }
+  
+  .cardTitle {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1400px) {
+  .content {
+    padding: 0 2rem;
+  }
 }

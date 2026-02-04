@@ -663,7 +663,7 @@ function GridAvailability() {
 
 
   const renderTimelineRow = (row) => {
-    
+
     return (
       <td className={styles.timelineCell}
         style={{
@@ -718,7 +718,12 @@ function GridAvailability() {
                 handleSlotClick(slot, typeToOpen);
               }}
 
-              title={`${to12HourFormat(slot.start)} - ${to12HourFormat(slot.end)}`}
+              title={
+                `${to12HourFormat(slot.start)} - ${to12HourFormat(slot.end)}` +
+                (isAdminOrOnsite && slot.empName
+                  ? ` | Locked by: ${slot.empName}`
+                  : "")
+              }
             >
               {to12HourFormat(slot.start)} – {to12HourFormat(slot.end)}
             </div>

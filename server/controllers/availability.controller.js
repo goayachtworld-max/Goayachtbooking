@@ -1,5 +1,6 @@
 import { AvailabilityModel } from "../models/availability.model.js";
 import { BookingModel } from "../models/booking.model.js";
+import { EmployeeModel } from "../models/employee.model.js";
 import { YachtModel } from "../models/yacht.model.js";
 import { sendNotification } from "../services/notification.service.js";
 
@@ -111,7 +112,7 @@ export const lockSlot = async (req, res, next) => {
       lockDurationMinutes = 15,
     } = req.body;
     const employeeId = req.user.id;
-
+    const employee = await EmployeeModel.findById(employeeId).select("name")
     // Validate input
     if (!yachtId || !date || !startTime || !endTime) {
       return res
@@ -175,7 +176,8 @@ export const lockSlot = async (req, res, next) => {
         roles: notifyRoles,
         title: "Slot Locked",
         message: `${yacht.name}
-${date} ${startTime} – ${endTime}`,
+${date} ${startTime} – ${endTime}
+- by ${employee.name}`,
         type: "slot_locked",
         excludeUserId: req.user.id,
         slot: {

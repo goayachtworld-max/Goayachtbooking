@@ -198,6 +198,9 @@ function Bookings({ user }) {
         )
       : [];
 
+    const notes = booking.extraDetails
+      ? booking.extraDetails.split("Notes:").slice(1).join("Notes:").trim()
+      : "";
     const boardingPassText = `
 Thank you for booking with ${booking.company?.name}
 
@@ -228,6 +231,8 @@ ${inclusions.length ? inclusions.map((i) => `• ${i.replace("-", "").trim()}`).
 
 Extra Paid Services:
 ${paidServices.length ? paidServices.map((i) => `• ${i.replace("-", "").trim()}`).join("\n") : "• None"}
+
+${notes ? `Notes:\n• ${notes.replace(/\n/g, "\n• ")}` : ""}
 
 Disclaimer:
 • Reporting time is 30 minutes prior to departure
@@ -588,7 +593,7 @@ Disclaimer:
                         </button>
 
                         {/* EDIT (icon only) */}
-                        {(user?.type === "admin" || user?.type === "backdesk")&& !isBookingCompleted(booking) && (
+                        {(user?.type === "admin" || user?.type === "backdesk") && !isBookingCompleted(booking) && (
                           <button
                             className="btn btn-sm btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
                             title="Edit Booking Details"

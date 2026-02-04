@@ -107,18 +107,21 @@ function AdminDashboard({ user }) {
     return bookingEnd < new Date();
   };
 
-
   // ---------------- CARD COMPONENT ----------------
   const StatCard = ({ title, value, color, onClick }) => (
-    <div className="col-12 col-sm-6 col-lg-3">
+    <div className="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-2 p-2">
       <div
-        className={`card shadow-sm border-${color} h-100`}
+        className={`card shadow-sm h-100 stat-card ${styles.statCard}`}
         style={{ cursor: onClick ? "pointer" : "default" }}
         onClick={onClick}
       >
-        <div className="card-body text-center">
-          <h6 className="text-muted">{title}</h6>
-          <h2 className={`fw-bold text-${color}`}>{value}</h2>
+        <div className="card-body d-flex flex-column text-center p-3">
+          <h6 className={`text-muted mb-2 flex-grow-1 d-flex align-items-end ${styles.cardTitle}`}>
+            {title}
+          </h6>
+          <h3 className={`fw-bold mb-0 ${styles[`color${color.charAt(0).toUpperCase() + color.slice(1)}`]}`}>
+            {value}
+          </h3>
         </div>
       </div>
     </div>
@@ -135,111 +138,121 @@ function AdminDashboard({ user }) {
   return (
     <div className={styles.dashboardWrapper}>
       <div className={styles.content}>
-        <h2 className={styles.title}>Admin Dashboard</h2>
-
-        <p className={styles.subTitle}>
-          {/* Welcome */}
-        </p>
+        <div className="text-center mb-4">
+          <h1 className={styles.title}>Admin Dashboard</h1>
+          {/* <p className={styles.subTitle}>Manage your bookings efficiently</p> */}
+        </div>
 
         {/* ---------------- BOOKING STATS ---------------- */}
-        <div className="row g-3 mb-4">
-          <StatCard
-            title="Today's Bookings"
-            value={stats.today}
-            color="primary"
-            onClick={() => navigate(`/bookings?date=${getToday()}`)}
-          />
-
-          <StatCard
-            title="Pending Bookings"
-            value={stats.pending}
-            color="info"
-            onClick={() => navigate("/bookings?status=pending")}
-          />
-
-          <StatCard
-            title="Cancelled Bookings"
-            value={stats.cancelled}
-            color="danger"
-            onClick={() => navigate("/bookings?status=cancelled")}
-          />
-
-          <StatCard
-            title="Upcoming (Next 7 Days)"
-            value={stats.upcoming}
-            color="info"
-          />
-
-          <StatCard
-            title="Created Today"
-            value={stats.createdToday}
-            color="secondary"
-          />
-
-          <StatCard
-            title="Confirmed Bookings"
-            value={stats.confirmed}
-            color="success"
-            onClick={() => navigate("/bookings?status=confirmed")}
-          />
-
-          <StatCard
-            title="Completed Bookings"
-            value={stats.completed}
-            color="secondary"
-            onClick={() => navigate("/bookings?status=completed")}
-          />
-
-
-          {/* <StatCard
-            title="Special Slots Available"
-            value={stats.specialSlotsAvailable}
-            color="dark"
-          /> */}
+        <div className="mb-4">
+          <h5 className="mb-3 fw-semibold text-center text-primary">Booking Statistics</h5>
+          <div className={`row g-2 g-sm-3 ${styles.statsRow}`}>
+            <StatCard
+              title="Today's"
+              value={stats.today}
+              color="primary"
+              onClick={() => navigate(`/bookings?date=${getToday()}`)}
+            />
+            <StatCard
+              title="Pending"
+              value={stats.pending}
+              color="info"
+              onClick={() => navigate("/bookings?status=pending")}
+            />
+            <StatCard
+              title="Cancelled"
+              value={stats.cancelled}
+              color="danger"
+              onClick={() => navigate("/bookings?status=cancelled")}
+            />
+            <StatCard
+              title="Upcoming 7D"
+              value={stats.upcoming}
+              color="warning"
+            />
+            <StatCard
+              title="Created Today"
+              value={stats.createdToday}
+              color="secondary"
+            />
+            <StatCard
+              title="Confirmed"
+              value={stats.confirmed}
+              color="success"
+              onClick={() => navigate("/bookings?status=confirmed")}
+            />
+            <StatCard
+              title="Completed"
+              value={stats.completed}
+              color="dark"
+              onClick={() => navigate("/bookings?status=completed")}
+            />
+          </div>
         </div>
 
         {/* ---------------- MANAGEMENT CARDS ---------------- */}
-        <div className="row g-4">
-          <div className="col-12 col-md-4">
-            <div className={`${styles.card} border-primary`}>
-              <div className={styles.cardBody}>
-                <h5>Create Employee</h5>
-                <p>Add backdesk or onsite employees</p>
+        <div className="row g-3 g-md-4 mb-4">
+          <div className="col-12 col-sm-6 col-lg-4">
+            <div className={`${styles.mgmtCard} card border-primary h-100 shadow`}>
+              <div className="card-body p-4">
+                <div className="d-flex align-items-start mb-3">
+                  <div className={`${styles.icon} bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3`}>
+                    <i className="bi bi-person-plus fs-5"></i>
+                  </div>
+                  <div>
+                    <h5 className="mb-1 fw-semibold">Create Employee</h5>
+                    <p className="text-muted mb-0 small">Add backdesk or onsite employees</p>
+                  </div>
+                </div>
                 <button
-                  className={`${styles.cardBtn} btn-primary`}
+                  className={`${styles.cardBtn} btn btn-primary w-100 w-md-auto`}
                   onClick={() => navigate("/create-employee")}
                 >
-                  Go
+                  Go <i className="bi bi-arrow-right ms-1"></i>
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="col-12 col-md-4">
-            <div className={`${styles.card} border-success`}>
-              <div className={styles.cardBody}>
-                <h5>View Bookings</h5>
-                <p>Manage all bookings efficiently</p>
+          <div className="col-12 col-sm-6 col-lg-4">
+            <div className={`${styles.mgmtCard} card border-success h-100 shadow`}>
+              <div className="card-body p-4">
+                <div className="d-flex align-items-start mb-3">
+                  <div className={`${styles.icon} bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3`}>
+                    <i className="bi bi-calendar-check fs-5"></i>
+                  </div>
+                  <div>
+                    <h5 className="mb-1 fw-semibold">View Bookings</h5>
+                    <p className="text-muted mb-0 small">Manage all bookings efficiently</p>
+                  </div>
+                </div>
                 <button
-                  className={`${styles.cardBtn} btn-success`}
+                  className={`${styles.cardBtn} btn btn-success w-100 w-md-auto`}
                   onClick={() => navigate("/bookings")}
                 >
-                  Go
+                  Go <i className="bi bi-arrow-right ms-1"></i>
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="col-12 col-md-4">
-            <div className={`${styles.card} border-warning`}>
-              <div className={styles.cardBody}>
-                <h5>Yacht Management</h5>
-                <p>Manage all yachts & pricing</p>
+          <div className="col-12 col-sm-6 col-lg-4">
+            <div className={`${styles.mgmtCard} card border-warning h-100 shadow`}>
+              <div className="card-body p-4">
+                <div className="d-flex align-items-start mb-3">
+                  <div className={`${styles.icon} bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center me-3`}>
+                    <i className="bi bi-ship fs-5"></i>
+                  </div>
+                  <div>
+                    <h5 className="mb-1 fw-semibold">Yacht Management</h5>
+                    <p className="text-muted mb-0 small">Manage all yachts & pricing</p>
+                  </div>
+                </div>
                 <button
-                  className={`${styles.cardBtn} btn-warning text-dark`}
+                  className={`${styles.cardBtn} btn btn-warning text-dark w-100 w-md-auto`}
                   onClick={() => navigate("/all-yachts")}
                 >
-                  Go
+                  Go <i className="bi bi-arrow-right ms-1"></i>
                 </button>
               </div>
             </div>
@@ -248,33 +261,34 @@ function AdminDashboard({ user }) {
 
         {/* ---------------- QUICK LINKS ---------------- */}
         <div className={styles.quickActions}>
-          <h5>Quick Links</h5>
-          <div className="d-flex flex-wrap justify-content-center gap-3 mt-3">
+          <h5 className="text-center mb-4 fw-semibold text-primary">Quick Actions</h5>
+          <div className="d-grid d-md-flex gap-2 gap-md-3 justify-content-center flex-wrap">
             <button
-              className="btn btn-outline-primary"
+              className="btn btn-outline-primary btn-lg px-4 py-2 flex-fill flex-md-grow-0"
               onClick={() => navigate("/create-customer")}
             >
+              <i className="bi bi-person-plus me-2"></i>
               Create Customer
             </button>
-
             <button
-              className="btn btn-outline-success"
+              className="btn btn-outline-success btn-lg px-4 py-2 flex-fill flex-md-grow-0"
               onClick={() => navigate("/create-booking")}
             >
+              <i className="bi bi-calendar-plus me-2"></i>
               Create Booking
             </button>
-
             <button
-              className="btn btn-outline-warning"
+              className="btn btn-outline-warning btn-lg px-4 py-2 flex-fill flex-md-grow-0"
               onClick={() => navigate("/bookings?status=pending")}
             >
+              <i className="bi bi-clock me-2"></i>
               Pending Approval
             </button>
-
             <button
-              className="btn btn-outline-danger"
+              className="btn btn-outline-danger btn-lg px-4 py-2 flex-fill flex-md-grow-0"
               onClick={() => navigate("/bookings?status=cancelled")}
             >
+              <i className="bi bi-x-circle me-2"></i>
               Cancelled Bookings
             </button>
           </div>
