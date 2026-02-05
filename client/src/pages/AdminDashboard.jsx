@@ -109,7 +109,9 @@ function AdminDashboard({ user }) {
 
   // ---------------- CARD COMPONENT ----------------
   const StatCard = ({ title, value, color, onClick }) => (
-    <div className="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-2 p-2">
+    // <div className="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-2 p-2">
+    // <div className="p-1" style={{ minWidth: "180px" }}>
+    <div className="h-100">
       <div
         className={`card shadow-sm h-100 stat-card ${styles.statCard}`}
         style={{ cursor: onClick ? "pointer" : "default" }}
@@ -146,7 +148,9 @@ function AdminDashboard({ user }) {
         {/* ---------------- BOOKING STATS ---------------- */}
         <div className="mb-4">
           <h5 className="mb-3 fw-semibold text-center text-primary">Booking Statistics</h5>
-          <div className={`row g-2 g-sm-3 ${styles.statsRow}`}>
+          {/* <div className={`row g-2 g-sm-3 ${styles.statsRow}`}> */}
+          {/* <div className="d-flex flex-nowrap gap-2 overflow-auto mb-2"> */}
+          <div className={styles.statsGrid}>
             <StatCard
               title="Today's"
               value={stats.today}
@@ -158,12 +162,6 @@ function AdminDashboard({ user }) {
               value={stats.pending}
               color="info"
               onClick={() => navigate("/bookings?status=pending")}
-            />
-            <StatCard
-              title="Cancelled"
-              value={stats.cancelled}
-              color="danger"
-              onClick={() => navigate("/bookings?status=cancelled")}
             />
             <StatCard
               title="Upcoming 7D"
@@ -186,6 +184,12 @@ function AdminDashboard({ user }) {
               value={stats.completed}
               color="dark"
               onClick={() => navigate("/bookings?status=completed")}
+            />
+            <StatCard
+              title="Cancelled"
+              value={stats.cancelled}
+              color="danger"
+              onClick={() => navigate("/bookings?status=cancelled")}
             />
           </div>
         </div>
