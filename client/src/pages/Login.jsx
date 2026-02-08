@@ -132,9 +132,18 @@ function Login({ onLogin }) {
           ["Drone", "DSLR"].some((k) => i.includes(k))
         )
       : [];
+    const notes = booking.extraDetails
+      ? booking.extraDetails.split("Notes:").slice(1).join("Notes:").trim()
+      : "";
+    const tktNum = `${booking._id.slice(-5).toUpperCase()}`
+    const hardCodedDisclaimer = `Disclaimer:
+• Reporting time is 30 minutes prior to departure
+• No refund for late arrival or no-show
+• Subject to weather and government regulations
+Thank you for booking with ${booking.company?.name}`
 
     return `
-# Ticket Number: ${booking._id.slice(-5).toUpperCase()}
+# Ticket Number: ${tktNum}
 Booking Status: ${booking.status.toUpperCase()}
 
 👤 Guest Name: ${booking.customerId?.name}
@@ -156,17 +165,18 @@ ${inclusions.length
         ? inclusions.map((i) => `• ${i.replace("-", "").trim()}`).join("\n")
         : "• As discussed"
       }
-Extra Paid Services:
-${paidServices.length
-        ? paidServices.map((i) => `• ${i.replace("-", "").trim()}`).join("\n")
-        : "• None"
-      }
 
-Disclaimer:
-• Reporting time is 30 minutes prior to departure
-• No refund for late arrival or no-show
-• Subject to weather and government regulations
-`.trim();
+${paidServices.length ? paidServices.map((i) => `Extra Paid Services:\n• ${i.replace("-", "").trim()}`).join("\n") : ""}
+
+${notes ? `Notes:\n${notes.replace(/\n/g, "\n• ")}` : ""}
+`.trim() + 
+`\n\n${booking?.company?.disclaimer
+        ? `${booking.company.disclaimer}[${tktNum}]
+
+Thank You`
+        : hardCodedDisclaimer
+      }
+`;
   };
 
   const copyBoardingPass = (booking) => {

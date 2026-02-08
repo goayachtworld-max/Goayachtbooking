@@ -530,37 +530,6 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
               ))}
             </select>
           </div>
-
-          {/* Start Time */}
-          {/* <div className="col-md-6">
-            <label className="form-label fw-bold">Start Time</label>
-            <select
-              className="form-select border border-dark text-dark"
-              name="startTime"
-              value={formData.startTime}
-              onChange={handleStartSelect}
-              required
-            >
-              <option value="">-- Select Start Time --</option>
-              {startTimeOptions.map((opt, i) => (
-                <option key={i} value={opt.start}>
-                  {to12Hour(opt.start)}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="col-md-6">
-            <label className="form-label fw-bold">End Time</label>
-            <input
-              type="text"
-              className="form-control"
-              value={to12Hour(formData.endTime)}
-              readOnly
-            />
-
-          </div> */}
-
           <div className="col-md-6">
             <label className="form-label fw-bold">
               Time Slot
@@ -615,32 +584,6 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
               onChange={handleChange}
             />
           </div>
-
-          {/* Extra Details / Notes */}
-          {/* <div className="col-12 mb-3">
-            {!showExtraDetails ? (
-              <button
-                type="button"
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => setShowExtraDetails(true)}
-              >
-                +
-              </button>
-            ) : (
-              <div>
-                <label className="form-label fw-bold">Extra Details / Notes</label>
-                <textarea
-                  className="form-control border border-dark text-dark"
-                  name="extraDetails"
-                  value={formData.extraDetails}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Add any extra information here..."
-                />
-              </div>
-            )}
-          </div>*/}
-
           <div className="col-12 mb-3">
             {!showExtraDetails ? (
               <button
@@ -690,19 +633,6 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                     </div>
                   ))}
                 </div>
-
-
-                {/* <textarea
-                  className="form-control border border-dark text-dark mt-2"
-                  rows={5}
-                  placeholder="Add any extra notes here (special requests, snacks, decorations, etc.)"
-                  value={
-                    formData.extraDetails +
-                    (manualNotes ? `\n\nNotes:\n${manualNotes}` : "")
-                  }
-                  onChange={(e) => setManualNotes(e.target.value.replace(formData.extraDetails, "").trimStart())}
-                /> */}
-
                 <label className="form-label fw-bold">Extra Notes</label>
                 <textarea
                   className="form-control border border-dark text-dark"
@@ -715,8 +645,6 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
               </div>
             )}
           </div>
-
-
           <div className="col-12 text-center">
             <button type="submit" className="btn btn-primary w-100" disabled={loading}>
               {loading ? "Creating..." : "Create Booking"}

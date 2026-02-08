@@ -158,12 +158,6 @@ function AdminDashboard({ user }) {
               onClick={() => navigate(`/bookings?date=${getToday()}`)}
             />
             <StatCard
-              title="Pending"
-              value={stats.pending}
-              color="info"
-              onClick={() => navigate("/bookings?status=pending")}
-            />
-            <StatCard
               title="Upcoming 7D"
               value={stats.upcoming}
               color="warning"
@@ -172,6 +166,12 @@ function AdminDashboard({ user }) {
               title="Created Today"
               value={stats.createdToday}
               color="secondary"
+            />
+            <StatCard
+              title="Pending"
+              value={stats.pending}
+              color="info"
+              onClick={() => navigate("/bookings?status=pending")}
             />
             <StatCard
               title="Confirmed"
@@ -204,13 +204,13 @@ function AdminDashboard({ user }) {
                     <i className="bi bi-person-plus fs-5"></i>
                   </div>
                   <div>
-                    <h5 className="mb-1 fw-semibold">Create Employee</h5>
-                    <p className="text-muted mb-0 small">Add backdesk or onsite employees</p>
+                    <h5 className="mb-1 fw-semibold">Check Availability</h5>
+                    <p className="text-muted mb-0 small">Check Availabilities of Yachts</p>
                   </div>
                 </div>
                 <button
                   className={`${styles.cardBtn} btn btn-primary w-100 w-md-auto`}
-                  onClick={() => navigate("/create-employee")}
+                  onClick={() => navigate("/grid-availability")}
                 >
                   Go <i className="bi bi-arrow-right ms-1"></i>
                 </button>

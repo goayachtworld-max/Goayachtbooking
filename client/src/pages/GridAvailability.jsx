@@ -16,6 +16,7 @@ import {
   releaseSlot,
 } from "../services/operations/availabilityAPI";
 import { adjustSlots } from "../utils/slotEngine";
+import { FiSliders } from "react-icons/fi";
 
 /* helpers */
 const todayISO = () => new Date().toISOString().split("T")[0];
@@ -214,6 +215,7 @@ function GridAvailability() {
   const params = new URLSearchParams(location.search);
 
   const [yachtId, setYachtId] = useState(params.get("yachtId") || "");
+  const [yachtName, setYachtName] = useState("");
   const [fromDate, setFromDate] = useState(
     params.get("fromDate") || todayISO()
   );
@@ -252,7 +254,15 @@ function GridAvailability() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [daySlots, setDaySlots] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const [showFilters, setShowFilters] = useState(!isMobile);
 
 
   useEffect(() => {
@@ -275,6 +285,10 @@ function GridAvailability() {
       setYachtId(yachts[0]._id);
     }
   }, [yachts, yachtId]);
+  useEffect(() => {
+    const selectedYacht = yachts.find((y) => y._id === yachtId);
+    setYachtName(selectedYacht?.name || "");
+  }, [yachtId, yachts]);
 
   const loadGrid = async () => {
     if (!yachtId || !fromDate || !toDate) return;
@@ -736,51 +750,71 @@ function GridAvailability() {
 
   return (
     <div className="container-fluid py-1">
-      <div className="mx-auto" style={{ maxWidth: "85vw" }}>
-
-        <h4 className="fw-bold mb-4">Calendar View</h4>
-
-        <div className="row g-3 mb-4">
-
-          <div className="col-md-4">
-            <select
-              className="form-select"
-              value={yachtId}
-              onChange={(e) => setYachtId(e.target.value)}
-            >
-              {yachts.map((y) => (
-                <option key={y._id} value={y._id}>
-                  {y.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-md-3">
-            <input
-              type="date"
-              className="form-control"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-3">
-            <input
-              type="date"
-              className="form-control"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-2">
-            <button className="btn btn-primary w-100" onClick={loadGrid}>
-              View
-            </button>
-          </div>
+      <div className="mx-auto" style={{ maxWidth: "87vw" }}>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h3 className="fw-bold mb-4">Calendar View</h3>
+          <button
+            className="btn btn-outline-primary btn-sm"
+            onClick={() => setShowFilters((prev) => !prev)}
+          >
+            <FiSliders size={22} />
+          </button>
         </div>
 
+        {showFilters && (
+          <div className="row g-3 mb-4">
+
+            <div className="col-md-4">
+              <select
+                className="form-select"
+                value={yachtId}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  setYachtId(selectedId);
+
+                  const selectedYacht = yachts.find((y) => y._id === selectedId);
+                  setYachtName(selectedYacht?.name || "");
+                }}
+              >
+                {yachts.map((y) => (
+                  <option key={y._id} value={y._id}>
+                    {y.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-4">
+              <input
+                type="date"
+                className="form-control"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+            </div>
+
+            <div className="col-md-3">
+              <input
+                type="date"
+                className="form-control"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+            </div>
+
+            {/* <div className="col-md-2">
+              <button
+                className="btn btn-primary w-100"
+                onClick={() => {
+                  loadGrid();
+                  if (isMobile) setShowFilters(false);
+                }}
+              >
+                View
+              </button>
+            </div> */}
+          </div>
+        )}
         {yacht && (
           <div className="mb-3 d-flex gap-4 align-items-center">
             <div>
@@ -809,7 +843,7 @@ function GridAvailability() {
               <thead className="table-light sticky-top">
                 <tr>
                   <th className={styles.stickyCol}>Date</th>
-                  <th>Timeline</th>
+                  <th>{yachtName}</th>
                 </tr>
               </thead>
 

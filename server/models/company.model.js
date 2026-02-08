@@ -26,17 +26,18 @@ const companySchema = new mongoose.Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Invalid email format']
     },
-
     contact: {
       type: String,
       match: [/^\+?[0-9]{10,15}$/, 'Contact number must be 10–15 digits']
     },
-
     address: {
       type: String,
       trim: true
     },
-
+    disclaimer: {
+      type: String,
+      required: false
+    },
     status: {
       type: String,
       enum: ['active', 'inactive'],

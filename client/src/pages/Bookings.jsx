@@ -201,9 +201,14 @@ function Bookings({ user }) {
     const notes = booking.extraDetails
       ? booking.extraDetails.split("Notes:").slice(1).join("Notes:").trim()
       : "";
-    const boardingPassText = `
-Thank you for booking with ${booking.company?.name}
 
+    const hardCodedDisclaimer = `Disclaimer:
+• Reporting time is 30 minutes prior to departure
+• No refund for late arrival or no-show
+• Subject to weather and government regulations
+Thank you for booking with ${booking.company?.name}`
+
+    const boardingPassText = `
 # Ticket Number: ${booking._id.slice(-5).toUpperCase()}
 
 Booking Status: ${booking.status.toUpperCase()}
@@ -229,16 +234,17 @@ Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)
 Inclusions:
 ${inclusions.length ? inclusions.map((i) => `• ${i.replace("-", "").trim()}`).join("\n") : "• As discussed"}
 
-Extra Paid Services:
-${paidServices.length ? paidServices.map((i) => `• ${i.replace("-", "").trim()}`).join("\n") : "• None"}
+${paidServices.length ? paidServices.map((i) => `Extra Paid Services:\n• ${i.replace("-", "").trim()}`).join("\n") : ""}
 
-${notes ? `Notes:\n• ${notes.replace(/\n/g, "\n• ")}` : ""}
+${notes ? `Notes:\n${notes.replace(/\n/g, "\n• ")}` : ""}
+`.trim() + 
+`\n\n${booking?.company?.disclaimer
+        ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]
 
-Disclaimer:
-• Reporting time is 30 minutes prior to departure
-• No refund for late arrival or no-show
-• Subject to weather and government regulations
-`.trim();
+Thank You`
+        : hardCodedDisclaimer
+      }
+`;
 
     navigator.clipboard.writeText(boardingPassText);
     toast.success("Boarding Pass copied to clipboard");
