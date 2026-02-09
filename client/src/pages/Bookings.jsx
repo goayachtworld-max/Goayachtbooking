@@ -6,9 +6,12 @@ import { FiSliders } from "react-icons/fi";
 import { Eye, Pencil } from "lucide-react";
 import jsPDF from "jspdf";
 import toast from "react-hot-toast";
+import { Download } from "lucide-react";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Bookings.css";
+import BoardingPassPDF from "./BoardingPassPDF";
 
 function Bookings({ user }) {
   const navigate = useNavigate();
@@ -33,9 +36,7 @@ function Bookings({ user }) {
   const employeeParam = params.get("employee");
   const parsedEmployeeId = employeeParam?.split("~")[1] || "";
   const [filterEmployee, setFilterEmployee] = useState(parsedEmployeeId);
-
-
-
+  const [boardingPassBooking, setBoardingPassBooking] = useState();
   // ---------------- COLORS ----------------
   const statusColorMap = {
     pending: "info",
@@ -202,6 +203,7 @@ function Bookings({ user }) {
       ? booking.extraDetails.split("Notes:").slice(1).join("Notes:").trim()
       : "";
 
+
     const hardCodedDisclaimer = `Disclaimer:
 • Reporting time is 30 minutes prior to departure
 • No refund for late arrival or no-show
@@ -237,8 +239,8 @@ ${inclusions.length ? inclusions.map((i) => `• ${i.replace("-", "").trim()}`).
 ${paidServices.length ? paidServices.map((i) => `Extra Paid Services:\n• ${i.replace("-", "").trim()}`).join("\n") : ""}
 
 ${notes ? `Notes:\n${notes.replace(/\n/g, "\n• ")}` : ""}
-`.trim() + 
-`\n\n${booking?.company?.disclaimer
+`.trim() +
+      `\n\n${booking?.company?.disclaimer
         ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]
 
 Thank You`
@@ -258,41 +260,6 @@ Thank You`
 
   const handleUpdateBooking = (booking) =>
     navigate("/update-booking", { state: { booking } });
-
-  // const filteredBookings = bookings
-  //   .filter((booking) => {
-  //     // If user selected a status → respect it
-  //     if (filterStatus) {
-  //       return booking.status === filterStatus;
-  //     }
-
-  //     // No status selected → hide cancelled by default
-  //     return booking.status !== "cancelled";
-  //   })
-  //   // 2️⃣ Search filter
-  //   .filter((booking) => {
-  //     if (!searchQuery) return true;
-  //     const q = searchQuery.toLowerCase();
-
-  //     return (
-  //       booking.customerId?.name?.toLowerCase().includes(q) ||
-  //       booking.customerId?.contact?.includes(q) ||
-  //       booking._id.toLowerCase().includes(q) ||
-  //       booking.company?.name?.toLowerCase().includes(q) ||
-  //       booking._id.slice(-5).toLowerCase().includes(q) ||
-  //       booking.yachtId?.name?.toLowerCase().includes(q)
-  //     );
-  //   })
-  //   // 3️⃣ Sort: Date → Time → Yacht
-  //   .sort((a, b) => {
-  //     const dateDiff = new Date(a.date) - new Date(b.date);
-  //     if (dateDiff !== 0) return dateDiff;
-
-  //     const timeDiff = a.startTime.localeCompare(b.startTime);
-  //     if (timeDiff !== 0) return timeDiff;
-
-  //     return a.yachtId?.name.localeCompare(b.yachtId?.name);
-  //   });
 
   const filteredBookings = bookings
     // 1️⃣ Status logic (including virtual "completed")
@@ -393,18 +360,6 @@ Thank You`
               </option>
             ))}
           </select>
-
-          {/* <select
-            className="form-select"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            style={{ maxWidth: "140px" }}
-          >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="cancelled">Cancelled</option>
-          </select> */}
           <select
             className="form-select"
             value={filterStatus}
@@ -457,14 +412,6 @@ Thank You`
             className="mobile-filter-drawer"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* <input
-              type="text"
-              className="form-control mb-2"
-              placeholder="Search Name / Ticket / Phone"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            /> */}
-
             <input
               type="date"
               className="form-control mb-2"
@@ -484,17 +431,6 @@ Thank You`
                 </option>
               ))}
             </select>
-
-            {/* <select
-              className="form-select mb-3"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="cancelled">Cancelled</option>
-            </select> */}
             <select
               className="form-select mb-3"
               value={filterStatus}
@@ -611,15 +547,39 @@ Thank You`
                             <Pencil size={16} />
                           </button>
                         )}
+                        {booking.status === "confirmed" && (
+                          <>
+                            {/* 📋 Copy Boarding Pass */}
+                            <button
+                              className="btn btn-sm btn-outline-success flex-grow-1 rounded-pill"
+                              title="Copy Boarding Pass"
+                              onClick={() => generateBoardingPass(booking)}
+                            >
+                              Boarding Pass
+                            </button>
 
-                        {booking.status == "confirmed" && <button
-                          className="btn btn-sm btn-outline-success flex-grow-1 rounded-pill"
-                          title="Boarding Pass"
-                          onClick={() => generateBoardingPass(booking)}
-                        >
-                          Boarding Pass
-                        </button>
-                        }
+                            {/* ⬇️ PDF Download */}
+                            {(
+                              <PDFDownloadLink
+                                document={<BoardingPassPDF booking={booking} />}
+                                fileName={`BoardingPass_${booking._id.slice(-5)}.pdf`}
+                              >
+                                {({ loading }) => (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-success rounded-circle d-flex align-items-center justify-content-center"
+                                    title="Download PDF"
+                                    style={{ width: 34, height: 34 }}
+                                    disabled={loading}
+                                  >
+                                    <Download size={16} />
+                                  </button>
+                                )}
+                              </PDFDownloadLink>
+                            )}
+                          </>
+                        )}
+
 
                         {/* UPDATE (take remaining space) */}
                         {(user?.type === "admin" || user?.type === "onsite") && (

@@ -2,6 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../styles/AdminDashboard.module.css";
 import { getBookingsAPI } from "../services/operations/bookingAPI";
+import {
+  BsCalendar3,
+  BsClipboardCheck,
+  BsArrowRight,
+} from "react-icons/bs";
+import { FaShip } from "react-icons/fa";
 
 function AdminDashboard({ user }) {
   const navigate = useNavigate();
@@ -152,13 +158,13 @@ function AdminDashboard({ user }) {
           {/* <div className="d-flex flex-nowrap gap-2 overflow-auto mb-2"> */}
           <div className={styles.statsGrid}>
             <StatCard
-              title="Today's"
+              title="Today's Booking"
               value={stats.today}
               color="primary"
               onClick={() => navigate(`/bookings?date=${getToday()}`)}
             />
             <StatCard
-              title="Upcoming 7D"
+              title="Booking in 7 Days"
               value={stats.upcoming}
               color="warning"
             />
@@ -168,19 +174,19 @@ function AdminDashboard({ user }) {
               color="secondary"
             />
             <StatCard
-              title="Pending"
+              title="Pending Bookings"
               value={stats.pending}
               color="info"
               onClick={() => navigate("/bookings?status=pending")}
             />
             <StatCard
-              title="Confirmed"
+              title="Confirmed Bookings"
               value={stats.confirmed}
               color="success"
               onClick={() => navigate("/bookings?status=confirmed")}
             />
             <StatCard
-              title="Completed"
+              title="Completed Bookings"
               value={stats.completed}
               color="dark"
               onClick={() => navigate("/bookings?status=completed")}
@@ -200,19 +206,23 @@ function AdminDashboard({ user }) {
             <div className={`${styles.mgmtCard} card border-primary h-100 shadow`}>
               <div className="card-body p-4">
                 <div className="d-flex align-items-start mb-3">
-                  <div className={`${styles.icon} bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3`}>
-                    <i className="bi bi-person-plus fs-5"></i>
+                  <div
+                    className={`${styles.icon} bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3`}
+                  >
+                    <BsCalendar3 size={20} />
                   </div>
                   <div>
                     <h5 className="mb-1 fw-semibold">Check Availability</h5>
-                    <p className="text-muted mb-0 small">Check Availabilities of Yachts</p>
+                    <p className="text-muted mb-0 small">
+                      Check Availabilities of Yachts
+                    </p>
                   </div>
                 </div>
                 <button
                   className={`${styles.cardBtn} btn btn-primary w-100 w-md-auto`}
                   onClick={() => navigate("/grid-availability")}
                 >
-                  Go <i className="bi bi-arrow-right ms-1"></i>
+                  Go <BsArrowRight className="ms-1" />
                 </button>
               </div>
             </div>
@@ -222,19 +232,23 @@ function AdminDashboard({ user }) {
             <div className={`${styles.mgmtCard} card border-success h-100 shadow`}>
               <div className="card-body p-4">
                 <div className="d-flex align-items-start mb-3">
-                  <div className={`${styles.icon} bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3`}>
-                    <i className="bi bi-calendar-check fs-5"></i>
+                  <div
+                    className={`${styles.icon} bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3`}
+                  >
+                    <BsClipboardCheck size={20} />
                   </div>
                   <div>
                     <h5 className="mb-1 fw-semibold">View Bookings</h5>
-                    <p className="text-muted mb-0 small">Manage all bookings efficiently</p>
+                    <p className="text-muted mb-0 small">
+                      Manage all bookings efficiently
+                    </p>
                   </div>
                 </div>
                 <button
                   className={`${styles.cardBtn} btn btn-success w-100 w-md-auto`}
                   onClick={() => navigate("/bookings")}
                 >
-                  Go <i className="bi bi-arrow-right ms-1"></i>
+                  Go <BsArrowRight className="ms-1" />
                 </button>
               </div>
             </div>
@@ -244,24 +258,29 @@ function AdminDashboard({ user }) {
             <div className={`${styles.mgmtCard} card border-warning h-100 shadow`}>
               <div className="card-body p-4">
                 <div className="d-flex align-items-start mb-3">
-                  <div className={`${styles.icon} bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center me-3`}>
-                    <i className="bi bi-ship fs-5"></i>
+                  <div
+                    className={`${styles.icon} bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center me-3`}
+                  >
+                    <FaShip size={20} />
                   </div>
                   <div>
                     <h5 className="mb-1 fw-semibold">Yacht Management</h5>
-                    <p className="text-muted mb-0 small">Manage all yachts & pricing</p>
+                    <p className="text-muted mb-0 small">
+                      Manage all yachts & pricing
+                    </p>
                   </div>
                 </div>
                 <button
                   className={`${styles.cardBtn} btn btn-warning text-dark w-100 w-md-auto`}
                   onClick={() => navigate("/all-yachts")}
                 >
-                  Go <i className="bi bi-arrow-right ms-1"></i>
+                  Go <BsArrowRight className="ms-1" />
                 </button>
               </div>
             </div>
           </div>
         </div>
+
 
         {/* ---------------- QUICK LINKS ---------------- */}
         <div className={styles.quickActions}>

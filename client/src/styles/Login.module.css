@@ -204,7 +204,7 @@
   transition: all 0.2s ease;
 }
 
-.actions button:first-child {
+/* .actions button:first-child {
   background: linear-gradient(135deg, #0077c7, #005fa5);
   color: #fff;
 }
@@ -212,7 +212,7 @@
 .actions button:first-child:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(0, 95, 165, 0.35);
-}
+} */
 
 .actions button.closeBtn {
   background: #e5e7eb;
@@ -279,4 +279,52 @@
 .boardingPassText b {
   font-weight: 700;
   color: #003d66; /* deep blue for emphasis */
+}
+
+/* -------- DOWNLOAD PDF BUTTON -------- */
+
+.downloadBtn {
+  background: linear-gradient(135deg, #16a34a, #0f9f44);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(97, 100, 98, 0.35);
+}
+
+.downloadBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.copyBtn {
+  background: linear-gradient(135deg, #0077c7, #005fa5);
+  color: #fff;
+}
+
+
+/* -------- PDFDownloadLink RESET -------- */
+
+.actions a {
+  flex: 1;
+  text-decoration: none;
+  background: transparent !important;
+}
+
+.actions a:focus,
+.actions a:active {
+  outline: none;
+  background: transparent !important;
+}
+.actions a button {
+  width: 100%;
 }

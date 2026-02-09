@@ -315,6 +315,8 @@ export const getPublicBookingByTicket = async (req, res) => {
     let booking = await BookingModel.findOne({ ticketNo: ticket })
       .populate("yachtId", "name boardingLocation")
       .populate("company : ", "name disclaimer")
+      .populate("customerId", "name contact email alternateContact")
+      .populate("employeeId", "name type")
 
     if (booking) {
       return res.json({ success: true, booking });
@@ -334,6 +336,8 @@ export const getPublicBookingByTicket = async (req, res) => {
     booking = await BookingModel.findById(fallback[0]._id)
       .populate("yachtId", "name boardingLocation")
       .populate("company : ", "name disclaimer")
+      .populate("customerId", "name contact email alternateContact")
+      .populate("employeeId", "name type")
 
     if (!booking) {
       return res.status(404).json({ success: false, message: "Booking not found" });
