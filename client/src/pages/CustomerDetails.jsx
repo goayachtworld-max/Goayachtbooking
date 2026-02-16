@@ -1,10 +1,13 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { Download } from "lucide-react";
+import BoardingPassPDF from "./BoardingPassPDF";
 
 /* ------------------ Trip Steps ------------------ */
 const TRIP_STEPS = [
   { key: "pending", label: "Pending" },
-  { key: "initiated", label: "Initiated" },
+  { key: "initiated", label: "Confirmed" },
   { key: "success", label: "Completed" },
 ];
 
@@ -198,14 +201,50 @@ function CustomerDetails() {
 
             </div>
 
-            <div className="text-center mt-3">
+            {/* <div className="text-center mt-3">
               <button
                 className="btn btn-outline-secondary btn-sm"
                 onClick={() => navigate(-1)}
               >
                 Back
               </button>
+            </div> */}
+
+            <div className="d-flex justify-content-center gap-2 mt-3 flex-wrap">
+
+              {/* Back Button */}
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => navigate(-1)}
+              >
+                Back
+              </button>
+
+              {/* Download Boarding Pass (Only if Confirmed) */}
+              {booking.status === "confirmed" && (
+                <div className="">
+                  <PDFDownloadLink
+                    document={<BoardingPassPDF booking={booking} />}
+                    fileName={`BoardingPass_${booking._id.slice(-5)}.pdf`}
+                    className="w-100 text-decoration-none"
+                  >
+                    {({ loading }) => (
+                      <button
+                        type="button"
+                        className="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2 py-2"
+                        disabled={loading}
+                      >
+                        <Download size={18} />
+                        {loading ? "Generating PDF..." : "Download Boarding Pass"}
+                      </button>
+                    )}
+                  </PDFDownloadLink>
+                </div>
+              )}
+
+
             </div>
+
           </div>
         </div>
       </div>

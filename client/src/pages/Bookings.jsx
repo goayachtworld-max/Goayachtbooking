@@ -559,7 +559,7 @@ Thank You`
                             </button>
 
                             {/* ⬇️ PDF Download */}
-                            {(
+                            {/* {(
                               <PDFDownloadLink
                                 document={<BoardingPassPDF booking={booking} />}
                                 fileName={`BoardingPass_${booking._id.slice(-5)}.pdf`}
@@ -576,7 +576,7 @@ Thank You`
                                   </button>
                                 )}
                               </PDFDownloadLink>
-                            )}
+                            )} */}
                           </>
                         )}
 

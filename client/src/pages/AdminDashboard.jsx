@@ -6,6 +6,7 @@ import {
   BsCalendar3,
   BsClipboardCheck,
   BsArrowRight,
+  BsPlusCircle,
 } from "react-icons/bs";
 import { FaShip } from "react-icons/fa";
 
@@ -201,7 +202,7 @@ function AdminDashboard({ user }) {
         </div>
 
         {/* ---------------- MANAGEMENT CARDS ---------------- */}
-        <div className="row g-3 g-md-4 mb-4">
+        {/* <div className="row g-3 g-md-4 mb-4">
           <div className="col-12 col-sm-6 col-lg-4">
             <div className={`${styles.mgmtCard} card border-primary h-100 shadow`}>
               <div className="card-body p-4">
@@ -273,6 +274,89 @@ function AdminDashboard({ user }) {
                 <button
                   className={`${styles.cardBtn} btn btn-warning text-dark w-100 w-md-auto`}
                   onClick={() => navigate("/all-yachts")}
+                >
+                  Go <BsArrowRight className="ms-1" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div> */}
+
+        <div className="row g-3 g-md-4 mb-4">
+          {/* Create Booking */}
+          <div className="col-12 col-sm-6 col-lg-4">
+            <div className={`${styles.mgmtCard} card border-primary h-100 shadow`}>
+              <div className="card-body p-4">
+                <div className="d-flex align-items-start mb-3">
+                  <div
+                    className={`${styles.icon} bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3`}
+                  >
+                    <BsPlusCircle size={20} />
+                  </div>
+                  <div>
+                    <h5 className="mb-1 fw-semibold">Create Booking</h5>
+                    <p className="text-muted mb-0 small">
+                      Create a new yacht booking
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className={`${styles.cardBtn} btn btn-primary w-100 w-md-auto`}
+                  onClick={() => navigate("/create-booking")}
+                >
+                  Go <BsArrowRight className="ms-1" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* View Bookings */}
+          <div className="col-12 col-sm-6 col-lg-4">
+            <div className={`${styles.mgmtCard} card border-success h-100 shadow`}>
+              <div className="card-body p-4">
+                <div className="d-flex align-items-start mb-3">
+                  <div
+                    className={`${styles.icon} bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3`}
+                  >
+                    <BsClipboardCheck size={20} />
+                  </div>
+                  <div>
+                    <h5 className="mb-1 fw-semibold">View Bookings</h5>
+                    <p className="text-muted mb-0 small">
+                      Manage and review all bookings
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className={`${styles.cardBtn} btn btn-success w-100 w-md-auto`}
+                  onClick={() => navigate("/bookings")}
+                >
+                  Go <BsArrowRight className="ms-1" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Check Availability */}
+          <div className="col-12 col-sm-6 col-lg-4">
+            <div className={`${styles.mgmtCard} card border-warning h-100 shadow`}>
+              <div className="card-body p-4">
+                <div className="d-flex align-items-start mb-3">
+                  <div
+                    className={`${styles.icon} bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center me-3`}
+                  >
+                    <BsCalendar3 size={20} />
+                  </div>
+                  <div>
+                    <h5 className="mb-1 fw-semibold">Check Availability</h5>
+                    <p className="text-muted mb-0 small">
+                      Check yacht availability by date
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className={`${styles.cardBtn} btn btn-warning text-dark w-100 w-md-auto`}
+                  onClick={() => navigate("/grid-availability")}
                 >
                   Go <BsArrowRight className="ms-1" />
                 </button>
