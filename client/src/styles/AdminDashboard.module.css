@@ -164,18 +164,26 @@
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(8, minmax(160px, 1fr));
   gap: 12px;
 }
 
-/* Responsive fallback */
+
 @media (max-width: 1200px) {
   .statsGrid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(180px, max-content));
+    justify-content: center;
   }
 }
 
 @media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
+    justify-content: center;
+  }
+}
+
+@media (max-width: 425px) {
   .statsGrid {
     grid-template-columns: repeat(2, 1fr);
   }

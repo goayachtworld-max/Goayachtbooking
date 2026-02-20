@@ -15,6 +15,7 @@ export const employee = {
 
 export const customer = {
   CREATE_CUSTOMER_API: `${BASE_URL}/customers`,
+  GET_CUSTOMERS_API: `${BASE_URL}/customers`,  
   GET_CUSTOMER_BY_CONTACT: `${BASE_URL}/customers/contact`, // we'll append /:contact dynamically
   SEARCH_CUSTOMERS_API: `${BASE_URL}/customers/search`,
   UPDATE_CUSTOMER_API: `${BASE_URL}/customers`

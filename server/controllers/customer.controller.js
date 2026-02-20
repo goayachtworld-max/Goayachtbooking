@@ -32,10 +32,49 @@ export const createCustomer = async (req, res, next) => {
 
 
 export const getCustomers = async (req, res, next) => {
-  console.log("Get all Customers")
   try {
-    const customers = await CustomerModel.find({ company: { $in: req.user.company } });
-    res.json(customers);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const skip = (page - 1) * limit;
+
+    const query = {
+      company: { $in: req.user.company }
+    };
+
+    const totalCustomers = await CustomerModel.countDocuments(query);
+
+    const customers = await CustomerModel.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      customers,
+      totalCustomers,
+      totalPages: Math.ceil(totalCustomers / limit),
+      currentPage: page
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+export const getCustomerById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const customer = await CustomerModel.findOne({
+      _id: id,
+      company: { $in: req.user.company }
+    });
+
+    if (!customer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    res.json({ customer });
+
   } catch (error) {
     next(error);
   }

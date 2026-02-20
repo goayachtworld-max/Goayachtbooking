@@ -28,6 +28,7 @@ import { socket } from "./socket";
 import "./styles/NavbarNotification.css"
 import NotificationBell from "./pages/NotificationBell";
 import EditBookingDetails from "./components/EditBookingDetails";
+import CustomerManagement from "./pages/CustomerManagement";
 
 
 function App() {
@@ -234,7 +235,21 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* This for customer management edit customer - inside create customer */}
+          <Route
+            path="/customer-management"
+            element={
+              <ProtectedRoute user={user}>
+                {["admin", "backdesk", "onsite"].includes(role) ? (
+                  <CustomerManagement/>
+                ) : (
+                  <NotFound />
+                )}
+              </ProtectedRoute>
+            }
+          />
 
+          {/* This is used for getting booking pass and other data - eye button in card of booking */}
           <Route
             path="/customer-details"
             element={
@@ -299,7 +314,7 @@ function App() {
           />
           <Route path="/edit-booking" element={
             <ProtectedRoute user={user}>
-              {["admin", "backdesk", "onsite"].includes(role) ? <EditBookingDetails/> : <NotFound />}
+              {["admin", "backdesk", "onsite"].includes(role) ? <EditBookingDetails /> : <NotFound />}
             </ProtectedRoute>
           } />
 

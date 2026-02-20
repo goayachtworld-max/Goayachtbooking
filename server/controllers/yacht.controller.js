@@ -11,23 +11,73 @@ export const createYacht = async (req, res, next) => {
 };
 
 // create booking
+// export const getAllYachts = async (req, res, next) => {
+//   try {
+//     const date = req.query.date; // date comes as string "YYYY-MM-DD"
+//     if (!date) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Date is required" });
+//     }
+
+//     // Convert date string to start and end of day
+//     const startOfDay = new Date(date);
+//     startOfDay.setHours(0, 0, 0, 0);
+
+//     const endOfDay = new Date(date);
+//     endOfDay.setHours(23, 59, 59, 999);
+
+//     // Fetch yachts
+//     const yachts = await YachtModel.find({
+//       company: { $in: req.user.company },
+//       status: "active",
+//     }).populate({
+//       path: "slots",
+//       match: {
+//         date: { $gte: startOfDay, $lte: endOfDay },
+//       },
+//       select: "date slots",
+//     });
+
+//     // Format response
+//     const formatted = yachts.map((yacht) => ({
+//       id: yacht._id,
+//       _id:yacht._id,
+//       name: yacht.name,
+//       sailStartTime: yacht.sailStartTime,
+//       sailEndTime: yacht.sailEndTime,
+//       slotDurationMinutes: yacht.duration,
+//       specialSlots: yacht.specialSlotTimes,
+//       runningCost: yacht.runningCost,
+//       status: yacht.status,
+//       slots: yacht.slots || [],
+//     }));
+
+//     res.json({ success: true, yachts: formatted });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+import { BookingModel } from "../models/booking.model.js";
+
 export const getAllYachts = async (req, res, next) => {
   try {
-    const date = req.query.date; // date comes as string "YYYY-MM-DD"
+    const date = req.query.date;
+
     if (!date) {
       return res
         .status(400)
         .json({ success: false, message: "Date is required" });
     }
 
-    // Convert date string to start and end of day
+    // Start & End of day
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Fetch yachts
+    // 1️⃣ Fetch yachts
     const yachts = await YachtModel.find({
       company: { $in: req.user.company },
       status: "active",
@@ -39,10 +89,32 @@ export const getAllYachts = async (req, res, next) => {
       select: "date slots",
     });
 
-    // Format response
+    const yachtIds = yachts.map((y) => y._id);
+
+    // 2️⃣ Fetch bookings for those yachts for that day
+    const bookings = await BookingModel.find({
+      yachtId: { $in: yachtIds },
+      date: { $gte: startOfDay, $lte: endOfDay },
+      status: { $ne: "cancelled" }, // 🔥 Ignore cancelled bookings
+    }).select("yachtId startTime endTime");
+
+    // 3️⃣ Group bookings by yachtId
+    const bookingsMap = {};
+
+    bookings.forEach((booking) => {
+      const yachtId = booking.yachtId.toString();
+
+      if (!bookingsMap[yachtId]) {
+        bookingsMap[yachtId] = [];
+      }
+
+      bookingsMap[yachtId].push(booking);
+    });
+
+    // 4️⃣ Format response
     const formatted = yachts.map((yacht) => ({
       id: yacht._id,
-      _id:yacht._id,
+      _id: yacht._id,
       name: yacht.name,
       sailStartTime: yacht.sailStartTime,
       sailEndTime: yacht.sailEndTime,
@@ -51,6 +123,7 @@ export const getAllYachts = async (req, res, next) => {
       runningCost: yacht.runningCost,
       status: yacht.status,
       slots: yacht.slots || [],
+      bookings: bookingsMap[yacht._id.toString()] || [], // ✅ Added bookings
     }));
 
     res.json({ success: true, yachts: formatted });
@@ -58,6 +131,7 @@ export const getAllYachts = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // Used for Yacht management
 export const getAllYachtsDetails = async (req, res, next) => {

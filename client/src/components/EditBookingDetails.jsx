@@ -73,9 +73,7 @@ function EditBookingDetails() {
         booking?.extraDetails || ""
     );
 
-    const [showExtraNotes, setShowExtraNotes] = useState(
-        Boolean(extraDetails)
-    );
+    const [showExtraNotes, setShowExtraNotes] = useState(false);
 
     const extraOptions = {
         inclusions: [
@@ -91,21 +89,6 @@ function EditBookingDetails() {
             "Drone - Photography & Videography",
         ],
     };
-    // const handleExtraToggle = (label) => {
-    //     setSelectedExtras((prev) => {
-    //         const updated = prev.includes(label)
-    //             ? prev.filter((i) => i !== label)
-    //             : [...prev, label];
-
-    //         setExtraDetails(
-    //             updated.length
-    //                 ? `- ${updated.join("\n- ")}`
-    //                 : ""
-    //         );
-
-    //         return updated;
-    //     });
-    // };
 
     const handleExtraToggle = (label) => {
         setSelectedExtras((prev) =>
@@ -156,6 +139,33 @@ function EditBookingDetails() {
         return !selectedExtras.every((e) => originalExtras.includes(e));
     };
 
+    const isSlotBooked = (slot, bookings, currentBooking) => {
+    if (!bookings) return false;
+
+    const toMin = (t) => {
+        const [h, m] = t.split(":").map(Number);
+        return h * 60 + m;
+    };
+
+    const slotStart = toMin(slot.start);
+    const slotEnd = toMin(slot.end);
+
+    return bookings.some((b) => {
+
+        // ignore current booking
+        if (
+            b.startTime === currentBooking.startTime &&
+            b.endTime === currentBooking.endTime
+        ) {
+            return false;
+        }
+
+        const bookStart = toMin(b.startTime);
+        const bookEnd = toMin(b.endTime);
+
+        return slotStart < bookEnd && slotEnd > bookStart;
+    });
+};
 
     const isSubmitDisabled = () => {
         // Customer required fields
@@ -337,7 +347,13 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
         const slots = buildSlotsForYacht(yacht, bookingData.date);
         console.log("slots in edit : ", slots)
-        setStartTimeOptions(slots);
+        const slotsWithStatus = slots.map((slot) => ({
+            ...slot,
+            isBooked: isSlotBooked(slot, yacht.bookings, bookingData)
+        }));
+
+        setStartTimeOptions(slotsWithStatus);
+
 
         // auto-fix end time
         const match = slots.find((s) => s.start === bookingData.startTime);
@@ -369,32 +385,6 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
         fetchYachts();
     }, [bookingData.date, isAdmin]);
-
-    // useEffect(() => {
-    //     if (!isAdmin) return;
-
-    //     // If yachts are empty, KEEP current yacht
-    //     if (!yachts.length) {
-    //         setBookingData((p) => ({
-    //             ...p,
-    //             yachtId: booking.yachtId._id,
-    //         }));
-    //         return;
-    //     }
-
-    //     const bookedYachtId = booking.yachtId._id;
-    //     console.log("yachts are : ", yachts)
-    //     const exists = yachts.some((y) => y.id === bookedYachtId);
-
-    //     if (exists && bookingData.yachtId !== bookedYachtId) {
-    //         setBookingData((p) => ({
-    //             ...p,
-    //             yachtId: bookedYachtId,
-    //         }));
-    //     }
-    // }, [yachts, isAdmin]);
-
-
 
     const ticketId = booking._id
         ? booking._id.slice(-5).toUpperCase()
@@ -510,11 +500,9 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
                         {/* ===== BOOKING DETAILS ===== */}
                         <h6 className="fw-bold">Booking Information</h6>
-{/* 
                         <div className="col-12">
-                            <label className="form-label fw-bold">Yacht</label> */}
-
-                            {/* {isAdmin ? (
+                            <label className="form-label fw-bold">Yacht</label>
+                            {isAdmin ? (
                                 <select
                                     className="form-select"
                                     name="yachtId"
@@ -545,17 +533,17 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                                     value={booking?.yachtId?.name}
                                     disabled
                                 />
-                            )} */}
-                            <div className="col-12">
+                            )}
+                            {/* <div className="col-12">
                                 <label className="form-label fw-bold">Yacht</label>
                                 <input
                                     className="form-control"
                                     value={booking?.yachtId?.name || ""}
                                     readOnly
                                 />
-                            </div>
+                            </div> */}
 
-                        {/* </div> */}
+                        </div>
 
 
                         <div className="col-md-6">
@@ -592,7 +580,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                                 >
                                     <option value="">-- Select Time Slot --</option>
                                     {startTimeOptions.map((s, i) => (
-                                        <option key={`${s.start}-${s.end}`} value={s.start}>
+                                        <option key={`${s.start}-${s.end}`} value={s.start} disabled={s.isBooked}>
                                             {to12Hour(s.start)} – {to12Hour(s.end)}
                                         </option>
                                     ))}

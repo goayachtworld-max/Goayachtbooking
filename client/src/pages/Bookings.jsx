@@ -4,14 +4,10 @@ import { getBookingsAPI } from "../services/operations/bookingAPI";
 import { getEmployeesForBookingAPI } from "../services/operations/employeeAPI";
 import { FiSliders } from "react-icons/fi";
 import { Eye, Pencil } from "lucide-react";
-import jsPDF from "jspdf";
 import toast from "react-hot-toast";
-import { Download } from "lucide-react";
-import { PDFDownloadLink } from "@react-pdf/renderer";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Bookings.css";
-import BoardingPassPDF from "./BoardingPassPDF";
 
 function Bookings({ user }) {
   const navigate = useNavigate();
@@ -30,7 +26,11 @@ function Bookings({ user }) {
   // ---------------- FILTER STATES (FROM URL) ----------------
   const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
   const [filterDate, setFilterDate] = useState(params.get("date") || "");
-  const [filterStatus, setFilterStatus] = useState(params.get("status") || "");
+  const [filterStatus, setFilterStatus] = useState(params.get("status") || ""); const today = new Date();
+  const todayMonth = today.toISOString().slice(0, 7);
+
+  const [selectedMonth, setSelectedMonth] = useState(todayMonth);
+
 
   // employee=John Doe~65ab123
   const employeeParam = params.get("employee");
@@ -149,7 +149,10 @@ function Bookings({ user }) {
     setFilterDate("");
     setFilterStatus("");
     setFilterEmployee("");
+    setSelectedMonth("");
   };
+
+
 
   const isBookingCompleted = (booking) => {
     if (!booking.date || !booking.endTime) return false;
@@ -262,9 +265,31 @@ Thank You`
     navigate("/update-booking", { state: { booking } });
 
   const filteredBookings = bookings
-    // 1️⃣ Status logic (including virtual "completed")
+    // 🔥 0️⃣ Month / Date Filter (UI only)
     .filter((booking) => {
-      // COMPLETED (virtual)
+      const bookingDateObj = new Date(booking.date);
+      const bookingDate = booking.date?.split("T")[0];
+
+      // 1️⃣ Specific date → highest priority
+      if (filterDate) {
+        return bookingDate === filterDate;
+      }
+
+      // 2️⃣ If no month selected → show all
+      if (!selectedMonth) {
+        return true;
+      }
+
+      // 3️⃣ Otherwise filter by selected month
+      const year = bookingDateObj.getFullYear();
+      const month = String(bookingDateObj.getMonth() + 1).padStart(2, "0");
+
+      return `${year}-${month}` === selectedMonth;
+    })
+
+
+    // 1️⃣ Status logic
+    .filter((booking) => {
       if (filterStatus === "completed") {
         return (
           booking.status !== "cancelled" &&
@@ -272,12 +297,10 @@ Thank You`
         );
       }
 
-      // REAL STATUS selected
       if (filterStatus) {
         return booking.status === filterStatus;
       }
 
-      // DEFAULT → hide cancelled & completed
       return (
         booking.status !== "cancelled" &&
         !isBookingCompleted(booking)
@@ -339,13 +362,47 @@ Thank You`
             style={{ maxWidth: "260px" }}
           />
 
+          <select
+            className="form-select"
+            value={selectedMonth || ""}
+            onChange={(e) => {
+              setSelectedMonth(e.target.value);
+              setFilterDate("");
+            }}
+            style={{ maxWidth: "80px" }}
+          >
+            {/* 👇 Add this option */}
+            <option value="">All</option>
+
+            {Array.from({ length: 6 }).map((_, i) => {
+              const date = new Date();
+              date.setMonth(date.getMonth() + i);
+
+              const value = date.toISOString().slice(0, 7); // YYYY-MM
+              const label = date.toLocaleString("en-GB", {
+                month: "short",
+              });
+
+              return (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
+
+
+
+          {/* Specific Date Picker */}
           <input
             type="date"
             className="form-control"
             value={filterDate}
+            min={new Date().toISOString().split("T")[0]}
             onChange={(e) => setFilterDate(e.target.value)}
-            style={{ maxWidth: "140px" }}
+            style={{ maxWidth: "150px" }}
           />
+
 
           <select
             className="form-select"
@@ -413,11 +470,24 @@ Thank You`
             onClick={(e) => e.stopPropagation()}
           >
             <input
+              type="month"
+              className="form-control mb-2"
+              value={selectedMonth}
+              min={todayMonth}
+              onChange={(e) => {
+                setSelectedMonth(e.target.value);
+                setFilterDate("");
+              }}
+            />
+
+            <input
               type="date"
               className="form-control mb-2"
               value={filterDate}
+              min={new Date().toISOString().split("T")[0]}
               onChange={(e) => setFilterDate(e.target.value)}
             />
+
 
             <select
               className="form-select mb-2"

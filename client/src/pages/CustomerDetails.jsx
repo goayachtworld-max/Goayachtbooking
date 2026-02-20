@@ -16,6 +16,13 @@ const STATUS_INDEX = {
   initiated: 1,
   success: 2,
 };
+const formatDate = (d) =>
+  new Date(d).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
 
 /* ------------------ Trip Progress ------------------ */
 const TripProgress = ({ tripStatus }) => {
@@ -225,7 +232,7 @@ function CustomerDetails() {
                 <div className="">
                   <PDFDownloadLink
                     document={<BoardingPassPDF booking={booking} />}
-                    fileName={`BoardingPass_${booking._id.slice(-5)}.pdf`}
+                    fileName={`${booking.yachtId?.name}_${booking.customerId?.name}_${formatDate(booking.date)}.pdf`}
                     className="w-100 text-decoration-none"
                   >
                     {({ loading }) => (

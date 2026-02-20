@@ -243,7 +243,8 @@ export const getBookings = async (req, res) => {
       .populate("yachtId", "name boardingLocation")
       .populate("customerId", "name contact email alternateContact")
       .populate("employeeId", "name type")
-      .populate("company : ", "name disclaimer")
+      .populate("company", "name disclaimer")
+      .populate("transactionIds")
       .sort({ date: 1, startTime: 1 });
 
     // ⏱ AUTO UPDATE tripStatus (response level)

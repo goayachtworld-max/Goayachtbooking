@@ -50,3 +50,16 @@ export const updateCustomerAPI = async (customerId, payload, token) => {
     }
   );
 };
+
+export const getCustomersAPI = async (page, limit, token) => {
+  const response = await apiConnector(
+    "GET",
+    `${customer.GET_CUSTOMERS_API}?page=${page}&limit=${limit}`,
+    null,
+    {
+      Authorization: `Bearer ${token}`,
+    }
+  );
+
+  return response.data;
+};

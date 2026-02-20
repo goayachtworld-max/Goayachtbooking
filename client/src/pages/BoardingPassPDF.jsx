@@ -5,6 +5,7 @@ import {
   View,
   StyleSheet,
 } from "@react-pdf/renderer";
+import { useState } from "react";
 
 /* ===================== HELPERS ===================== */
 
@@ -62,9 +63,10 @@ export default function BoardingPassPDF({ booking }) {
     : "";
 
   const disclaimerText = sanitizeText(
-    booking?.company?.disclaimer ||
-    `
-Reporting time is 30 minutes prior to departure
+    booking?.company?.disclaimer
+      ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]` :
+
+      `Reporting time is 30 minutes prior to departure
 No refund for late arrival or no-show
 Subject to weather and government regulations
 Thank you for booking with ${booking.company?.name}
@@ -232,8 +234,24 @@ Thank you for booking with ${booking.company?.name}
     },
   });
 
-  /* ===================== RENDER ===================== */
+  const formatTo12Hour = (time) => {
+    if (!time) return "";
 
+    const [hourStr, minute] = time.split(":");
+    let hour = parseInt(hourStr, 10);
+
+    const ampm = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12 || 12; // convert 0 → 12
+
+    return `${hour}:${minute} ${ampm}`;
+  };
+
+  const storedUser = localStorage.getItem("user");
+  const [user, setUser] = useState(storedUser ? JSON.parse(storedUser) : null);
+  const role = user?.type?.toLowerCase();
+
+  /* ===================== RENDER ===================== */
+  console.log("Booking ", booking)
   return (
     <Document>
       <Page size="A4" style={styles.page} wrap={false}>
@@ -260,14 +278,14 @@ Thank you for booking with ${booking.company?.name}
 
               <View style={styles.row}>
                 <View style={styles.column}>
-                  <Text style={styles.label}>Guest</Text>
+                  <Text style={styles.label}>Booking Name</Text>
                   <Text style={styles.value}>
                     {booking.customerId?.name}
                   </Text>
                 </View>
 
                 <View style={styles.column}>
-                  <Text style={styles.label}>Contact</Text>
+                  <Text style={styles.label}>Contact Number</Text>
                   <Text style={styles.value}>
                     {booking.customerId?.contact}
                   </Text>
@@ -276,7 +294,7 @@ Thank you for booking with ${booking.company?.name}
 
               <View style={styles.row}>
                 <View style={styles.column}>
-                  <Text style={styles.label}>Yacht</Text>
+                  <Text style={styles.label}>Booked Yacht</Text>
                   <Text style={styles.value}>
                     {booking.yachtId?.name}
                   </Text>
@@ -301,7 +319,15 @@ Thank you for booking with ${booking.company?.name}
                 <View style={styles.column}>
                   <Text style={styles.label}>Time</Text>
                   <Text style={styles.value}>
-                    {booking.startTime} – {booking.endTime}
+                    {formatTo12Hour(booking.startTime)} – {formatTo12Hour(booking.endTime)}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.row}>
+                <View style={{ width: "100%" }}>
+                  <Text style={styles.label}>Boarding Location</Text>
+                  <Text style={styles.value}>
+                    {booking.yachtId?.boardingLocation || "Location not provided"}
                   </Text>
                 </View>
               </View>
@@ -312,8 +338,27 @@ Thank you for booking with ${booking.company?.name}
             {/* PAYMENT */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Payment Summary</Text>
+              {
+                role === "admin" && (
+                  <>
+                    <View style={styles.paymentBox}>
+                      <Text style={styles.label}>Booking Amount</Text>
+                      <Text style={styles.paymentAmount}>
+                        Rs. {booking.quotedAmount}/-
+                      </Text>
+                    </View>
+
+                    <View style={styles.paymentBox}>
+                      <Text style={styles.label}>Token Amount</Text>
+                      <Text style={styles.paymentAmount}>
+                        Rs. {booking?.transactionIds[0]?.amount}/-
+                      </Text>
+                    </View>
+                  </>
+                )
+              }
               <View style={styles.paymentBox}>
-                <Text style={styles.label}>Balance Pending</Text>
+                <Text style={styles.label}>Pending Balance</Text>
                 <Text style={styles.paymentAmount}>
                   Rs. {booking.pendingAmount}/-
                 </Text>
@@ -346,10 +391,10 @@ Thank you for booking with ${booking.company?.name}
                     <>
                       <Text style={styles.sectionTitle}>
                         Extra Paid Services:
-                      </Text>
+                      </Text> •
                       {safePaidServices.map((i, idx) => (
                         <Text key={idx} style={styles.listItem}>
-                          • {i.replace("-", "").trim()}
+                          {i.replace("-", "").trim()}
                         </Text>
                       ))}
                     </>
@@ -375,9 +420,9 @@ Thank you for booking with ${booking.company?.name}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Disclaimer: </Text>
               <View style={styles.disclaimerBox}>
-                {safeDisclaimer.map((line, i) => (
+                •{safeDisclaimer.map((line, i) => (
                   <Text key={i} style={styles.listItem}>
-                    • {line}
+                    {line}
                   </Text>
                 ))}
               </View>
@@ -390,6 +435,6 @@ Thank you for booking with ${booking.company?.name}
           </View>
         </View>
       </Page>
-    </Document>
+    </Document >
   );
 }

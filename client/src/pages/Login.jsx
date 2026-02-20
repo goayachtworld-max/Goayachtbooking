@@ -83,6 +83,12 @@ function Login({ onLogin }) {
       setLoading(false);
     }
   };
+const formatDate = (d) =>
+    new Date(d).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
 
   const generateBoardingPassText = (booking) => {
     const formatDate = (dateStr) => {
@@ -200,7 +206,7 @@ Thank You`
               {boardingPassBooking && (
                 <PDFDownloadLink
                   document={<BoardingPassPDF booking={boardingPassBooking} />}
-                  fileName={`BoardingPass_${boardingPassBooking._id.slice(-5)}.pdf`}
+                  fileName={`${boardingPassBooking.yachtId?.name}_${boardingPassBooking.customerId?.name}_${formatDate(boardingPassBooking.date)}.pdf`}
                 >
                   {({ loading }) => (
                     <button type="button" className={styles.downloadBtn}>
