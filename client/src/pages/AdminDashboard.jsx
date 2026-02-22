@@ -12,13 +12,13 @@ function AdminDashboard({ user }) {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     today: 0,
-    upcoming: 0,
+    upcoming7Days: 0,
+    month: 0,
     createdToday: 0,
     confirmed: 0,
     pending: 0,
     cancelled: 0,
     completed: 0,
-    specialSlotsAvailable: 0,
   });
 
   // ---------------- HELPERS ----------------
@@ -28,19 +28,100 @@ function AdminDashboard({ user }) {
     d1.getDate() === d2.getDate() && bookinStatus != "cancelled";
 
   // ---------------- FETCH DASHBOARD DATA ----------------
+  // useEffect(() => {
+  //   const fetchDashboardData = async () => {
+  //     try {
+  //       const token = localStorage.getItem("authToken");
+  //       const res = await getBookingsAPI(token, {}); // get all bookings
+  //       const bookings = res?.data?.bookings || [];
+
+  //       const today = new Date();
+  //       const next7Days = new Date();
+  //       next7Days.setDate(today.getDate() + 7);
+
+  //       let todayCount = 0;
+  //       let upcomingCount = 0;
+  //       let createdToday = 0;
+  //       let confirmed = 0;
+  //       let pending = 0;
+  //       let cancelled = 0;
+  //       let completed = 0;
+
+  //       bookings.forEach((b) => {
+  //         const bookingDate = new Date(b.date);
+  //         const createdAt = new Date(b.createdAt);
+
+  //         const isCompleted = isBookingCompleted(b);
+
+  //         // ✅ COMPLETED COUNT
+  //         if (isCompleted && b.status !== "cancelled") {
+  //           completed++;
+  //           return;
+  //         }
+  //         // ❌ Ignore cancelled bookings for today/upcoming
+  //         if (b.status === "cancelled") {
+  //           cancelled++;
+  //           return;
+  //         }
+
+  //         // ✅ TODAY (only active bookings)
+  //         if (isSameDay(bookingDate, today)) {
+  //           todayCount++;
+  //         }
+
+  //         // ✅ UPCOMING (next 7 days, future only)
+  //         if (bookingDate > today && bookingDate <= next7Days) {
+  //           upcomingCount++;
+  //         }
+
+  //         // ✅ CREATED TODAY
+  //         if (isSameDay(createdAt, today)) {
+  //           createdToday++;
+  //         }
+
+  //         // ✅ STATUS COUNTS
+  //         if (b.status === "confirmed") confirmed++;
+  //         if (b.status === "pending") pending++;
+  //       });
+
+  //       setStats({
+  //         today: todayCount,
+  //         upcoming: upcomingCount,
+  //         createdToday,
+  //         confirmed,
+  //         pending,
+  //         cancelled,
+  //         completed,
+  //         specialSlotsAvailable: 0, // 🔧 hook when yacht slots logic is ready
+  //       });
+  //     } catch (err) {
+  //       console.error("Dashboard stats error", err);
+  //     }
+  //   };
+
+  //   fetchDashboardData();
+  // }, []);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem("authToken");
-        const res = await getBookingsAPI(token, {}); // get all bookings
+        const res = await getBookingsAPI(token, {});
         const bookings = res?.data?.bookings || [];
 
+        const now = new Date();
         const today = new Date();
-        const next7Days = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const next7Days = new Date(today);
         next7Days.setDate(today.getDate() + 7);
 
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+
         let todayCount = 0;
-        let upcomingCount = 0;
+        let upcoming7Days = 0;
+        let monthCount = 0;
         let createdToday = 0;
         let confirmed = 0;
         let pending = 0;
@@ -53,46 +134,63 @@ function AdminDashboard({ user }) {
 
           const isCompleted = isBookingCompleted(b);
 
-          // ✅ COMPLETED COUNT
-          if (isCompleted && b.status !== "cancelled") {
-            completed++;
-            return;
-          }
-          // ❌ Ignore cancelled bookings for today/upcoming
+          // ---------------- CANCELLED ----------------
           if (b.status === "cancelled") {
             cancelled++;
             return;
           }
 
-          // ✅ TODAY (only active bookings)
-          if (isSameDay(bookingDate, today)) {
+          // ---------------- COMPLETED ----------------
+          if (isCompleted) {
+            completed++;
+            return;
+          }
+
+          // ---------------- TODAY ----------------
+          if (
+            bookingDate.getFullYear() === today.getFullYear() &&
+            bookingDate.getMonth() === today.getMonth() &&
+            bookingDate.getDate() === today.getDate()
+          ) {
             todayCount++;
           }
 
-          // ✅ UPCOMING (next 7 days, future only)
+          // ---------------- NEXT 7 DAYS ----------------
           if (bookingDate > today && bookingDate <= next7Days) {
-            upcomingCount++;
+            upcoming7Days++;
           }
 
-          // ✅ CREATED TODAY
-          if (isSameDay(createdAt, today)) {
+          // ---------------- CURRENT MONTH ----------------
+          if (
+            bookingDate.getMonth() === currentMonth &&
+            bookingDate.getFullYear() === currentYear
+          ) {
+            monthCount++;
+          }
+
+          // ---------------- CREATED TODAY ----------------
+          if (
+            createdAt.getFullYear() === today.getFullYear() &&
+            createdAt.getMonth() === today.getMonth() &&
+            createdAt.getDate() === today.getDate()
+          ) {
             createdToday++;
           }
 
-          // ✅ STATUS COUNTS
+          // ---------------- STATUS ----------------
           if (b.status === "confirmed") confirmed++;
           if (b.status === "pending") pending++;
         });
 
         setStats({
           today: todayCount,
-          upcoming: upcomingCount,
+          upcoming7Days,
+          month: monthCount,
           createdToday,
           confirmed,
           pending,
           cancelled,
           completed,
-          specialSlotsAvailable: 0, // 🔧 hook when yacht slots logic is ready
         });
       } catch (err) {
         console.error("Dashboard stats error", err);
@@ -160,19 +258,23 @@ function AdminDashboard({ user }) {
               title="Today's Booking"
               value={stats.today}
               color="primary"
-              onClick={() => navigate(`/bookings?date=${getToday()}`)}
+              onClick={() =>
+                navigate(`/bookings?date=${new Date().toISOString().split("T")[0]}`)
+              }
             />
             <StatCard
               title="Booking in 7 Days"
-              value={stats.upcoming}
+              value={stats.upcoming7Days}
               color="warning"
-              onClick={() => navigate("/bookings?status=confirmed")}
+              onClick={() => navigate("/bookings?range=7days")}
             />
             <StatCard
-              title="Months Booking"
-              value={stats.upcoming}
+              title="Month's Booking"
+              value={stats.month}
               color="warning"
-              onClick={() => navigate("/bookings")}
+              onClick={() =>
+                navigate(`/bookings?month=${new Date().toISOString().slice(0, 7)}`)
+              }
             />
             <StatCard
               title="Created Today"
@@ -206,7 +308,7 @@ function AdminDashboard({ user }) {
             />
           </div>
         </div>
-        
+
         <div className="row g-3 g-md-4 mb-4">
           {/* Create Booking */}
           <div className="col-12 col-sm-6 col-lg-4">

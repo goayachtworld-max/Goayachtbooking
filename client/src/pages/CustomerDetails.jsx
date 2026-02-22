@@ -24,6 +24,9 @@ const formatDate = (d) =>
   });
 
 
+
+
+
 /* ------------------ Trip Progress ------------------ */
 const TripProgress = ({ tripStatus }) => {
   if (!tripStatus) return null;
@@ -84,6 +87,29 @@ function CustomerDetails() {
   const { booking } = location.state || {};
   const customer = booking?.customerId || {};
 
+  const isBookingCompleted = (booking) => {
+    if (!booking.date || !booking.endTime) return false;
+
+    const bookingEnd = new Date(booking.date);
+    const [h, m] = booking.endTime.split(":").map(Number);
+
+    bookingEnd.setHours(h, m, 0, 0);
+
+    return bookingEnd < new Date();
+  };
+  let finalTripStatus = "pending";
+
+  if (booking.status === "cancelled") {
+    finalTripStatus = "cancelled";
+  } else if (
+    booking.status === "confirmed" &&
+    isBookingCompleted(booking)
+  ) {
+    finalTripStatus = "success";
+  } else if (booking.status === "confirmed") {
+    finalTripStatus = "initiated";
+  }
+
   if (!booking) {
     return (
       <div className="container text-center mt-5">
@@ -132,123 +158,143 @@ function CustomerDetails() {
         </div>
 
         {/* Progress */}
-        <TripProgress tripStatus={booking.tripStatus} />
+        {/* <TripProgress tripStatus={booking.tripStatus} /> */}
+        <TripProgress tripStatus={finalTripStatus} />
 
         {/* Card */}
         <div className="card shadow-sm">
           <div className="card-body p-3">
-            <div className="d-flex flex-column gap-2 small">
-              <p className="m-0">
-                <strong>Customer:</strong> {customer.name || "N/A"}
-              </p>
-              <p className="m-0">
-                <strong>Contact:</strong> {customer.contact || "N/A"}
-              </p>
-              <p className="m-0">
-                <strong>Email:</strong> {customer.email || "N/A"}
-              </p>
 
-              <hr className="my-2" />
+            {/* ================= TOP TWO COLUMN SECTION ================= */}
+            <div className="row small g-2">
 
-              <p className="m-0">
-                <strong>Date:</strong> {bookingDate}
-              </p>
-              <p className="m-0">
-                <strong>Start:</strong>{" "}
-                {to12HourFormat(booking.startTime)}
-              </p>
-              <p className="m-0">
-                <strong>End:</strong>{" "}
-                {to12HourFormat(booking.endTime)}
-              </p>
-              <p className="m-0">
-                <strong>People:</strong> {booking.numPeople}
-              </p>
+              {/* LEFT COLUMN */}
+              <div className="col-6">
+                <p className="m-0"><strong>Customer:</strong><br />{customer.name || "N/A"}</p>
+                <p className="m-0 mt-2"><strong>Contact:</strong><br />{customer.contact || "N/A"}</p>
+                <p className="m-0 mt-2"><strong>Email:</strong><br />{customer.email || "N/A"}</p>
+              </div>
 
-              <hr className="my-2" />
-
-              <p className="m-0">
-                <strong>Booking Status:</strong>{" "}
-                <span className="text-capitalize">
-                  {booking.status}
-                </span>
-              </p>
-              <p className="m-0">
-                <strong>Balance:</strong> ₹{booking.pendingAmount ?? 0}
-              </p>
-
-              {/* {booking?.extraDetails && <> 
-                <hr className="my-2" />
-                <p className="m-0">
-                  <strong>Extra Details : </strong>
-                  <span>{booking.extraDetails}</span>
+              {/* RIGHT COLUMN */}
+              <div className="col-6">
+                <p className="m-0"><strong>Date:</strong><br />{bookingDate}</p>
+                <p className="m-0 mt-2">
+                  <strong>Time:</strong><br />
+                  {to12HourFormat(booking.startTime)} – {to12HourFormat(booking.endTime)}
                 </p>
-              </>} */}
-              {booking?.extraDetails && (
-                <>
-                  <hr className="my-2" />
-                  <strong>Extra Details : </strong>
-                  <ul className="mb-0">
-                    {booking.extraDetails
-                      .split("\n")
-                      .filter(line => line.startsWith("-"))
-                      .map((item, index) => (
-                        <li key={index}>{item.replace(/^- /, "")}</li>
-                      ))}
-                  </ul>
-                  {booking.extraDetails
-                    .split("\n")
-                    .filter(line => !line.startsWith("-"))
-                    .map((line, idx) => (
-                      <div key={idx}>{line}</div>
-                    ))}
-                </>
-              )}
-
+                <p className="m-0 mt-2"><strong>People:</strong><br />{booking.numPeople}</p>
+              </div>
 
             </div>
 
-            {/* <div className="text-center mt-3">
+            <hr className="my-3" />
+
+            {/* ================= BALANCE ================= */}
+            <div className="small">
+              <strong>Balance:</strong> ₹{booking.pendingAmount ?? 0}
+            </div>
+
+            <hr className="my-3" />
+
+            {/* ================= EXTRA DETAILS TWO COLUMN ================= */}
+            {booking?.extraDetails && (() => {
+
+              const sanitizeText = (text = "") =>
+                text
+                  .replace(/\u2022|\u2023|\u25E6/g, "-")
+                  .replace(/\u200B|\u200C|\u200D|\uFEFF/g, "")
+                  .replace(/\r\n/g, "\n")
+                  .replace(/\n{2,}/g, "\n")
+                  .trim();
+
+              const extraDetails = sanitizeText(booking.extraDetails);
+              const lines = extraDetails.split("\n").map(l => l.trim()).filter(Boolean);
+
+              const inclusions = lines.filter(i =>
+                ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"]
+                  .some(k => i.includes(k))
+              );
+
+              const paidServices = lines.filter(i =>
+                ["Drone", "DSLR"].some(k => i.includes(k))
+              );
+
+              const notes = extraDetails.includes("Notes:")
+                ? extraDetails.split("Notes:").slice(1).join("Notes:").trim()
+                : "";
+
+              return (
+                <>
+                  <div className="row small">
+
+                    <div className="col-6">
+                      <strong>Extra Inclusions</strong>
+                      <ul className="mb-0 mt-1">
+                        {inclusions.length > 0
+                          ? inclusions.map((item, i) => (
+                            <li key={i}>{item.replace("-", "").trim()}</li>
+                          ))
+                          : <li className="text-muted">None</li>
+                        }
+                      </ul>
+                    </div>
+
+                    <div className="col-6">
+                      <strong>Extra Paid Services</strong>
+                      <ul className="mb-0 mt-1">
+                        {paidServices.length > 0
+                          ? paidServices.map((item, i) => (
+                            <li key={i}>{item.replace("-", "").trim()}</li>
+                          ))
+                          : <li className="text-muted">None</li>
+                        }
+                      </ul>
+                    </div>
+
+                  </div>
+
+                  {notes && (
+                    <>
+                      <hr className="my-3" />
+                      <div className="small">
+                        <strong>Note</strong>
+                        <div className="mt-1">{notes}</div>
+                      </div>
+                    </>
+                  )}
+                </>
+              );
+            })()}
+
+            <hr className="my-3" />
+
+            {/* ================= ACTION BUTTONS ================= */}
+            <div className="d-flex justify-content-center gap-2 flex-wrap">
+
               <button
                 className="btn btn-outline-secondary btn-sm"
                 onClick={() => navigate(-1)}
               >
                 Back
               </button>
-            </div> */}
 
-            <div className="d-flex justify-content-center gap-2 mt-3 flex-wrap">
-
-              {/* Back Button */}
-              <button
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => navigate(-1)}
-              >
-                Back
-              </button>
-
-              {/* Download Boarding Pass (Only if Confirmed) */}
               {booking.status === "confirmed" && (
-                <div className="">
-                  <PDFDownloadLink
-                    document={<BoardingPassPDF booking={booking} />}
-                    fileName={`${booking.yachtId?.name}_${booking.customerId?.name}_${formatDate(booking.date)}.pdf`}
-                    className="w-100 text-decoration-none"
-                  >
-                    {({ loading }) => (
-                      <button
-                        type="button"
-                        className="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2 py-2"
-                        disabled={loading}
-                      >
-                        <Download size={18} />
-                        {loading ? "Generating PDF..." : "Download Boarding Pass"}
-                      </button>
-                    )}
-                  </PDFDownloadLink>
-                </div>
+                <PDFDownloadLink
+                  document={<BoardingPassPDF booking={booking} />}
+                  fileName={`${booking.yachtId?.name}_${customer.name}_${formatDate(booking.date)}.pdf`}
+                  className="text-decoration-none"
+                >
+                  {({ loading }) => (
+                    <button
+                      type="button"
+                      className="btn btn-success btn-sm"
+                      disabled={loading}
+                    >
+                      {loading ? "Generating..." : "Download Boarding Pass"}
+                    </button>
+                  )}
+                </PDFDownloadLink>
               )}
-
 
             </div>
 

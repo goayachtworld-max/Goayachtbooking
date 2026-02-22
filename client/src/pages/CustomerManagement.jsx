@@ -43,26 +43,38 @@ function CustomerManagement() {
 
     /* ---------------- Fetch Customers ---------------- */
     const fetchCustomers = async () => {
-        try {
-            setLoading(true);
+    try {
+        setLoading(true);
 
-            let response;
+        let response;
 
-            if (debouncedSearch.trim()) {
-                response = await searchCustomersByNameAPI(debouncedSearch, token);
-                setCustomers(response.customers);
-                setTotalPages(1);
-            } else {
-                response = await getCustomersAPI(page, 10, token);
-                setCustomers(response.customers);
-                setTotalPages(response.totalPages);
-            }
-        } catch (err) {
-            toast.error("Failed to fetch customers");
-        } finally {
-            setLoading(false);
+        const searchValue = debouncedSearch.trim();
+
+        // ✅ Call search only if length >= 2
+        if (searchValue.length >= 2) {
+            response = await searchCustomersByNameAPI(searchValue, token);
+            setCustomers(response.data.customers || []);
+            setTotalPages(1);
+        } 
+        // ✅ If 0 characters → normal pagination
+        else if (searchValue.length === 0) {
+            response = await getCustomersAPI(page, 10, token);
+            setCustomers(response.data.customers || []);
+            setTotalPages(response.data.totalPages || 1);
         }
-    };
+        // ✅ If 1 character → DO NOTHING (optional: clear results)
+        else {
+            setCustomers([]); // optional
+            setTotalPages(1);
+        }
+
+    } catch (err) {
+        console.log("FETCH ERROR:", err);
+        toast.error("Failed to fetch customers");
+    } finally {
+        setLoading(false);
+    }
+};
 
     useEffect(() => {
         fetchCustomers();
@@ -139,7 +151,7 @@ function CustomerManagement() {
                 <input
                     type="text"
                     className="form-control"
-                    placeholder="Search customer by name..."
+                    placeholder="Search for customer by name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />

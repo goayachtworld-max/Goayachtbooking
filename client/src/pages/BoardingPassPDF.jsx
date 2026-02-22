@@ -391,7 +391,7 @@ Thank you for booking with ${booking.company?.name}
                     <>
                       <Text style={styles.sectionTitle}>
                         Extra Paid Services:
-                      </Text> •
+                      </Text>
                       {safePaidServices.map((i, idx) => (
                         <Text key={idx} style={styles.listItem}>
                           {i.replace("-", "").trim()}
@@ -420,7 +420,7 @@ Thank you for booking with ${booking.company?.name}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Disclaimer: </Text>
               <View style={styles.disclaimerBox}>
-                •{safeDisclaimer.map((line, i) => (
+                {safeDisclaimer.map((line, i) => (
                   <Text key={i} style={styles.listItem}>
                     {line}
                   </Text>

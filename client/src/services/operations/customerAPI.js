@@ -61,5 +61,5 @@ export const getCustomersAPI = async (page, limit, token) => {
     }
   );
 
-  return response.data;
+  return response;
 };

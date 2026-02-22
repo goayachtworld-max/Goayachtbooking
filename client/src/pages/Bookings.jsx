@@ -13,7 +13,7 @@ function Bookings({ user }) {
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-
+  const rangeParam = params.get("range");
   // ---------------- STATE ----------------
   const [bookings, setBookings] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -26,10 +26,15 @@ function Bookings({ user }) {
   // ---------------- FILTER STATES (FROM URL) ----------------
   const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
   const [filterDate, setFilterDate] = useState(params.get("date") || "");
-  const [filterStatus, setFilterStatus] = useState(params.get("status") || ""); const today = new Date();
+  const [filterStatus, setFilterStatus] = useState(params.get("status") || "");
+
+  const today = new Date();
   const todayMonth = today.toISOString().slice(0, 7);
 
-  const [selectedMonth, setSelectedMonth] = useState(todayMonth);
+  const monthParam = params.get("month");
+  const [selectedMonth, setSelectedMonth] = useState(
+    monthParam || ""
+  );
 
 
   // employee=John Doe~65ab123
@@ -86,12 +91,35 @@ function Bookings({ user }) {
   }, []);
 
   // ---------------- FETCH BOOKINGS ----------------
+  // const fetchBookings = async (filters = {}) => {
+  //   try {
+  //     setLoading(true);
+  //     const token = localStorage.getItem("authToken");
+  //     const res = await getBookingsAPI(token, filters);
+  //     setBookings(res?.data?.bookings || []);
+  //   } catch (e) {
+  //     console.error("❌ Error fetching bookings", e);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const fetchBookings = async (filters = {}) => {
     try {
       setLoading(true);
       const token = localStorage.getItem("authToken");
       const res = await getBookingsAPI(token, filters);
-      setBookings(res?.data?.bookings || []);
+
+      const updatedBookings = (res?.data?.bookings || []).map((booking) => {
+        if (
+          booking.status === "confirmed" &&
+          isBookingCompleted(booking)
+        ) {
+          return { ...booking, status: "completed" };
+        }
+        return booking;
+      });
+
+      setBookings(updatedBookings);
     } catch (e) {
       console.error("❌ Error fetching bookings", e);
     } finally {
@@ -101,17 +129,34 @@ function Bookings({ user }) {
 
   // ---------------- URL SYNC ----------------
   useEffect(() => {
-    const p = new URLSearchParams();
+    const p = new URLSearchParams(location.search);
 
     if (searchQuery) p.set("search", searchQuery);
+    else p.delete("search");
+
     if (filterDate) p.set("date", filterDate);
+    else p.delete("date");
+
     if (filterStatus) p.set("status", filterStatus);
+    else p.delete("status");
+
+    if (selectedMonth) p.set("month", selectedMonth);
+    else p.delete("month");
 
     const employeeValue = getEmployeeParamValue();
     if (employeeValue) p.set("employee", employeeValue);
+    else p.delete("employee");
 
     navigate({ search: p.toString() }, { replace: true });
-  }, [searchQuery, filterDate, filterStatus, filterEmployee, employees]);
+  }, [
+    searchQuery,
+    filterDate,
+    filterStatus,
+    filterEmployee,
+    selectedMonth,
+    employees,
+    location.search,   // 🔥 important
+  ]);
 
   // ---------------- FILTER / REFRESH → FETCH ----------------
   useEffect(() => {
@@ -132,6 +177,12 @@ function Bookings({ user }) {
     location.state?.refresh, // 🔥 notification refresh
   ]);
 
+  useEffect(() => {
+    if (rangeParam === "7days") {
+      setSelectedMonth("");
+      setFilterDate("");
+    }
+  }, [rangeParam]);
   // ---------------- AUTO SEARCH FROM NOTIFICATION ----------------
   useEffect(() => {
     if (location.state?.bookingId || location.state?.status) {
@@ -185,27 +236,51 @@ function Bookings({ user }) {
     const tokenPaid = booking.quotedAmount - booking.pendingAmount;
 
     // Split inclusions & paid services if you store them together
-    const inclusions = booking.extraDetails
-      ? booking.extraDetails
-        .split("\n")
-        .filter((i) =>
-          ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"]
-            .some((k) => i.includes(k))
-        )
-      : [];
+    // const inclusions = booking.extraDetails
+    //   ? booking.extraDetails
+    //     .split("\n")
+    //     .filter((i) =>
+    //       ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"]
+    //         .some((k) => i.includes(k))
+    //     )
+    //   : [];
 
-    const paidServices = booking.extraDetails
-      ? booking.extraDetails
-        .split("\n")
-        .filter((i) =>
-          ["Drone", "DSLR"].some((k) => i.includes(k))
-        )
-      : [];
+    // const paidServices = booking.extraDetails
+    //   ? booking.extraDetails
+    //     .split("\n")
+    //     .filter((i) =>
+    //       ["Drone", "DSLR"].some((k) => i.includes(k))
+    //     )
+    //   : [];
 
-    const notes = booking.extraDetails
-      ? booking.extraDetails.split("Notes:").slice(1).join("Notes:").trim()
+    // const notes = booking.extraDetails
+    //   ? booking.extraDetails.split("Notes:").slice(1).join("Notes:").trim()
+    //   : "";
+
+    const sanitizeText = (text = "") =>
+      text
+        .replace(/\u2022|\u2023|\u25E6/g, "-")
+        .replace(/\u200B|\u200C|\u200D|\uFEFF/g, "")
+        .replace(/\r\n/g, "\n")
+        .replace(/\n{2,}/g, "\n")
+        .trim();
+
+    const extraDetails = sanitizeText(booking.extraDetails || "");
+
+    const lines = extraDetails.split("\n").map(l => l.trim()).filter(Boolean);
+
+    const inclusions = lines.filter((i) =>
+      ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"]
+        .some((k) => i.includes(k))
+    );
+
+    const paidServices = lines.filter((i) =>
+      ["Drone", "DSLR"].some((k) => i.includes(k))
+    );
+
+    const notes = extraDetails.includes("Notes:")
+      ? extraDetails.split("Notes:").slice(1).join("Notes:").trim()
       : "";
-
 
     const hardCodedDisclaimer = `Disclaimer:
 • Reporting time is 30 minutes prior to departure
@@ -236,12 +311,21 @@ Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)
 📍 Boarding Location
 🔗 ${booking.yachtId?.boardingLocation || "Location not provided"}
 
-Inclusions:
-${inclusions.length ? inclusions.map((i) => `• ${i.replace("-", "").trim()}`).join("\n") : "• As discussed"}
+${inclusions.length
+        ? `Inclusions:\n${inclusions
+          .map((i) => `• ${i.replace("-", "").trim()}`)
+          .join("\n")}`
+        : ""}
 
-${paidServices.length ? paidServices.map((i) => `Extra Paid Services:\n• ${i.replace("-", "").trim()}`).join("\n") : ""}
+${paidServices.length
+        ? `\nExtra Paid Services:\n${paidServices
+          .map((i) => `• ${i.replace("-", "").trim()}`)
+          .join("\n")}`
+        : ""}
 
-${notes ? `Notes:\n${notes.replace(/\n/g, "\n• ")}` : ""}
+${notes
+        ? `\nNotes:\n• ${notes.replace(/\n/g, "\n• ")}`
+        : ""}
 `.trim() +
       `\n\n${booking?.company?.disclaimer
         ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]
@@ -270,24 +354,38 @@ Thank You`
       const bookingDateObj = new Date(booking.date);
       const bookingDate = booking.date?.split("T")[0];
 
-      // 1️⃣ Specific date → highest priority
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // ✅ 1️⃣ RANGE = 7 DAYS (highest priority from dashboard)
+      if (rangeParam === "7days") {
+        const next7Days = new Date(today);
+        next7Days.setDate(today.getDate() + 7);
+
+        return (
+          bookingDateObj > today &&
+          bookingDateObj <= next7Days
+        );
+      }
+
+      // ✅ 2️⃣ Specific Date
       if (filterDate) {
         return bookingDate === filterDate;
       }
 
-      // 2️⃣ If no month selected → show all
+      // ✅ 3️⃣ If no month selected → show all
       if (!selectedMonth) {
         return true;
       }
 
-      // 3️⃣ Otherwise filter by selected month
+      // ✅ 4️⃣ Month filter
       const year = bookingDateObj.getFullYear();
-      const month = String(bookingDateObj.getMonth() + 1).padStart(2, "0");
+      const month = String(
+        bookingDateObj.getMonth() + 1
+      ).padStart(2, "0");
 
       return `${year}-${month}` === selectedMonth;
     })
-
-
     // 1️⃣ Status logic
     .filter((booking) => {
       if (filterStatus === "completed") {

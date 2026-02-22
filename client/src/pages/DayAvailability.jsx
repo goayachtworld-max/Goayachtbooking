@@ -847,8 +847,12 @@ function DayAvailability() {
                         }}
                         title={
                           `${to12HourFormat(slot.start)} - ${to12HourFormat(slot.end)}` +
-                          (isAdminOrOnsite && slot.empName
-                            ? ` | Locked by: ${slot.empName}`
+                          ((isAdminOrOnsite || slot.empName === employee.name)
+                            ? slot.type === "locked"
+                              ? ` | Locked by: ${slot.empName}`
+                              : slot.type === "booked"
+                                ? ` | Booked By ${slot.empName} for ${slot.custName}`
+                                : ""
                             : "")
                         }
                       >
