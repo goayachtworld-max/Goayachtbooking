@@ -47,6 +47,7 @@ function Bookings({ user }) {
     pending: "info",
     confirmed: "success",
     cancelled: "danger",
+    completed: "primary"
   };
 
   // ---------------- SCREEN RESIZE ----------------
@@ -635,7 +636,7 @@ Thank You`
           {filteredBookings.length > 0 ? (
             filteredBookings.map((booking) => {
               const statusColor =
-                statusColorMap[booking.status] || "secondary";
+                statusColorMap[booking.status] || "info";
 
               return (
                 <div key={booking._id} className="col-lg-4 col-md-6 mb-3">

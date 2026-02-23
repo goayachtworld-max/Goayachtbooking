@@ -5,16 +5,25 @@ import { Download } from "lucide-react";
 import BoardingPassPDF from "./BoardingPassPDF";
 
 /* ------------------ Trip Steps ------------------ */
+// const TRIP_STEPS = [
+//   { key: "pending", label: "Pending" },
+//   { key: "initiated", label: "Confirmed" },
+//   { key: "success", label: "Completed" },
+// ];
 const TRIP_STEPS = [
   { key: "pending", label: "Pending" },
-  { key: "initiated", label: "Confirmed" },
-  { key: "success", label: "Completed" },
+  { key: "confirmed", label: "Confirmed" },
+  { key: "completed", label: "Completed" },
 ];
-
+// const STATUS_INDEX = {
+//   pending: 0,
+//   initiated: 1,
+//   success: 2,
+// };
 const STATUS_INDEX = {
   pending: 0,
-  initiated: 1,
-  success: 2,
+  confirmed: 1,
+  completed: 2,
 };
 const formatDate = (d) =>
   new Date(d).toLocaleDateString("en-GB", {
@@ -22,10 +31,6 @@ const formatDate = (d) =>
     month: "short",
     year: "numeric",
   });
-
-
-
-
 
 /* ------------------ Trip Progress ------------------ */
 const TripProgress = ({ tripStatus }) => {
@@ -87,28 +92,16 @@ function CustomerDetails() {
   const { booking } = location.state || {};
   const customer = booking?.customerId || {};
 
-  const isBookingCompleted = (booking) => {
-    if (!booking.date || !booking.endTime) return false;
+  // const isBookingCompleted = (booking) => {
+  //   if (!booking?.date || !booking?.endTime) return false;
 
-    const bookingEnd = new Date(booking.date);
-    const [h, m] = booking.endTime.split(":").map(Number);
-
-    bookingEnd.setHours(h, m, 0, 0);
-
-    return bookingEnd < new Date();
-  };
-  let finalTripStatus = "pending";
-
-  if (booking.status === "cancelled") {
-    finalTripStatus = "cancelled";
-  } else if (
-    booking.status === "confirmed" &&
-    isBookingCompleted(booking)
-  ) {
-    finalTripStatus = "success";
-  } else if (booking.status === "confirmed") {
-    finalTripStatus = "initiated";
-  }
+  //   // Create correct local datetime safely
+  //   const bookingEnd = new Date(
+  //     `${booking.date.split("T")[0]}T${booking.endTime}:00`
+  //   );
+  //   console.log("What isBookingCompleted is returing : ", bookingEnd < new Date())
+  //   return bookingEnd < new Date();
+  // };
 
   if (!booking) {
     return (
@@ -120,7 +113,28 @@ function CustomerDetails() {
       </div>
     );
   }
+  // const getFinalStatus = (booking) => {
+  //   console.log("Booking : ", booking)
+  //   if (!booking) return "pending";
 
+  //   const status = booking.status?.toLowerCase?.().trim();
+
+  //   if (status === "cancelled") return "cancelled";
+
+  //   if (status === "confirmed") {
+  //     if (isBookingCompleted(booking)) {
+  //       return "completed";
+  //     }
+  //     return "confirmed";
+  //   }
+
+  //   if (status === "pending") return "pending";
+
+  //   return "pending";
+  // };
+
+  const finalTripStatus = booking.status;
+  // console.log("FInal : ", finalTripStatus)
   /* ---------------- Helpers ---------------- */
   const to12HourFormat = (time24) => {
     if (!time24) return "-";
