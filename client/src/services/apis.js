@@ -58,3 +58,7 @@ export const notification = {
   MARK_AS_READ_API: (id) => `${BASE_URL}/notifications/${id}/read`,
   MARK_ALL_AS_READ_API: `${BASE_URL}/notifications/mark-all-read`,
 };
+
+export const company ={
+  REGISTER_COMPANY_API : `${BASE_URL}/company`
+}

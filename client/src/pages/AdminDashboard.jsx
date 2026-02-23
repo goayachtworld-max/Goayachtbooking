@@ -397,6 +397,15 @@ function AdminDashboard({ user }) {
         <div className={styles.quickActions}>
           <h5 className="text-center mb-4 fw-semibold text-primary">Quick Actions</h5>
           <div className="d-grid d-md-flex gap-2 gap-md-3 justify-content-center flex-wrap">
+            {user?.systemAdministrator && (
+              <button
+                className="btn btn-outline-dark btn-lg px-4 py-2 flex-fill flex-md-grow-0"
+                onClick={() => navigate("/register-company")}
+              >
+                <i className="bi bi-building-add me-2"></i>
+                Create Company
+              </button>
+            )}
             <button
               className="btn btn-outline-primary btn-lg px-4 py-2 flex-fill flex-md-grow-0"
               onClick={() => navigate("/create-customer")}

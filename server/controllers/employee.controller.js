@@ -19,7 +19,8 @@ export const createEmployee = async (req, res, next) => {
       ...req.body,
       password: hashedPassword,
       company: [req.user.company[0]],
-      username: uname
+      username: uname,
+      systemAdministrator: false
     });
 
     employee.password = null;

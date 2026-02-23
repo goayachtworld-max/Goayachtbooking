@@ -19,7 +19,7 @@ export const authMiddleware = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const employee = await EmployeeModel.findById(decoded.id)
-      .select("_id type company isPrivate status lastSeenAt");
+      .select("_id type company isPrivate status lastSeenAt systemAdministrator");
 
     if (!employee) {
       return res.status(401).json({
@@ -51,7 +51,8 @@ export const authMiddleware = async (req, res, next) => {
       _id: employee._id.toString(),
       type: employee.type,
       company: employee.company.map(id => id.toString()),
-      isPrivate: employee.isPrivate
+      isPrivate: employee.isPrivate,
+      systemAdministrator : employee.systemAdministrator
     };
 
     console.log("Auth success:", req.user);

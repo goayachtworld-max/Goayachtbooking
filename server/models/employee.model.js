@@ -7,11 +7,14 @@ const employeeSchema = new mongoose.Schema({
     enum: ['admin', 'backdesk', 'onsite'], // 👈 Only these values allowed
     required: true
   },
+  systemAdministrator: {
+    type: Boolean,
+    default: false
+  },
   company: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Company',
-      required: true
     }
   ],
   username: {

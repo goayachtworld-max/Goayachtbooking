@@ -29,6 +29,7 @@ import "./styles/NavbarNotification.css"
 import NotificationBell from "./pages/NotificationBell";
 import EditBookingDetails from "./components/EditBookingDetails";
 import CustomerManagement from "./pages/CustomerManagement";
+import RegisterCompany from "./pages/RegisterCompany";
 
 
 function App() {
@@ -178,7 +179,20 @@ function App() {
             path="/admin"
             element={
               <ProtectedRoute user={user}>
-                {role === "admin" ? <AdminDashboard /> : <NotFound />}
+                {role === "admin" ? <AdminDashboard user={user}/> : <NotFound />}
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/register-company"
+            element={
+              <ProtectedRoute user={user}>
+                {user?.systemAdministrator ? (
+                  <RegisterCompany />
+                ) : (
+                  <NotFound />
+                )}
               </ProtectedRoute>
             }
           />
@@ -241,7 +255,7 @@ function App() {
             element={
               <ProtectedRoute user={user}>
                 {["admin", "backdesk", "onsite"].includes(role) ? (
-                  <CustomerManagement/>
+                  <CustomerManagement />
                 ) : (
                   <NotFound />
                 )}
