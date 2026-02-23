@@ -122,7 +122,7 @@ const formatDate = (d) =>
       ? booking.extraDetails
         .split("\n")
         .filter((i) =>
-          ["Drone", "DSLR"].some((k) => i.includes(k))
+           ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
         )
       : [];
     const notes = booking.extraDetails

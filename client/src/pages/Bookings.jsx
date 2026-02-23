@@ -276,7 +276,7 @@ function Bookings({ user }) {
     );
 
     const paidServices = lines.filter((i) =>
-      ["Drone", "DSLR"].some((k) => i.includes(k))
+      ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
     );
 
     const notes = extraDetails.includes("Notes:")
@@ -313,13 +313,13 @@ Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)
 🔗 ${booking.yachtId?.boardingLocation || "Location not provided"}
 
 ${inclusions.length
-        ? `Inclusions:\n${inclusions
+        ? `Extra Inclusions:\n${inclusions
           .map((i) => `• ${i.replace("-", "").trim()}`)
           .join("\n")}`
         : ""}
 
 ${paidServices.length
-        ? `\nExtra Paid Services:\n${paidServices
+        ? `\nExtra Purchased Services:\n${paidServices
           .map((i) => `• ${i.replace("-", "").trim()}`)
           .join("\n")}`
         : ""}
