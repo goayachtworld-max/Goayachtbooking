@@ -139,13 +139,6 @@ function AdminDashboard({ user }) {
             cancelled++;
             return;
           }
-
-          // ---------------- COMPLETED ----------------
-          if (isCompleted) {
-            completed++;
-            return;
-          }
-
           // ---------------- TODAY ----------------
           if (
             bookingDate.getFullYear() === today.getFullYear() &&
@@ -153,6 +146,11 @@ function AdminDashboard({ user }) {
             bookingDate.getDate() === today.getDate()
           ) {
             todayCount++;
+          }
+          // ---------------- COMPLETED ----------------
+          if (isCompleted) {
+            completed++;
+            return;
           }
 
           // ---------------- NEXT 7 DAYS ----------------
@@ -232,14 +230,15 @@ function AdminDashboard({ user }) {
     </div>
   );
 
-  const getToday = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
+  // const getToday = () => {
+  //   const today = new Date();
+  //   const yyyy = today.getFullYear();
+  //   const mm = String(today.getMonth() + 1).padStart(2, "0");
+  //   const dd = String(today.getDate()).padStart(2, "0");
+  //   return `${yyyy}-${mm}-${dd}`;
+  // };
   const today = new Date().toISOString().split("T")[0];
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   return (
     <div className={styles.dashboardWrapper}>
       <div className={styles.content}>
@@ -280,7 +279,7 @@ function AdminDashboard({ user }) {
               title="Created Today"
               value={stats.createdToday}
               color="secondary"
-              onClick={() => navigate(`/bookings?date=${today}`)}
+              onClick={() => navigate(`/bookings?created=today`)}
             />
             <StatCard
               title="Pending Bookings"
@@ -356,7 +355,7 @@ function AdminDashboard({ user }) {
                 </div>
                 <button
                   className={`${styles.cardBtn} btn btn-success w-100 w-md-auto`}
-                  onClick={() => navigate("/bookings")}
+                  onClick={() => navigate(`/bookings?month=${currentMonth}`)}
                 >
                   Go <BsArrowRight className="ms-1" />
                 </button>

@@ -155,7 +155,7 @@ function Navbar({ user, onLogout }) {
     };
   }, []);
 
-
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -204,7 +204,7 @@ function Navbar({ user, onLogout }) {
                 <Link
                   className={`nav-link text-white ${styles.navHover} ${isActive("/bookings") ? styles.activeTab : ""
                     }`}
-                  to="/bookings"
+                  to={`/bookings?month=${currentMonth}`}
                   onClick={handleNavLinkClick}
                 >
                   Bookings

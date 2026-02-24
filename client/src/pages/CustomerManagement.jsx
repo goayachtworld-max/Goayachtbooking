@@ -6,6 +6,7 @@ import {
 } from "../services/operations/customerAPI";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import styles from "../styles/CustomerManagement.module.css"
 
 function CustomerManagement() {
     const token = localStorage.getItem("authToken");
@@ -43,38 +44,38 @@ function CustomerManagement() {
 
     /* ---------------- Fetch Customers ---------------- */
     const fetchCustomers = async () => {
-    try {
-        setLoading(true);
+        try {
+            setLoading(true);
 
-        let response;
+            let response;
 
-        const searchValue = debouncedSearch.trim();
+            const searchValue = debouncedSearch.trim();
 
-        // ✅ Call search only if length >= 2
-        if (searchValue.length >= 2) {
-            response = await searchCustomersByNameAPI(searchValue, token);
-            setCustomers(response.data.customers || []);
-            setTotalPages(1);
-        } 
-        // ✅ If 0 characters → normal pagination
-        else if (searchValue.length === 0) {
-            response = await getCustomersAPI(page, 10, token);
-            setCustomers(response.data.customers || []);
-            setTotalPages(response.data.totalPages || 1);
+            // ✅ Call search only if length >= 2
+            if (searchValue.length >= 2) {
+                response = await searchCustomersByNameAPI(searchValue, token);
+                setCustomers(response.data.customers || []);
+                setTotalPages(1);
+            }
+            // ✅ If 0 characters → normal pagination
+            else if (searchValue.length === 0) {
+                response = await getCustomersAPI(page, 10, token);
+                setCustomers(response.data.customers || []);
+                setTotalPages(response.data.totalPages || 1);
+            }
+            // ✅ If 1 character → DO NOTHING (optional: clear results)
+            else {
+                setCustomers([]); // optional
+                setTotalPages(1);
+            }
+
+        } catch (err) {
+            console.log("FETCH ERROR:", err);
+            toast.error("Failed to fetch customers");
+        } finally {
+            setLoading(false);
         }
-        // ✅ If 1 character → DO NOTHING (optional: clear results)
-        else {
-            setCustomers([]); // optional
-            setTotalPages(1);
-        }
-
-    } catch (err) {
-        console.log("FETCH ERROR:", err);
-        toast.error("Failed to fetch customers");
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
     useEffect(() => {
         fetchCustomers();
@@ -158,7 +159,7 @@ function CustomerManagement() {
             </div>
 
             {/* Table */}
-            {loading ? (
+            {/* {loading ? (
                 <div className="text-center py-4">
                     <div className="spinner-border text-primary" />
                 </div>
@@ -199,8 +200,162 @@ function CustomerManagement() {
                             )}
                         </tbody>
                     </table>
+                    {!debouncedSearch && (
+                        <div className="d-flex justify-content-center mt-3">
+                            {renderPageNumbers()}
+                        </div>
+                    )}
+                </>
+            )} */}
 
-                    {/* Pagination Numbers */}
+            {/* Table / Cards */}
+            {loading ? (
+                <div className="text-center py-4">
+                    <div className="spinner-border text-primary" />
+                </div>
+            ) : (
+                <>
+                    {/* Desktop Table */}
+                    {/* <div className="d-none d-md-block">
+      <table className="table table-hover table-bordered align-middle">
+        <thead className="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>Email</th>
+            <th width="120">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {customers.length === 0 ? (
+            <tr>
+              <td colSpan="4" className="text-center">
+                No customers found
+              </td>
+            </tr>
+          ) : (
+            customers.map((cust) => (
+              <tr key={cust._id}>
+                <td>{cust.name}</td>
+                <td>{cust.contact}</td>
+                <td>{cust.email}</td>
+                <td>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={() => handleEditClick(cust)}
+                  >
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div> */}
+                    {/* Desktop Table */}
+                    <div className={styles.desktopView}>
+                        <table className="table table-hover table-bordered align-middle">
+                            <thead className="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Email</th>
+                                    <th width="120">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {customers.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="4" className="text-center">
+                                            No customers found
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    customers.map((cust) => (
+                                        <tr key={cust._id}>
+                                            <td>{cust.name}</td>
+                                            <td>{cust.contact}</td>
+                                            <td>{cust.email}</td>
+                                            <td>
+                                                <button
+                                                    className="btn btn-sm btn-primary"
+                                                    onClick={() => handleEditClick(cust)}
+                                                >
+                                                    Edit
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Mobile Cards */}
+                    <div className={styles.mobileView}>
+                        {customers.length === 0 ? (
+                            <div className="text-center py-4">No customers found</div>
+                        ) : (
+                            customers.map((cust) => (
+                                <div
+                                    key={cust._id}
+                                    className={`card shadow-sm mb-3 border-0 ${styles.mobileCard}`}
+                                >
+                                    <div className="card-body">
+                                        <h6 className="fw-bold mb-2">{cust.name}</h6>
+
+                                        <p className="mb-1">
+                                            <strong>Contact:</strong> {cust.contact}
+                                        </p>
+
+                                        <p className="mb-2">
+                                            <strong>Email:</strong> {cust.email || "N/A"}
+                                        </p>
+
+                                        <button
+                                            className="btn btn-sm btn-primary w-100"
+                                            onClick={() => handleEditClick(cust)}
+                                        >
+                                            Edit Customer
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Mobile Cards */}
+                    {/* <div className="d-block d-md-none">
+      {customers.length === 0 ? (
+        <div className="text-center py-4">No customers found</div>
+      ) : (
+        customers.map((cust) => (
+          <div key={cust._id} className="card shadow-sm mb-3">
+            <div className="card-body">
+              <h6 className="fw-bold mb-2">{cust.name}</h6>
+
+              <p className="mb-1">
+                <strong>Contact:</strong> {cust.contact}
+              </p>
+
+              <p className="mb-2">
+                <strong>Email:</strong> {cust.email || "N/A"}
+              </p>
+
+              <button
+                className="btn btn-sm btn-primary w-100"
+                onClick={() => handleEditClick(cust)}
+              >
+                Edit Customer
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </div> */}
+
+                    {/* Pagination */}
                     {!debouncedSearch && (
                         <div className="d-flex justify-content-center mt-3">
                             {renderPageNumbers()}

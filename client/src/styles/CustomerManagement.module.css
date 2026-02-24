@@ -1,0 +1,28 @@
+/* Default: Desktop */
+.desktopView {
+  display: block;
+}
+
+.mobileView {
+  display: none;
+}
+
+/* Strictly below 500px */
+@media (max-width: 500px) {
+  .desktopView {
+    display: none;
+  }
+
+  .mobileView {
+    display: block;
+  }
+
+  .mobileCard {
+    border-radius: 12px;
+    transition: 0.2s ease;
+  }
+
+  .mobileCard:active {
+    transform: scale(0.98);
+  }
+}

@@ -145,11 +145,15 @@
     padding: 0 0.25rem;
   }
   
-  .statCard {
+  /* .statCard {
     min-width: 160px;
     flex: 0 0 auto;
-  }
+  } */
   
+  .statCard {
+  width: 100%;
+  min-height: 130px;
+}
   .cardTitle {
     font-size: 0.75rem !important;
   }
@@ -182,7 +186,27 @@
     justify-content: center;
   }
 }
+/* 
+@media (max-width: 425px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
+@media (max-width: 425px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    justify-items: center;  
+  }
+
+  .statCard {
+    width: 100%;
+    max-width: 170px;       
+  }
+} */
+
+
+/* Mobile */
 @media (max-width: 425px) {
   .statsGrid {
     grid-template-columns: repeat(2, 1fr);

@@ -14,6 +14,7 @@ function Bookings({ user }) {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const rangeParam = params.get("range");
+  const createdParam = params.get("created");
   // ---------------- STATE ----------------
   const [bookings, setBookings] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -129,8 +130,45 @@ function Bookings({ user }) {
   };
 
   // ---------------- URL SYNC ----------------
+  // useEffect(() => {
+  //   const p = new URLSearchParams(location.search);
+
+  //   if (searchQuery) p.set("search", searchQuery);
+  //   else p.delete("search");
+
+  //   if (filterDate) p.set("date", filterDate);
+  //   else p.delete("date");
+
+  //   if (filterStatus) p.set("status", filterStatus);
+  //   else p.delete("status");
+
+  //   if (selectedMonth) p.set("month", selectedMonth);
+  //   else p.delete("month");
+
+  //   const employeeValue = getEmployeeParamValue();
+  //   if (employeeValue) p.set("employee", employeeValue);
+  //   else p.delete("employee");
+
+  //   navigate({ search: p.toString() }, { replace: true });
+  // }, [
+  //   searchQuery,
+  //   filterDate,
+  //   filterStatus,
+  //   filterEmployee,
+  //   selectedMonth,
+  //   employees,
+  //   location.search,   // 🔥 important
+  // ]);
+
   useEffect(() => {
     const p = new URLSearchParams(location.search);
+
+    // 🔥 PRESERVE DASHBOARD PARAMS
+    if (rangeParam) p.set("range", rangeParam);
+    else p.delete("range");
+
+    if (createdParam) p.set("created", createdParam);
+    else p.delete("created");
 
     if (searchQuery) p.set("search", searchQuery);
     else p.delete("search");
@@ -156,7 +194,8 @@ function Bookings({ user }) {
     filterEmployee,
     selectedMonth,
     employees,
-    location.search,   // 🔥 important
+    rangeParam,
+    createdParam,
   ]);
 
   // ---------------- FILTER / REFRESH → FETCH ----------------
@@ -175,7 +214,9 @@ function Bookings({ user }) {
     filterDate,
     filterStatus,
     filterEmployee,
-    location.state?.refresh, // 🔥 notification refresh
+    location.state?.refresh,
+    rangeParam,
+    createdParam,
   ]);
 
   useEffect(() => {
@@ -202,9 +243,9 @@ function Bookings({ user }) {
     setFilterStatus("");
     setFilterEmployee("");
     setSelectedMonth("");
+
+      navigate("/bookings", { replace: true });
   };
-
-
 
   const isBookingCompleted = (booking) => {
     if (!booking.date || !booking.endTime) return false;
@@ -357,6 +398,20 @@ Thank You`
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      // ✅ CREATED TODAY FILTER (highest priority from dashboard)
+      if (createdParam === "today") {
+        const createdAt = new Date(booking.createdAt);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        return (
+          createdAt.getFullYear() === today.getFullYear() &&
+          createdAt.getMonth() === today.getMonth() &&
+          createdAt.getDate() === today.getDate() &&
+          booking.status !== "cancelled"
+        );
+      }
 
       // ✅ 1️⃣ RANGE = 7 DAYS (highest priority from dashboard)
       if (rangeParam === "7days") {
