@@ -819,28 +819,84 @@ function GridAvailability() {
             </div> */}
           </div>
         )}
-        {yacht && (
-          <div className="mb-3 d-flex gap-4 align-items-center">
-            <div>
-              <span className="text-muted me-1">B2B:</span>
-              <span className="fw-semibold text-primary">
-                ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
-              </span>
+        <div className="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          {yacht && (
+            <div className="d-flex gap-4 align-items-center">
+              <div>
+                <span className="text-muted me-1">B2B:</span>
+                <span className="fw-semibold text-primary">
+                  ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted me-1">Price:</span>
+                <span className="fw-semibold text-success">
+                  ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
+                </span>
+              </div>
             </div>
-
-            <div>
-              <span className="text-muted me-1">Price:</span>
-              <span className="fw-semibold text-success">
-                ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
-              </span>
-            </div>
+          )}
+          <div className={styles.legend}>
+            <span className={styles.legendItem}>
+              <span className={`${styles.legendDot} ${styles.legendFree}`}></span> Free
+            </span>
+            <span className={styles.legendItem}>
+              <span className={`${styles.legendDot} ${styles.legendPending}`}></span> Pending
+            </span>
+            <span className={styles.legendItem}>
+              <span className={`${styles.legendDot} ${styles.legendLocked}`}></span> Locked
+            </span>
+            <span className={styles.legendItem}>
+              <span className={`${styles.legendDot} ${styles.legendBooked}`}></span> Booked
+            </span>
           </div>
-        )}
-
+        </div>
 
         {loading ? (
           <div className="text-center py-5">Loading availability...</div>
         ) : grid.length > 0 ? (
+          <>
+
+          {/* Mobile card view */}
+          {isMobile ? (
+            <div className={styles.mobileGrid}>
+              {grid.map((row, i) => (
+                <div key={i} className={styles.mobileDay}>
+                  <div className={styles.mobileDayHeader}>
+                    {new Date(row.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                  </div>
+                  <div className={styles.mobileSlots}>
+                    {row.slots.map((slot, idx) => {
+                      const past = isPastSlot(slot, row.date);
+                      const unauthorized =
+                        !isAdminOrOnsite &&
+                        (slot.type === "locked" || slot.type === "booked" || slot.type === "pending") &&
+                        !isOwner(slot);
+                      return (
+                        <div
+                          key={idx}
+                          className={[
+                            styles.mobileSlot,
+                            styles[slot.type],
+                            past ? styles.past : ""
+                          ].join(" ")}
+                          style={{ cursor: past || unauthorized ? "not-allowed" : "pointer" }}
+                          onClick={() => {
+                            if (past || unauthorized) return;
+                            const typeToOpen = slot.type === "pending" ? "booked" : slot.type;
+                            handleSlotClick(slot, typeToOpen);
+                          }}
+                          title={`${to12HourFormat(slot.start)} - ${to12HourFormat(slot.end)}`}
+                        >
+                          {to12HourFormat(slot.start)}–{to12HourFormat(slot.end)}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className={styles.wrapper}>
             <table className={`table ${styles.table} text-center align-middle`}>
 
@@ -864,6 +920,8 @@ function GridAvailability() {
               </tbody>
             </table>
           </div>
+          )}
+          </>
         ) : (
           <div className="text-muted text-center py-5">No availability found</div>
         )}

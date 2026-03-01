@@ -128,9 +128,94 @@
     font-size: 12px;
     padding: 6px 10px;
   }
+
+  .legend {
+    gap: 12px;
+  }
 }
 
-/* GridAvailability.module.css */
+/* ================================
+   Legend
+================================ */
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.legendFree    { background: #27ae60; }
+.legendPending { background: #0984e3; }
+.legendLocked  { background: #f39c12; }
+.legendBooked  { background: #e74c3c; }
+
+/* ================================
+   Mobile Card Grid
+================================ */
+.mobileGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobileDay {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  overflow: hidden;
+}
+
+.mobileDayHeader {
+  background: #f8fafc;
+  font-weight: 700;
+  font-size: 13px;
+  color: #475569;
+  padding: 8px 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mobileSlots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.mobileSlot {
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.1s;
+}
+
+.mobileSlot:active {
+  transform: scale(0.96);
+}
+
+/* ================================
+   GridAvailability.module.css (modal)
+================================ */
 .modal-content input,
 .modal-content select,
 .modal-content textarea {

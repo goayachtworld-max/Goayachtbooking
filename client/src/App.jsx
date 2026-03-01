@@ -156,7 +156,7 @@ function App() {
       {user && <Navbar user={user} onLogout={logoutUser} />}
       {user && <NotificationBell className="nav-notification" />}
       {/* <div className="mt-1">hi</div> */}
-      <div className="app-content">
+      <div className={user ? "app-content" : ""}>
         <Routes>
           {/* Root Route → Redirect based on user role */}
           <Route

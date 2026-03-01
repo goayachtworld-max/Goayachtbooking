@@ -1,81 +1,49 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import { Download } from "lucide-react";
 import BoardingPassPDF from "./BoardingPassPDF";
+import { GLOBAL_CSS } from "../styles/customerStyles";
 
-/* ------------------ Trip Steps ------------------ */
-// const TRIP_STEPS = [
-//   { key: "pending", label: "Pending" },
-//   { key: "initiated", label: "Confirmed" },
-//   { key: "success", label: "Completed" },
-// ];
-const TRIP_STEPS = [
-  { key: "pending", label: "Pending" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "completed", label: "Completed" },
+/* ── constants ── */
+const STEPS = [
+  { key:"pending",   label:"Pending"   },
+  { key:"confirmed", label:"Confirmed" },
+  { key:"completed", label:"Completed" },
 ];
-// const STATUS_INDEX = {
-//   pending: 0,
-//   initiated: 1,
-//   success: 2,
-// };
-const STATUS_INDEX = {
-  pending: 0,
-  confirmed: 1,
-  completed: 2,
+const STEP_IDX = { pending:0, confirmed:1, completed:2 };
+
+const fmt = (d) =>
+  new Date(d).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
+
+const to12 = (t) => {
+  if (!t) return "—";
+  let [h, m] = t.split(":").map(Number);
+  const p = h >= 12 ? "PM" : "AM";
+  return `${h % 12 || 12}:${String(m).padStart(2,"0")} ${p}`;
 };
-const formatDate = (d) =>
-  new Date(d).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 
-/* ------------------ Trip Progress ------------------ */
-const TripProgress = ({ tripStatus }) => {
-  if (!tripStatus) return null;
-
-  if (tripStatus === "cancelled") {
+/* ── TripProgress ── */
+const TripProgress = ({ status }) => {
+  if (!status) return null;
+  if (status === "cancelled") {
     return (
-      <div className="alert alert-danger text-center fw-semibold mb-3">
-        ❌ Trip Cancelled
+      <div style={{ background:"#fef2f2", border:"2px solid #fca5a5", color:"#dc2626", fontWeight:800, fontSize:14, padding:"11px 16px", borderRadius:10, textAlign:"center", marginBottom:14 }}>
+        ✕ Trip Cancelled
       </div>
     );
   }
-
-  const activeIndex = STATUS_INDEX[tripStatus] ?? 0;
-  const progressPercent = (activeIndex / (TRIP_STEPS.length - 1)) * 100;
-
+  const idx  = STEP_IDX[status] ?? 0;
+  const pct  = (idx / (STEPS.length - 1)) * 100;
   return (
-    <div className="mb-1">
-      {/* Progress bar */}
-      <div className="progress mb-3" style={{ height: "6px" }}>
-        <div
-          className="progress-bar bg-success"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
-
-      {/* Steps */}
-      <div className="d-flex justify-content-between">
-        {TRIP_STEPS.map((step, index) => {
-          const completed = index <= activeIndex;
+    <div style={{ marginBottom:18 }}>
+      <div className="cm-progress-track"><div className="cm-progress-fill" style={{ width:`${pct}%` }} /></div>
+      <div className="cm-steps">
+        {STEPS.map((s, i) => {
+          const done = i <= idx;
           return (
-            <div key={step.key} className="text-center flex-fill">
-              <div
-                className={`rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center fw-bold ${completed ? "bg-success text-white" : "bg-light text-muted"
-                  }`}
-                style={{ width: 20, height: 20 }}
-              >
-                {completed ? "✓" : index + 1}
-              </div>
-              <small
-                className={`fw-semibold ${completed ? "text-success" : "text-muted"
-                  }`}
-              >
-                {step.label}
-              </small>
+            <div key={s.key} className="cm-step">
+              <div className={`cm-step-dot${done?" done":""}`}>{done ? "✓" : i+1}</div>
+              <div className={`cm-step-lbl${done?" done":""}`}>{s.label}</div>
             </div>
           );
         })}
@@ -84,236 +52,176 @@ const TripProgress = ({ tripStatus }) => {
   );
 };
 
-/* ------------------ Main Page ------------------ */
+/* ── InfoItem ── */
+const Info = ({ label, value }) => (
+  <div>
+    <div className="cm-info-label">{label}</div>
+    <div className="cm-info-val">{value || "—"}</div>
+  </div>
+);
+
+/* ── Main ── */
 function CustomerDetails() {
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const { booking } = location.state || {};
-  const customer = booking?.customerId || {};
-
-  // const isBookingCompleted = (booking) => {
-  //   if (!booking?.date || !booking?.endTime) return false;
-
-  //   // Create correct local datetime safely
-  //   const bookingEnd = new Date(
-  //     `${booking.date.split("T")[0]}T${booking.endTime}:00`
-  //   );
-  //   console.log("What isBookingCompleted is returing : ", bookingEnd < new Date())
-  //   return bookingEnd < new Date();
-  // };
+  const { state }   = useLocation();
+  const navigate    = useNavigate();
+  const { booking } = state || {};
+  const customer    = booking?.customerId || {};
 
   if (!booking) {
     return (
-      <div className="container text-center mt-5">
-        <h5>No booking data found</h5>
-        <button className="btn btn-primary mt-3" onClick={() => navigate(-1)}>
-          Go Back
-        </button>
+      <div className="cm-wrap">
+        <style>{GLOBAL_CSS}</style>
+        <div className="cm-page" style={{ maxWidth:520 }}>
+          <div className="cm-card" style={{ padding:32, textAlign:"center" }}>
+            <div style={{ fontSize:40, marginBottom:12 }}>📋</div>
+            <div style={{ fontSize:18, fontWeight:800, color:"#0f172a", marginBottom:8 }}>No booking data</div>
+            <button className="cm-btn cm-btn-primary" onClick={() => navigate(-1)}>← Go Back</button>
+          </div>
+        </div>
       </div>
     );
   }
-  // const getFinalStatus = (booking) => {
-  //   console.log("Booking : ", booking)
-  //   if (!booking) return "pending";
 
-  //   const status = booking.status?.toLowerCase?.().trim();
+  /* parse extras */
+  const sanitize = (txt="") =>
+    txt.replace(/\u2022|\u2023|\u25E6/g,"-")
+       .replace(/\u200B|\u200C|\u200D|\uFEFF/g,"")
+       .replace(/\r\n/g,"\n").replace(/\n{2,}/g,"\n").trim();
 
-  //   if (status === "cancelled") return "cancelled";
+  const extras     = booking.extraDetails ? sanitize(booking.extraDetails) : "";
+  const lines      = extras.split("\n").map((l)=>l.trim()).filter(Boolean);
+  const inclusions = lines.filter((l) => ["Soft Drink","Ice Cube","Water Bottles","Bluetooth Speaker","Captain","Snacks"].some((k)=>l.includes(k)));
+  const paid       = lines.filter((l) => ["Drone","DSLR"].some((k)=>l.includes(k)));
+  const notes      = extras.includes("Notes:") ? extras.split("Notes:").slice(1).join("Notes:").trim() : "";
 
-  //   if (status === "confirmed") {
-  //     if (isBookingCompleted(booking)) {
-  //       return "completed";
-  //     }
-  //     return "confirmed";
-  //   }
-
-  //   if (status === "pending") return "pending";
-
-  //   return "pending";
-  // };
-
-  const finalTripStatus = booking.status;
-  // console.log("FInal : ", finalTripStatus)
-  /* ---------------- Helpers ---------------- */
-  const to12HourFormat = (time24) => {
-    if (!time24) return "-";
-    let [hour, minute] = time24.split(":").map(Number);
-    hour = hour % 24;
-    const period = hour >= 12 ? "PM" : "AM";
-    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-    return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
-  };
-
-  const bookingDate = booking.date
-    ? new Date(booking.date).toLocaleDateString()
-    : "-";
-
-  const ticketId = booking._id
-    ? booking._id.slice(-5).toUpperCase()
-    : "-----";
+  const ticketId   = booking._id ? booking._id.slice(-6).toUpperCase() : "------";
+  const pending    = booking.pendingAmount ?? 0;
 
   return (
-    <div
-      className="container-fluid d-flex justify-content-center align-items-start"
-      style={{
-        minHeight: "calc(100vh - 70px)", // adjust if navbar height differs
-        overflow: "hidden",
-        paddingTop: "12px",
-      }}
-    >
-      <div className="col-12 col-md-8 col-lg-6">
+    <div className="cm-wrap">
+      <style>{GLOBAL_CSS}</style>
+      <div className="cm-page" style={{ maxWidth:620 }}>
+
         {/* Header */}
-        <div className="text-center mb-1">
-          <h5 className="fw-bold mb-1">Booking Details</h5>
-          <span className="badge bg-dark">
-            Ticket #{ticketId}
+        <div className="cm-header">
+          <div>
+            <div className="cm-subtitle">Booking · #{ticketId}</div>
+            <div className="cm-title">Booking Details</div>
+          </div>
+          <button className="cm-btn cm-btn-outline" onClick={() => navigate(-1)}>← Back</button>
+        </div>
+
+        {/* Status badge */}
+        <div style={{ marginBottom:16 }}>
+          <span className={`cm-tag ${
+            booking.status === "confirmed"  ? "cm-tag-green" :
+            booking.status === "cancelled"  ? "cm-tag-red"   :
+            booking.status === "completed"  ? "cm-tag-blue"  : "cm-tag-amber"
+          }`}>
+            {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
           </span>
         </div>
 
         {/* Progress */}
-        {/* <TripProgress tripStatus={booking.tripStatus} /> */}
-        <TripProgress tripStatus={finalTripStatus} />
+        <TripProgress status={booking.status} />
 
-        {/* Card */}
-        <div className="card shadow-sm">
-          <div className="card-body p-3">
+        {/* Main card */}
+        <div className="cm-card" style={{ padding:20, marginBottom:12 }}>
 
-            {/* ================= TOP TWO COLUMN SECTION ================= */}
-            <div className="row small g-2">
-
-              {/* LEFT COLUMN */}
-              <div className="col-6">
-                <p className="m-0"><strong>Customer:</strong><br />{customer.name || "N/A"}</p>
-                <p className="m-0 mt-2"><strong>Contact:</strong><br />{customer.contact || "N/A"}</p>
-                <p className="m-0 mt-2"><strong>Email:</strong><br />{customer.email || "N/A"}</p>
-              </div>
-
-              {/* RIGHT COLUMN */}
-              <div className="col-6">
-                <p className="m-0"><strong>Date:</strong><br />{bookingDate}</p>
-                <p className="m-0 mt-2">
-                  <strong>Time:</strong><br />
-                  {to12HourFormat(booking.startTime)} – {to12HourFormat(booking.endTime)}
-                </p>
-                <p className="m-0 mt-2"><strong>People:</strong><br />{booking.numPeople}</p>
-              </div>
-
-            </div>
-
-            <hr className="my-3" />
-
-            {/* ================= BALANCE ================= */}
-            <div className="small">
-              <strong>Balance:</strong> ₹{booking.pendingAmount ?? 0}
-            </div>
-
-            <hr className="my-3" />
-
-            {/* ================= EXTRA DETAILS TWO COLUMN ================= */}
-            {booking?.extraDetails && (() => {
-
-              const sanitizeText = (text = "") =>
-                text
-                  .replace(/\u2022|\u2023|\u25E6/g, "-")
-                  .replace(/\u200B|\u200C|\u200D|\uFEFF/g, "")
-                  .replace(/\r\n/g, "\n")
-                  .replace(/\n{2,}/g, "\n")
-                  .trim();
-
-              const extraDetails = sanitizeText(booking.extraDetails);
-              const lines = extraDetails.split("\n").map(l => l.trim()).filter(Boolean);
-
-              const inclusions = lines.filter(i =>
-                ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"]
-                  .some(k => i.includes(k))
-              );
-
-              const paidServices = lines.filter(i =>
-                ["Drone", "DSLR"].some(k => i.includes(k))
-              );
-
-              const notes = extraDetails.includes("Notes:")
-                ? extraDetails.split("Notes:").slice(1).join("Notes:").trim()
-                : "";
-
-              return (
-                <>
-                  <div className="row small">
-
-                    <div className="col-6">
-                      <strong>Extra Inclusions</strong>
-                      <ul className="mb-0 mt-1">
-                        {inclusions.length > 0
-                          ? inclusions.map((item, i) => (
-                            <li key={i}>{item.replace("-", "").trim()}</li>
-                          ))
-                          : <li className="text-muted">None</li>
-                        }
-                      </ul>
-                    </div>
-
-                    <div className="col-6">
-                      <strong>Extra Paid Services</strong>
-                      <ul className="mb-0 mt-1">
-                        {paidServices.length > 0
-                          ? paidServices.map((item, i) => (
-                            <li key={i}>{item.replace("-", "").trim()}</li>
-                          ))
-                          : <li className="text-muted">None</li>
-                        }
-                      </ul>
-                    </div>
-
-                  </div>
-
-                  {notes && (
-                    <>
-                      <hr className="my-3" />
-                      <div className="small">
-                        <strong>Note</strong>
-                        <div className="mt-1">{notes}</div>
-                      </div>
-                    </>
-                  )}
-                </>
-              );
-            })()}
-
-            <hr className="my-3" />
-
-            {/* ================= ACTION BUTTONS ================= */}
-            <div className="d-flex justify-content-center gap-2 flex-wrap">
-
-              <button
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => navigate(-1)}
-              >
-                Back
-              </button>
-
-              {booking.status === "confirmed" && (
-                <PDFDownloadLink
-                  document={<BoardingPassPDF booking={booking} />}
-                  fileName={`${booking.yachtId?.name}_${customer.name}_${formatDate(booking.date)}.pdf`}
-                  className="text-decoration-none"
-                >
-                  {({ loading }) => (
-                    <button
-                      type="button"
-                      className="btn btn-success btn-sm"
-                      disabled={loading}
-                    >
-                      {loading ? "Generating..." : "Download Boarding Pass"}
-                    </button>
-                  )}
-                </PDFDownloadLink>
-              )}
-
-            </div>
-
+          {/* Customer + Trip info grid */}
+          <div className="cm-section-head">
+            <span className="cm-dot" style={{ background:"#3b82f6" }} />Customer & Trip
           </div>
+          <div className="cm-info-grid" style={{ marginBottom:18 }}>
+            <Info label="Customer"  value={customer.name} />
+            <Info label="Date"      value={booking.date ? fmt(booking.date) : "—"} />
+            <Info label="Contact"   value={customer.contact} />
+            <Info label="Time"      value={`${to12(booking.startTime)} – ${to12(booking.endTime)}`} />
+            <Info label="Email"     value={customer.email} />
+            <Info label="Guests"    value={booking.numPeople ? `${booking.numPeople} pax` : "—"} />
+          </div>
+
+          <hr style={{ border:"none", borderTop:"2px solid #f1f5f9", margin:"0 0 18px" }} />
+
+          {/* Payment */}
+          <div className="cm-section-head">
+            <span className="cm-dot" style={{ background:"#16a34a" }} />Payment
+          </div>
+          <div style={{
+            display:"flex", justifyContent:"space-between", alignItems:"center",
+            background: pending > 0 ? "#fef2f2" : "#f0fdf4",
+            border:`2px solid ${pending > 0 ? "#fca5a5" : "#86efac"}`,
+            borderRadius:10, padding:"13px 16px"
+          }}>
+            <span style={{ fontSize:13, fontWeight:800, color:"#374151" }}>Pending Balance</span>
+            <span style={{ fontSize:22, fontWeight:900, color: pending > 0 ? "#dc2626" : "#16a34a" }}>
+              ₹{pending.toLocaleString("en-IN")}
+            </span>
+          </div>
+
+          {/* Extras */}
+          {extras && (
+            <>
+              <hr style={{ border:"none", borderTop:"2px solid #f1f5f9", margin:"18px 0" }} />
+              <div className="cm-section-head">
+                <span className="cm-dot" style={{ background:"#f59e0b" }} />Add-ons & Services
+              </div>
+              <div className="cm-grid2" style={{ marginBottom: notes ? 12 : 0 }}>
+                <div>
+                  <div style={{ fontSize:11, fontWeight:800, color:"#16a34a", letterSpacing:.5, marginBottom:8 }}>✓ INCLUDED</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                    {inclusions.length > 0
+                      ? inclusions.map((item, i) => (
+                          <span key={i} className="cm-tag cm-tag-green" style={{ alignSelf:"flex-start" }}>
+                            {item.replace(/^-\s*/, "")}
+                          </span>
+                        ))
+                      : <span style={{ fontSize:12, color:"#94a3b8" }}>None</span>
+                    }
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize:11, fontWeight:800, color:"#d97706", letterSpacing:.5, marginBottom:8 }}>★ PAID ADD-ONS</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                    {paid.length > 0
+                      ? paid.map((item, i) => (
+                          <span key={i} className="cm-tag cm-tag-amber" style={{ alignSelf:"flex-start" }}>
+                            {item.replace(/^-\s*/, "")}
+                          </span>
+                        ))
+                      : <span style={{ fontSize:12, color:"#94a3b8" }}>None</span>
+                    }
+                  </div>
+                </div>
+              </div>
+              {notes && (
+                <div style={{ background:"#f8fafc", border:"2px solid #e2e8f0", borderRadius:10, padding:"12px 14px", marginTop:12 }}>
+                  <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:.5, marginBottom:4 }}>Note</div>
+                  <div style={{ fontSize:14, fontWeight:600, color:"#1e293b" }}>{notes}</div>
+                </div>
+              )}
+            </>
+          )}
         </div>
+
+        {/* Actions */}
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+          <button className="cm-btn cm-btn-outline" style={{ flex:1, minWidth:120 }} onClick={() => navigate(-1)}>← Back</button>
+          {booking.status === "confirmed" && (
+            <PDFDownloadLink
+              document={<BoardingPassPDF booking={booking} />}
+              fileName={`${booking.yachtId?.name}_${customer.name}_${fmt(booking.date)}.pdf`}
+              style={{ flex:2, minWidth:180, textDecoration:"none" }}
+            >
+              {({ loading: pdfLoading }) => (
+                <button className="cm-btn cm-btn-primary cm-btn-full" disabled={pdfLoading}>
+                  {pdfLoading ? "Generating…" : "⬇ Download Boarding Pass"}
+                </button>
+              )}
+            </PDFDownloadLink>
+          )}
+        </div>
+
       </div>
     </div>
   );

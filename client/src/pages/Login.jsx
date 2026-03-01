@@ -83,7 +83,7 @@ function Login({ onLogin }) {
       setLoading(false);
     }
   };
-const formatDate = (d) =>
+  const formatDate = (d) =>
     new Date(d).toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
@@ -122,7 +122,7 @@ const formatDate = (d) =>
       ? booking.extraDetails
         .split("\n")
         .filter((i) =>
-           ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
+          ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
         )
       : [];
     const notes = booking.extraDetails
@@ -180,107 +180,209 @@ Thank You`
     toast.success("Boarding Pass copied to clipboard");
   };
 
+  // Parse boarding pass data into structured fields
+  const parseBoardingPass = (booking) => {
+    const formatDate = (dateStr) =>
+      new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+    const formatTime = (time24) => {
+      let [h, m] = time24.split(":").map(Number);
+      const period = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      return `${h}:${m.toString().padStart(2, "0")} ${period}`;
+    };
+
+    const inclusions = booking.extraDetails
+      ? booking.extraDetails.split("\n").filter((i) =>
+        ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"].some((k) => i.includes(k))
+      ).map((i) => i.replace("- ", "").trim())
+      : [];
+
+    const paidServices = booking.extraDetails
+      ? booking.extraDetails.split("\n").filter((i) =>
+        ["Drone", "DSLR"].some((k) => i.includes(k))
+      ).map((i) => i.replace("- ", "").trim())
+      : [];
+
+    const notes = booking.extraDetails
+      ? booking.extraDetails.split("Notes:").slice(1).join("").trim()
+      : "";
+
+    return {
+      ticketId: booking._id.slice(-5).toUpperCase(),
+      status: booking.status,
+      guestName: booking.customerId?.name,
+      contact: booking.customerId?.contact,
+      groupSize: booking.numPeople,
+      yacht: booking.yachtId?.name,
+      date: formatDate(booking.date),
+      time: `${formatTime(booking.startTime)} – ${formatTime(booking.endTime)}`,
+      boardingLocation: booking.yachtId?.boardingLocation,
+      pendingAmount: booking.pendingAmount,
+      inclusions,
+      paidServices,
+      notes,
+      disclaimer: booking.company?.disclaimer || `• Reporting time is 30 minutes prior to departure\n• No refund for late arrival or no-show\n• Subject to weather and government regulations\nThank you for booking with ${booking.company?.name || "us"}`,
+    };
+  };
+
+  const statusClass = (status) => {
+    if (status === "confirmed") return styles.statusConfirmed;
+    if (status === "pending") return styles.statusPending;
+    return styles.statusCancelled;
+  };
+
   return (
     <>
-      {showModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
-          <div
-            className={styles.modalContent}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className={styles.modalTitle}>Boarding Pass</h3>
+      {showModal && boardingPassBooking && (() => {
+        const pass = parseBoardingPass(boardingPassBooking);
+        return (
+          <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
 
-            <pre className={styles.boardingPassText}>
-              {generateBoardingPassText(boardingPassBooking)}
-            </pre>
+              {/* Header */}
+              <div className={styles.modalHeader}>
+                <h3 className={styles.modalTitle}>⚓ Boarding Pass</h3>
+                <span className={styles.modalTicketId}>#{pass.ticketId}</span>
+              </div>
 
-            <div className={styles.actions}>
-              <button
-                className={styles.copyBtn}
-                onClick={() => copyBoardingPass(boardingPassBooking)}
-              >
-                Copy
-              </button>
+              {/* Tear line */}
+              <div className={styles.tearLine}>
+                <hr />
+              </div>
 
+              {/* Pass body */}
+              <div className={styles.boardingPassBody}>
 
-              {boardingPassBooking && (
-                <PDFDownloadLink
-                  document={<BoardingPassPDF booking={boardingPassBooking} />}
-                  fileName={`${boardingPassBooking.yachtId?.name}_${boardingPassBooking.customerId?.name}_${formatDate(boardingPassBooking.date)}.pdf`}
-                >
-                  {({ loading }) => (
-                    <button type="button" className={styles.downloadBtn}>
-                      {loading ? "Preparing PDF..." : "Download PDF"}
-                    </button>
-                  )}
-                </PDFDownloadLink>
-              )}
+                {/* Status */}
+                <div className={styles.passRow}>
+                  <span className={styles.passLabel}>Status</span>
+                  <span className={`${styles.statusBadge} ${statusClass(pass.status)}`}>
+                    {pass.status.toUpperCase()}
+                  </span>
+                </div>
 
+                <div className={styles.passRow}>
+                  <span className={styles.passLabel}>Guest</span>
+                  <span className={styles.passValue}>{pass.guestName}</span>
+                </div>
 
-              <button
-                className={styles.closeBtn}
-                onClick={() => setShowModal(false)}
-              >
-                Close
-              </button>
+                <div className={styles.passRow}>
+                  <span className={styles.passLabel}>Contact</span>
+                  <span className={styles.passValueMono}>{pass.contact}</span>
+                </div>
+
+                <div className={styles.passRow}>
+                  <span className={styles.passLabel}>Group Size</span>
+                  <span className={styles.passValue}>{pass.groupSize} Pax</span>
+                </div>
+
+                <div className={styles.passRow}>
+                  <span className={styles.passLabel}>Vessel</span>
+                  <span className={styles.passValue}>{pass.yacht}</span>
+                </div>
+
+                <div className={styles.passRow}>
+                  <span className={styles.passLabel}>Date</span>
+                  <span className={styles.passValue}>{pass.date}</span>
+                </div>
+
+                <div className={styles.passRow}>
+                  <span className={styles.passLabel}>Time</span>
+                  <span className={styles.passValue}>{pass.time}</span>
+                </div>
+
+                {pass.boardingLocation && (
+                  <div className={styles.passRow}>
+                    <span className={styles.passLabel}>Location</span>
+                    <span className={styles.passValue} style={{ fontSize: "0.8rem" }}>{pass.boardingLocation}</span>
+                  </div>
+                )}
+
+                {pass.pendingAmount > 0 && (
+                  <div className={styles.passRow}>
+                    <span className={styles.passLabel}>Balance Due</span>
+                    <span className={styles.pendingAmount}>₹{pass.pendingAmount}/-</span>
+                  </div>
+                )}
+
+                {/* Inclusions */}
+                {pass.inclusions.length > 0 && (
+                  <>
+                    <p className={styles.passSection}>Inclusions</p>
+                    <div className={styles.inclusionList}>
+                      {pass.inclusions.map((item) => (
+                        <span key={item} className={styles.inclusionChip}>{item}</span>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Paid services */}
+                {pass.paidServices.length > 0 && (
+                  <>
+                    <p className={styles.passSection}>Paid Services</p>
+                    <div className={styles.inclusionList}>
+                      {pass.paidServices.map((item) => (
+                        <span key={item} className={styles.inclusionChip}>{item}</span>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Notes */}
+                {pass.notes && (
+                  <>
+                    <p className={styles.passSection}>Notes</p>
+                    <div className={styles.notesBox}>{pass.notes}</div>
+                  </>
+                )}
+
+                {/* Disclaimer */}
+                <div className={styles.disclaimerBox}>
+                  {pass.disclaimer.split("\n").map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+
+              </div>
+
+              {/* Actions */}
+              <div className={styles.actions}>
+                <button className={styles.copyBtn} onClick={() => copyBoardingPass(boardingPassBooking)}>
+                  Copy
+                </button>
+                {boardingPassBooking && (
+                  <PDFDownloadLink
+                    document={<BoardingPassPDF booking={boardingPassBooking} />}
+                    fileName={`${pass.yacht}_${pass.guestName}_${pass.date}.pdf`}
+                  >
+                    {({ loading }) => (
+                      <button type="button" className={styles.downloadBtn}>
+                        {loading ? "Preparing..." : "Download PDF"}
+                      </button>
+                    )}
+                  </PDFDownloadLink>
+                )}
+                <button className={styles.closeBtn} onClick={() => setShowModal(false)}>
+                  Close
+                </button>
+              </div>
+
             </div>
           </div>
-        </div>
-      )}
-
-      <div
-        style={{
-          position: "absolute",
-          top: 20,
-          right: 20,
-        }}
-      >
-        <div style={{ position: "relative" }}>
-          <input
-            type="text"
-            value={ticket}
-            onChange={handleTicketChange}
-            placeholder="#ABCDE"
-            className={styles.inputField}
-            style={{ width: 180, paddingRight: 40 }}
-            disabled={searching}
-          />
-
-          <button
-            type="button"
-            onClick={handleTicketSearch}
-            disabled={searching || ticket.length < 5}
-            style={{
-              position: "absolute",
-              right: 10,
-              top: "50%",
-              transform: "translateY(-50%)",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              color: "#555",
-            }}
-          >
-            <FiSearch size={18} />
-          </button>
-        </div>
-      </div>
-
+        );
+      })()}
 
       <div className={styles.loginWrapper}>
+
         <div className={styles.loginCard}>
           <h2 className={styles.loginTitle}>Yacht Management</h2>
 
           <form onSubmit={handleSubmit} className={styles.loginForm}>
-
-            {/* USERNAME */}
             <div className={styles.inputGroup}>
               <label>Username</label>
-
-              <span className={styles.leftIcon}>
-                <FiUser size={18} />
-              </span>
-
+              <span className={styles.leftIcon}><FiUser size={16} /></span>
               <input
                 type="text"
                 className={styles.inputField}
@@ -292,14 +394,9 @@ Thank You`
               />
             </div>
 
-            {/* PASSWORD */}
             <div className={styles.inputGroup}>
               <label>Password</label>
-
-              <span className={styles.leftIcon}>
-                <FiLock size={18} />
-              </span>
-
+              <span className={styles.leftIcon}><FiLock size={16} /></span>
               <input
                 type={showPass ? "text" : "password"}
                 className={styles.inputField}
@@ -309,13 +406,8 @@ Thank You`
                 disabled={loading}
                 required
               />
-
-              {/* Toggle Eye Icon */}
-              <span
-                className={styles.passwordToggle}
-                onClick={() => setShowPass(!showPass)}
-              >
-                {showPass ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+              <span className={styles.passwordToggle} onClick={() => setShowPass(!showPass)}>
+                {showPass ? <FiEyeOff size={18} /> : <FiEye size={18} />}
               </span>
             </div>
 
@@ -326,6 +418,28 @@ Thank You`
             </button>
           </form>
         </div>
+
+        {/* Ticket search — below login card */}
+        <div className={styles.ticketSearchWrap}>
+          <p className={styles.ticketSearchLabel}>Check your booking</p>
+          <div className={styles.ticketSearchRow}>
+            <input
+              type="text"
+              value={ticket}
+              onChange={handleTicketChange}
+              placeholder="Ticket ID e.g. ABCDE"
+              disabled={searching}
+            />
+            <button
+              type="button"
+              onClick={handleTicketSearch}
+              disabled={searching || ticket.length < 5}
+            >
+              <FiSearch size={16} />
+            </button>
+          </div>
+        </div>
+
       </div>
     </>
   );

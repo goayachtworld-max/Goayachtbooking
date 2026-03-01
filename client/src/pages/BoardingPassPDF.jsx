@@ -4,6 +4,8 @@ import {
   Text,
   View,
   StyleSheet,
+  Line,
+  Svg,
 } from "@react-pdf/renderer";
 import { useState } from "react";
 
@@ -17,45 +19,358 @@ const sanitizeText = (text = "") =>
     .replace(/\n{2,}/g, "\n")
     .trim();
 
-/* ===================== COMPONENT ===================== */
+const formatTo12Hour = (time) => {
+  if (!time) return "";
+  const [hourStr, minute] = time.split(":");
+  let hour = parseInt(hourStr, 10);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12;
+  return `${hour}:${minute} ${ampm}`;
+};
+
+const formatDate = (d) =>
+  new Date(d).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+/* ===================== THEME ===================== */
+const NAVY = "#0D2137";   // deep ocean blue (warmer)
+const GOLD = "#D4A843";   // warmer gold
+const GOLD2 = "#F0C96B";
+const TEAL = "#0E8A7A";   // fresh teal for included services
+const AMBER = "#D97706";   // amber for paid add-ons
+const LIGHT = "#F4F7FB";
+const MUTED = "#8A98AC";
+const WHITE = "#FFFFFF";
+const BORDER = "#DDE3ED";
+const CREAM = "#FDFAF2";
+
+/* ===================== STYLES ===================== */
+const S = StyleSheet.create({
+  page: {
+    padding: 28,
+    backgroundColor: "#D6E4F0",
+    fontFamily: "Helvetica",
+  },
+
+  /* ── OUTER CARD ── */
+  card: {
+    backgroundColor: WHITE,
+    borderRadius: 14,
+    overflow: "hidden",
+    border: `1 solid ${BORDER}`,
+  },
+
+  /* ── HEADER BAND ── */
+  header: {
+    backgroundColor: NAVY,
+    padding: "14 20 12 20",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+  headerLeft: { flexDirection: "column" },
+  companyName: {
+    color: GOLD,
+    fontSize: 11,
+    letterSpacing: 3,
+    fontFamily: "Helvetica-Bold",
+    textTransform: "uppercase",
+  },
+  boardingTitle: {
+    color: WHITE,
+    fontSize: 19,
+    fontFamily: "Helvetica-Bold",
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
+  headerRight: { alignItems: "flex-end" },
+  ticketLabel: { color: MUTED, fontSize: 8, letterSpacing: 1 },
+  ticketId: {
+    color: GOLD2,
+    fontSize: 16,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 2,
+    marginTop: 2,
+  },
+  statusBadge: {
+    backgroundColor: GOLD,
+    borderRadius: 4,
+    padding: "2 8",
+    marginTop: 4,
+  },
+  statusText: {
+    color: NAVY,
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 1,
+  },
+
+  /* ── GOLD ACCENT LINE ── */
+  accentStripe: {
+    backgroundColor: GOLD,
+    height: 3,
+  },
+
+  /* ── BODY ── */
+  body: { padding: "14 20 16 20" },
+
+  /* ── SECTION TITLE ── */
+  sectionTitle: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: GOLD,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    marginBottom: 8,
+    borderBottom: `1 solid ${GOLD}`,
+    paddingBottom: 3,
+  },
+
+  /* ── INFO GRID ── */
+  row: {
+    flexDirection: "row",
+    marginBottom: 10,
+    gap: 12,
+  },
+  col: { flex: 1 },
+  label: {
+    fontSize: 7.5,
+    color: MUTED,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+    fontFamily: "Helvetica",
+  },
+  value: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: NAVY,
+    lineHeight: 1.2,
+  },
+
+  /* ── HIGHLIGHT BOX (time / date) ── */
+  highlightBox: {
+    backgroundColor: NAVY,
+    borderRadius: 8,
+    padding: "8 12",
+    flex: 1,
+  },
+  highlightLabel: { fontSize: 7.5, color: MUTED, letterSpacing: 0.5 },
+  highlightValue: {
+    fontSize: 13,
+    fontFamily: "Helvetica-Bold",
+    color: WHITE,
+    marginTop: 2,
+  },
+  highlightSub: { fontSize: 8.5, color: GOLD2, marginTop: 1 },
+
+  /* ── PERFORATED DIVIDER ── */
+  perfRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  perfCircleLeft: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#D6E4F0",
+    marginLeft: -28,
+  },
+  perfCircleRight: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#D6E4F0",
+    marginRight: -28,
+  },
+  perfLine: {
+    flex: 1,
+    borderBottom: `1.5 dashed ${BORDER}`,
+    marginHorizontal: 4,
+  },
+
+  /* ── PAYMENT STRIP ── */
+  paymentStrip: {
+    backgroundColor: CREAM,
+    border: `1 solid ${GOLD}`,
+    borderRadius: 8,
+    padding: "10 14",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  paymentBlock: { flex: 1 },
+  paymentLabel: { fontSize: 7.5, color: MUTED, letterSpacing: 0.5 },
+  paymentValue: {
+    fontSize: 13,
+    fontFamily: "Helvetica-Bold",
+    color: NAVY,
+    marginTop: 2,
+  },
+  paymentDivider: {
+    width: 1,
+    backgroundColor: BORDER,
+    height: 30,
+    marginHorizontal: 10,
+  },
+  pendingValue: {
+    fontSize: 13,
+    fontFamily: "Helvetica-Bold",
+    color: "#C0392B",
+    marginTop: 2,
+  },
+
+  /* ── SERVICES ── */
+  servicesRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+  },
+  serviceCol: { flex: 1 },
+  serviceColHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  serviceColDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  serviceColLabel: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 0.8,
+  },
+  serviceItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginBottom: 3,
+    borderRadius: 5,
+    borderLeftWidth: 3,
+  },
+  serviceItemIncluded: {
+    backgroundColor: "#F0FDF9",
+    borderLeftColor: TEAL,
+  },
+  serviceItemPaid: {
+    backgroundColor: "#FFFBEB",
+    borderLeftColor: AMBER,
+  },
+  serviceItemText: {
+    fontSize: 8.5,
+    lineHeight: 1.2,
+  },
+  serviceItemTextIncluded: { color: "#065F52" },
+  serviceItemTextPaid: { color: "#92400E" },
+
+  /* ── NOTES ── */
+  notesBox: {
+    backgroundColor: "#FFFDF5",
+    border: `1 solid ${GOLD}`,
+    borderRadius: 7,
+    padding: "7 10",
+    marginBottom: 12,
+  },
+  notesText: { fontSize: 9, color: "#5A4A1A", lineHeight: 1.4 },
+
+  /* ── DISCLAIMER ── */
+  disclaimerBox: {
+    backgroundColor: LIGHT,
+    border: `1 solid ${BORDER}`,
+    borderRadius: 7,
+    padding: "8 10",
+    marginBottom: 10,
+  },
+  disclaimerLine: {
+    fontSize: 8,
+    color: "#64748B",
+    lineHeight: 1.5,
+    marginBottom: 1,
+  },
+
+  /* ── FOOTER STAMP ── */
+  footer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderTop: `1 solid ${BORDER}`,
+    paddingTop: 8,
+    marginTop: 4,
+  },
+  footerText: { fontSize: 7.5, color: MUTED, fontStyle: "italic" },
+  footerBrand: { fontSize: 8, color: NAVY, fontFamily: "Helvetica-Bold" },
+});
+
+/* ===================== SUB-COMPONENTS ===================== */
+
+const InfoField = ({ label, value }) => (
+  <View style={S.col}>
+    <Text style={S.label}>{label}</Text>
+    <Text style={S.value}>{value || "—"}</Text>
+  </View>
+);
+
+const HighlightBox = ({ label, value, sub }) => (
+  <View style={S.highlightBox}>
+    <Text style={S.highlightLabel}>{label}</Text>
+    <Text style={S.highlightValue}>{value || "—"}</Text>
+    {sub ? <Text style={S.highlightSub}>{sub}</Text> : null}
+  </View>
+);
+
+const Perforated = () => (
+  <View style={S.perfRow}>
+    <View style={S.perfCircleLeft} />
+    <View style={S.perfLine} />
+    <View style={S.perfCircleRight} />
+  </View>
+);
+
+const ServiceItem = ({ text, type }) => {
+  const isIncluded = type === "included";
+  return (
+    <View style={[S.serviceItem, isIncluded ? S.serviceItemIncluded : S.serviceItemPaid]}>
+      <Text style={[S.serviceItemText, isIncluded ? S.serviceItemTextIncluded : S.serviceItemTextPaid]}>
+        {text}
+      </Text>
+    </View>
+  );
+};
+
+/* ===================== MAIN COMPONENT ===================== */
 
 export default function BoardingPassPDF({ booking }) {
   if (!booking) return null;
 
   const ticket = booking._id.slice(-5).toUpperCase();
 
-  const formatDate = (d) =>
-    new Date(d).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+  const storedUser = localStorage.getItem("user");
+  const [user] = useState(storedUser ? JSON.parse(storedUser) : null);
+  const role = user?.type?.toLowerCase();
 
-  /* ===================== PARSE EXTRA DETAILS ===================== */
-
+  /* ── PARSE EXTRA DETAILS ── */
   const extraDetails = sanitizeText(booking.extraDetails || "");
 
   const inclusions = extraDetails
-    ? extraDetails
-      .split("\n")
-      .filter((i) =>
-        [
-          "Soft Drink",
-          "Ice Cube",
-          "Water Bottles",
-          "Bluetooth Speaker",
-          "Captain",
-          "Snacks",
-        ].some((k) => i.includes(k))
+    ? extraDetails.split("\n").filter((i) =>
+      ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"].some(
+        (k) => i.includes(k)
       )
+    )
     : [];
 
   const paidServices = extraDetails
-    ? extraDetails
-      .split("\n")
-      .filter((i) =>
-         ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
-      )
+    ? extraDetails.split("\n").filter((i) =>
+      ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
+    )
     : [];
 
   const notes = extraDetails.includes("Notes:")
@@ -64,377 +379,170 @@ export default function BoardingPassPDF({ booking }) {
 
   const disclaimerText = sanitizeText(
     booking?.company?.disclaimer
-      ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]` :
-
-      `Reporting time is 30 minutes prior to departure
-No refund for late arrival or no-show
-Subject to weather and government regulations
-Thank you for booking with ${booking.company?.name}
-`
+      ? `${booking.company.disclaimer}[${ticket}]`
+      : `Reporting time is 30 minutes prior to departure\nNo refund for late arrival or no-show\nSubject to weather and government regulations\nThank you for booking with ${booking.company?.name}`
   );
+  const disclaimerLines = disclaimerText.split("\n").map((l) => l.trim()).filter(Boolean);
 
-  const disclaimerLines = disclaimerText
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
+  /* ── SMART TRUNCATION ── */
+  const safeInclusions = inclusions.slice(0, 6);
+  const safePaidServices = paidServices.slice(0, 6);
+  const safeDisclaimer = disclaimerLines.slice(0, 8);
 
-  /* ===================== SMART CONTENT ANALYSIS ===================== */
+  /* ── PAYMENT ── */
+  const tokenAmt = booking?.transactionIds?.[0]?.amount;
 
-  const totalLines =
-    inclusions.length +
-    paidServices.length +
-    disclaimerLines.length +
-    (notes ? 2 : 0);
-
-  let fontScale = 1;
-  let sectionSpacing = 16;
-  let maxLines = 8;
-
-  if (totalLines > 12) {
-    fontScale = 0.95;
-    sectionSpacing = 12;
-    maxLines = 6;
-  }
-
-  if (totalLines > 18) {
-    fontScale = 0.88;
-    sectionSpacing = 8;
-    maxLines = 5;
-  }
-
-  const safeInclusions = inclusions.slice(0, maxLines);
-  const safePaidServices = paidServices.slice(0, maxLines);
-  const safeDisclaimer = disclaimerLines.slice(0, maxLines);
-
-  /* ===================== DYNAMIC STYLES ===================== */
-
-  const styles = StyleSheet.create({
-    page: {
-      padding: 12,
-      backgroundColor: "#EEF1F4",
-      fontFamily: "Helvetica",
-      fontSize: 12 * fontScale,
-    },
-
-    card: {
-      backgroundColor: "#FFFFFF",
-      borderRadius: 12,
-      overflow: "hidden",
-      border: "1 solid #E5E7EB",
-    },
-
-    header: {
-      backgroundColor: "#0F172A",
-      padding: 10,
-    },
-
-    companyName: {
-      color: "#FFFFFF",
-      fontSize: 15 * fontScale,
-      letterSpacing: 1,
-    },
-
-    boardingTitle: {
-      color: "#FFFFFF",
-      fontSize: 18 * fontScale,
-      fontWeight: "bold",
-      marginTop: 4,
-    },
-
-    ticket: {
-      color: "#CBD5E1",
-      fontSize: 13 * fontScale,
-      marginTop: 3,
-    },
-
-    content: {
-      padding: 10,
-    },
-
-    section: {
-      marginBottom: sectionSpacing,
-    },
-
-    sectionTitle: {
-      fontSize: 10 * fontScale,
-      fontWeight: "bold",
-      color: "#64748B",
-      marginBottom: 2,
-      textTransform: "uppercase",
-      letterSpacing: 0.6,
-    },
-
-    row: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginBottom: 8,
-    },
-
-    column: {
-      width: "48%",
-    },
-
-    dualColumnRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginBottom: sectionSpacing,
-    },
-
-    halfSection: {
-      width: "48%",
-    },
-
-    label: {
-      fontSize: 10 * fontScale,
-      color: "#64748B",
-    },
-
-    value: {
-      fontSize: 12 * fontScale,
-      fontWeight: "bold",
-      marginTop: 2,
-    },
-
-    divider: {
-      borderBottom: "1 solid #E2E8F0",
-      marginVertical: 4,
-    },
-
-    paymentBox: {
-      backgroundColor: "#F8FAFC",
-      padding: 6,
-      borderRadius: 8,
-      border: "1 solid #E2E8F0",
-    },
-
-    paymentAmount: {
-      fontSize: 14 * fontScale,
-      fontWeight: "bold",
-      marginTop: 3,
-    },
-
-    listItem: {
-      fontSize: 10 * fontScale,
-      marginBottom: 2,
-      lineHeight: 1.1,
-    },
-
-    disclaimerBox: {
-      backgroundColor: "#F1F5F9",
-      padding: 5,
-      borderRadius: 8,
-      border: "1 solid #E2E8F0",
-    },
-
-    footer: {
-      marginTop: 7,
-      fontSize: 8 * fontScale,
-      color: "#64748B",
-      textAlign: "center",
-    },
-  });
-
-  const formatTo12Hour = (time) => {
-    if (!time) return "";
-
-    const [hourStr, minute] = time.split(":");
-    let hour = parseInt(hourStr, 10);
-
-    const ampm = hour >= 12 ? "PM" : "AM";
-    hour = hour % 12 || 12; // convert 0 → 12
-
-    return `${hour}:${minute} ${ampm}`;
-  };
-
-  const storedUser = localStorage.getItem("user");
-  const [user, setUser] = useState(storedUser ? JSON.parse(storedUser) : null);
-  const role = user?.type?.toLowerCase();
-
-  /* ===================== RENDER ===================== */
-  console.log("Booking ", booking)
   return (
     <Document>
-      <Page size="A4" style={styles.page} wrap={false}>
-        <View style={styles.card} wrap={false}>
+      <Page size="A4" style={S.page} wrap={false}>
+        <View style={S.card} wrap={false}>
 
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Text style={styles.companyName}>
-              {booking.company?.name?.toUpperCase()}
-            </Text>
-            {/* <Text style={styles.boardingTitle}>
-              LUXURY YACHT BOARDING PASS
-            </Text> */}
-            <Text style={styles.ticket}>
-              Ticket ID: {ticket} | Status: {booking.status?.toUpperCase()}
-            </Text>
+          {/* ══ HEADER ══ */}
+          <View style={S.header}>
+            <View style={S.headerLeft}>
+              <Text style={S.companyName}>
+                {booking.company?.name?.toUpperCase() || "COMPANY"}
+              </Text>
+              <Text style={S.boardingTitle}>BOARDING PASS</Text>
+            </View>
+            <View style={S.headerRight}>
+              <Text style={S.ticketLabel}>TICKET ID</Text>
+              <Text style={S.ticketId}>{ticket}</Text>
+              <View style={S.statusBadge}>
+                <Text style={S.statusText}>{booking.status?.toUpperCase()}</Text>
+              </View>
+            </View>
           </View>
 
-          <View style={styles.content} wrap={false}>
+          {/* Gold stripe */}
+          <View style={S.accentStripe} />
 
-            {/* JOURNEY */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Guest & Journey</Text>
+          {/* ══ BODY ══ */}
+          <View style={S.body}>
 
-              <View style={styles.row}>
-                <View style={styles.column}>
-                  <Text style={styles.label}>Booking Name</Text>
-                  <Text style={styles.value}>
-                    {booking.customerId?.name}
-                  </Text>
-                </View>
+            {/* ── SECTION: Guest & Journey ── */}
+            <Text style={S.sectionTitle}>Guest & Journey</Text>
 
-                <View style={styles.column}>
-                  <Text style={styles.label}>Contact Number</Text>
-                  <Text style={styles.value}>
-                    {booking.customerId?.contact}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.row}>
-                <View style={styles.column}>
-                  <Text style={styles.label}>Booked Yacht</Text>
-                  <Text style={styles.value}>
-                    {booking.yachtId?.name}
-                  </Text>
-                </View>
-
-                <View style={styles.column}>
-                  <Text style={styles.label}>Guests</Text>
-                  <Text style={styles.value}>
-                    {booking.numPeople} Pax
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.row}>
-                <View style={styles.column}>
-                  <Text style={styles.label}>Date</Text>
-                  <Text style={styles.value}>
-                    {formatDate(booking.date)}
-                  </Text>
-                </View>
-
-                <View style={styles.column}>
-                  <Text style={styles.label}>Time</Text>
-                  <Text style={styles.value}>
-                    {formatTo12Hour(booking.startTime)} – {formatTo12Hour(booking.endTime)}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.row}>
-                <View style={{ width: "100%" }}>
-                  <Text style={styles.label}>Boarding Location</Text>
-                  <Text style={styles.value}>
-                    {booking.yachtId?.boardingLocation || "Location not provided"}
-                  </Text>
-                </View>
-              </View>
+            <View style={S.row}>
+              <InfoField label="PASSENGER NAME" value={booking.customerId?.name} />
+              <InfoField label="CONTACT NUMBER" value={booking.customerId?.contact} />
+              <InfoField label="YACHT" value={booking.yachtId?.name} />
+              <InfoField label="GUESTS" value={`${booking.numPeople} Pax`} />
             </View>
 
-            <View style={styles.divider} />
-
-            {/* PAYMENT */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Payment Summary</Text>
-              {
-                role === "admin" && (
-                  <>
-                    <View style={styles.paymentBox}>
-                      <Text style={styles.label}>Booking Amount</Text>
-                      <Text style={styles.paymentAmount}>
-                        Rs. {booking.quotedAmount}/-
-                      </Text>
-                    </View>
-
-                    <View style={styles.paymentBox}>
-                      <Text style={styles.label}>Token Amount</Text>
-                      <Text style={styles.paymentAmount}>
-                        Rs. {booking?.transactionIds[0]?.amount}/-
-                      </Text>
-                    </View>
-                  </>
-                )
-              }
-              <View style={styles.paymentBox}>
-                <Text style={styles.label}>Pending Balance</Text>
-                <Text style={styles.paymentAmount}>
-                  Rs. {booking.pendingAmount}/-
+            {/* Highlighted date + time boxes */}
+            <View style={[S.row, { gap: 10, marginBottom: 10 }]}>
+              <HighlightBox
+                label="SAILING DATE"
+                value={formatDate(booking.date)}
+              />
+              <HighlightBox
+                label="DEPARTURE"
+                value={formatTo12Hour(booking.startTime)}
+                sub={`Until ${formatTo12Hour(booking.endTime)}`}
+              />
+              <View style={[S.col, { flex: 2 }]}>
+                <Text style={S.label}>BOARDING LOCATION</Text>
+                <Text style={[S.value, { fontSize: 10, marginTop: 3, color: NAVY }]}>
+                  {booking.yachtId?.boardingLocation || "Location not provided"}
                 </Text>
               </View>
             </View>
 
-            {/* INCLUSIONS + EXTRA SERVICES SIDE BY SIDE */}
+            {/* ── PERFORATED TEAR LINE ── */}
+            <Perforated />
+
+            {/* ── SECTION: Payment ── */}
+            <Text style={S.sectionTitle}>Payment Summary</Text>
+
+            {role === "admin" ? (
+              <View style={S.paymentStrip}>
+                <View style={S.paymentBlock}>
+                  <Text style={S.paymentLabel}>BOOKING AMOUNT</Text>
+                  <Text style={S.paymentValue}>0{booking.quotedAmount}/-</Text>
+                </View>
+                <View style={S.paymentDivider} />
+                <View style={S.paymentBlock}>
+                  <Text style={S.paymentLabel}>TOKEN PAID</Text>
+                  <Text style={S.paymentValue}>{tokenAmt}/-</Text>
+                </View>
+                <View style={S.paymentDivider} />
+                <View style={S.paymentBlock}>
+                  <Text style={S.paymentLabel}>PENDING BALANCE</Text>
+                  <Text style={S.pendingValue}>{booking.pendingAmount}/-</Text>
+                </View>
+              </View>
+            ) : (
+              <View style={S.paymentStrip}>
+                <View style={S.paymentBlock}>
+                  <Text style={S.paymentLabel}>PENDING BALANCE</Text>
+                  <Text style={S.pendingValue}>{booking.pendingAmount}/-</Text>
+                </View>
+              </View>
+            )}
+
+            {/* ── SECTION: Services ── */}
             {(safeInclusions.length > 0 || safePaidServices.length > 0) && (
-              <View style={styles.dualColumnRow}>
-
-                {/* LEFT COLUMN - INCLUSIONS */}
-                <View style={styles.halfSection}>
+              <>
+                <Text style={S.sectionTitle}>Services</Text>
+                <View style={S.servicesRow}>
                   {safeInclusions.length > 0 && (
-                    <>
-                      <Text style={styles.sectionTitle}>
-                        Extra Included Services:
-                      </Text>
-                      {safeInclusions.map((i, idx) => (
-                        <Text key={idx} style={styles.listItem}>
-                          • {i.replace("-", "").trim()}
-                        </Text>
+                    <View style={S.serviceCol}>
+                      <View style={S.serviceColHeader}>
+                        <View style={[S.serviceColDot, { backgroundColor: TEAL }]} />
+                        <Text style={[S.serviceColLabel, { color: TEAL }]}>INCLUDED</Text>
+                      </View>
+                      {safeInclusions.map((item, i) => (
+                        <ServiceItem key={i} text={item.replace(/^-/, "").trim()} type="included" />
                       ))}
-                    </>
+                    </View>
                   )}
-                </View>
-
-                {/* RIGHT COLUMN - PAID SERVICES */}
-                <View style={styles.halfSection}>
                   {safePaidServices.length > 0 && (
-                    <>
-                      <Text style={styles.sectionTitle}>
-                        Extra Paid Services:
-                      </Text>
-                      {safePaidServices.map((i, idx) => (
-                        <Text key={idx} style={styles.listItem}>
-                          {i.replace("-", "").trim()}
-                        </Text>
+                    <View style={S.serviceCol}>
+                      <View style={S.serviceColHeader}>
+                        <View style={[S.serviceColDot, { backgroundColor: AMBER }]} />
+                        <Text style={[S.serviceColLabel, { color: AMBER }]}>PAID ADD-ONS</Text>
+                      </View>
+                      {safePaidServices.map((item, i) => (
+                        <ServiceItem key={i} text={item.replace(/^-/, "").trim()} type="paid" />
                       ))}
-                    </>
+                    </View>
                   )}
                 </View>
-              </View>
+              </>
             )}
 
-
-            {/* NOTES */}
+            {/* ── NOTES ── */}
             {notes && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Special Notes:</Text>
-                <Text style={styles.listItem}>
-                  {notes.substring(0, 200)}
-                </Text>
+              <View style={S.notesBox}>
+                <Text style={[S.label, { marginBottom: 4 }]}>✦ SPECIAL NOTES</Text>
+                <Text style={S.notesText}>{notes.substring(0, 250)}</Text>
               </View>
             )}
 
-            <View style={styles.divider} />
-
-            {/* DISCLAIMER */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Disclaimer: </Text>
-              <View style={styles.disclaimerBox}>
-                {safeDisclaimer.map((line, i) => (
-                  <Text key={i} style={styles.listItem}>
-                    {line}
-                  </Text>
-                ))}
-              </View>
+            {/* ── DISCLAIMER ── */}
+            <Text style={S.sectionTitle}>Terms & Conditions</Text>
+            <View style={S.disclaimerBox}>
+              {safeDisclaimer.map((line, i) => (
+                <Text key={i} style={S.disclaimerLine}>
+                  {i + 1}. {line}
+                </Text>
+              ))}
             </View>
 
-            <Text style={styles.footer}>
-              We wish you a luxurious and unforgettable sailing experience.
-            </Text>
+            {/* ── FOOTER ── */}
+            <View style={S.footer}>
+              <Text style={S.footerText}>
+                We wish you a luxurious and unforgettable sailing experience.
+              </Text>
+              <Text style={S.footerBrand}>
+                {booking.company?.name?.toUpperCase()}
+              </Text>
+            </View>
 
           </View>
         </View>
       </Page>
-    </Document >
+    </Document>
   );
 }

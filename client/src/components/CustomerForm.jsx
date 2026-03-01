@@ -1,75 +1,43 @@
-
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createCustomerAPI } from "../services/operations/customerAPI";
 import { toast } from "react-hot-toast";
+import { GLOBAL_CSS } from "../styles/customerStyles";
 
 function CustomerForm() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    name: "",
-    contact: "",
-    alternateContact: "",
-    email: "",
-    govtIdType: "None",
-    govtIdNo: "",
-    govtIdImage: null,
+    name: "", contact: "", alternateContact: "",
+    email: "", govtIdType: "None", govtIdNo: "", govtIdImage: null,
   });
-
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-
     if (name === "govtIdType" && value === "None") {
-      setFormData({
-        ...formData,
-        govtIdType: value,
-        govtIdNo: "",
-        govtIdImage: null,
-      });
-      return;
-    }
-
-    if (name === "govtIdImage") {
+      setFormData({ ...formData, govtIdType:"None", govtIdNo:"", govtIdImage:null });
+    } else if (name === "govtIdImage") {
       setFormData({ ...formData, govtIdImage: files[0] });
     } else {
       setFormData({ ...formData, [name]: value });
     }
   };
 
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
-
-    const indianPhoneRegex = /^(?:\+91-?|\+91)?[789]\d{9}$/;
-
-    if (!indianPhoneRegex.test(formData.contact)) {
-      setLoading(false);
-      setError("Please enter a valid Indian mobile number");
-      return;
+    const phone = /^(?:\+91-?|\+91)?[789]\d{9}$/;
+    if (!phone.test(formData.contact)) {
+      setError("Please enter a valid Indian mobile number"); return;
     }
-
     try {
-      const token = localStorage.getItem("authToken");
-
+      setLoading(true);
+      const token   = localStorage.getItem("authToken");
       const payload = new FormData();
       for (let key in formData) {
-        if (
-          formData.govtIdType === "None" &&
-          (key === "govtIdNo" || key === "govtIdImage")
-        ) {
-          continue;
-        }
-
+        if (formData.govtIdType === "None" && (key === "govtIdNo" || key === "govtIdImage")) continue;
         if (formData[key] !== null) {
           if (key === "alternateContact" && !formData.alternateContact?.trim()) {
             payload.append("alternateContact", formData.contact);
@@ -78,186 +46,113 @@ function CustomerForm() {
           }
         }
       }
-
       await createCustomerAPI(payload, token);
-      toast.success("Customer profile created successfully!");
-
-      setFormData({
-        name: "",
-        contact: "",
-        alternateContact: "",
-        email: "",
-        govtIdType: "None",
-        govtIdNo: "",
-        govtIdImage: null,
-      });
+      toast.success("Customer created!");
+      setFormData({ name:"", contact:"", alternateContact:"", email:"", govtIdType:"None", govtIdNo:"", govtIdImage:null });
     } catch (err) {
-      console.error("❌ Error creating customer:", err);
-      setError(
-        err.response?.data?.message || "Failed to create customer profile"
-      );
+      setError(err.response?.data?.message || "Failed to create customer");
     } finally {
       setLoading(false);
     }
   };
 
-  const isGovtIdDisabled = formData.govtIdType === "None";
+  const noId = formData.govtIdType === "None";
 
   return (
-    <div className="container my-4">
+    <div className="cm-wrap">
+      <style>{GLOBAL_CSS}</style>
+      <div className="cm-page" style={{ maxWidth:680 }}>
 
-      {/* Header */}
-      <div className="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom border-2">
-        <h4 className="fw-bold mb-0 text-dark">
-          Create Customer
-        </h4>
+        {/* Header */}
+        <div className="cm-header">
+          <div>
+            {/* <div className="cm-subtitle">New Entry</div> */}
+            <div className="cm-title">Create Customer</div>
+          </div>
+          <div className="cm-hdr-btns">
+            <button className="cm-btn cm-btn-outline" onClick={() => navigate("/customer-management")}>
+              📋 Manage
+            </button>
+            <button className="cm-btn cm-btn-outline" onClick={() => navigate(-1)}>← Back</button>
+          </div>
+        </div>
 
-        <div className="d-flex gap-2">
+        {/* Error */}
+        {error && (
+          <div style={{ background:"#fef2f2", border:"2px solid #fca5a5", color:"#dc2626", fontSize:13, fontWeight:700, padding:"11px 14px", borderRadius:10, marginBottom:16 }}>
+            ⚠ {error}
+          </div>
+        )}
+
+        {/* Form card */}
+        <div className="cm-card" style={{ padding:24 }}>
+
+          {/* Section: Basic Info */}
+          <div className="cm-section-head">
+            <span className="cm-dot" style={{ background:"#3b82f6" }} />
+            Basic Information
+          </div>
+          <div className="cm-grid2">
+            <div className="cm-field">
+              <label className="cm-lbl">Full Name</label>
+              <input className="cm-inp" type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Enter full name" required />
+            </div>
+            <div className="cm-field">
+              <label className="cm-lbl">Contact Number</label>
+              <input className="cm-inp" type="tel" name="contact" value={formData.contact} onChange={handleChange} placeholder="+91 00000 00000" required />
+            </div>
+            <div className="cm-field">
+              <label className="cm-lbl">WhatsApp Number <span className="cm-lbl-opt">optional</span></label>
+              <input className="cm-inp" type="tel" name="alternateContact" value={formData.alternateContact} onChange={handleChange} placeholder="Same as contact if blank" />
+            </div>
+            <div className="cm-field">
+              <label className="cm-lbl">Email Address <span className="cm-lbl-opt">optional</span></label>
+              <input className="cm-inp" type="email" name="email" value={formData.email} onChange={handleChange} placeholder="customer@email.com" />
+            </div>
+          </div>
+
+          <hr style={{ border:"none", borderTop:"2px solid #f1f5f9", margin:"8px 0 20px" }} />
+
+          {/* Section: Govt ID */}
+          <div className="cm-section-head">
+            <span className="cm-dot" style={{ background:"#8b5cf6" }} />
+            Government ID <span style={{ fontSize:11, fontWeight:500, color:"#94a3b8", marginLeft:4 }}>optional</span>
+          </div>
+          <div className="cm-grid2">
+            <div className="cm-field">
+              <label className="cm-lbl">ID Type</label>
+              <select className="cm-inp" name="govtIdType" value={formData.govtIdType} onChange={handleChange}>
+                <option value="None">None</option>
+                <option value="Aadhar">Aadhar</option>
+                <option value="PAN">PAN</option>
+                <option value="Driving License">Driving License</option>
+                <option value="Passport">Passport</option>
+              </select>
+            </div>
+            <div className="cm-field">
+              <label className="cm-lbl">ID Number</label>
+              <input className="cm-inp" type="text" name="govtIdNo" value={formData.govtIdNo} onChange={handleChange}
+                placeholder={noId ? "Select ID type first" : "Enter ID number"} disabled={noId} required={!noId} />
+            </div>
+            <div className="cm-field" style={{ gridColumn:"span 2" }}>
+              <label className="cm-lbl">Upload ID Image</label>
+              <input className="cm-inp" type="file" name="govtIdImage" accept="image/*" onChange={handleChange} disabled={noId}
+                style={{ padding:"9px 13px", fontSize:13, cursor: noId ? "not-allowed" : "pointer" }} />
+            </div>
+          </div>
+
+          {/* Submit */}
           <button
-            className="btn btn-outline-primary btn-sm px-3 fw-semibold"
-            onClick={() => navigate("/customer-management")}
+            type="button"
+            className="cm-btn cm-btn-primary cm-btn-full"
+            style={{ marginTop:8, padding:"14px", fontSize:16 }}
+            disabled={loading}
+            onClick={handleSubmit}
           >
-            Manage
-          </button>
-
-          <button
-            className="btn btn-outline-dark btn-sm px-3 fw-semibold"
-            onClick={handleBack}
-          >
-            Back
+            {loading ? "Creating…" : "✓ Create Customer Profile"}
           </button>
         </div>
       </div>
-
-      {error && (
-        <div className="alert alert-danger fw-semibold py-2 px-3 mb-3 rounded-pill border border-danger">
-          {error}
-        </div>
-      )}
-
-      <form className="row g-3" onSubmit={handleSubmit}>
-
-        <div className="col-12 col-md-6">
-          <label className="form-label fw-bold text-dark mb-1">
-            Full Name
-          </label>
-          <input
-            type="text"
-            className="form-control border-2 rounded-pill fw-semibold"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Enter full name"
-            required
-          />
-        </div>
-
-        <div className="col-12 col-md-6">
-          <label className="form-label fw-bold text-dark mb-1">
-            Contact Number
-          </label>
-          <input
-            type="tel"
-            className="form-control border-2 rounded-pill fw-semibold"
-            name="contact"
-            value={formData.contact}
-            onChange={handleChange}
-            placeholder="Enter contact number"
-            required
-          />
-        </div>
-
-        <div className="col-12 col-md-6">
-          <label className="form-label fw-bold text-dark mb-1">
-            WhatsApp Number
-          </label>
-          <input
-            type="tel"
-            className="form-control border-2 rounded-pill fw-semibold"
-            name="alternateContact"
-            value={formData.alternateContact}
-            onChange={handleChange}
-            placeholder="Enter WhatsApp contact"
-          />
-        </div>
-
-        <div className="col-12 col-md-6">
-          <label className="form-label fw-bold text-dark mb-1">
-            Email Address
-          </label>
-          <input
-            type="email"
-            className="form-control border-2 rounded-pill fw-semibold"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Enter email address"
-          />
-        </div>
-
-        <div className="col-12 col-md-6">
-          <label className="form-label fw-bold text-dark mb-1">
-            Govt ID Type
-          </label>
-          <select
-            className="form-select border-2 rounded-pill fw-semibold"
-            name="govtIdType"
-            value={formData.govtIdType}
-            onChange={handleChange}
-          >
-            <option value="None">None</option>
-            <option value="Aadhar">Aadhar</option>
-            <option value="PAN">PAN</option>
-            <option value="Driving License">Driving License</option>
-            <option value="Passport">Passport</option>
-          </select>
-        </div>
-
-        <div className="col-12 col-md-6">
-          <label className="form-label fw-bold text-dark mb-1">
-            Govt ID Number
-          </label>
-          <input
-            type="text"
-            className={`form-control border-2 rounded-pill fw-semibold ${
-              isGovtIdDisabled ? "bg-light" : ""
-            }`}
-            name="govtIdNo"
-            value={formData.govtIdNo}
-            onChange={handleChange}
-            placeholder="Enter govt ID number"
-            disabled={isGovtIdDisabled}
-            required={!isGovtIdDisabled}
-          />
-        </div>
-
-        <div className="col-12">
-          <label className="form-label fw-bold text-dark mb-1">
-            Upload Govt ID Image
-          </label>
-          <input
-            type="file"
-            className={`form-control border-2 rounded-pill ${
-              isGovtIdDisabled ? "bg-light" : ""
-            }`}
-            name="govtIdImage"
-            accept="image/*"
-            onChange={handleChange}
-            disabled={isGovtIdDisabled}
-          />
-        </div>
-
-        <div className="col-12 mt-3">
-          <button
-            type="submit"
-            className="btn btn-primary w-100 fw-bold py-2 rounded-pill shadow-sm"
-            disabled={loading}
-          >
-            {loading ? "Creating..." : "Create Profile"}
-          </button>
-        </div>
-
-      </form>
     </div>
   );
 }

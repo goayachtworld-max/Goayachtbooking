@@ -2,11 +2,7 @@ import React from "react";
 import CustomerForm from "../components/CustomerForm";
 
 function CreateCustomer() {
-  return (
-    <div>
-      <CustomerForm />
-    </div>
-  );
+  return <CustomerForm />;
 }
 
 export default CreateCustomer;

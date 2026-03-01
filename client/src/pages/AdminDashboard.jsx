@@ -230,13 +230,6 @@ function AdminDashboard({ user }) {
     </div>
   );
 
-  // const getToday = () => {
-  //   const today = new Date();
-  //   const yyyy = today.getFullYear();
-  //   const mm = String(today.getMonth() + 1).padStart(2, "0");
-  //   const dd = String(today.getDate()).padStart(2, "0");
-  //   return `${yyyy}-${mm}-${dd}`;
-  // };
   const today = new Date().toISOString().split("T")[0];
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   return (
@@ -311,7 +304,7 @@ function AdminDashboard({ user }) {
         <div className="row g-3 g-md-4 mb-4">
           {/* Create Booking */}
           <div className="col-12 col-sm-6 col-lg-4">
-            <div className={`${styles.mgmtCard} card border-primary h-100 shadow`}>
+            <div className={`${styles.mgmtCard} card h-100`}>
               <div className="card-body p-4">
                 <div className="d-flex align-items-start mb-3">
                   <div
@@ -338,7 +331,7 @@ function AdminDashboard({ user }) {
 
           {/* View Bookings */}
           <div className="col-12 col-sm-6 col-lg-4">
-            <div className={`${styles.mgmtCard} card border-success h-100 shadow`}>
+            <div className={`${styles.mgmtCard} card h-100`}>
               <div className="card-body p-4">
                 <div className="d-flex align-items-start mb-3">
                   <div
@@ -365,7 +358,7 @@ function AdminDashboard({ user }) {
 
           {/* Check Availability */}
           <div className="col-12 col-sm-6 col-lg-4">
-            <div className={`${styles.mgmtCard} card border-warning h-100 shadow`}>
+            <div className={`${styles.mgmtCard} card h-100`}>
               <div className="card-body p-4">
                 <div className="d-flex align-items-start mb-3">
                   <div
@@ -394,7 +387,7 @@ function AdminDashboard({ user }) {
 
         {/* ---------------- QUICK LINKS ---------------- */}
         <div className={styles.quickActions}>
-          <h5 className="text-center mb-4 fw-semibold text-primary">Quick Actions</h5>
+          <h5 className="text-center mb-4 fw-semibold" style={{ color: "#0d1f3c" }}>Quick Actions</h5>
           <div className="d-grid d-md-flex gap-2 gap-md-3 justify-content-center flex-wrap">
             {user?.systemAdministrator && (
               <button
