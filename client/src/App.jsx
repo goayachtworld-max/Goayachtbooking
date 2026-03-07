@@ -34,7 +34,7 @@ import NotificationBell from "./pages/NotificationBell";
 import EditBookingDetails from "./components/EditBookingDetails";
 import CustomerManagement from "./pages/CustomerManagement";
 import RegisterCompany from "./pages/RegisterCompany";
-import PublicHome from "./pages/Publichome";
+import PublicHome from "./pages/PublicHome";
 
 
 function App() {
