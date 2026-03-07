@@ -80,3 +80,18 @@ export const updateBookingExtrasAPI = async (bookingId, payload, token) => {
   );
 };
 
+export const createPublicBookingAPI = async (data) => {
+  try {
+    const response = await apiConnector(
+      "POST",
+      booking.CREATE_PUBLIC_BOOKING_API,  // → BASE_URL/bookings/public
+      data,
+      {},   // no Authorization header
+      null
+    );
+    return response;
+  } catch (error) {
+    console.error("❌ Failed to create public booking:", error.response?.data || error);
+    throw error;
+  }
+};

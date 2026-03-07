@@ -6,6 +6,10 @@ import "./App.css";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+// Public pages
+// import PublicHome from "./pages/PublicHome";
+import PublicYacht from "./pages/PublicYacht";
+
 // Pages
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -30,6 +34,7 @@ import NotificationBell from "./pages/NotificationBell";
 import EditBookingDetails from "./components/EditBookingDetails";
 import CustomerManagement from "./pages/CustomerManagement";
 import RegisterCompany from "./pages/RegisterCompany";
+import PublicHome from "./pages/Publichome";
 
 
 function App() {
@@ -155,24 +160,34 @@ function App() {
       <Toaster position="top-right" reverseOrder={false} />
       {user && <Navbar user={user} onLogout={logoutUser} />}
       {user && <NotificationBell className="nav-notification" />}
-      {/* <div className="mt-1">hi</div> */}
       <div className={user ? "app-content" : ""}>
         <Routes>
-          {/* Root Route → Redirect based on user role */}
+          {/* Public home — shown when not logged in */}
           <Route
             path="/"
             element={
               user ? (
-                role === "admin" ? (
-                  <Navigate to="/admin" />
-                ) : (
-                  <Navigate to="/bookings" />
-                )
+                role === "admin" ? <Navigate to="/admin" /> : <Navigate to="/bookings" />
+              ) : (
+                <PublicHome/>
+              )
+            }
+          />
+
+          {/* Staff login */}
+          <Route
+            path="/login"
+            element={
+              user ? (
+                role === "admin" ? <Navigate to="/admin" /> : <Navigate to="/bookings" />
               ) : (
                 <Login onLogin={handleLogin} />
               )
             }
           />
+
+          {/* Single yacht embeddable page — shareable link */}
+          <Route path="/book/:yachtId" element={<PublicYacht />} />
 
           {/* Protected Routes */}
           <Route

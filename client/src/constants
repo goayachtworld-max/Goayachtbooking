@@ -1,0 +1,17 @@
+// src/constants.js
+// Central place for all app-wide constants.
+// Update values here — reflected everywhere automatically.
+
+// ── WhatsApp ──────────────────────────────────────────────────────────────────
+// Format: country code + number, no + or spaces (for wa.me links)
+export const WA_NUMBER      = '919921710376';      // used in wa.me deep links
+export const WA_NUMBER_DISPLAY = '+91 99217 10376'; // human-readable, for UI text
+export const WA_NUMBER_SHORT   = '9921710376';      // 10-digit, for display
+
+// ── App ───────────────────────────────────────────────────────────────────────
+export const APP_NAME    = 'GoaBoat';
+export const APP_TAGLINE = 'Yacht Charters';
+export const APP_ADDRESS = 'Panaji, Goa, India';
+export const APP_EMAIL   = 'support@goaboat.com';
+export const APP_INSTAGRAM = 'https://instagram.com/';
+export const APP_MAPS    = 'https://maps.google.com/?q=Panaji+Goa';

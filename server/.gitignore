@@ -9,3 +9,9 @@ logs/
 
 # OS
 Thumbs.db
+echo ".wa-session/" >> .gitignore
+
+
+.wa-session/
+.wwebjs_cache/
+.env

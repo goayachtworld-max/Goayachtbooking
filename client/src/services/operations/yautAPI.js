@@ -151,3 +151,22 @@ export const updateDaySlots = async (yachtId, date, payloadSlots, token) => {
     throw error;
   }
 };
+
+// ── PUBLIC (no auth token) ───────────────────────────────────────────────────
+// Called from PublicHome — returns active websiteSale yachts with photos[]
+
+export const getPublicYachtsAPI = async (date) => {
+  try {
+    const response = await apiConnector(
+      "GET",
+      yaut.GET_PUBLIC_YACHTS_API,
+      null,
+      {},   // no Authorization header
+      date ? { date } : null,
+    );
+    return response;
+  } catch (error) {
+    console.error("❌ Failed to fetch public yachts:", error.response?.data || error);
+    throw error;
+  }
+};

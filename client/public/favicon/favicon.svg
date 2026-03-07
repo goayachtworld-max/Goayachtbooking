@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1f3c"/>
+      <stop offset="100%" stop-color="#1a3a5c"/>
+    </linearGradient>
+    <linearGradient id="sail1" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#e8c96a"/>
+      <stop offset="100%" stop-color="#c9a84c"/>
+    </linearGradient>
+    <linearGradient id="sail2" x1="1" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#dde8f0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+
+  <!-- Mast -->
+  <line x1="15.5" y1="5" x2="15.5" y2="24" stroke="#c9a84c" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Main sail (left, gold) -->
+  <path d="M15.5 6 L6 22 L15.5 22 Z" fill="url(#sail1)" opacity="0.95"/>
+
+  <!-- Jib sail (right, white) -->
+  <path d="M15.5 10 L23 21 L15.5 21 Z" fill="url(#sail2)" opacity="0.9"/>
+
+  <!-- Hull -->
+  <path d="M5 23.5 Q10 26.5 15.5 26.5 Q21 26.5 26 23.5" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+
+  <!-- Water line shimmer -->
+  <path d="M4 27 Q9 28.2 15.5 27.8 Q22 27.4 27.5 27" stroke="white" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="0.35"/>
+</svg>

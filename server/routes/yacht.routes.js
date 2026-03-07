@@ -6,6 +6,7 @@ import {
   updateYacht,
   deleteYacht,
   getAllYachtsDetails,
+  getPublicYachts,
 } from "../controllers/yacht.controller.js";
 
 import { yachtSchema } from "../validators/yacht.validator.js";
@@ -14,6 +15,8 @@ import { upload, uploadFileToCloudinaryV2, uploadToCloudinary } from "../middlew
 import { authMiddleware, onlyAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
+
+router.get("/public", getPublicYachts);
 
 // validate(yachtSchema), -- Removed as it is deleting special slot time
 router.post(

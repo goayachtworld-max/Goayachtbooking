@@ -1,0 +1,362 @@
+/* styles/MyBookingsPage.module.css */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+/* ── Page shell ────────────────────────────────────────────────────────────── */
+/* Sits inside <main> which already has margin-left:sidebar + padding-bottom:2rem.
+   We take full control — no extra scrollbars, no double scroll. */
+.page {
+  font-family: 'DM Sans', sans-serif;
+  background: #f0f4f8;
+  display: flex;
+  flex-direction: column;
+  /* Fill the viewport naturally without creating its own scroll context */
+  min-height: 100%;
+  overflow: visible;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+.header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0e4d6b 100%);
+  padding: 1.25rem 1.25rem 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  /* overflow:hidden clips the wave pseudo-element only */
+  overflow: hidden;
+}
+/* Wave cutout */
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 28px;
+  background: #f0f4f8;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+
+.back_btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.08);
+  color: #fff; cursor: pointer;
+  transition: background .15s; flex-shrink: 0; z-index: 1;
+}
+.back_btn:hover { background: rgba(255,255,255,.18); }
+
+.header__text { flex: 1; z-index: 1; min-width: 0; }
+.header__title {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.4rem; font-weight: 800;
+  color: #fff; margin: 0; letter-spacing: -.02em;
+}
+.header__count {
+  font-size: .75rem; color: rgba(255,255,255,.5);
+  font-weight: 500; margin-top: 2px; display: block;
+}
+.header__avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(135deg, #0d9488, #0891b2);
+  color: #fff; font-size: .9rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; z-index: 1;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.22);
+}
+
+/* ── Content ────────────────────────────────────────────────────────────────── */
+.content {
+  flex: 1;
+  padding: 1.25rem 1rem 2rem;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* ── Grid — 1 col mobile, 2 col tablet, 3 col desktop ──────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1024px) {
+  .grid { grid-template-columns: 1fr 1fr 1fr; gap: 1.125rem; }
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(15,23,42,.07), 0 1px 2px rgba(15,23,42,.04);
+  transition: box-shadow .2s, transform .2s;
+  animation: cardIn .35s ease both;
+  /* Critical: card itself must not scroll */
+  display: flex; flex-direction: column;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card:hover {
+  box-shadow: 0 8px 28px rgba(15,23,42,.11);
+  transform: translateY(-2px);
+}
+
+/* ── Hero image ── */
+.card__hero {
+  position: relative;
+  height: 150px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f172a, #1e3a5f);
+  flex-shrink: 0;
+}
+.card__hero_img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  filter: brightness(.82);
+}
+.card__hero_ph {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.2);
+  background: linear-gradient(135deg, #0f172a, #164e63);
+}
+
+/* Status badge */
+.card__status {
+  position: absolute; top: 10px; right: 10px;
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 999px;
+  font-size: .69rem; font-weight: 700; letter-spacing: .03em;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.22);
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.card__status_dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* Ticket pill */
+.card__ticket {
+  position: absolute; bottom: 9px; left: 9px;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(6px);
+  color: rgba(255,255,255,.88);
+  font-size: .62rem; font-weight: 700; letter-spacing: .08em;
+  padding: 2px 7px; border-radius: 5px;
+  font-family: 'Sora', monospace;
+}
+
+/* ── Card body ── */
+.card__body {
+  padding: .875rem 1rem .875rem;
+  flex: 1; display: flex; flex-direction: column;
+  min-width: 0;
+}
+.card__row_top {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: .375rem;
+  margin-bottom: .5rem;
+}
+.card__name {
+  font-family: 'Sora', sans-serif;
+  font-size: .92rem; font-weight: 700; color: #0f172a;
+  margin: 0; line-height: 1.2;
+  /* Ellipsis only on the name — it's in a flex container with the price */
+  min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  flex: 1 1 0;
+  max-width: calc(100% - 80px); /* leave room for price */
+}
+.card__price {
+  font-size: .9rem; font-weight: 800; color: #0f172a;
+  white-space: nowrap; flex-shrink: 0;
+}
+
+/* Meta items — each on its own line, text truncated */
+.card__meta {
+  display: flex; flex-direction: column;
+  gap: .3rem;
+  margin-bottom: .75rem;
+}
+.meta_item {
+  display: flex; align-items: baseline; gap: .3rem;
+  font-size: .75rem; color: #475569; font-weight: 500;
+  min-width: 0;
+}
+.meta_icon { flex-shrink: 0; font-size: .78rem; line-height: 1; }
+.meta_text {
+  min-width: 0;
+  /* Wrap on small screens so nothing is cut; truncate only when truly needed */
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ── Expanded details ── */
+.card__details {
+  border-top: 1px solid #f1f5f9;
+  padding-top: .75rem; margin-bottom: .625rem;
+  animation: expandIn .18s ease;
+}
+@keyframes expandIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.details_grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: .45rem .625rem; margin-bottom: .75rem;
+}
+.detail_row { display: flex; flex-direction: column; gap: 2px; }
+.detail_row--full { grid-column: 1 / -1; }
+.detail_lbl {
+  font-size: .62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: #94a3b8;
+}
+.detail_val {
+  font-size: .78rem; font-weight: 500; color: #1e293b;
+  word-break: break-word;
+}
+/* Location value — show as link if it's a URL */
+.location_link {
+  font-size: .75rem; color: #2563eb; font-weight: 600;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 3px;
+}
+.location_link:hover { text-decoration: underline; }
+
+/* Boarding note */
+.boarding_note {
+  display: flex; align-items: flex-start; gap: .625rem;
+  background: linear-gradient(135deg, #f0fdfa, #ecfeff);
+  border: 1px solid #99f6e4; border-radius: 10px; padding: .625rem .75rem;
+}
+.bn_icon { font-size: 1rem; flex-shrink: 0; }
+.boarding_note strong { font-size: .78rem; color: #0d9488; display: block; margin-bottom: 1px; }
+.boarding_note p { font-size: .72rem; color: #0f766e; margin: 0; line-height: 1.4; }
+
+/* ── Card footer ── */
+.card__foot {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid #f1f5f9; padding-top: .625rem;
+  margin-top: auto; /* pushes footer to bottom of flex card */
+}
+.expand_btn {
+  background: none; border: none;
+  font-size: .72rem; font-weight: 600; color: #64748b;
+  cursor: pointer; padding: 0; transition: color .15s; font-family: inherit;
+}
+.expand_btn:hover { color: #2563eb; }
+.help_btn {
+  display: flex; align-items: center; gap: .3rem;
+  font-size: .72rem; font-weight: 700; color: #25d366;
+  text-decoration: none; padding: 4px 10px;
+  border: 1.5px solid #86efac; border-radius: 999px;
+  transition: all .15s; background: #f0fdf4;
+}
+.help_btn:hover { background: #dcfce7; border-color: #4ade80; }
+
+/* ── Skeleton ───────────────────────────────────────────────────────────────── */
+.skeleton_card {
+  background: #fff; border-radius: 16px;
+  overflow: hidden; box-shadow: 0 2px 8px rgba(15,23,42,.06);
+}
+.sk_hero {
+  height: 150px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%; animation: shimmer 1.2s infinite;
+}
+.sk_body { padding: .875rem 1rem; }
+.sk_line {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%; animation: shimmer 1.2s infinite; margin-bottom: .45rem;
+}
+.sk_line--lg { height: 16px; width: 60%; }
+.sk_line--md { height: 11px; width: 80%; animation-delay: .1s; }
+.sk_line--sm { height: 10px; width: 42%; animation-delay: .2s; }
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────────── */
+.empty {
+  text-align: center; padding: 3rem 1.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: .75rem;
+}
+.empty__waves { width: 160px; margin-bottom: .25rem; opacity: .6; }
+.empty__anchor { font-size: 2.75rem; }
+.empty h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;
+}
+.empty p { font-size: .85rem; color: #64748b; margin: 0; }
+.empty__cta {
+  margin-top: .375rem; padding: .7rem 1.75rem;
+  background: #2563eb; color: #fff; border: none; border-radius: 12px;
+  font-size: .85rem; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: background .15s;
+}
+.empty__cta:hover { background: #1d4ed8; }
+
+/* ── Pagination ──────────────────────────────────────────────────────────────── */
+.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 0 .5rem; gap: 1rem;
+}
+.pg_btn {
+  padding: .55rem 1.125rem;
+  border: 1.5px solid #e2e8f0; background: #fff; border-radius: 10px;
+  font-size: .78rem; font-weight: 700; color: #1e293b;
+  cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.pg_btn:disabled { opacity: .35; cursor: not-allowed; }
+.pg_btn:not(:disabled):hover { border-color: #2563eb; color: #2563eb; }
+.pg_dots { display: flex; gap: .5rem; align-items: center; }
+.pg_dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #e2e8f0; border: none; cursor: pointer; transition: all .15s;
+  /* Expand tap area without changing visual size */
+  padding: 6px; margin: -6px;
+  box-sizing: content-box;
+}
+.pg_dot--on { background: #2563eb; transform: scale(1.35); }
+.pg_count {
+  font-size: .72rem; font-weight: 700; color: #64748b;
+  white-space: nowrap;
+}
+
+/* ── Footer help ─────────────────────────────────────────────────────────────── */
+.footer_help {
+  padding: .875rem 1rem 1.5rem;
+  font-size: .76rem; color: #94a3b8;
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+}
+.footer_wa {
+  display: flex; align-items: center; gap: .3rem;
+  color: #25d366; font-weight: 700; text-decoration: none;
+  font-size: .76rem; transition: opacity .15s;
+}
+.footer_wa:hover { opacity: .8; }
+
+/* ── Mobile tab-bar clearance ────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  /* <main> on mobile has padding-top: var(--mob-hd-h) set by PublicHome.
+     That padding already moves content below the fixed mobile header,
+     so the .page header starts at the right place — no extra offset needed.
+     We only need bottom clearance for the tab bar. */
+  .content {
+    padding-bottom: calc(var(--tabbar-h, 64px) + 1.5rem);
+  }
+  .header { padding-bottom: 2.25rem; }
+  .card__hero { height: 130px; }
+  /* Cards always full-width on mobile */
+  .grid { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 400px) {
+  .details_grid { grid-template-columns: 1fr; }
+  .card__name { font-size: .85rem; }
+  .card__price { font-size: .82rem; }
+}

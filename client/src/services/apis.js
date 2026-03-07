@@ -28,6 +28,7 @@ export const booking = {
   RESCHEDULE_BOOKING_API: `${BASE_URL}/bookings/reschedule`,
   UPDATE_EXTRA_DETAILS_BOOKING_API: `${BASE_URL}/bookings`,
   GET_PUBLIC_BOOKING_BY_TKT_API: (id) => `${BASE_URL}/bookings/public/${id}`,
+  CREATE_PUBLIC_BOOKING_API: `${BASE_URL}/bookings/public`, 
 };
 
 export const transaction = {
@@ -49,6 +50,7 @@ export const yaut = {
   GET_ALL_YACHTS_DETAILS_API: `${BASE_URL}/yacht/details`,
   GET_YACHT_BY_ID_API: (id) => `${BASE_URL}/yacht/${id}`,
   UPDATE_YACHT_API: (id) => `${BASE_URL}/yacht/${id}`,
+   GET_PUBLIC_YACHTS_API: `${BASE_URL}/yacht/public`,
   DELETE_YACHT_API: (id) => `${BASE_URL}/yacht/${id}`,
   UPDATE_DAY_SLOTS: `${BASE_URL}/slot/`
 };
@@ -62,3 +64,13 @@ export const notification = {
 export const company ={
   REGISTER_COMPANY_API : `${BASE_URL}/company`
 }
+
+// ── Customer self-service auth (public-facing site) ───────────────────────────
+// Phone OTP login — no password, no username.
+export const customerAuth = {
+  SEND_OTP_API:       `${BASE_URL}/customer/auth/send-otp`,
+  VERIFY_OTP_API:     `${BASE_URL}/customer/auth/verify-otp`,
+  GET_ME_API:         `${BASE_URL}/customer/auth/me`,
+  UPDATE_PROFILE_API: `${BASE_URL}/customer/auth/profile`,
+  GET_BOOKINGS_API:   `${BASE_URL}/customer/auth/bookings`,
+};
