@@ -163,23 +163,23 @@ function AdminDashboard({ user }) {
         </div>
 
         {/* ── MANAGEMENT CARDS ── */}
-        <div className={`row g-3 g-md-4 mb-5`}>
+        <div className={`row g-2 g-md-3 mb-4`}>
           <MgmtCard
             title="Create Booking" desc="New yacht booking" btnLabel="Go" btnClass="btn-primary"
             iconBg="linear-gradient(135deg,#3b82f6,#1d4ed8)"
-            icon={<BsPlusCircle size={22} color="#fff" />}
+            icon={<BsPlusCircle size={18} color="#fff" />}
             onClick={() => navigate("/create-booking")} delay={100}
           />
           <MgmtCard
             title="View Bookings" desc="Manage all bookings" btnLabel="Go" btnClass="btn-success"
             iconBg="linear-gradient(135deg,#10b981,#059669)"
-            icon={<BsClipboardCheck size={22} color="#fff" />}
+            icon={<BsClipboardCheck size={18} color="#fff" />}
             onClick={() => navigate(`/bookings?month=${currentMonth}`)} delay={200}
           />
           <MgmtCard
             title="Check Availability" desc="Yacht availability by date" btnLabel="Go" btnClass="btn-warning text-dark"
             iconBg="linear-gradient(135deg,#f59e0b,#d97706)"
-            icon={<BsCalendar3 size={22} color="#fff" />}
+            icon={<BsCalendar3 size={18} color="#fff" />}
             onClick={() => navigate("/grid-availability")} delay={300}
           />
         </div>
@@ -190,20 +190,20 @@ function AdminDashboard({ user }) {
           <div className={styles.quickGrid}>
             {user?.systemAdministrator && (
               <button className={`${styles.quickBtn} ${styles.quickBtnDark}`} onClick={() => navigate("/register-company")}>
-                <BsBuilding size={16} className="me-2" /> Create Company
+                <BsBuilding size={14} className="me-2" /> Create Company
               </button>
             )}
             <button className={`${styles.quickBtn} ${styles.quickBtnPrimary}`} onClick={() => navigate("/create-customer")}>
-              <BsPersonPlus size={16} className="me-2" /> Create Customer
+              <BsPersonPlus size={14} className="me-2" /> Create Customer
             </button>
             <button className={`${styles.quickBtn} ${styles.quickBtnSuccess}`} onClick={() => navigate("/availability")}>
-              <BsCalendarPlus size={16} className="me-2" /> Book Yacht
+              <BsCalendarPlus size={14} className="me-2" /> Book Yacht
             </button>
             <button className={`${styles.quickBtn} ${styles.quickBtnWarning}`} onClick={() => navigate("/bookings?status=pending")}>
-              <BsClock size={16} className="me-2" /> Pending Approval
+              <BsClock size={14} className="me-2" /> Pending Approval
             </button>
             <button className={`${styles.quickBtn} ${styles.quickBtnDanger}`} onClick={() => navigate("/bookings?status=cancelled")}>
-              <BsXCircle size={16} className="me-2" /> Cancelled Bookings
+              <BsXCircle size={14} className="me-2" /> Cancelled Bookings
             </button>
           </div>
         </div>
