@@ -4,9 +4,9 @@
 
 // ── WhatsApp ──────────────────────────────────────────────────────────────────
 // Format: country code + number, no + or spaces (for wa.me links)
-export const WA_NUMBER      = '919921710376';      // used in wa.me deep links
-export const WA_NUMBER_DISPLAY = '+91 99217 10376'; // human-readable, for UI text
-export const WA_NUMBER_SHORT   = '9921710376';      // 10-digit, for display
+export const WA_NUMBER      = '917058455985';      // used in wa.me deep links
+export const WA_NUMBER_DISPLAY = '+91 70584 55985'; // human-readable, for UI text
+export const WA_NUMBER_SHORT   = '7058455985';      // 10-digit, for display
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export const APP_NAME    = 'GoaBoat';

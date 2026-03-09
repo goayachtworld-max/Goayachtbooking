@@ -72,3 +72,15 @@ input{
 select{
   border-radius: 50px !important
 }
+
+@media (max-width: 991.98px) {
+  .app-content {
+    padding-top: 56px !important;
+    padding-bottom: 72px !important; /* clears the bottom nav for admin/backdesk */
+  }
+
+  /* Staff (onsite) has no bottom nav — no extra padding needed */
+  .app-content.role-onsite {
+    padding-bottom: 0 !important;
+  }
+}

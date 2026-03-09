@@ -197,7 +197,27 @@ function TicketSearch() {
 
   const generateBoardingPassText = (booking) => {
     const p = parseBoardingPass(booking);
-    return `# Ticket Number: ${p.ticketId}\nBooking Status: ${p.status.toUpperCase()}\n\n\u{1F464} Guest Name: ${p.guestName}\n\u{1F4DE} Contact No.: ${p.contact}\n\u{1F465} Group Size: ${p.groupSize} Pax\n\u26F5 Yacht Name: ${p.yacht}\n\u{1F5D3}\uFE0F Trip Date: ${p.date} | \u23F0 Time: ${p.time}\n\nBalance Pending: \u20B9${p.pendingAmount}/- (to be collected before boarding)\n\n\u{1F4CD} Boarding Location\n${p.boardingLocation || "Location not provided"}`;
+    const lines = [
+      `⚓ Boarding Pass`,
+      `━━━━━━━━━━━━━━━━━━━━━━━`,
+      `Ticket #${p.ticketId}`,
+      `Status: ${p.status.toUpperCase()}`,
+      ``,
+      `👤 Guest: ${p.guestName}`,
+      `📞 Contact: ${p.contact}`,
+      `👥 Group Size: ${p.groupSize} Pax`,
+      `⛵ Vessel: ${p.yacht}`,
+      `📅 Date: ${p.date}`,
+      `🕐 Time: ${p.time}`,
+      p.boardingLocation ? `📍 Location: ${p.boardingLocation}` : null,
+      p.pendingAmount > 0 ? `💰 Balance Due: ₹${p.pendingAmount}/-` : null,
+      p.inclusions.length > 0 ? `\n✅ Inclusions:\n${p.inclusions.map(i => `  • ${i}`).join('\n')}` : null,
+      p.paidServices.length > 0 ? `\n💳 Paid Services:\n${p.paidServices.map(i => `  • ${i}`).join('\n')}` : null,
+      p.notes ? `\n📝 Notes:\n${p.notes}` : null,
+      `\n━━━━━━━━━━━━━━━━━━━━━━━`,
+      ...p.disclaimer.split('\n').map(line => line),
+    ].filter(l => l !== null);
+    return lines.join('\n');
   };
 
   const copyBoardingPass = (booking) => {
@@ -221,7 +241,7 @@ function TicketSearch() {
           <div className={styles.ts_modalOverlay} onClick={() => setShowModal(false)}>
             <div className={styles.ts_modalContent} onClick={(e) => e.stopPropagation()}>
               <div className={styles.ts_modalHeader}>
-                <h3 className={styles.ts_modalTitle}>\u2693 Boarding Pass</h3>
+                <h3 className={styles.ts_modalTitle}>⚓ Boarding Pass</h3>
                 <span className={styles.ts_modalTicketId}>#{pass.ticketId}</span>
               </div>
               <div className={styles.ts_tearLine}><hr /></div>
@@ -245,7 +265,7 @@ function TicketSearch() {
                 {pass.pendingAmount > 0 && (
                   <div className={styles.ts_passRow}>
                     <span className={styles.ts_passLabel}>Balance Due</span>
-                    <span className={styles.ts_pendingAmount}>\u20B9{pass.pendingAmount}/-</span>
+                    <span className={styles.ts_pendingAmount}>₹{pass.pendingAmount}/-</span>
                   </div>
                 )}
                 {pass.inclusions.length > 0 && (

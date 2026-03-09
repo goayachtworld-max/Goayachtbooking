@@ -11,6 +11,7 @@ import {
   saveCustomerSession,
 } from '../services/operations/customerAuthAPI';
 import { WA_NUMBER as WA } from '../constants';
+import { saveOtpState, loadOtpState, clearOtpState, resendSecondsLeft } from '../utils/otpState';
 
 const cx = (...c) => c.filter(Boolean).join(' ');
 const fmt = n => Number(n || 0).toLocaleString('en-IN');
@@ -69,12 +70,18 @@ function useCountdown(init = 0) {
 }
 
 // ─── Inline OTP Login (shown when not logged in) ──────────────────────────────
+// Persists OTP step in sessionStorage so navigating away and back restores
+// the "Enter OTP" screen instead of forcing a fresh number entry.
 function InlineLogin({ onSuccess }) {
-  const [phone, setPhone] = useState('');
+  // Restore any in-progress OTP session from sessionStorage
+  const saved = loadOtpState();
+  const [phone, setPhone] = useState(saved?.phone || '');
   const [otp,   setOtp]   = useState('');
-  const [step,  setStep]  = useState(1);
+  const [step,  setStep]  = useState(saved ? 2 : 1);
   const [busy,  setBusy]  = useState(false);
-  const { left, start }   = useCountdown();
+  // Initialise countdown from remaining seconds if restoring mid-session
+  const initLeft = saved ? resendSecondsLeft(saved.sentAt) : 0;
+  const { left, start } = useCountdown(initLeft);
   const digits = phone.replace(/\D/g, '');
 
   const handleSend = async () => {
@@ -82,6 +89,7 @@ function InlineLogin({ onSuccess }) {
     setBusy(true);
     try {
       await sendCustomerOtpAPI(digits);
+      saveOtpState(digits);   // persist phone + timestamp
       setStep(2); start();
       toast.success('OTP sent to your WhatsApp!');
     } catch (err) {
@@ -96,6 +104,7 @@ function InlineLogin({ onSuccess }) {
       const res = await verifyCustomerOtpAPI(digits, otp);
       const d   = res.data;
       saveCustomerSession(d.token, d.customer);
+      clearOtpState();        // clean up now that we're done
       toast.success(d.isNewCustomer ? 'Welcome! 🎉' : 'Welcome back!');
       onSuccess(d.customer);
     } catch (err) {
@@ -108,11 +117,17 @@ function InlineLogin({ onSuccess }) {
     setBusy(true);
     try {
       await sendCustomerOtpAPI(digits);
+      saveOtpState(digits);
       setOtp(''); start();
       toast.success('New OTP sent!');
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to resend');
     } finally { setBusy(false); }
+  };
+
+  const handleChangeNumber = () => {
+    clearOtpState();
+    setStep(1); setOtp(''); setPhone('');
   };
 
   return (
@@ -146,29 +161,32 @@ function InlineLogin({ onSuccess }) {
                 onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 onKeyDown={e => e.key === 'Enter' && handleSend()}
                 autoFocus
-                style={{
-                  flex: 1, border: 'none', outline: 'none', padding: '0 14px',
-                  fontSize: '0.95rem', height: 48, background: 'transparent',
-                }}
+                style={{ flex: 1, border: 'none', outline: 'none', padding: '0 14px', fontSize: '0.95rem', height: 48, background: 'transparent' }}
               />
             </div>
           </div>
-          <button
-            onClick={handleSend}
-            disabled={busy || digits.length < 10}
-            style={{
-              width: '100%', height: 48, borderRadius: 12, border: 'none',
-              background: digits.length < 10 ? '#e2e8f0' : '#0f172a',
-              color: digits.length < 10 ? '#94a3b8' : '#fff',
-              fontSize: '0.9rem', fontWeight: 700, cursor: digits.length < 10 ? 'not-allowed' : 'pointer',
-              transition: 'all .15s',
-            }}
-          >
+          <button onClick={handleSend} disabled={busy || digits.length < 10} style={{
+            width: '100%', height: 48, borderRadius: 12, border: 'none',
+            background: digits.length < 10 ? '#e2e8f0' : '#0f172a',
+            color: digits.length < 10 ? '#94a3b8' : '#fff',
+            fontSize: '0.9rem', fontWeight: 700,
+            cursor: digits.length < 10 ? 'not-allowed' : 'pointer', transition: 'all .15s',
+          }}>
             {busy ? 'Sending…' : '📲 Send OTP via WhatsApp'}
           </button>
         </>
       ) : (
         <>
+          {/* Restored-state hint — shown when user navigated away and came back */}
+          {saved && (
+            <div style={{
+              width: '100%', marginBottom: '0.75rem', padding: '8px 12px',
+              background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10,
+              fontSize: '0.75rem', color: '#15803d', fontWeight: 600, textAlign: 'center',
+            }}>
+              ✓ OTP already sent to +91 {digits} — enter it below
+            </div>
+          )}
           <p style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '0.875rem', textAlign: 'center' }}>
             OTP sent to <b>+91 {digits}</b>.<br/>
             <span style={{ color: '#25d366', fontWeight: 700 }}>📲 Check your WhatsApp</span>
@@ -183,22 +201,16 @@ function InlineLogin({ onSuccess }) {
               width: '100%', height: 52, border: '1.5px solid #e2e8f0',
               borderRadius: 12, fontSize: '1.5rem', fontWeight: 700,
               letterSpacing: '0.4em', textAlign: 'center', outline: 'none',
-              marginBottom: '0.875rem', boxSizing: 'border-box',
-              transition: 'border-color .15s',
+              marginBottom: '0.875rem', boxSizing: 'border-box', transition: 'border-color .15s',
             }}
           />
-          <button
-            onClick={handleVerify}
-            disabled={busy || otp.length < 4}
-            style={{
-              width: '100%', height: 48, borderRadius: 12, border: 'none',
-              background: otp.length < 4 ? '#e2e8f0' : '#0f172a',
-              color: otp.length < 4 ? '#94a3b8' : '#fff',
-              fontSize: '0.9rem', fontWeight: 700,
-              cursor: otp.length < 4 ? 'not-allowed' : 'pointer',
-              marginBottom: '0.75rem',
-            }}
-          >
+          <button onClick={handleVerify} disabled={busy || otp.length < 4} style={{
+            width: '100%', height: 48, borderRadius: 12, border: 'none',
+            background: otp.length < 4 ? '#e2e8f0' : '#0f172a',
+            color: otp.length < 4 ? '#94a3b8' : '#fff',
+            fontSize: '0.9rem', fontWeight: 700,
+            cursor: otp.length < 4 ? 'not-allowed' : 'pointer', marginBottom: '0.75rem',
+          }}>
             {busy ? 'Verifying…' : 'Verify & View Bookings'}
           </button>
           <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.78rem', color: '#64748b' }}>
@@ -209,7 +221,7 @@ function InlineLogin({ onSuccess }) {
                   Resend OTP
                 </button>
             }
-            <button onClick={() => { setStep(1); setOtp(''); }}
+            <button onClick={handleChangeNumber}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2563eb', fontWeight: 600, fontSize: '0.78rem' }}>
               Change number
             </button>
@@ -248,7 +260,7 @@ function BookingCard({ b, idx }) {
   const pax       = b.numPax ?? b.numAdults ?? b.numPeople ?? null;
   const kids      = b.numKids ?? null;
   const extras    = b.extraDetails || '';
-  const ticket    = b.ticketNo || null;
+  const ticket = b.ticketNo || (b._id ? String(b._id).slice(-5).toUpperCase() : null);
   const slot      = b.startTime && b.endTime
     ? `${to12h(b.startTime)} – ${to12h(b.endTime)}` : null;
   const isCompleted = status === 'completed';
@@ -279,7 +291,7 @@ function BookingCard({ b, idx }) {
           {sc.label}
         </span>
 
-        {/* Ticket pill */}
+        {/* Ticket pill — top-left, clear of the bottom ribbon */}
         {ticket && <span className={styles.card__ticket}>#{ticket}</span>}
 
         {/* Completed overlay ribbon */}

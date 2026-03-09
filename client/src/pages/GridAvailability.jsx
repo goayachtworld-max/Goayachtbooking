@@ -6,7 +6,6 @@ import styles from "./GridAvailability.module.css";
 
 import {
   getAllYachtsDetailsAPI,
-  getYachtById,
   updateDaySlots,
 } from "../services/operations/yautAPI";
 
@@ -201,8 +200,6 @@ function GridAvailability() {
   const employee = JSON.parse(localStorage.getItem("user") || "{}");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-  console.log("Logged user:", employee);
-
   const isAdminOrOnsite =
     employee.type === "admin" || employee.type === "onsite";
 
@@ -296,9 +293,8 @@ function GridAvailability() {
     try {
       setLoading(true);
 
-      // 🔹 yacht details (unchanged)
-      const yachtRes = await getYachtById(yachtId, token);
-      const yachtData = yachtRes?.data?.yacht ?? yachtRes;
+      // 🔹 yacht details — use already-loaded list, avoid extra API call
+      const yachtData = yachts.find((y) => y._id === yachtId) || null;
       setYacht(yachtData);
 
       const dateList = getDatesBetween(fromDate, toDate);
@@ -308,93 +304,108 @@ function GridAvailability() {
       let globalMin = Infinity;
       let globalMax = -Infinity;
 
-      for (const date of dateList) {
-        // 🔹 day availability (unchanged)
-        const res = await getDayAvailability(yachtId, date, token);
+      // 🔹 Fallback slots — built ONCE from yacht config.
+      // Used only for dates that have no custom slots saved in the backend.
+      // Dates WITH backend slots (day.slots) will use those instead — per-date custom slots are fully preserved.
+      const defaultBaseSlots = buildSlotsForYacht(yachtData);
+
+      // Pre-cache minutes for fallback slots
+      const defaultBaseSlotsWithMins = defaultBaseSlots.map((s) => ({
+        ...s,
+        startMin: hhmmToMinutes(s.start),
+        endMin: hhmmToMinutes(s.end),
+      }));
+
+      // 🔹 Compute timeline range from fallback slots (will be updated per-date if custom slots exist)
+      defaultBaseSlotsWithMins.forEach(({ startMin, endMin }) => {
+        if (startMin < globalMin) globalMin = startMin;
+        if (endMin > globalMax) globalMax = endMin;
+      });
+
+      // ── FIX: Fetch all dates IN PARALLEL instead of sequentially ──
+      const dayResults = await Promise.all(
+        dateList.map((date) => getDayAvailability(yachtId, date, token))
+      );
+
+      dateList.forEach((date, dateIdx) => {
+        const res = dayResults[dateIdx];
         const day = res?.data || res || {};
 
         const booked = day.bookedSlots || [];
         const locked = day.lockedSlots || [];
 
-        // 🔹 base slots (unchanged)
-        let baseSlots = [];
+        // Use per-day custom slots if available, else use pre-built defaults
+        let baseSlotsWithMins;
         if (
           Array.isArray(day.slots) &&
           day.slots.length > 0 &&
           Array.isArray(day.slots[0].slots)
         ) {
-          baseSlots = day.slots[0].slots.map((s) => ({
+          baseSlotsWithMins = day.slots[0].slots.map((s) => ({
             start: s.start,
             end: s.end,
+            startMin: hhmmToMinutes(s.start),
+            endMin: hhmmToMinutes(s.end),
           }));
+          // Update global range for custom slots
+          baseSlotsWithMins.forEach(({ startMin, endMin }) => {
+            if (startMin < globalMin) globalMin = startMin;
+            if (endMin > globalMax) globalMax = endMin;
+          });
         } else {
-          baseSlots = buildSlotsForYacht(yachtData);
+          baseSlotsWithMins = defaultBaseSlotsWithMins;
         }
 
-        // 🔹 compute timeline range
-        baseSlots.forEach((s) => {
-          const sMin = hhmmToMinutes(s.start);
-          const eMin = hhmmToMinutes(s.end);
-          if (sMin < globalMin) globalMin = sMin;
-          if (eMin > globalMax) globalMax = eMin;
-        });
+        // Pre-cache booked/locked minute values once per day
+        const bookedWithMins = booked.map((b) => ({
+          ...b,
+          startMin: hhmmToMinutes(b.startTime || b.start),
+          endMin: hhmmToMinutes(b.endTime || b.end),
+        }));
+        const lockedWithMins = locked.map((l) => ({
+          ...l,
+          startMin: hhmmToMinutes(l.startTime || l.start),
+          endMin: hhmmToMinutes(l.endTime || l.end),
+        }));
 
-        // 🔹 enrich slots (unchanged)
-        const enriched = baseSlots.map((slot) => {
-          const bookedOverlap = booked.find(
-            (b) =>
-              hhmmToMinutes(b.startTime || b.start) <
-              hhmmToMinutes(slot.end) &&
-              hhmmToMinutes(b.endTime || b.end) >
-              hhmmToMinutes(slot.start)
+        // 🔹 enrich slots using pre-cached minute values
+        const enriched = baseSlotsWithMins.map((slot) => {
+          const bookedOverlap = bookedWithMins.find(
+            (b) => b.startMin < slot.endMin && b.endMin > slot.startMin
           );
 
           if (bookedOverlap) {
             return {
-              ...slot,
+              start: slot.start,
+              end: slot.end,
               date,
-              type:
-                bookedOverlap.status === "pending"
-                  ? "pending"
-                  : "booked",
-              custName:
-                bookedOverlap.custName ||
-                bookedOverlap.customerName ||
-                "",
-              empName:
-                bookedOverlap.empName ||
-                bookedOverlap.employeeName ||
-                "",
+              type: bookedOverlap.status === "pending" ? "pending" : "booked",
+              custName: bookedOverlap.custName || bookedOverlap.customerName || "",
+              empName: bookedOverlap.empName || bookedOverlap.employeeName || "",
               appliedBy: bookedOverlap.appliedBy || null,
             };
           }
 
-          const lockedOverlap = locked.find(
-            (l) =>
-              hhmmToMinutes(l.startTime || l.start) <
-              hhmmToMinutes(slot.end) &&
-              hhmmToMinutes(l.endTime || l.end) >
-              hhmmToMinutes(slot.start)
+          const lockedOverlap = lockedWithMins.find(
+            (l) => l.startMin < slot.endMin && l.endMin > slot.startMin
           );
 
           if (lockedOverlap) {
             return {
-              ...slot,
+              start: slot.start,
+              end: slot.end,
               date,
               type: "locked",
-              empName:
-                lockedOverlap.empName ||
-                lockedOverlap.employeeName ||
-                "",
+              empName: lockedOverlap.empName || lockedOverlap.employeeName || "",
               appliedBy: lockedOverlap.appliedBy || null,
             };
           }
 
-          return { ...slot, date, type: "free" };
+          return { start: slot.start, end: slot.end, date, type: "free" };
         });
 
         rows.push({ date, slots: enriched });
-      }
+      });
 
       // 🔹 fallback timeline range
       if (!isFinite(globalMin) || !isFinite(globalMax)) {

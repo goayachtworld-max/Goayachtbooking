@@ -18,25 +18,21 @@ function Navbar({ user, onLogout }) {
     currentPassword: "",
     newPassword: "",
     isPrivate: user?.isPrivate || false,
-    profilePhoto: user?.profilePhoto || null
+    profilePhoto: user?.profilePhoto || null,
   });
 
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Collapse navbar on link click (for mobile)
   const handleNavLinkClick = () => {
     const collapseEl = collapseRef.current;
     if (collapseEl && collapseEl.classList.contains("show")) {
-      const bsCollapse = new window.bootstrap.Collapse(collapseEl, {
-        toggle: true,
-      });
+      const bsCollapse = new window.bootstrap.Collapse(collapseEl, { toggle: true });
       bsCollapse.hide();
     }
   };
 
-  // Helper: Get user initials
   const getInitials = (name) => {
     if (!name) return "";
     const parts = name.trim().split(" ");
@@ -46,34 +42,18 @@ function Navbar({ user, onLogout }) {
   };
 
   const handleProfileUpdate = async () => {
-    console.log("inside call")
     try {
       const newErrors = {};
-
       if (!editForm.name.trim()) newErrors.name = "Name is required";
       if (!editForm.email.trim()) newErrors.email = "Email is required";
       if (!editForm.contact.trim()) newErrors.contact = "Contact is required";
-
-      if (editForm.currentPassword && !editForm.newPassword) {
-        newErrors.newPassword = "New password is required";
-      }
-
-      if (!editForm.currentPassword && editForm.newPassword) {
-        newErrors.currentPassword = "Current password is required";
-      }
-
-      if (editForm.newPassword && editForm.newPassword.length < 6) {
-        newErrors.newPassword = "Password must be at least 6 characters";
-      }
-
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
-      }
+      if (editForm.currentPassword && !editForm.newPassword) newErrors.newPassword = "New password is required";
+      if (!editForm.currentPassword && editForm.newPassword) newErrors.currentPassword = "Current password is required";
+      if (editForm.newPassword && editForm.newPassword.length < 6) newErrors.newPassword = "Password must be at least 6 characters";
+      if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
 
       setErrors({});
       let payload;
-
       if (editForm.profilePhoto) {
         payload = new FormData();
         payload.append("name", editForm.name);
@@ -81,19 +61,12 @@ function Navbar({ user, onLogout }) {
         payload.append("contact", editForm.contact);
         payload.append("isPrivate", editForm.isPrivate);
         payload.append("profilePhoto", editForm.profilePhoto);
-
         if (editForm.currentPassword && editForm.newPassword) {
           payload.append("currentPassword", editForm.currentPassword);
           payload.append("newPassword", editForm.newPassword);
         }
       } else {
-        payload = {
-          name: editForm.name,
-          email: editForm.email,
-          contact: editForm.contact,
-          isPrivate: editForm.isPrivate,
-        };
-
+        payload = { name: editForm.name, email: editForm.email, contact: editForm.contact, isPrivate: editForm.isPrivate };
         if (editForm.currentPassword && editForm.newPassword) {
           payload.currentPassword = editForm.currentPassword;
           payload.newPassword = editForm.newPassword;
@@ -102,28 +75,16 @@ function Navbar({ user, onLogout }) {
 
       const response = await updateEmployeeProfileAPI(user._id, payload, token);
       const updatedEmployee = response.data.employee;
-
-      // ✅ Update ONLY required fields in localStorage
       const storedUser = JSON.parse(localStorage.getItem("user"));
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          ...storedUser,
-          name: updatedEmployee.name,
-          email: updatedEmployee.email,
-          contact: updatedEmployee.contact,
-          isPrivate: updatedEmployee.isPrivate,
-          profilePhoto: updatedEmployee.profilePhoto
-        })
-      );
-
-      // ✅ Clear password fields from state
-      setEditForm((prev) => ({
-        ...prev,
-        currentPassword: "",
-        newPassword: "",
+      localStorage.setItem("user", JSON.stringify({
+        ...storedUser,
+        name: updatedEmployee.name,
+        email: updatedEmployee.email,
+        contact: updatedEmployee.contact,
+        isPrivate: updatedEmployee.isPrivate,
+        profilePhoto: updatedEmployee.profilePhoto,
       }));
+      setEditForm((prev) => ({ ...prev, currentPassword: "", newPassword: "" }));
       toast.success("Profile updated successfully 🎉");
       setShowEditProfile(false);
       setShowProfile(false);
@@ -131,204 +92,181 @@ function Navbar({ user, onLogout }) {
       toast.error("Profile update failed ❌");
     }
   };
-  // Collapse navbar when clicked outside
+
   useEffect(() => {
     const handleOutsideClick = (event) => {
       const collapseEl = collapseRef.current;
-      if (
-        collapseEl &&
-        collapseEl.classList.contains("show") &&
-        !collapseEl.contains(event.target) &&
-        !event.target.classList.contains("navbar-toggler")
-      ) {
-        const bsCollapse = new window.bootstrap.Collapse(collapseEl, {
-          toggle: true,
-        });
+      if (collapseEl && collapseEl.classList.contains("show") && !collapseEl.contains(event.target) && !event.target.classList.contains("navbar-toggler")) {
+        const bsCollapse = new window.bootstrap.Collapse(collapseEl, { toggle: true });
         bsCollapse.hide();
       }
     };
-
     document.addEventListener("click", handleOutsideClick);
-
-    return () => {
-      document.removeEventListener("click", handleOutsideClick);
-    };
+    return () => document.removeEventListener("click", handleOutsideClick);
   }, []);
 
-  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const currentMonth = new Date().toISOString().slice(0, 7);
   const isActive = (path) => location.pathname === path;
+
+  // Nav items config — reused for both top and bottom nav
+  const navItems = [
+    {
+      label: "Bookings",
+      to: `/bookings?month=${currentMonth}`,
+      path: "/bookings",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+        </svg>
+      ),
+      show: true,
+    },
+    {
+      label: "Availability",
+      to: "/availability",
+      path: "/availability",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+          <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+        </svg>
+      ),
+      show: user?.type === "admin" || user?.type === "backdesk",
+    },
+    {
+      label: "Calendar",
+      to: "/grid-availability",
+      path: "/grid-availability",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
+          <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+        </svg>
+      ),
+      show: user?.type === "admin" || user?.type === "backdesk",
+    },
+    {
+      label: "Yacht Master",
+      to: "/all-yachts",
+      path: "/all-yachts",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5v-4h3v4H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L8.354 1.146z"/>
+        </svg>
+      ),
+      show: user?.type === "admin",
+    },
+    {
+      label: "Customers",
+      to: "/create-customer",
+      path: "/create-customer",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+        </svg>
+      ),
+      show: user?.type === "admin" || user?.type === "backdesk",
+    },
+    {
+      label: "User Master",
+      to: "/all-employees",
+      path: "/all-employees",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+          <path fillRule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/>
+          <path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+        </svg>
+      ),
+      show: user?.type === "admin",
+    },
+  ].filter((item) => item.show);
+
+  const ProfileAvatar = ({ size = 38 }) => (
+    <button
+      className="btn p-0 d-flex align-items-center justify-content-center rounded-circle shadow-sm"
+      style={{
+        width: size, height: size,
+        background: user?.profilePhoto ? "transparent" : "rgba(255,255,255,0.2)",
+        border: "2px solid rgba(255,255,255,0.6)",
+        overflow: "hidden",
+        flexShrink: 0,
+      }}
+      onClick={() => setShowProfile(true)}
+    >
+      {user?.profilePhoto ? (
+        <img src={user.profilePhoto} alt="profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      ) : (
+        <span style={{ color: "#fff", fontWeight: 700, fontSize: size * 0.36 }}>{getInitials(user?.name)}</span>
+      )}
+    </button>
+  );
 
   return (
     <>
-      {/* NAVBAR */}
+      {/* ─── DESKTOP TOP NAVBAR (hidden on mobile) ─── */}
       <nav
-        className="navbar navbar-expand-lg position-fixed w-100"
+        className="navbar navbar-expand-lg position-fixed w-100 d-none d-lg-flex"
         style={{
-          top: 0,
-          left: 0,
-          zIndex: 1030,
-          background: "linear-gradient(90deg, #0d6efd, #0b5ed7)",
-          boxShadow: "0 2px 5px rgba(0,0,0,0.25)",
+          top: 0, left: 0, zIndex: 1030,
+          background: "linear-gradient(90deg, #0d6efd 0%, #0b5ed7 100%)",
+          boxShadow: "0 2px 12px rgba(13,110,253,0.25)",
+          height: "60px",
         }}
       >
-        <div className="container-fluid">
+        <div className="container-fluid px-4">
           {/* Brand */}
           <Link
-            className="navbar-brand fw-bold text-white"
-            style={{ letterSpacing: "0.5px", fontSize: "1.2rem" }}
+            className="navbar-brand fw-bold text-white me-4"
+            style={{ letterSpacing: "0.5px", fontSize: "1.15rem", flexShrink: 0 }}
             to="/"
           >
+            {/* {user.type === "admin" ? "⚓ GYW Admin" : "⚓ GYW"} */}
             {user.type === "admin" ? "Dashboard" : "Boating Assistance"}
           </Link>
 
-
-          {/* Toggler */}
-          <button
-            className="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarNav"
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
-
-          {/* Navbar links */}
-          <div
-            className="collapse navbar-collapse"
-            id="navbarNav"
-            ref={collapseRef}
-          >
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-
-              <li className="nav-item">
-                <Link
-                  className={`nav-link text-white ${styles.navHover} ${isActive("/bookings") ? styles.activeTab : ""
-                    }`}
-                  to={`/bookings?month=${currentMonth}`}
-                  onClick={handleNavLinkClick}
-                >
-                  Bookings
-                </Link>
-              </li>
-
-              {(user?.type === "admin" || user?.type === "backdesk") && (
-                <li className="nav-item">
+          {/* Nav Links */}
+          <div className="collapse navbar-collapse" id="navbarNav" ref={collapseRef}>
+            <ul className="navbar-nav me-auto mb-0">
+              {navItems.map((item) => (
+                <li className="nav-item" key={item.path}>
                   <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/availability") ? styles.activeTab : ""
-                      }`}
-                    to="/availability"
+                    className={`nav-link text-white px-3 py-2 ${styles.navHover || ""}`}
+                    style={{
+                      borderRadius: "8px",
+                      fontWeight: isActive(item.path) ? 600 : 400,
+                      background: isActive(item.path) ? "rgba(255,255,255,0.18)" : "transparent",
+                      transition: "background 0.15s",
+                      fontSize: "0.92rem",
+                    }}
+                    to={item.to}
                     onClick={handleNavLinkClick}
                   >
-                    Availability
+                    {item.label}
                   </Link>
                 </li>
-              )}
-
-              {(user?.type === "admin" || user?.type === "backdesk") && (
-                <li className="nav-item">
-                  <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/grid-availability") ? styles.activeTab : ""
-                      }`}
-                    to="/grid-availability"
-                    onClick={handleNavLinkClick}
-                  >
-                    Calendar
-                  </Link>
-                </li>
-              )}
-
-              {user?.type === "admin" && (
-                <li className="nav-item">
-                  <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/all-yachts") ? styles.activeTab : ""
-                      }`}
-                    to="/all-yachts"
-                    onClick={handleNavLinkClick}
-                  >
-                    Yacht Master
-                  </Link>
-                </li>
-              )}
-
-              {(user?.type === "admin" || user?.type === "backdesk") && (
-                <li className="nav-item">
-                  <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/create-customer") ? styles.activeTab : ""
-                      }`}
-                    to="/create-customer"
-                    onClick={handleNavLinkClick}
-                  >
-                    Customer
-                  </Link>
-                </li>
-              )}
-
-              {user?.type === "admin" && (
-                <li className="nav-item">
-                  <Link
-                    className={`nav-link text-white ${styles.navHover} ${isActive("/all-employees") ? styles.activeTab : ""
-                      }`}
-                    to="/all-employees"
-                    onClick={handleNavLinkClick}
-                  >
-                    User Master
-                  </Link>
-                </li>
-              )}
+              ))}
             </ul>
 
-            {/* Profile + Logout */}
+            {/* Right: Profile + Logout */}
             <div className="d-flex align-items-center gap-2">
-              {/* Profile Button */}
-              {/* <button
-                className="btn bg-white rounded-circle text-primary fw-bold shadow-sm d-flex align-items-center justify-content-center"
-                style={{ width: "42px", height: "42px", fontSize: "15px" }}
-                onClick={() => setShowProfile(true)}
-              >
-                {getInitials(user?.name)}
-              </button> */}
-              <button
-                className="btn bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center p-0"
-                style={{ width: "42px", height: "42px", overflow: "hidden" }}
-                onClick={() => setShowProfile(true)}
-              >
-                {user?.profilePhoto ? (
-                  <img
-                    src={user.profilePhoto}
-                    alt="profile"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                ) : (
-                  <span
-                    className="text-primary fw-bold"
-                    style={{ fontSize: "15px" }}
-                  >
-                    {getInitials(user?.name)}
-                  </span>
-                )}
-              </button>
+              <ProfileAvatar size={38} />
 
-
-              {/* Logout Icon */}
               <button
-                className="btn btn-outline-light d-flex align-items-center justify-content-center"
-                style={{ width: "42px", height: "42px", borderRadius: "50%" }}
+                className="btn d-flex align-items-center justify-content-center"
+                style={{
+                  width: 38, height: 38,
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1.5px solid rgba(255,255,255,0.35)",
+                  color: "#fff",
+                }}
                 onClick={onLogout}
                 title="Logout"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M6 2a1 1 0 0 1 1-1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a1 1 0 0 1-1-1v-1h1v1h3a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7v1H6V2z" />
-                  <path d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M6 2a1 1 0 0 1 1-1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a1 1 0 0 1-1-1v-1h1v1h3a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7v1H6V2z"/>
+                  <path d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z"/>
                 </svg>
               </button>
             </div>
@@ -336,279 +274,171 @@ function Navbar({ user, onLogout }) {
         </div>
       </nav>
 
-      {/* PROFILE MODAL */}
-      {showProfile && (
-        <div
-          className="modal fade show"
-          style={{
-            display: "block",
-            backgroundColor: "rgba(0,0,0,0.6)",
-          }}
-          onClick={() => setShowProfile(false)}
-        >
-          <div
-            className="modal-dialog modal-dialog-centered"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-content shadow">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">My Profile</h5>
-                <button
-                  type="button"
-                  className="btn-close btn-close-white"
-                  onClick={() => setShowProfile(false)}
-                ></button>
-              </div>
+      {/* ─── MOBILE TOP BAR (visible on mobile only) ─── */}
+      <nav
+        className="d-flex d-lg-none align-items-center justify-content-between position-fixed w-100 px-3"
+        style={{
+          top: 0, left: 0, zIndex: 1030,
+          background: "linear-gradient(90deg, #0d6efd 0%, #0b5ed7 100%)",
+          boxShadow: "0 2px 10px rgba(13,110,253,0.3)",
+          height: "56px",
+        }}
+      >
+        <Link className="fw-bold text-white" style={{ fontSize: "1.05rem", textDecoration: "none", letterSpacing: "0.4px" }} to="/">
+          Boating Assistance
+        </Link>
+        <div className="d-flex align-items-center gap-2">
+          <ProfileAvatar size={36} />
+        </div>
+      </nav>
 
-              <div className="modal-body text-center">
+      {/* ─── MOBILE BOTTOM APP NAV (hidden for onsite/staff — only 1 tab) ─── */}
+      {user?.type !== "onsite" && (
+      <nav
+        className="d-flex d-lg-none position-fixed w-100"
+        style={{
+          bottom: 0, left: 0, zIndex: 1030,
+          background: "#fff",
+          boxShadow: "0 -2px 16px rgba(13,110,253,0.13)",
+          borderTop: "1px solid #e8f0fe",
+          height: "64px",
+        }}
+      >
+        {/* Show max 5 items on bottom bar; if more show "More" */}
+        {navItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={item.path}
+              to={item.to}
+              className="d-flex flex-column align-items-center justify-content-center text-decoration-none flex-fill"
+              style={{
+                color: active ? "#0d6efd" : "#7a8a9a",
+                transition: "color 0.15s",
+                position: "relative",
+                paddingTop: "4px",
+              }}
+              onClick={handleNavLinkClick}
+            >
+              {/* Active indicator dot */}
+              {active && (
+                <span style={{
+                  position: "absolute",
+                  top: 0,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: 28,
+                  height: 3,
+                  borderRadius: "0 0 4px 4px",
+                  background: "#0d6efd",
+                }} />
+              )}
+              <span style={{ opacity: active ? 1 : 0.65, transform: active ? "scale(1.1)" : "scale(1)", transition: "transform 0.15s" }}>
+                {item.icon}
+              </span>
+              <span style={{ fontSize: "10px", fontWeight: active ? 700 : 500, marginTop: "2px", letterSpacing: "0.2px" }}>
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      )}
+
+      {/* ─── PROFILE MODAL ─── */}
+      {showProfile && (
+        <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.55)" }} onClick={() => setShowProfile(false)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content shadow-lg" style={{ borderRadius: "16px", overflow: "hidden", border: "none" }}>
+              <div className="modal-header text-white" style={{ background: "linear-gradient(90deg,#0d6efd,#0b5ed7)", border: "none" }}>
+                <h5 className="modal-title">My Profile</h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setShowProfile(false)}></button>
+              </div>
+              <div className="modal-body text-center py-4">
                 <img
-                  src={
-                    user.profilePhoto
-                      ? user.profilePhoto
-                      : `https://ui-avatars.com/api/?name=${user.name}&background=random`
-                  }
+                  src={user.profilePhoto ? user.profilePhoto : `https://ui-avatars.com/api/?name=${user.name}&background=random`}
                   alt="profile"
                   className="rounded-circle mb-3 shadow-sm"
-                  width="100"
-                  height="100"
+                  width="90" height="90"
+                  style={{ objectFit: "cover", border: "3px solid #e8f0fe" }}
                 />
-
-
-                <h5>{user.name}</h5>
-                <p className="text-muted mb-2">
-                  {user.type === "backdesk"
-                    ? "Agent"
-                    : user.type === "onsite"
-                      ? "Staff"
-                      : user.type.charAt(0).toUpperCase() +
-                      user.type.slice(1)}
+                <h5 className="mb-0">{user.name}</h5>
+                <p className="text-muted mb-3" style={{ fontSize: "0.88rem" }}>
+                  {user.type === "backdesk" ? "Agent" : user.type === "onsite" ? "Staff" : user.type.charAt(0).toUpperCase() + user.type.slice(1)}
                 </p>
-
                 <hr />
-
-                <p>
-                  <strong>Username:</strong> {user.username}
-                </p>
-                <p>
-                  <strong>Email:</strong> {user.email}
-                </p>
-                <p>
-                  <strong>Contact:</strong> {user.contact}
-                </p>
-                <p>
-                  <strong>Status:</strong> {user.status}
-                </p>
+                <div className="text-start px-2" style={{ fontSize: "0.9rem" }}>
+                  <p><strong>Username:</strong> {user.username}</p>
+                  <p><strong>Email:</strong> {user.email}</p>
+                  <p><strong>Contact:</strong> {user.contact}</p>
+                  <p className="mb-0"><strong>Status:</strong> {user.status}</p>
+                </div>
               </div>
-
-              <div className="modal-footer">
-                <button
-                  className="btn btn-outline-primary"
-                  onClick={() => {
-                    setShowProfile(false);
-                    setShowEditProfile(true);
-                  }}
-                >
-                  Edit Profile
-                </button>
-
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowProfile(false)}
-                >
-                  Close
+              <div className="modal-footer" style={{ border: "none" }}>
+                <button className="btn btn-outline-primary" onClick={() => { setShowProfile(false); setShowEditProfile(true); }}>Edit Profile</button>
+                <button className="btn btn-danger btn-sm ms-auto" onClick={() => { setShowProfile(false); onLogout(); }} title="Logout">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" className="me-1">
+                    <path d="M6 2a1 1 0 0 1 1-1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a1 1 0 0 1-1-1v-1h1v1h3a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7v1H6V2z"/>
+                    <path d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z"/>
+                  </svg>
+                  Logout
                 </button>
               </div>
-
             </div>
           </div>
         </div>
       )}
 
-      {/* Update Profile Modal */}
+      {/* ─── EDIT PROFILE MODAL ─── */}
       {showEditProfile && (
-        <div
-          className="modal fade show"
-          style={{
-            display: "block",
-            backgroundColor: "rgba(0,0,0,0.6)",
-          }}
-          onClick={() => setShowEditProfile(false)}
-        >
-          <div
-            className="modal-dialog modal-dialog-centered"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-content shadow">
+        <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.55)" }} onClick={() => setShowEditProfile(false)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content shadow-lg" style={{ borderRadius: "16px", overflow: "hidden", border: "none" }}>
               <div className="modal-header bg-warning">
                 <h5 className="modal-title">Edit Profile</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowEditProfile(false)}
-                ></button>
+                <button type="button" className="btn-close" onClick={() => setShowEditProfile(false)}></button>
               </div>
-
               <div className="modal-body">
-                {/* Name */}
-                <input
-                  className={`form-control mb-2 ${errors.name ? "is-invalid" : ""}`}
-                  placeholder="Name"
-                  value={editForm.name}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, name: e.target.value })
-                  }
-                />
-                {errors.name && (
-                  <div className="text-danger small mb-2">{errors.name}</div>
-                )}
+                <input className={`form-control mb-2 ${errors.name ? "is-invalid" : ""}`} placeholder="Name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                {errors.name && <div className="text-danger small mb-2">{errors.name}</div>}
 
-                {/* Email */}
-                <input
-                  className={`form-control mb-2 ${errors.email ? "is-invalid" : ""}`}
-                  placeholder="Email"
-                  value={editForm.email}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, email: e.target.value })
-                  }
-                />
-                {errors.email && (
-                  <div className="text-danger small mb-2">{errors.email}</div>
-                )}
+                <input className={`form-control mb-2 ${errors.email ? "is-invalid" : ""}`} placeholder="Email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+                {errors.email && <div className="text-danger small mb-2">{errors.email}</div>}
 
-                {/* Contact */}
-                <input
-                  className={`form-control mb-3 ${errors.contact ? "is-invalid" : ""
-                    }`}
-                  placeholder="Contact"
-                  value={editForm.contact}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, contact: e.target.value })
-                  }
-                />
-                {errors.contact && (
-                  <div className="text-danger small mb-3">{errors.contact}</div>
-                )}
-
-                {/* <div className="form-check form-switch mb-3">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="privateProfile"
-                    checked={editForm.isPrivate}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, isPrivate: e.target.checked })
-                    }
-                  />
-                  <label className="form-check-label" htmlFor="privateProfile">
-                    {editForm.isPrivate ? "Private Profile" : "Public Profile"}
-                  </label>
-                </div> */}
+                <input className={`form-control mb-3 ${errors.contact ? "is-invalid" : ""}`} placeholder="Contact" value={editForm.contact} onChange={(e) => setEditForm({ ...editForm, contact: e.target.value })} />
+                {errors.contact && <div className="text-danger small mb-3">{errors.contact}</div>}
 
                 <div className="mb-3 text-start">
                   <label className="form-label fw-semibold">Profile Photo</label>
-                  <input
-                    type="file"
-                    className="form-control"
-                    accept="image/*"
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, profilePhoto: e.target.files[0] })
-                    }
-                  />
+                  <input type="file" className="form-control" accept="image/*" onChange={(e) => setEditForm({ ...editForm, profilePhoto: e.target.files[0] })} />
                 </div>
 
                 <hr />
-                {/* Current Password */}
+
                 <div className="input-group mb-2">
-                  <input
-                    type={showCurrentPassword ? "text" : "password"}
-                    className={`form-control ${errors.currentPassword ? "is-invalid" : ""
-                      }`}
-                    placeholder="Current Password"
-                    value={editForm.currentPassword}
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        currentPassword: e.target.value,
-                      })
-                    }
-                  />
-                  <button
-                    className="btn btn-outline-secondary"
-                    type="button"
-                    onClick={() =>
-                      setShowCurrentPassword(!showCurrentPassword)
-                    }
-                  >
-                    {showCurrentPassword ? "Hide" : "Show"}
-                  </button>
+                  <input type={showCurrentPassword ? "text" : "password"} className={`form-control ${errors.currentPassword ? "is-invalid" : ""}`} placeholder="Current Password" value={editForm.currentPassword} onChange={(e) => setEditForm({ ...editForm, currentPassword: e.target.value })} />
+                  <button className="btn btn-outline-secondary" type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>{showCurrentPassword ? "Hide" : "Show"}</button>
                 </div>
-                {errors.currentPassword && (
-                  <div className="text-danger small mb-2">
-                    {errors.currentPassword}
-                  </div>
-                )}
+                {errors.currentPassword && <div className="text-danger small mb-2">{errors.currentPassword}</div>}
 
-                {/* New Password */}
                 <div className="input-group">
-                  <input
-                    type={showNewPassword ? "text" : "password"}
-                    className={`form-control ${errors.newPassword ? "is-invalid" : ""
-                      }`}
-                    placeholder="New Password"
-                    value={editForm.newPassword}
-                    disabled={!editForm.currentPassword}
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        newPassword: e.target.value,
-                      })
-                    }
-                  />
-                  <button
-                    className="btn btn-outline-secondary"
-                    type="button"
-                    disabled={!editForm.currentPassword}
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                  >
-                    {showNewPassword ? "Hide" : "Show"}
-                  </button>
+                  <input type={showNewPassword ? "text" : "password"} className={`form-control ${errors.newPassword ? "is-invalid" : ""}`} placeholder="New Password" value={editForm.newPassword} disabled={!editForm.currentPassword} onChange={(e) => setEditForm({ ...editForm, newPassword: e.target.value })} />
+                  <button className="btn btn-outline-secondary" type="button" disabled={!editForm.currentPassword} onClick={() => setShowNewPassword(!showNewPassword)}>{showNewPassword ? "Hide" : "Show"}</button>
                 </div>
-
-                {/* {!editForm.currentPassword && (
-                  <div className="text-muted small mt-1">
-                    Enter current password to enable new password
-                  </div>
-                )} */}
-
-                {errors.newPassword && (
-                  <div className="text-danger small mt-1">
-                    {errors.newPassword}
-                  </div>
-                )}
+                {errors.newPassword && <div className="text-danger small mt-1">{errors.newPassword}</div>}
               </div>
-
               <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowEditProfile(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-success"
-                  onClick={handleProfileUpdate}
-                >
-                  Update
-                </button>
+                <button className="btn btn-secondary" onClick={() => setShowEditProfile(false)}>Cancel</button>
+                <button className="btn btn-success" onClick={handleProfileUpdate}>Update</button>
               </div>
             </div>
           </div>
         </div>
       )}
-
-
     </>
   );
 }
 
 export default Navbar;
+/* Already done above */

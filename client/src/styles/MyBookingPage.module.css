@@ -140,14 +140,15 @@
 }
 .card__status_dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
-/* Ticket pill */
+/* Ticket pill — top-left corner, clear of bottom ribbon */
 .card__ticket {
-  position: absolute; bottom: 9px; left: 9px;
-  background: rgba(0,0,0,.5); backdrop-filter: blur(6px);
-  color: rgba(255,255,255,.88);
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(0,0,0,.52); backdrop-filter: blur(6px);
+  color: rgba(255,255,255,.92);
   font-size: .62rem; font-weight: 700; letter-spacing: .08em;
-  padding: 2px 7px; border-radius: 5px;
+  padding: 3px 8px; border-radius: 6px;
   font-family: 'Sora', monospace;
+  border: 1px solid rgba(255,255,255,.18);
 }
 
 /* ── Card body ── */

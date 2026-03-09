@@ -15,6 +15,7 @@ import {
 const cx = (...c) => c.filter(Boolean).join(' ');
 const fmt = n => Number(n || 0).toLocaleString('en-IN');
 import { WA_NUMBER as WA, WA_NUMBER_DISPLAY } from '../constants';
+import { saveOtpState, loadOtpState, clearOtpState, resendSecondsLeft } from '../utils/otpState';
 const RESEND_CD = 60;
 const fmtDate = d => {
   if (!d) return '—';
@@ -22,8 +23,8 @@ const fmtDate = d => {
   return new Date(s + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-function useCountdown() {
-  const [left, setLeft] = useState(0);
+function useCountdown(init = 0) {
+  const [left, setLeft] = useState(init);
   useEffect(() => {
     if (left <= 0) return;
     const t = setTimeout(() => setLeft(l => l - 1), 1000);
@@ -33,12 +34,16 @@ function useCountdown() {
 }
 
 // ─── OTP Login ─────────────────────────────────────────────────────────────
+// Restores in-progress OTP session from sessionStorage so navigating away
+// and back shows the "Enter OTP" screen, not the phone entry screen.
 function OtpLogin({ onSuccess }) {
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp]     = useState('');
-  const [step, setStep]   = useState(1);   // 1 = enter phone, 2 = enter OTP
-  const [busy, setBusy]   = useState(false);
-  const { left, start }   = useCountdown();
+  const saved = loadOtpState();
+  const [phone, setPhone] = useState(saved?.phone || '');
+  const [otp,   setOtp]   = useState('');
+  const [step,  setStep]  = useState(saved ? 2 : 1);
+  const [busy,  setBusy]  = useState(false);
+  const initLeft = saved ? resendSecondsLeft(saved.sentAt) : 0;
+  const { left, start } = useCountdown(initLeft);
 
   const digits = phone.replace(/\D/g, '');
 
@@ -47,6 +52,7 @@ function OtpLogin({ onSuccess }) {
     setBusy(true);
     try {
       await sendCustomerOtpAPI(digits);
+      saveOtpState(digits);
       setStep(2);
       start();
       toast.success('OTP sent to your WhatsApp!');
@@ -62,6 +68,7 @@ function OtpLogin({ onSuccess }) {
       const res = await verifyCustomerOtpAPI(digits, otp);
       const d   = res.data;
       saveCustomerSession(d.token, d.customer);
+      clearOtpState();
       toast.success(d.isNewCustomer ? 'Welcome! 🎉' : 'Welcome back!');
       onSuccess(d.customer, d.isNewCustomer);
     } catch (err) {
@@ -74,11 +81,17 @@ function OtpLogin({ onSuccess }) {
     setBusy(true);
     try {
       await sendCustomerOtpAPI(digits);
+      saveOtpState(digits);
       setOtp(''); start();
       toast.success('New OTP sent to your WhatsApp!');
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to resend');
     } finally { setBusy(false); }
+  };
+
+  const handleChangeNumber = () => {
+    clearOtpState();
+    setStep(1); setOtp(''); setPhone('');
   };
 
   return (
@@ -110,6 +123,16 @@ function OtpLogin({ onSuccess }) {
         </>
       ) : (
         <>
+          {/* Restored-state hint when user navigated away and came back */}
+          {saved && (
+            <div style={{
+              margin: '0 0 0.75rem', padding: '8px 12px',
+              background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10,
+              fontSize: '0.75rem', color: '#15803d', fontWeight: 600, textAlign: 'center',
+            }}>
+              ✓ OTP already sent to +91 {digits} — enter it below
+            </div>
+          )}
           <p className={styles.login__sub}>
             OTP sent to <b>+91 {digits}</b>.
             <br/>
@@ -136,7 +159,7 @@ function OtpLogin({ onSuccess }) {
               ? <span className={styles.timer}>Resend in {left}s</span>
               : <button className={styles.link_btn} onClick={handleResend} disabled={busy}>Resend OTP</button>
             }
-            <button className={styles.link_btn} onClick={() => { setStep(1); setOtp(''); }}>
+            <button className={styles.link_btn} onClick={handleChangeNumber}>
               Change number
             </button>
           </div>
