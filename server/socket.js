@@ -10,6 +10,7 @@ export const initSocket = (server) => {
         "https://goaboat.com",
         "http://goaboat.com",
         "http://localhost:5173",
+        "http://localhost:5174",
       ],
       credentials: true,
     },
