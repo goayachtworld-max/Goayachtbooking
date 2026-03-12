@@ -10,6 +10,7 @@ function Navbar({ user, onLogout }) {
   const location = useLocation();
   const token = localStorage.getItem("authToken");
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
 
   const [editForm, setEditForm] = useState({
     name: user?.name || "",
@@ -31,6 +32,7 @@ function Navbar({ user, onLogout }) {
       const bsCollapse = new window.bootstrap.Collapse(collapseEl, { toggle: true });
       bsCollapse.hide();
     }
+    setShowSettingsDrawer(false);
   };
 
   const getInitials = (name) => {
@@ -105,11 +107,21 @@ function Navbar({ user, onLogout }) {
     return () => document.removeEventListener("click", handleOutsideClick);
   }, []);
 
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (showSettingsDrawer) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [showSettingsDrawer]);
+
   const currentMonth = new Date().toISOString().slice(0, 7);
   const isActive = (path) => location.pathname === path;
 
-  // Nav items config — reused for both top and bottom nav
-  const navItems = [
+  // All nav items
+  const allNavItems = [
     {
       label: "Bookings",
       to: `/bookings?month=${currentMonth}`,
@@ -182,6 +194,13 @@ function Navbar({ user, onLogout }) {
     },
   ].filter((item) => item.show);
 
+  // Bottom bar: only these 3 core tabs (always shown if user has access) + Settings
+  const bottomBarPaths = ["/bookings", "/availability", "/grid-availability"];
+  const bottomBarItems = allNavItems.filter((item) => bottomBarPaths.includes(item.path));
+
+  // Settings drawer: all items NOT in bottom bar
+  const drawerItems = allNavItems.filter((item) => !bottomBarPaths.includes(item.path));
+
   const ProfileAvatar = ({ size = 38 }) => (
     <button
       className="btn p-0 d-flex align-items-center justify-content-center rounded-circle shadow-sm"
@@ -215,20 +234,17 @@ function Navbar({ user, onLogout }) {
         }}
       >
         <div className="container-fluid px-4">
-          {/* Brand */}
           <Link
             className="navbar-brand fw-bold text-white me-4"
             style={{ letterSpacing: "0.5px", fontSize: "1.15rem", flexShrink: 0 }}
             to="/"
           >
-            {/* {user.type === "admin" ? "⚓ GYW Admin" : "⚓ GYW"} */}
             {user.type === "admin" ? "Dashboard" : "Boating Assistance"}
           </Link>
 
-          {/* Nav Links */}
           <div className="collapse navbar-collapse" id="navbarNav" ref={collapseRef}>
             <ul className="navbar-nav me-auto mb-0">
-              {navItems.map((item) => (
+              {allNavItems.map((item) => (
                 <li className="nav-item" key={item.path}>
                   <Link
                     className={`nav-link text-white px-3 py-2 ${styles.navHover || ""}`}
@@ -248,10 +264,8 @@ function Navbar({ user, onLogout }) {
               ))}
             </ul>
 
-            {/* Right: Profile + Logout */}
             <div className="d-flex align-items-center gap-2">
               <ProfileAvatar size={38} />
-
               <button
                 className="btn d-flex align-items-center justify-content-center"
                 style={{
@@ -274,7 +288,7 @@ function Navbar({ user, onLogout }) {
         </div>
       </nav>
 
-      {/* ─── MOBILE TOP BAR (visible on mobile only) ─── */}
+      {/* ─── MOBILE TOP BAR ─── */}
       <nav
         className="d-flex d-lg-none align-items-center justify-content-between position-fixed w-100 px-3"
         style={{
@@ -285,66 +299,265 @@ function Navbar({ user, onLogout }) {
         }}
       >
         <Link className="fw-bold text-white" style={{ fontSize: "1.05rem", textDecoration: "none", letterSpacing: "0.4px" }} to="/">
-          Boating Assistance
+          {user.type === "admin" ? "Dashboard" : "Boating Assistance"}
         </Link>
         <div className="d-flex align-items-center gap-2">
           <ProfileAvatar size={36} />
         </div>
       </nav>
 
-      {/* ─── MOBILE BOTTOM APP NAV (hidden for onsite/staff — only 1 tab) ─── */}
+      {/* ─── MOBILE BOTTOM APP NAV ─── */}
       {user?.type !== "onsite" && (
-      <nav
-        className="d-flex d-lg-none position-fixed w-100"
+        <nav
+          className="d-flex d-lg-none position-fixed w-100"
+          style={{
+            bottom: 0, left: 0, zIndex: 1030,
+            background: "#fff",
+            boxShadow: "0 -2px 16px rgba(13,110,253,0.13)",
+            borderTop: "1px solid #e8f0fe",
+            height: "64px",
+          }}
+        >
+          {/* Core nav tabs */}
+          {bottomBarItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.to}
+                className="d-flex flex-column align-items-center justify-content-center text-decoration-none flex-fill"
+                style={{
+                  color: active ? "#0d6efd" : "#7a8a9a",
+                  transition: "color 0.15s",
+                  position: "relative",
+                  paddingTop: "4px",
+                }}
+                onClick={handleNavLinkClick}
+              >
+                {active && (
+                  <span style={{
+                    position: "absolute",
+                    top: 0,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 28,
+                    height: 3,
+                    borderRadius: "0 0 4px 4px",
+                    background: "#0d6efd",
+                  }} />
+                )}
+                <span style={{ opacity: active ? 1 : 0.65, transform: active ? "scale(1.1)" : "scale(1)", transition: "transform 0.15s" }}>
+                  {item.icon}
+                </span>
+                <span style={{ fontSize: "10px", fontWeight: active ? 700 : 500, marginTop: "2px", letterSpacing: "0.2px" }}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+
+          {/* Settings tab — opens full-screen drawer */}
+          <button
+            className="d-flex flex-column align-items-center justify-content-center border-0 bg-transparent flex-fill"
+            style={{
+              color: showSettingsDrawer ? "#0d6efd" : "#7a8a9a",
+              transition: "color 0.15s",
+              position: "relative",
+              paddingTop: "4px",
+              cursor: "pointer",
+            }}
+            onClick={() => setShowSettingsDrawer((v) => !v)}
+          >
+            {showSettingsDrawer && (
+              <span style={{
+                position: "absolute",
+                top: 0,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 28,
+                height: 3,
+                borderRadius: "0 0 4px 4px",
+                background: "#0d6efd",
+              }} />
+            )}
+            <span style={{ opacity: showSettingsDrawer ? 1 : 0.65, transform: showSettingsDrawer ? "scale(1.1)" : "scale(1)", transition: "transform 0.15s" }}>
+              {/* Settings / menu icon */}
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+              </svg>
+            </span>
+            <span style={{ fontSize: "10px", fontWeight: showSettingsDrawer ? 700 : 500, marginTop: "2px", letterSpacing: "0.2px" }}>
+              Settings
+            </span>
+          </button>
+        </nav>
+      )}
+
+      {/* ─── FULL-SCREEN SETTINGS DRAWER (mobile) ─── */}
+      <div
+        className="d-lg-none"
         style={{
-          bottom: 0, left: 0, zIndex: 1030,
+          position: "fixed",
+          inset: 0,
+          zIndex: 1025,
+          background: "rgba(0,0,0,0.45)",
+          opacity: showSettingsDrawer ? 1 : 0,
+          pointerEvents: showSettingsDrawer ? "auto" : "none",
+          transition: "opacity 0.25s ease",
+        }}
+        onClick={() => setShowSettingsDrawer(false)}
+      />
+
+      <div
+        className="d-lg-none"
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: showSettingsDrawer ? "64px" : "-100%",
+          zIndex: 1026,
           background: "#fff",
-          boxShadow: "0 -2px 16px rgba(13,110,253,0.13)",
-          borderTop: "1px solid #e8f0fe",
-          height: "64px",
+          borderRadius: "20px 20px 0 0",
+          boxShadow: "0 -8px 40px rgba(13,110,253,0.18)",
+          transition: "bottom 0.32s cubic-bezier(0.4,0,0.2,1)",
+          maxHeight: "calc(100dvh - 120px)",
+          overflowY: "auto",
+          paddingBottom: "12px",
         }}
       >
-        {/* Show max 5 items on bottom bar; if more show "More" */}
-        {navItems.map((item) => {
-          const active = isActive(item.path);
-          return (
-            <Link
-              key={item.path}
-              to={item.to}
-              className="d-flex flex-column align-items-center justify-content-center text-decoration-none flex-fill"
-              style={{
-                color: active ? "#0d6efd" : "#7a8a9a",
-                transition: "color 0.15s",
-                position: "relative",
-                paddingTop: "4px",
-              }}
-              onClick={handleNavLinkClick}
-            >
-              {/* Active indicator dot */}
-              {active && (
-                <span style={{
-                  position: "absolute",
-                  top: 0,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  width: 28,
-                  height: 3,
-                  borderRadius: "0 0 4px 4px",
-                  background: "#0d6efd",
-                }} />
-              )}
-              <span style={{ opacity: active ? 1 : 0.65, transform: active ? "scale(1.1)" : "scale(1)", transition: "transform 0.15s" }}>
-                {item.icon}
-              </span>
-              <span style={{ fontSize: "10px", fontWeight: active ? 700 : 500, marginTop: "2px", letterSpacing: "0.2px" }}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
+        {/* Drawer handle */}
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 4px" }}>
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: "#dde3f0" }} />
+        </div>
 
-      )}
+        {/* Drawer header */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "8px 20px 16px",
+          borderBottom: "1px solid #f0f4ff",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                width: 44, height: 44, borderRadius: "50%",
+                background: user?.profilePhoto ? "transparent" : "linear-gradient(135deg,#0d6efd,#0b5ed7)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                overflow: "hidden", border: "2px solid #e8f0fe", flexShrink: 0,
+              }}
+            >
+              {user?.profilePhoto ? (
+                <img src={user.profilePhoto} alt="profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <span style={{ color: "#fff", fontWeight: 700, fontSize: "1rem" }}>{getInitials(user?.name)}</span>
+              )}
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1a1a2e" }}>{user?.name}</div>
+              <div style={{ fontSize: "0.78rem", color: "#7a8a9a", textTransform: "capitalize" }}>
+                {user?.type === "backdesk" ? "Agent" : user?.type === "onsite" ? "Staff" : user?.type}
+              </div>
+            </div>
+          </div>
+          <button
+            style={{
+              border: "none", background: "#f0f4ff", borderRadius: "50%",
+              width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#0d6efd", cursor: "pointer",
+            }}
+            onClick={() => setShowSettingsDrawer(false)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Drawer nav items */}
+        <div style={{ padding: "12px 16px" }}>
+          {drawerItems.length > 0 && (
+            <>
+              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#aab4cc", textTransform: "uppercase", letterSpacing: "0.8px", padding: "4px 8px 10px" }}>
+                Navigation
+              </div>
+              {drawerItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.to}
+                    onClick={handleNavLinkClick}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: "13px 14px",
+                      borderRadius: 12,
+                      marginBottom: 4,
+                      textDecoration: "none",
+                      background: active ? "#eef3ff" : "transparent",
+                      color: active ? "#0d6efd" : "#2d3a4a",
+                      fontWeight: active ? 700 : 500,
+                      fontSize: "0.95rem",
+                      transition: "background 0.15s",
+                    }}
+                  >
+                    <span style={{ color: active ? "#0d6efd" : "#7a8a9a", flexShrink: 0 }}>{item.icon}</span>
+                    {item.label}
+                    {active && (
+                      <span style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: "#0d6efd" }} />
+                    )}
+                  </Link>
+                );
+              })}
+              <div style={{ height: 1, background: "#f0f4ff", margin: "12px 0" }} />
+            </>
+          )}
+
+          {/* Account actions */}
+          <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#aab4cc", textTransform: "uppercase", letterSpacing: "0.8px", padding: "4px 8px 10px" }}>
+            Account
+          </div>
+
+          <button
+            onClick={() => { setShowSettingsDrawer(false); setShowProfile(true); }}
+            style={{
+              display: "flex", alignItems: "center", gap: 14,
+              padding: "13px 14px", borderRadius: 12, marginBottom: 4,
+              background: "transparent", border: "none", width: "100%",
+              color: "#2d3a4a", fontWeight: 500, fontSize: "0.95rem",
+              cursor: "pointer", textAlign: "left", transition: "background 0.15s",
+            }}
+          >
+            <span style={{ color: "#7a8a9a" }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+              </svg>
+            </span>
+            View Profile
+          </button>
+
+          <button
+            onClick={() => { setShowSettingsDrawer(false); onLogout(); }}
+            style={{
+              display: "flex", alignItems: "center", gap: 14,
+              padding: "13px 14px", borderRadius: 12,
+              background: "#fff1f1", border: "none", width: "100%",
+              color: "#dc3545", fontWeight: 600, fontSize: "0.95rem",
+              cursor: "pointer", textAlign: "left",
+            }}
+          >
+            <span style={{ color: "#dc3545" }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M6 2a1 1 0 0 1 1-1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a1 1 0 0 1-1-1v-1h1v1h3a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7v1H6V2z"/>
+                <path d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z"/>
+              </svg>
+            </span>
+            Logout
+          </button>
+        </div>
+      </div>
 
       {/* ─── PROFILE MODAL ─── */}
       {showProfile && (
@@ -441,4 +654,3 @@ function Navbar({ user, onLogout }) {
 }
 
 export default Navbar;
-/* Already done above */
