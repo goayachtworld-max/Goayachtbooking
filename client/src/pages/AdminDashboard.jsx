@@ -132,18 +132,17 @@ export default function AdminDashboard({ user }) {
 
   const todayStr = new Date().toISOString().split("T")[0];
   const monthStr = new Date().toISOString().slice(0, 7);
-  const vis = (d) => `${loaded ? styles.statCardVisible : ""}`; // shorthand
 
   /* ── Data ── */
   const STATS = [
-    { label:"Today",       value: stats.today,         accent:"#3b82f6", bg:"#eff6ff", icon:<Icon.Calendar /> , nav:`/bookings?date=${todayStr}` },
-    { label:"Next 7 Days", value: stats.upcoming7Days, accent:"#f59e0b", bg:"#fffbeb", icon:<Icon.Clock />    , nav:"/bookings?range=7days" },
-    { label:"This Month",  value: stats.month,         accent:"#8b5cf6", bg:"#f5f3ff", icon:<Icon.Month />    , nav:`/bookings?month=${monthStr}` },
-    { label:"New Today",   value: stats.createdToday,  accent:"#06b6d4", bg:"#ecfeff", icon:<Icon.Plus />     , nav:"/bookings?created=today" },
-    { label:"Pending",     value: stats.pending,       accent:"#f97316", bg:"#fff7ed", icon:<Icon.Clock />    , nav:"/bookings?status=pending" },
-    { label:"Confirmed",   value: stats.confirmed,     accent:"#10b981", bg:"#f0fdf4", icon:<Icon.Check />    , nav:"/bookings?status=confirmed" },
-    { label:"Completed",   value: stats.completed,     accent:"#6366f1", bg:"#eef2ff", icon:<Icon.Done />     , nav:"/bookings?status=completed" },
-    { label:"Cancelled",   value: stats.cancelled,     accent:"#ef4444", bg:"#fef2f2", icon:<Icon.X />        , nav:"/bookings?status=cancelled" },
+    { label:"Today",       value: stats.today,         accent:"#3b82f6", nav:`/bookings?date=${todayStr}` },
+    { label:"Next 7 Days", value: stats.upcoming7Days, accent:"#f59e0b", nav:"/bookings?range=7days" },
+    { label:"This Month",  value: stats.month,         accent:"#8b5cf6", nav:`/bookings?month=${monthStr}` },
+    { label:"New Today",   value: stats.createdToday,  accent:"#06b6d4", nav:"/bookings?created=today" },
+    { label:"Pending",     value: stats.pending,       accent:"#f97316", nav:"/bookings?status=pending" },
+    { label:"Confirmed",   value: stats.confirmed,     accent:"#10b981", nav:"/bookings?status=confirmed" },
+    { label:"Completed",   value: stats.completed,     accent:"#6366f1", nav:"/bookings?status=completed" },
+    { label:"Cancelled",   value: stats.cancelled,     accent:"#ef4444", nav:"/bookings?status=cancelled" },
   ];
 
   const MGMT = [
@@ -175,19 +174,18 @@ export default function AdminDashboard({ user }) {
   return (
     <div className={styles.dashboardWrapper}>
 
-      {/* ── Hero ── */}
-      <div className={styles.heroBanner}>
-        <div className={styles.heroInner}>
-          <div className={styles.heroLeft}>
-            <p className={styles.heroEyebrow}><span />Admin Portal</p>
-            <h1 className={styles.heroTitle}>Good {getGreeting()}, {user?.name?.split(" ")[0] || "Admin"} ⚓</h1>
-            <p className={styles.heroDate}>
-              {new Date().toLocaleDateString("en-US", {
-                weekday:"long", year:"numeric", month:"long", day:"numeric",
-              })}
-            </p>
+      {/* ── Slim Top Bar (replaces hero) ── */}
+      <div className={styles.topBar}>
+        <div className={styles.topBarInner}>
+          <div>
+            <p className={styles.topBarEyebrow}>Admin Portal</p>
+            <h1 className={styles.topBarTitle}>{user?.companyName || "Dashboard"}</h1>
           </div>
-          <div className={styles.heroBadge}>⚓</div>
+          <p className={styles.topBarDate}>
+            {new Date().toLocaleDateString("en-US", {
+              weekday:"short", month:"short", day:"numeric",
+            })}
+          </p>
         </div>
       </div>
 
@@ -208,12 +206,6 @@ export default function AdminDashboard({ user }) {
               style={{ "--card-accent": s.accent, transitionDelay: `${i * 45}ms` }}
               onClick={() => navigate(s.nav)}
             >
-              <div className={styles.statIconRow}>
-                <div className={styles.statIcon} style={{ background: s.bg, color: s.accent }}>
-                  {s.icon}
-                </div>
-                <div className={styles.statDot} style={{ background: s.accent }} />
-              </div>
               <span className={styles.statValue}>{loaded ? s.value : "—"}</span>
               <span className={styles.statLabel}>{s.label}</span>
             </div>
@@ -281,11 +273,4 @@ export default function AdminDashboard({ user }) {
       </div>
     </div>
   );
-}
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "morning";
-  if (h < 17) return "afternoon";
-  return "evening";
 }

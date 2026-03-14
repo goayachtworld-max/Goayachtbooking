@@ -10,6 +10,85 @@
 .booking-info div {
   margin-bottom: 4px;
 }
+
+/* ── Booking count badge ─────────────────────────── */
+.booking-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #d1fae5;
+  color: #065f46;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  min-width: 28px;
+}
+
+/* ── Filter bar search wrapper ───────────────────── */
+.filter-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-icon {
+  position: absolute;
+  left: 0.55rem;
+  font-size: 0.8rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.filter-input {
+  padding-left: 2rem !important;
+}
+
+.filter-clear-x {
+  position: absolute;
+  right: 0.4rem;
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.filter-clear-x:hover {
+  color: #555;
+}
+
+/* ── Active filter highlight ─────────────────────── */
+.filter-active {
+  border-color: #0d6efd !important;
+  background-color: #eff6ff !important;
+  color: #1d4ed8;
+}
+
+.filter-select {
+  font-size: 0.875rem;
+}
+
+/* ── Clear filter button ─────────────────────────── */
+.btn-clear-filter {
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 999px;
+  background: #fff;
+  color: #6c757d;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-clear-filter:hover {
+  background: #f8d7da;
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
 /* Custom breakpoint at 550px */
 .mobile-only {
   display: none;
@@ -28,7 +107,45 @@
   }
 }
 
-/* Mobile drawer */
+/* ── Mobile filter button ────────────────────────── */
+.mobile-filter-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1.5px solid #dee2e6;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #495057;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.mobile-filter-btn.has-active {
+  border-color: #0d6efd;
+  background: #eff6ff;
+  color: #0d6efd;
+}
+
+.filter-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 17px;
+  height: 17px;
+  background: #0d6efd;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Mobile drawer ───────────────────────────────── */
 .mobile-filter-backdrop {
   position: fixed;
   inset: 0;
@@ -42,9 +159,41 @@
   left: 0;
   right: 0;
   background: #fff;
-  border-radius: 16px 16px 0 0;
-  padding: 16px;
+  border-radius: 20px 20px 0 0;
+  padding: 12px 20px 28px;
   animation: slideUp 0.25s ease-out;
+}
+
+.drawer-handle {
+  width: 36px;
+  height: 4px;
+  background: #dee2e6;
+  border-radius: 999px;
+  margin: 0 auto 16px;
+}
+
+/* ── Status pills (mobile drawer) ───────────────── */
+.status-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-pill {
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--pill-color, #6c757d);
+  background: transparent;
+  color: var(--pill-color, #6c757d);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.status-pill.active {
+  background: var(--pill-color, #6c757d);
+  color: #fff;
 }
 
 @keyframes slideUp {

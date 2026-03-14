@@ -25,104 +25,57 @@
   overflow-x: hidden;
 }
 
-/* ── Hero Banner ── */
-.heroBanner {
-  background: linear-gradient(118deg, #3681f1 0%, #2561c3 55%, #0e5ad4 100%);
-  padding: 2rem 2rem 5rem;
-  position: relative;
-  overflow: hidden;
+/* ── Slim Top Bar ── */
+.topBar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 1.75rem;
 }
 
-.heroBanner::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 80% at 90% -20%, rgba(99,179,237,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 60% at -10% 110%, rgba(129,140,248,0.10) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-/* subtle grid lines */
-.heroBanner::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-}
-
-.heroInner {
+.topBarInner {
   max-width: 1380px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: relative;
-  z-index: 1;
+  gap: 1rem;
 }
 
-.heroLeft {}
-
-.heroEyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.68rem;
+.topBarEyebrow {
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 1.8px;
+  letter-spacing: 1.6px;
   text-transform: uppercase;
-  color: rgba(147,197,253,0.85);
-  margin-bottom: 0.5rem;
+  color: var(--text-3);
+  margin: 0 0 2px;
 }
 
-.heroEyebrow span {
-  display: inline-block;
-  width: 18px;
-  height: 1px;
-  background: rgba(147,197,253,0.6);
-}
-
-.heroTitle {
-  font-size: clamp(1.75rem, 3vw, 2.5rem);
+.topBarTitle {
+  font-size: 1.2rem;
   font-weight: 800;
-  color: #ffffff;
-  margin: 0 0 0.35rem;
-  letter-spacing: -0.5px;
-  line-height: 1.15;
-}
-
-.heroDate {
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.45);
-  font-weight: 400;
+  color: var(--text-1);
   margin: 0;
+  letter-spacing: -0.3px;
 }
 
-.heroBadge {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.6rem;
-  backdrop-filter: blur(8px);
-  flex-shrink: 0;
+.topBarDate {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-2);
+  margin: 0;
+  white-space: nowrap;
+  background: var(--bg);
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
 }
 
-/* ── Content Area (pulls up over banner) ── */
+/* ── Content Area ── */
 .contentArea {
   max-width: 1380px;
-  margin: -3.5rem auto 0;
-  padding: 0 1.75rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.75rem;
   position: relative;
-  z-index: 2;
 }
 
 /* ── Section Header ── */
@@ -152,40 +105,28 @@
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 12px;
-  margin-bottom: 2rem;
+  gap: 10px;
+  margin-bottom: 1.75rem;
 }
 
-/* ── Stat Card ── */
+/* ── Stat Card — no icon, compact ── */
 .statCard {
   background: var(--surface);
-  border-radius: var(--radius);
-  padding: 1.1rem 1rem 1rem;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 0.9rem 0.8rem;
   border: 1px solid var(--border);
+  border-top: 3px solid var(--card-accent, #3b82f6);
   box-shadow: var(--shadow-xs);
   cursor: pointer;
   opacity: 0;
-  transform: translateY(18px);
+  transform: translateY(14px);
   transition:
     opacity 0.4s var(--ease),
     transform 0.4s var(--ease),
-    box-shadow 0.22s var(--ease),
-    border-color 0.22s var(--ease);
+    box-shadow 0.22s var(--ease);
   display: flex;
   flex-direction: column;
-  gap: 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.statCard::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2.5px;
-  background: var(--card-accent, #3b82f6);
-  border-radius: 2px 2px 0 0;
-  opacity: 0.85;
+  gap: 3px;
 }
 
 .statCardVisible {
@@ -195,56 +136,30 @@
 
 .statCard:hover {
   box-shadow: var(--shadow-md);
-  border-color: rgba(148,163,184,0.4);
-  transform: translateY(-3px);
-}
-
-.statIconRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.85rem;
-}
-
-.statIcon {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.statDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--card-accent, #3b82f6);
-  opacity: 0.4;
+  transform: translateY(-2px);
 }
 
 .statValue {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -1.5px;
+  letter-spacing: -1px;
   color: var(--text-1);
-  margin-bottom: 4px;
   display: block;
 }
 
 .statLabel {
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   font-weight: 600;
   color: var(--text-3);
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
 }
 
 /* ── Bottom Row: Mgmt + Actions ── */
 .bottomRow {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr 300px;
   gap: 12px;
   align-items: start;
 }
@@ -262,7 +177,7 @@
   border-radius: var(--radius);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-xs);
-  padding: 1.35rem 1.2rem;
+  padding: 1.2rem 1.1rem;
   cursor: pointer;
   opacity: 0;
   transform: translateY(14px);
@@ -272,7 +187,7 @@
     box-shadow 0.22s var(--ease);
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 0.85rem;
 }
 
 .mgmtCardVisible {
@@ -286,12 +201,13 @@
 }
 
 .mgmtIconWrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .mgmtCardBody {
@@ -299,7 +215,7 @@
 }
 
 .mgmtCardBody h5 {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--text-1);
   margin: 0 0 3px;
@@ -307,7 +223,7 @@
 }
 
 .mgmtCardBody p {
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   color: var(--text-2);
   margin: 0;
   font-weight: 400;
@@ -317,7 +233,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 0.9rem;
+  padding-top: 0.8rem;
   border-top: 1px solid var(--border);
 }
 
@@ -346,7 +262,7 @@
   border-radius: var(--radius);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-xs);
-  padding: 1.35rem 1.2rem;
+  padding: 1.2rem 1.1rem;
   opacity: 0;
   transform: translateY(14px);
   transition: opacity 0.4s var(--ease) 0.4s, transform 0.4s var(--ease) 0.4s;
@@ -363,7 +279,7 @@
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--text-3);
-  margin: 0 0 1rem;
+  margin: 0 0 0.85rem;
 }
 
 .actionsList {
@@ -393,8 +309,8 @@
 }
 
 .actionItemIcon {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -425,22 +341,15 @@
     grid-template-columns: 1fr;
   }
 
+  /* Actions go horizontal when it's full width */
   .actionsPanel {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 1rem 1.5rem;
-    align-items: start;
-  }
-
-  .actionsPanelTitle {
-    grid-column: 1 / -1;
-    margin-bottom: 0;
+    padding: 1rem 1.1rem;
   }
 
   .actionsList {
     flex-direction: row;
     flex-wrap: wrap;
-    grid-column: 1 / -1;
+    gap: 8px;
   }
 
   .actionItem {
@@ -461,34 +370,80 @@
 }
 
 @media (max-width: 768px) {
-  .heroBanner {
-    padding: 1.5rem 1.25rem 4.5rem;
+  .topBar {
+    padding: 0.75rem 1rem;
+  }
+
+  .topBarTitle {
+    font-size: 1.05rem;
   }
 
   .contentArea {
-    padding: 0 1rem;
-    margin-top: -3rem;
+    padding: 1.1rem 1rem;
   }
 
   .statsGrid {
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    gap: 7px;
     margin-bottom: 1.25rem;
   }
 
   .statCard {
-    padding: 0.85rem 0.75rem 0.75rem;
+    padding: 0.7rem 0.7rem 0.6rem;
   }
 
-  .statValue { font-size: 1.55rem; }
-  .statLabel { font-size: 0.58rem; }
-  .statIcon  { width: 26px; height: 26px; border-radius: 7px; }
+  .statValue { font-size: 1.45rem; }
+  .statLabel { font-size: 0.57rem; }
 
+  /* Mgmt cards go horizontal (icon + text side by side, no footer) on mobile */
   .mgmtGrid {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
-  .heroTitle { font-size: 1.6rem; }
+  .mgmtCard {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .mgmtCardBody {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mgmtCardFooter {
+    padding-top: 0;
+    border-top: none;
+    flex-shrink: 0;
+  }
+
+  /* Quick actions: pill row */
+  .actionsPanel {
+    padding: 0.85rem 1rem;
+  }
+
+  .actionsPanelTitle {
+    margin-bottom: 0.65rem;
+  }
+
+  .actionsList {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .actionItem {
+    flex: 1 1 auto;
+    padding: 8px 12px;
+    justify-content: center;
+    gap: 7px;
+  }
+
+  .actionItemArrow {
+    display: none;
+  }
 
   .dashboardWrapper {
     padding-bottom: 5rem;
@@ -497,14 +452,21 @@
 
 @media (max-width: 480px) {
   .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
   }
 
-  .actionsList {
-    flex-direction: column;
+  .statValue { font-size: 1.3rem; }
+  .statLabel { font-size: 0.54rem; letter-spacing: 0; }
+
+  .topBarDate {
+    display: none;
   }
 }
 
 @media (max-width: 360px) {
-  .statValue { font-size: 1.35rem; }
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .statValue { font-size: 1.25rem; }
 }

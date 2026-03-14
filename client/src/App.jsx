@@ -39,7 +39,7 @@ function App() {
   const role = user?.type?.toLowerCase();
 
   const logoutUser = () => {
-    socket.disconnect(); // 🔌 DISCONNECT SOCKET
+    socket.disconnect();
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("authToken");
@@ -55,12 +55,11 @@ function App() {
     if (token) {
       localStorage.setItem("authToken", token);
       socket.auth = { token };
-      socket.connect(); // 🔌 CONNECT SOCKET
+      socket.connect();
       scheduleAutoLogout(token);
     }
   };
 
-  //  AUTO LOGOUT BASED ON TOKEN EXPIRY
   const scheduleAutoLogout = (token) => {
     try {
       const decoded = jwtDecode(token);
@@ -101,14 +100,11 @@ function App() {
     };
   }, []);
 
-
-
   useEffect(() => {
     if (!user) return;
 
     socket.on("notification:new", (notification) => {
       console.log("🔔 Notification received:", notification);
-
       toast.success(notification.message || "New notification");
     });
 
@@ -117,8 +113,6 @@ function App() {
     };
   }, [user]);
 
-
-  //  RUN ON PAGE LOAD / REFRESH
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     if (token) {
@@ -135,7 +129,6 @@ function App() {
     }
   }, []);
 
-  //  AXIOS INTERCEPTOR → Auto logout on 401
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       (res) => res,
@@ -155,8 +148,7 @@ function App() {
       <Toaster position="top-right" reverseOrder={false} />
       {user && <Navbar user={user} onLogout={logoutUser} />}
       {user && <NotificationBell className="nav-notification" />}
-      {/* <div className="mt-1">hi</div> */}
-      <div className="app-content">
+      <div className={user ? `app-content role-${role}` : ""}>
         <Routes>
           {/* Root Route → Redirect based on user role */}
           <Route
@@ -249,7 +241,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* This for customer management edit customer - inside create customer */}
           <Route
             path="/customer-management"
             element={
@@ -263,7 +254,6 @@ function App() {
             }
           />
 
-          {/* This is used for getting booking pass and other data - eye button in card of booking */}
           <Route
             path="/customer-details"
             element={

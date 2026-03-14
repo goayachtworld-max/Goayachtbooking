@@ -490,126 +490,137 @@ Thank You`
   return (
     <div className="container mt-1">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-1">
-        <div className="d-flex justify-content-between gap-2 align-items-center">
-          <h2>Bookings</h2>
-          <span
-            className={`badge bg-success bg-opacity-10 text-success`}
-          >{filteredBookings.length}</span>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="d-flex align-items-center gap-2">
+          <h2 className="mb-0">Bookings</h2>
+          <span className="booking-count-badge">{filteredBookings.length}</span>
         </div>
         {(user?.type === "admin" || user?.type === "backdesk") && (
-          <button className="btn btn-success" onClick={handleCreateBooking}>
-            + Create Booking
+          <button className="btn btn-success rounded-pill px-3" onClick={handleCreateBooking}>
+            + New Booking
           </button>
         )}
       </div>
 
       {/* Filters */}
       {!isMobile && (
-        <div className="d-flex flex-wrap gap-2 mb-3">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search Name/Ticket/Phone/Company"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ maxWidth: "260px" }}
-          />
+        <div className="filter-bar d-flex flex-wrap gap-2 mb-3 align-items-center">
+          {/* Search */}
+          <div className="filter-input-wrapper">
+            <span className="filter-icon">🔍</span>
+            <input
+              type="text"
+              className="form-control filter-input"
+              placeholder="Name / Ticket / Phone"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ maxWidth: "220px", paddingLeft: "2rem" }}
+            />
+          </div>
 
+          {/* Month */}
           <select
-            className="form-select"
+            className={`form-select filter-select ${selectedMonth ? "filter-active" : ""}`}
             value={selectedMonth || ""}
             onChange={(e) => {
               setSelectedMonth(e.target.value);
               setFilterDate("");
             }}
-            style={{ maxWidth: "80px" }}
+            style={{ maxWidth: "110px" }}
           >
-            {/* 👇 Add this option */}
-            <option value="">All</option>
-
+            <option value="">📅 Month</option>
             {Array.from({ length: 6 }).map((_, i) => {
               const date = new Date();
               date.setMonth(date.getMonth() + i);
-
-              const value = date.toISOString().slice(0, 7); // YYYY-MM
-              const label = date.toLocaleString("en-GB", {
-                month: "short",
-              });
-
+              const value = date.toISOString().slice(0, 7);
+              const label = date.toLocaleString("en-GB", { month: "short", year: "2-digit" });
               return (
-                <option key={value} value={value}>
-                  {label}
-                </option>
+                <option key={value} value={value}>{label}</option>
               );
             })}
           </select>
 
-
-
           {/* Specific Date Picker */}
           <input
             type="date"
-            className="form-control"
+            className={`form-control filter-select ${filterDate ? "filter-active" : ""}`}
             value={filterDate}
             min={new Date().toISOString().split("T")[0]}
             onChange={(e) => setFilterDate(e.target.value)}
             style={{ maxWidth: "150px" }}
+            title="Filter by specific date"
           />
 
-
+          {/* Agent */}
           <select
-            className="form-select"
+            className={`form-select filter-select ${filterEmployee ? "filter-active" : ""}`}
             value={filterEmployee}
             onChange={(e) => setFilterEmployee(e.target.value)}
-            style={{ maxWidth: "160px" }}
+            style={{ maxWidth: "150px" }}
           >
-            <option value="">All Agents</option>
+            <option value="">👤 All Agents</option>
             {employees.map((emp) => (
-              <option key={emp._id} value={emp._id}>
-                {emp.name}
-              </option>
+              <option key={emp._id} value={emp._id}>{emp.name}</option>
             ))}
           </select>
+
+          {/* Status */}
           <select
-            className="form-select"
+            className={`form-select filter-select ${filterStatus ? "filter-active" : ""}`}
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             style={{ maxWidth: "140px" }}
           >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="">🔖 All Status</option>
+            <option value="pending">🟡 Pending</option>
+            <option value="confirmed">🟢 Confirmed</option>
+            <option value="completed">🔵 Completed</option>
+            <option value="cancelled">🔴 Cancelled</option>
           </select>
 
-
-          <button className="btn btn-secondary" onClick={handleClear}>
-            Clear
-          </button>
+          {/* Clear — only visible when any filter is active */}
+          {(searchQuery || filterDate || filterStatus || filterEmployee || selectedMonth) && (
+            <button className="btn btn-clear-filter" onClick={handleClear} title="Clear all filters">
+              ✕ Clear
+            </button>
+          )}
         </div>
       )}
 
       {isMobile && (
         <div className="d-flex align-items-center gap-2 mb-3">
-          {/* Search Bar (≈90%) */}
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search name / ticket / phone"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ flex: 1 }}
-          />
+          {/* Search Bar */}
+          <div className="filter-input-wrapper" style={{ flex: 1 }}>
+            <span className="filter-icon">🔍</span>
+            <input
+              type="text"
+              className="form-control filter-input"
+              placeholder="Name / Ticket / Phone"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ paddingLeft: "2rem" }}
+            />
+            {searchQuery && (
+              <button
+                className="filter-clear-x"
+                onClick={() => setSearchQuery("")}
+                title="Clear search"
+              >✕</button>
+            )}
+          </div>
 
-          {/* Filter Icon (no border) */}
+          {/* Filter Icon with active badge */}
           <button
-            className="btn p-0 d-flex align-items-center justify-content-center"
-            style={{ width: "40px", height: "40px" }}
+            className={`btn mobile-filter-btn ${[filterDate, filterStatus, filterEmployee, selectedMonth].filter(Boolean).length > 0 ? "has-active" : ""}`}
             onClick={() => setShowFilters(true)}
+            title="Open filters"
           >
-            <FiSliders size={22} />
+            <FiSliders size={20} />
+            {[filterDate, filterStatus, filterEmployee, selectedMonth].filter(Boolean).length > 0 && (
+              <span className="filter-badge">
+                {[filterDate, filterStatus, filterEmployee, selectedMonth].filter(Boolean).length}
+              </span>
+            )}
           </button>
         </div>
       )}
@@ -623,69 +634,93 @@ Thank You`
             className="mobile-filter-drawer"
             onClick={(e) => e.stopPropagation()}
           >
-            <input
-              type="month"
-              className="form-control mb-2"
+            {/* Drawer handle + header */}
+            <div className="drawer-handle" />
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h6 className="mb-0 fw-semibold">Filters</h6>
+              {[filterDate, filterStatus, filterEmployee, selectedMonth].filter(Boolean).length > 0 && (
+                <button className="btn btn-link btn-sm p-0 text-danger text-decoration-none" onClick={handleClear}>
+                  Clear all
+                </button>
+              )}
+            </div>
+
+            <label className="form-label small text-muted mb-1">Month</label>
+            <select
+              className={`form-select mb-3 ${selectedMonth ? "filter-active" : ""}`}
               value={selectedMonth}
-              min={todayMonth}
               onChange={(e) => {
                 setSelectedMonth(e.target.value);
                 setFilterDate("");
               }}
-            />
+            >
+              <option value="">All Months</option>
+              {Array.from({ length: 6 }).map((_, i) => {
+                const date = new Date();
+                date.setMonth(date.getMonth() + i);
+                const value = date.toISOString().slice(0, 7);
+                const label = date.toLocaleString("en-GB", { month: "long", year: "numeric" });
+                return <option key={value} value={value}>{label}</option>;
+              })}
+            </select>
 
+            <label className="form-label small text-muted mb-1">Specific Date</label>
             <input
               type="date"
-              className="form-control mb-2"
+              className={`form-control mb-3 ${filterDate ? "filter-active" : ""}`}
               value={filterDate}
               min={new Date().toISOString().split("T")[0]}
               onChange={(e) => setFilterDate(e.target.value)}
             />
 
-
+            <label className="form-label small text-muted mb-1">Agent</label>
             <select
-              className="form-select mb-2"
+              className={`form-select mb-3 ${filterEmployee ? "filter-active" : ""}`}
               value={filterEmployee}
               onChange={(e) => setFilterEmployee(e.target.value)}
             >
               <option value="">All Agents</option>
               {employees.map((emp) => (
-                <option key={emp._id} value={emp._id}>
-                  {emp.name}
-                </option>
+                <option key={emp._id} value={emp._id}>{emp.name}</option>
               ))}
             </select>
-            <select
-              className="form-select mb-3"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
 
-
-            <div className="d-flex gap-2">
-              <button className="btn btn-secondary flex-fill" onClick={handleClear}>
-                Clear
-              </button>
-              <button
-                className="btn btn-primary flex-fill"
-                onClick={() => setShowFilters(false)}
-              >
-                Apply
-              </button>
+            <label className="form-label small text-muted mb-1">Status</label>
+            <div className="status-pill-group mb-4">
+              {[
+                { value: "", label: "All", color: "#6c757d" },
+                { value: "pending", label: "Pending", color: "#0dcaf0" },
+                { value: "confirmed", label: "Confirmed", color: "#198754" },
+                { value: "completed", label: "Completed", color: "#0d6efd" },
+                { value: "cancelled", label: "Cancelled", color: "#dc3545" },
+              ].map(({ value, label, color }) => (
+                <button
+                  key={value}
+                  className={`status-pill ${filterStatus === value ? "active" : ""}`}
+                  style={{ "--pill-color": color }}
+                  onClick={() => setFilterStatus(value)}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
+
+            <button
+              className="btn btn-primary w-100 rounded-pill"
+              onClick={() => setShowFilters(false)}
+            >
+              Show {filteredBookings.length} Bookings
+            </button>
           </div>
         </div>
       )}
 
       {/* BOOKINGS – ORIGINAL CARD UI */}
       {loading ? (
-        <p className="text-center text-muted">Loading bookings...</p>
+        <div className="text-center py-5 text-muted">
+          <div className="spinner-border spinner-border-sm me-2" role="status" />
+          Loading bookings...
+        </div>
       ) : (
         <div className="row">
           {filteredBookings.length > 0 ? (
@@ -822,7 +857,16 @@ Thank You`
               );
             })
           ) : (
-            <p className="text-center text-muted">No bookings found</p>
+            <div className="text-center py-5 text-muted">
+              <div style={{ fontSize: "2.5rem" }}>🔍</div>
+              <p className="mt-2 mb-1 fw-semibold">No bookings found</p>
+              <small>Try adjusting your filters</small>
+              {(searchQuery || filterDate || filterStatus || filterEmployee || selectedMonth) && (
+                <div className="mt-2">
+                  <button className="btn btn-sm btn-outline-secondary rounded-pill" onClick={handleClear}>Clear filters</button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}

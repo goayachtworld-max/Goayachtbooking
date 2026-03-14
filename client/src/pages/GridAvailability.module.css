@@ -1,6 +1,395 @@
 /* ================================
-   Wrapper
+   Searchable Yacht Combobox
 ================================ */
+.comboWrapper {
+  position: relative;
+}
+
+.comboInput {
+  position: relative;
+}
+
+.comboInput input {
+  width: 100%;
+  padding-right: 2rem;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+/* Ghost selected name shown behind input when not typing */
+.comboSelected {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #1e293b;
+  pointer-events: none;
+  z-index: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: calc(100% - 24px);
+}
+
+.comboDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 1051;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px 0;
+  margin: 0;
+  list-style: none;
+}
+
+.comboDropdown::-webkit-scrollbar {
+  width: 4px;
+}
+.comboDropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.comboOption {
+  padding: 9px 14px 9px 34px;
+  font-size: 14px;
+  color: #1e293b;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.1s;
+}
+
+.comboOption:hover {
+  background: #f1f5f9;
+}
+
+.comboOptionActive {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.comboCheck {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: #1d4ed8;
+}
+
+.comboEmpty {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* ================================
+   Mobile Top Bar — one row only
+================================ */
+.mobileTopBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Yacht chip — clickable, opens sheet */
+.mobileYachtChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.mobileYachtChip:active {
+  background: #f8fafc;
+}
+
+.mobileYachtChipName {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobileYachtChipChevron {
+  font-size: 11px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+/* Filter button — fixed, shows date range */
+.mobileFilterBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 7px 11px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mobileFilterBtnActive {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* Mobile info bar */
+.mobileInfoBar { margin-bottom: 6px !important; }
+.mobileInfoBadge { padding: 2px 8px !important; }
+
+/* ================================
+   Sheet — date row at top
+================================ */
+.sheetDateRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sheetDateField {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sheetDateArrow {
+  font-size: 14px;
+  color: #94a3b8;
+  padding-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.sheetSectionLabel {
+  padding: 10px 16px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.sheetFooter {
+  padding: 12px 16px 4px;
+  flex-shrink: 0;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Date inputs inside sheet */
+.dateSheetLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dateSheetInput {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #f8fafc;
+  outline: none;
+  box-sizing: border-box;
+}
+.dateSheetInput:focus {
+  border-color: #93c5fd;
+  background: #fff;
+}
+
+/* ================================
+   Yacht Bottom Sheet
+================================ */
+.sheetBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.yachtSheet {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 0 0 24px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: sheetUp 0.22s ease-out;
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.sheetHandle {
+  width: 36px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  margin: 12px auto 0;
+  flex-shrink: 0;
+}
+
+.sheetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px 8px;
+  flex-shrink: 0;
+}
+
+.sheetTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sheetClose {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sheetSearchWrap {
+  position: relative;
+  margin: 0 16px 8px;
+  flex-shrink: 0;
+}
+
+.sheetSearchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.sheetSearchInput {
+  width: 100%;
+  padding: 9px 32px 9px 34px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1e293b;
+  background: #f8fafc;
+  outline: none;
+  box-sizing: border-box;
+}
+.sheetSearchInput:focus {
+  border-color: #93c5fd;
+  background: #fff;
+}
+
+.sheetSearchClear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Scrollable list */
+.sheetList {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px;
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheetItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.sheetItem:active {
+  background: #f1f5f9;
+}
+
+.sheetItemActive {
+  background: #eff6ff;
+}
+
+.sheetItemName {
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.sheetItemActive .sheetItemName {
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.sheetItemCheck {
+  font-size: 14px;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.sheetEmpty {
+  text-align: center;
+  padding: 24px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+
 .wrapper {
   background: #ffffff;
   border-radius: 16px;
@@ -35,7 +424,7 @@
 .stickyCol {
   position: sticky;
   left: 0;
-  z-index: 3;
+  z-index: 2;
   background: #ffffff;
   font-weight: 700;
   min-width: 70px;
@@ -191,6 +580,15 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+.mobileDayHeaderToday {
+  background: #fffbeb;
+  color: #92400e;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #fde68a;
+}
+
 .mobileSlots {
   display: flex;
   flex-wrap: wrap;
@@ -229,4 +627,38 @@
 
 .table tbody tr {
   height: 50px;   /* or whatever row height you want */
+}
+
+/* ================================
+   Today row highlight
+================================ */
+.todayRow td {
+  background: #fffbeb !important;
+}
+
+.todayRow .stickyCol {
+  background: #fffbeb !important;
+}
+
+/* ================================
+   Modal header text — ensure readable
+================================ */
+.modal-header.bg-warning .modal-title,
+.modal-header.bg-primary .modal-title,
+.modal-header.bg-danger .modal-title {
+  color: #fff;
+}
+
+.modal-header.bg-warning .modal-title {
+  color: #333;
+}
+
+.modal-header.bg-warning .btn-close,
+.modal-header.bg-primary .btn-close,
+.modal-header.bg-danger .btn-close {
+  filter: brightness(0) invert(1);
+}
+
+.modal-header.bg-warning .btn-close {
+  filter: none;
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-hot-toast";
@@ -260,6 +260,16 @@ function GridAvailability() {
   }, []);
 
   const [showFilters, setShowFilters] = useState(!isMobile);
+
+  // Searchable yacht combobox
+  const [yachtSearch, setYachtSearch] = useState("");
+  const [showYachtDropdown, setShowYachtDropdown] = useState(false);
+  const [showMoreYachts, setShowMoreYachts] = useState(false);
+  const yachtSearchRef = React.useRef(null);
+
+  // Mobile yacht bottom sheet
+  const [showYachtSheet, setShowYachtSheet] = useState(false);
+  const [mobileYachtSearch, setMobileYachtSearch] = useState("");
 
 
   useEffect(() => {
@@ -766,85 +776,181 @@ function GridAvailability() {
   return (
     <div className="container-fluid py-1">
       <div className="mx-auto" style={{ maxWidth: "87vw" }}>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h3 className="fw-bold mb-4">Calendar View</h3>
-          <button
-            className="btn btn-outline-primary btn-sm"
-            onClick={() => setShowFilters((prev) => !prev)}
-          >
-            <FiSliders size={22} />
-          </button>
-        </div>
 
-        {showFilters && (
-          <div className="row g-3 mb-4">
-
-            <div className="col-md-4">
-              <select
-                className="form-select"
-                value={yachtId}
-                onChange={(e) => {
-                  const selectedId = e.target.value;
-                  setYachtId(selectedId);
-
-                  const selectedYacht = yachts.find((y) => y._id === selectedId);
-                  setYachtName(selectedYacht?.name || "");
-                }}
-              >
-                {yachts.map((y) => (
-                  <option key={y._id} value={y._id}>
-                    {y.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="col-md-4">
-              <input
-                type="date"
-                className="form-control"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-              />
-            </div>
-
-            <div className="col-md-3">
-              <input
-                type="date"
-                className="form-control"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-              />
-            </div>
-
-            {/* <div className="col-md-2">
+        {/* ── DESKTOP header + filters ── */}
+        {!isMobile && (
+          <>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h3 className="fw-bold mb-0">Calendar View</h3>
               <button
-                className="btn btn-primary w-100"
-                onClick={() => {
-                  loadGrid();
-                  if (isMobile) setShowFilters(false);
-                }}
+                className={`btn btn-sm ${showFilters ? "btn-primary" : "btn-outline-primary"}`}
+                onClick={() => setShowFilters((prev) => !prev)}
+                title={showFilters ? "Hide filters" : "Show filters"}
               >
-                View
+                <FiSliders size={18} className="me-1" />
+                {showFilters ? "Hide" : "Filters"}
               </button>
-            </div> */}
-          </div>
+            </div>
+
+            {showFilters && (
+              <div style={{ position: "relative", zIndex: 1050, marginBottom: "1.5rem", isolation: "isolate" }}>
+              <div className="d-flex gap-3 align-items-end">
+                <div style={{ flex: "0 0 260px", position: "relative" }}>
+                  <label className="form-label small text-muted mb-1">⛵ Yacht</label>
+                  <div className={styles.comboWrapper}>
+                    <div className={styles.comboInput}>
+                      <input
+                        type="text"
+                        className="form-control"
+                        // placeholder="Search yacht..."
+                        value={yachtSearch}
+                        onChange={(e) => { setYachtSearch(e.target.value); setShowYachtDropdown(true); }}
+                        onFocus={() => setShowYachtDropdown(true)}
+                        onBlur={() => setTimeout(() => setShowYachtDropdown(false), 150)}
+                      />
+                      {!yachtSearch && yachtName && (
+                        <span className={styles.comboSelected}>{yachtName}</span>
+                      )}
+                    </div>
+                    {showYachtDropdown && (
+                      <ul className={styles.comboDropdown}>
+                        {yachts.filter((y) => y.name.toLowerCase().includes(yachtSearch.toLowerCase())).map((y) => (
+                          <li
+                            key={y._id}
+                            className={`${styles.comboOption} ${y._id === yachtId ? styles.comboOptionActive : ""}`}
+                            onMouseDown={() => { setYachtId(y._id); setYachtName(y.name); setYachtSearch(""); setShowYachtDropdown(false); }}
+                          >
+                            {y._id === yachtId && <span className={styles.comboCheck}>✓</span>}
+                            {y.name}
+                          </li>
+                        ))}
+                        {yachts.filter((y) => y.name.toLowerCase().includes(yachtSearch.toLowerCase())).length === 0 && (
+                          <li className={styles.comboEmpty}>No yacht found</li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ flex: "0 0 160px" }}>
+                  <label className="form-label small text-muted mb-1">📅 From</label>
+                  <input type="date" className="form-control" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                </div>
+
+                <div style={{ flex: "0 0 160px" }}>
+                  <label className="form-label small text-muted mb-1">📅 To</label>
+                  <input type="date" className="form-control" value={toDate} min={fromDate} onChange={(e) => setToDate(e.target.value)} />
+                </div>
+              </div>
+              </div>
+            )}
+          </>
         )}
-        <div className="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+        {/* ── MOBILE: one row — selected yacht + single filter button ── */}
+        {isMobile && (
+          <>
+            <div className={styles.mobileTopBar}>
+              {/* Yacht chip — clickable, opens combined filter sheet */}
+              <button
+                className={styles.mobileYachtChip}
+                onClick={() => { setMobileYachtSearch(""); setShowYachtSheet(true); }}
+              >
+                <span>⛵</span>
+                <span className={styles.mobileYachtChipName}>{yachtName || "Select Yacht"}</span>
+                <span className={styles.mobileYachtChipChevron}>▾</span>
+              </button>
+
+              {/* Filter button — also opens combined sheet */}
+              <button
+                className={`${styles.mobileFilterBtn} ${(fromDate !== todayISO() || toDate !== plusDaysISO(6)) ? styles.mobileFilterBtnActive : ""}`}
+                onClick={() => { setMobileYachtSearch(""); setShowYachtSheet(true); }}
+              >
+                <FiSliders size={15} />
+                <span>
+                  {`${new Date(fromDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${new Date(toDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
+                </span>
+              </button>
+            </div>
+
+            {/* ── Combined filter sheet ── */}
+            {showYachtSheet && (
+              <div className={styles.sheetBackdrop} onClick={() => setShowYachtSheet(false)}>
+                <div className={styles.yachtSheet} onClick={(e) => e.stopPropagation()}>
+                  <div className={styles.sheetHandle} />
+                  <div className={styles.sheetHeader}>
+                    <span className={styles.sheetTitle}>Filters</span>
+                    <button className={styles.sheetClose} onClick={() => setShowYachtSheet(false)}>✕</button>
+                  </div>
+
+                  {/* Date row — compact, inside sheet */}
+                  <div className={styles.sheetDateRow}>
+                    <div className={styles.sheetDateField}>
+                      <label className={styles.dateSheetLabel}>From</label>
+                      <input type="date" className={styles.dateSheetInput} value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                    </div>
+                    <span className={styles.sheetDateArrow}>→</span>
+                    <div className={styles.sheetDateField}>
+                      <label className={styles.dateSheetLabel}>To</label>
+                      <input type="date" className={styles.dateSheetInput} value={toDate} min={fromDate} onChange={(e) => setToDate(e.target.value)} />
+                    </div>
+                  </div>
+
+                  {/* Divider + Yacht label */}
+                  <div className={styles.sheetSectionLabel}>Yacht</div>
+
+                  {/* Search */}
+                  <div className={styles.sheetSearchWrap}>
+                    <span className={styles.sheetSearchIcon}>🔍</span>
+                    <input
+                      type="text"
+                      className={styles.sheetSearchInput}
+                      placeholder="Search yacht..."
+                      value={mobileYachtSearch}
+                      onChange={(e) => setMobileYachtSearch(e.target.value)}
+                    />
+                    {mobileYachtSearch && (
+                      <button className={styles.sheetSearchClear} onClick={() => setMobileYachtSearch("")}>✕</button>
+                    )}
+                  </div>
+
+                  {/* Yacht list */}
+                  <ul className={styles.sheetList}>
+                    {yachts.filter((y) => y.name.toLowerCase().includes(mobileYachtSearch.toLowerCase())).map((y) => (
+                      <li
+                        key={y._id}
+                        className={`${styles.sheetItem} ${y._id === yachtId ? styles.sheetItemActive : ""}`}
+                        onClick={() => { setYachtId(y._id); setYachtName(y.name); }}
+                      >
+                        <span className={styles.sheetItemName}>{y.name}</span>
+                        {y._id === yachtId && <span className={styles.sheetItemCheck}>✓</span>}
+                      </li>
+                    ))}
+                    {yachts.filter((y) => y.name.toLowerCase().includes(mobileYachtSearch.toLowerCase())).length === 0 && (
+                      <li className={styles.sheetEmpty}>No yacht found</li>
+                    )}
+                  </ul>
+
+                  {/* Apply */}
+                  <div className={styles.sheetFooter}>
+                    <button className="btn btn-primary w-100 rounded-pill" onClick={() => setShowYachtSheet(false)}>
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        <div className={`mb-2 d-flex justify-content-between align-items-center flex-wrap gap-2 ${isMobile ? styles.mobileInfoBar : ""}`}>
           {yacht && (
-            <div className="d-flex gap-4 align-items-center">
-              <div>
-                <span className="text-muted me-1">B2B:</span>
-                <span className="fw-semibold text-primary">
-                  ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted me-1">Price:</span>
-                <span className="fw-semibold text-success">
-                  ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
-                </span>
-              </div>
+            <div className="d-flex gap-2 align-items-center">
+              <span className={`badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold ${isMobile ? styles.mobileInfoBadge : ""}`} style={{ fontSize: isMobile ? "11px" : "13px" }}>
+                B2B: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
+              </span>
+              <span className={`badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-semibold ${isMobile ? styles.mobileInfoBadge : ""}`} style={{ fontSize: isMobile ? "11px" : "13px" }}>
+                ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
+              </span>
             </div>
           )}
           <div className={styles.legend}>
@@ -864,7 +970,10 @@ function GridAvailability() {
         </div>
 
         {loading ? (
-          <div className="text-center py-5">Loading availability...</div>
+          <div className="text-center py-5 text-muted">
+            <div className="spinner-border spinner-border-sm me-2" role="status" />
+            Loading availability...
+          </div>
         ) : grid.length > 0 ? (
           <>
 
@@ -873,8 +982,9 @@ function GridAvailability() {
             <div className={styles.mobileGrid}>
               {grid.map((row, i) => (
                 <div key={i} className={styles.mobileDay}>
-                  <div className={styles.mobileDayHeader}>
-                    {new Date(row.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                  <div className={row.date === todayISO() ? styles.mobileDayHeaderToday : styles.mobileDayHeader}>
+                    {new Date(row.date).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}
+                    {row.date === todayISO() && <span className="ms-2" style={{ fontSize: "11px", fontWeight: 500 }}>Today</span>}
                   </div>
                   <div className={styles.mobileSlots}>
                     {row.slots.map((slot, idx) => {
@@ -911,7 +1021,7 @@ function GridAvailability() {
           <div className={styles.wrapper}>
             <table className={`table ${styles.table} text-center align-middle`}>
 
-              <thead className="table-light sticky-top">
+              <thead className="table-light">
                 <tr>
                   <th className={styles.stickyCol}>Date</th>
                   <th>{yachtName}</th>
@@ -921,9 +1031,12 @@ function GridAvailability() {
 
               <tbody>
                 {grid.map((row, i) => (
-                  <tr key={i}>
+                  <tr key={i} className={row.date === todayISO() ? styles.todayRow : ""}>
                     <td className={`${styles.stickyCol} fw-semibold`}>
-                      {new Date(row.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                      <div>{new Date(row.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</div>
+                      <div style={{ fontSize: "11px", fontWeight: 400, color: row.date === todayISO() ? "#b45309" : "#94a3b8" }}>
+                        {row.date === todayISO() ? "Today" : new Date(row.date).toLocaleDateString('en-GB', { weekday: 'short' })}
+                      </div>
                     </td>
                     {renderTimelineRow(row)}
                   </tr>
@@ -934,7 +1047,11 @@ function GridAvailability() {
           )}
           </>
         ) : (
-          <div className="text-muted text-center py-5">No availability found</div>
+          <div className="text-center py-5 text-muted">
+            <div style={{ fontSize: "2rem" }}>📅</div>
+            <p className="mt-2 mb-0 fw-semibold">No availability found</p>
+            <small>Try selecting a different yacht or date range</small>
+          </div>
         )}
 
         <div className="modal fade" id="lockModal" tabIndex="-1">
@@ -952,19 +1069,23 @@ function GridAvailability() {
                 </div>
 
                 {/* BODY */}
-                <div className="modal-body text-center">
+                <div className="modal-body">
                   {selectedSlot && (
                     <>
-                      {/* Current slot display */}
-                      <p className="mb-3 fw-semibold">
-                        {to12HourFormat(selectedSlot.start)} —{" "}
-                        {to12HourFormat(selectedSlot.end)}
-                      </p>
+                      {/* Slot summary pill */}
+                      <div className="text-center mb-3">
+                        <span className="badge bg-warning bg-opacity-15 text-dark px-3 py-2 rounded-pill fw-semibold" style={{ fontSize: "14px" }}>
+                          🕐 {to12HourFormat(selectedSlot.start)} — {to12HourFormat(selectedSlot.end)}
+                        </span>
+                        <div className="text-muted small mt-1">
+                          {selectedDate && new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
+                        </div>
+                      </div>
 
                       {/* Editable time fields */}
                       {user?.type == "admin" && (
                         <div className="text-start">
-                          <label className="form-label">Start time</label>
+                          <label className="form-label small text-muted">Start time</label>
                           <input
                             type="time"
                             className="form-control mb-2"
@@ -973,7 +1094,7 @@ function GridAvailability() {
                             onChange={(e) => setEditStart(e.target.value)}
                           />
 
-                          <label className="form-label">End time</label>
+                          <label className="form-label small text-muted">End time</label>
                           <input
                             type="time"
                             className="form-control"
@@ -984,7 +1105,7 @@ function GridAvailability() {
 
                           {!canEditSlot && (
                             <div className="form-text text-muted mt-2">
-                              This slot cannot be edited
+                              ⚠️ This slot cannot be edited
                             </div>
                           )}
                         </div>)}
@@ -1028,15 +1149,19 @@ function GridAvailability() {
                     data-bs-dismiss="modal"
                   ></button>
                 </div>
-                <div className="modal-body text-center">
+                <div className="modal-body">
                   {selectedSlot && (
-                    <>
-                      <div>
-                        {to12HourFormat(selectedSlot.start)} —{" "}
-                        {to12HourFormat(selectedSlot.end)}
+                    <div className="text-center">
+                      <span className="badge bg-warning bg-opacity-15 text-dark px-3 py-2 rounded-pill fw-semibold" style={{ fontSize: "14px" }}>
+                        🕐 {to12HourFormat(selectedSlot.start)} — {to12HourFormat(selectedSlot.end)}
+                      </span>
+                      <div className="text-muted small mt-1 mb-3">
+                        {selectedDate && new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
                       </div>
-                      <div className="mt-2">Locked by: {selectedSlot.empName}</div>
-                    </>
+                      <div className="text-muted small">
+                        🔒 Locked by: <span className="fw-semibold text-dark">{selectedSlot.empName || "—"}</span>
+                      </div>
+                    </div>
                   )}
                 </div>
                 <div className="modal-footer">
@@ -1072,16 +1197,22 @@ function GridAvailability() {
                   data-bs-dismiss="modal"
                 ></button>
               </div>
-              <div className="modal-body text-center">
+              <div className="modal-body">
                 {selectedSlot && (
-                  <>
-                    <div>
-                      {to12HourFormat(selectedSlot.start)} —{" "}
-                      {to12HourFormat(selectedSlot.end)}
+                  <div className="text-center">
+                    <span className="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill fw-semibold" style={{ fontSize: "14px" }}>
+                      🕐 {to12HourFormat(selectedSlot.start)} — {to12HourFormat(selectedSlot.end)}
+                    </span>
+                    <div className="text-muted small mt-1 mb-3">
+                      {selectedDate && new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
                     </div>
-                    <div className="mt-2">User Name: {selectedSlot.empName}</div>
-                    <div className="mt-2">Booking Name: {selectedSlot.custName}</div>
-                  </>
+                    <div className="text-muted small mb-1">
+                      👤 Agent: <span className="fw-semibold text-dark">{selectedSlot.empName || "—"}</span>
+                    </div>
+                    <div className="text-muted small">
+                      🧑‍✈️ Guest: <span className="fw-semibold text-dark">{selectedSlot.custName || "—"}</span>
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="modal-footer">

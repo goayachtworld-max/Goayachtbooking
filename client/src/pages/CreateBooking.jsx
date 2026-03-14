@@ -425,8 +425,10 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         }
 
         .cb-g2 { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
-        @media(max-width:500px){
+        .cb-span2 { grid-column: span 2; }
+        @media(max-width:600px){
           .cb-g2 { grid-template-columns:1fr; }
+          .cb-span2 { grid-column: span 1; }
         }
 
         .cb-chip {
@@ -622,7 +624,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                   </div>
 
                   {isAdmin && (
-                    <div className="cb-f" style={{ gridColumn:"span 2" }}>
+                    <div className="cb-f cb-span2">
                       <label className="cb-lbl">On Behalf Of</label>
                       <select className="cb-inp" name="onBehalfEmployeeId" value={formData.onBehalfEmployeeId} onChange={handleChange}>
                         {employees.map((emp) => <option key={emp._id} value={emp._id}>{emp.name}</option>)}

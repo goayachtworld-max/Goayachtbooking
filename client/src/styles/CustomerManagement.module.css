@@ -1,4 +1,7 @@
-/* Default: Desktop */
+/* CustomerManagement.module.css
+   Only handles desktop/mobile view toggling.
+   All other styles come from customerStyles.js (GLOBAL_CSS). */
+
 .desktopView {
   display: block;
 }
@@ -7,8 +10,7 @@
   display: none;
 }
 
-/* Strictly below 500px */
-@media (max-width: 500px) {
+@media (max-width: 620px) {
   .desktopView {
     display: none;
   }
@@ -18,8 +20,8 @@
   }
 
   .mobileCard {
-    border-radius: 12px;
-    transition: 0.2s ease;
+    border-radius: 8px;
+    transition: transform 0.15s ease;
   }
 
   .mobileCard:active {

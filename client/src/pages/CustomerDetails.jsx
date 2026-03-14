@@ -2,7 +2,7 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import BoardingPassPDF from "./BoardingPassPDF";
-import { GLOBAL_CSS } from "../styles/customerStyles";
+import { GLOBAL_CSS } from "../styles/customerDetailsStyle";
 
 /* ── constants ── */
 const STEPS = [

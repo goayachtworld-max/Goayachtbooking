@@ -131,11 +131,11 @@ function CustomerManagement() {
                                             <td>
                                                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                                     <div className="cm-avatar" style={{ width: 34, height: 34, fontSize: 13 }}>{initials(c.name)}</div>
-                                                    <span style={{ fontWeight: 800, color: "#0f172a" }}>{c.name}</span>
+                                                    <span style={{ fontWeight: 600, color: "#212529" }}>{c.name}</span>
                                                 </div>
                                             </td>
                                             <td>{c.contact}</td>
-                                            <td style={{ color: "#64748b" }}>{c.email || <span style={{ color: "#cbd5e1" }}>—</span>}</td>
+                                            <td style={{ color: "#6c757d" }}>{c.email || <span style={{ color: "#adb5bd" }}>—</span>}</td>
                                             <td>
                                                 <button className="cm-btn cm-btn-primary cm-btn-sm" onClick={() => openEdit(c)}>✏ Edit</button>
                                             </td>
@@ -151,9 +151,9 @@ function CustomerManagement() {
                                 <div key={c._id} className="cm-cust-row">
                                     <div className="cm-avatar">{initials(c.name)}</div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 15, fontWeight: 900, color: "#0f172a", marginBottom: 2 }}>{c.name}</div>
-                                        <div style={{ fontSize: 13, color: "#475569", fontWeight: 600 }}>{c.contact}</div>
-                                        {c.email && <div style={{ fontSize: 12, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.email}</div>}
+                                        <div style={{ fontSize: 14, fontWeight: 600, color: "#212529", marginBottom: 2 }}>{c.name}</div>
+                                        <div style={{ fontSize: 13, color: "#6c757d" }}>{c.contact}</div>
+                                        {c.email && <div style={{ fontSize: 12, color: "#adb5bd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.email}</div>}
                                     </div>
                                     <button className="cm-btn cm-btn-primary cm-btn-sm" style={{ flexShrink: 0 }} onClick={() => openEdit(c)}>Edit</button>
                                 </div>
@@ -164,11 +164,11 @@ function CustomerManagement() {
                         {!debouncedSearch && totalPages > 1 && (
                             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
                                 <button className="cm-page-btn" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>‹</button>
-                                {page > 3 && <><button className="cm-page-btn" onClick={() => setPage(1)}>1</button><span style={{ color: "#94a3b8" }}>…</span></>}
+                                {page > 3 && <><button className="cm-page-btn" onClick={() => setPage(1)}>1</button><span style={{ color: "#adb5bd" }}>…</span></>}
                                 {pageRange().map((n) => (
                                     <button key={n} className={`cm-page-btn${n === page ? " active" : ""}`} onClick={() => setPage(n)}>{n}</button>
                                 ))}
-                                {page < totalPages - 2 && <><span style={{ color: "#94a3b8" }}>…</span><button className="cm-page-btn" onClick={() => setPage(totalPages)}>{totalPages}</button></>}
+                                {page < totalPages - 2 && <><span style={{ color: "#adb5bd" }}>…</span><button className="cm-page-btn" onClick={() => setPage(totalPages)}>{totalPages}</button></>}
                                 <button className="cm-page-btn" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>›</button>
                             </div>
                         )}

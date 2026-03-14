@@ -1,85 +1,30 @@
-/* #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
- */
-
- /* Global gradient background for entire app */
 body, #root {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 50%, #92c4ff 100%) ;
-  background-attachment: fixed; /* keeps it fixed while scrolling */
-  background-repeat: no-repeat;
-  background-size: cover;
-  font-family: 'Roboto', sans-serif; /* optional for consistency */
-  background: linear-gradient(135deg, #f3faff, #e7f5ff) !important;
-  background-size: 300% 300%;
-  animation: softFlow 14s ease infinite;
+  background: #f1f5f9;
+  font-family: 'Roboto', sans-serif;
 }
 
-/* body {
-  padding-top: 55px;
-} */
-
-/* App.css or global css */
+/* Logged-in content area — offset for navbar */
 .app-content {
-  padding-top: 72px; /* navbar height */
+  padding-top: 72px;
   min-height: calc(100vh - 72px);
 }
 
-input{
-  border-radius: 50px !important
+input {
+  border-radius: 50px !important;
 }
 
-select{
-  border-radius: 50px !important
+select {
+  border-radius: 50px !important;
 }
 
 @media (max-width: 991.98px) {
   .app-content {
     padding-top: 56px !important;
-    padding-bottom: 72px !important; /* clears the bottom nav for admin/backdesk */
+    padding-bottom: 72px !important; /* clears bottom nav for admin/backdesk */
   }
 
-  /* Staff (onsite) has no bottom nav — no extra padding needed */
+  /* onsite has no bottom nav — no extra bottom padding needed */
   .app-content.role-onsite {
     padding-bottom: 0 !important;
   }

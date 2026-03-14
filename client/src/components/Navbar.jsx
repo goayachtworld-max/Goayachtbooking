@@ -107,7 +107,6 @@ function Navbar({ user, onLogout }) {
     return () => document.removeEventListener("click", handleOutsideClick);
   }, []);
 
-  // Lock body scroll when drawer is open
   useEffect(() => {
     if (showSettingsDrawer) {
       document.body.style.overflow = "hidden";
@@ -120,7 +119,6 @@ function Navbar({ user, onLogout }) {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const isActive = (path) => location.pathname === path;
 
-  // All nav items
   const allNavItems = [
     {
       label: "Bookings",
@@ -194,11 +192,23 @@ function Navbar({ user, onLogout }) {
     },
   ].filter((item) => item.show);
 
-  // Bottom bar: only these 3 core tabs (always shown if user has access) + Settings
-  const bottomBarPaths = ["/bookings", "/availability", "/grid-availability"];
-  const bottomBarItems = allNavItems.filter((item) => bottomBarPaths.includes(item.path));
+  const homeItem = {
+    label: "Home",
+    to: user?.type === "admin" ? "/admin" : "/bookings",
+    path: user?.type === "admin" ? "/admin" : "/bookings",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5v-4h3v4H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L8.354 1.146z"/>
+      </svg>
+    ),
+  };
 
-  // Settings drawer: all items NOT in bottom bar
+  const bottomBarPaths = ["/bookings", "/availability", "/grid-availability"];
+  const bottomBarCoreItems = allNavItems.filter((item) => bottomBarPaths.includes(item.path));
+  const bottomBarItems = user?.type === "admin"
+    ? [homeItem, ...bottomBarCoreItems]
+    : bottomBarCoreItems;
+
   const drawerItems = allNavItems.filter((item) => !bottomBarPaths.includes(item.path));
 
   const ProfileAvatar = ({ size = 38 }) => (
@@ -219,6 +229,12 @@ function Navbar({ user, onLogout }) {
         <span style={{ color: "#fff", fontWeight: 700, fontSize: size * 0.36 }}>{getInitials(user?.name)}</span>
       )}
     </button>
+  );
+
+  const HamburgerIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+      <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+    </svg>
   );
 
   return (
@@ -301,9 +317,22 @@ function Navbar({ user, onLogout }) {
         <Link className="fw-bold text-white" style={{ fontSize: "1.05rem", textDecoration: "none", letterSpacing: "0.4px" }} to="/">
           {user.type === "admin" ? "Dashboard" : "Boating Assistance"}
         </Link>
-        <div className="d-flex align-items-center gap-2">
-          <ProfileAvatar size={36} />
-        </div>
+
+        <button
+          className="d-flex align-items-center justify-content-center"
+          style={{
+            width: 38, height: 38,
+            borderRadius: "10px",
+            background: showSettingsDrawer ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.12)",
+            border: "1.5px solid rgba(255,255,255,0.35)",
+            color: "#fff",
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+          onClick={() => setShowSettingsDrawer((v) => !v)}
+        >
+          <HamburgerIcon />
+        </button>
       </nav>
 
       {/* ─── MOBILE BOTTOM APP NAV ─── */}
@@ -318,7 +347,6 @@ function Navbar({ user, onLogout }) {
             height: "64px",
           }}
         >
-          {/* Core nav tabs */}
           {bottomBarItems.map((item) => {
             const active = isActive(item.path);
             return (
@@ -336,14 +364,9 @@ function Navbar({ user, onLogout }) {
               >
                 {active && (
                   <span style={{
-                    position: "absolute",
-                    top: 0,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: 28,
-                    height: 3,
-                    borderRadius: "0 0 4px 4px",
-                    background: "#0d6efd",
+                    position: "absolute", top: 0, left: "50%",
+                    transform: "translateX(-50%)", width: 28, height: 3,
+                    borderRadius: "0 0 4px 4px", background: "#0d6efd",
                   }} />
                 )}
                 <span style={{ opacity: active ? 1 : 0.65, transform: active ? "scale(1.1)" : "scale(1)", transition: "transform 0.15s" }}>
@@ -355,51 +378,14 @@ function Navbar({ user, onLogout }) {
               </Link>
             );
           })}
-
-          {/* Settings tab — opens full-screen drawer */}
-          <button
-            className="d-flex flex-column align-items-center justify-content-center border-0 bg-transparent flex-fill"
-            style={{
-              color: showSettingsDrawer ? "#0d6efd" : "#7a8a9a",
-              transition: "color 0.15s",
-              position: "relative",
-              paddingTop: "4px",
-              cursor: "pointer",
-            }}
-            onClick={() => setShowSettingsDrawer((v) => !v)}
-          >
-            {showSettingsDrawer && (
-              <span style={{
-                position: "absolute",
-                top: 0,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: 28,
-                height: 3,
-                borderRadius: "0 0 4px 4px",
-                background: "#0d6efd",
-              }} />
-            )}
-            <span style={{ opacity: showSettingsDrawer ? 1 : 0.65, transform: showSettingsDrawer ? "scale(1.1)" : "scale(1)", transition: "transform 0.15s" }}>
-              {/* Settings / menu icon */}
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
-              </svg>
-            </span>
-            <span style={{ fontSize: "10px", fontWeight: showSettingsDrawer ? 700 : 500, marginTop: "2px", letterSpacing: "0.2px" }}>
-              Settings
-            </span>
-          </button>
         </nav>
       )}
 
-      {/* ─── FULL-SCREEN SETTINGS DRAWER (mobile) ─── */}
+      {/* ─── SETTINGS DRAWER BACKDROP ─── */}
       <div
         className="d-lg-none"
         style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 1025,
+          position: "fixed", inset: 0, zIndex: 1025,
           background: "rgba(0,0,0,0.45)",
           opacity: showSettingsDrawer ? 1 : 0,
           pointerEvents: showSettingsDrawer ? "auto" : "none",
@@ -408,21 +394,18 @@ function Navbar({ user, onLogout }) {
         onClick={() => setShowSettingsDrawer(false)}
       />
 
+      {/* ─── SETTINGS DRAWER ─── */}
       <div
         className="d-lg-none"
         style={{
-          position: "fixed",
-          left: 0,
-          right: 0,
+          position: "fixed", left: 0, right: 0,
           bottom: showSettingsDrawer ? "64px" : "-100%",
-          zIndex: 1026,
-          background: "#fff",
+          zIndex: 1026, background: "#fff",
           borderRadius: "20px 20px 0 0",
           boxShadow: "0 -8px 40px rgba(13,110,253,0.18)",
           transition: "bottom 0.32s cubic-bezier(0.4,0,0.2,1)",
           maxHeight: "calc(100dvh - 120px)",
-          overflowY: "auto",
-          paddingBottom: "12px",
+          overflowY: "auto", paddingBottom: "12px",
         }}
       >
         {/* Drawer handle */}
@@ -430,23 +413,25 @@ function Navbar({ user, onLogout }) {
           <div style={{ width: 36, height: 4, borderRadius: 99, background: "#dde3f0" }} />
         </div>
 
-        {/* Drawer header */}
+        {/* ── Drawer header — click avatar/name to open profile ── */}
         <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "8px 20px 16px",
-          borderBottom: "1px solid #f0f4ff",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "8px 20px 16px", borderBottom: "1px solid #f0f4ff",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 44, height: 44, borderRadius: "50%",
-                background: user?.profilePhoto ? "transparent" : "linear-gradient(135deg,#0d6efd,#0b5ed7)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                overflow: "hidden", border: "2px solid #e8f0fe", flexShrink: 0,
-              }}
-            >
+          <button
+            onClick={() => { setShowSettingsDrawer(false); setShowProfile(true); }}
+            style={{
+              display: "flex", alignItems: "center", gap: 12,
+              background: "none", border: "none", cursor: "pointer",
+              padding: 0, textAlign: "left", flex: 1,
+            }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: "50%",
+              background: user?.profilePhoto ? "transparent" : "linear-gradient(135deg,#0d6efd,#0b5ed7)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              overflow: "hidden", border: "2px solid #e8f0fe", flexShrink: 0,
+            }}>
               {user?.profilePhoto ? (
                 <img src={user.profilePhoto} alt="profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
@@ -459,12 +444,13 @@ function Navbar({ user, onLogout }) {
                 {user?.type === "backdesk" ? "Agent" : user?.type === "onsite" ? "Staff" : user?.type}
               </div>
             </div>
-          </div>
+          </button>
+
           <button
             style={{
               border: "none", background: "#f0f4ff", borderRadius: "50%",
               width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#0d6efd", cursor: "pointer",
+              color: "#0d6efd", cursor: "pointer", flexShrink: 0,
             }}
             onClick={() => setShowSettingsDrawer(false)}
           >
@@ -489,18 +475,13 @@ function Navbar({ user, onLogout }) {
                     to={item.to}
                     onClick={handleNavLinkClick}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 14,
-                      padding: "13px 14px",
-                      borderRadius: 12,
-                      marginBottom: 4,
+                      display: "flex", alignItems: "center", gap: 14,
+                      padding: "13px 14px", borderRadius: 12, marginBottom: 4,
                       textDecoration: "none",
                       background: active ? "#eef3ff" : "transparent",
                       color: active ? "#0d6efd" : "#2d3a4a",
                       fontWeight: active ? 700 : 500,
-                      fontSize: "0.95rem",
-                      transition: "background 0.15s",
+                      fontSize: "0.95rem", transition: "background 0.15s",
                     }}
                   >
                     <span style={{ color: active ? "#0d6efd" : "#7a8a9a", flexShrink: 0 }}>{item.icon}</span>
@@ -515,28 +496,10 @@ function Navbar({ user, onLogout }) {
             </>
           )}
 
-          {/* Account actions */}
+          {/* Account — Logout only, View Profile removed (tap avatar above instead) */}
           <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#aab4cc", textTransform: "uppercase", letterSpacing: "0.8px", padding: "4px 8px 10px" }}>
             Account
           </div>
-
-          <button
-            onClick={() => { setShowSettingsDrawer(false); setShowProfile(true); }}
-            style={{
-              display: "flex", alignItems: "center", gap: 14,
-              padding: "13px 14px", borderRadius: 12, marginBottom: 4,
-              background: "transparent", border: "none", width: "100%",
-              color: "#2d3a4a", fontWeight: 500, fontSize: "0.95rem",
-              cursor: "pointer", textAlign: "left", transition: "background 0.15s",
-            }}
-          >
-            <span style={{ color: "#7a8a9a" }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
-              </svg>
-            </span>
-            View Profile
-          </button>
 
           <button
             onClick={() => { setShowSettingsDrawer(false); onLogout(); }}
