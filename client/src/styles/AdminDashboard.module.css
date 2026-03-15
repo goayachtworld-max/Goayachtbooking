@@ -462,11 +462,15 @@
   .topBarDate {
     display: none;
   }
+  .contentArea {
+    padding: 0.5rem 0.5rem;
+  }
 }
 
 @media (max-width: 360px) {
   .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
+    /* grid-template-columns: repeat(2, 1fr); */
+    gap: 2px;
   }
   .statValue { font-size: 1.25rem; }
 }

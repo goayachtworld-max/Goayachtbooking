@@ -129,37 +129,6 @@ function Bookings({ user }) {
     }
   };
 
-  // ---------------- URL SYNC ----------------
-  // useEffect(() => {
-  //   const p = new URLSearchParams(location.search);
-
-  //   if (searchQuery) p.set("search", searchQuery);
-  //   else p.delete("search");
-
-  //   if (filterDate) p.set("date", filterDate);
-  //   else p.delete("date");
-
-  //   if (filterStatus) p.set("status", filterStatus);
-  //   else p.delete("status");
-
-  //   if (selectedMonth) p.set("month", selectedMonth);
-  //   else p.delete("month");
-
-  //   const employeeValue = getEmployeeParamValue();
-  //   if (employeeValue) p.set("employee", employeeValue);
-  //   else p.delete("employee");
-
-  //   navigate({ search: p.toString() }, { replace: true });
-  // }, [
-  //   searchQuery,
-  //   filterDate,
-  //   filterStatus,
-  //   filterEmployee,
-  //   selectedMonth,
-  //   employees,
-  //   location.search,   // 🔥 important
-  // ]);
-
   useEffect(() => {
     const p = new URLSearchParams(location.search);
 
@@ -277,28 +246,6 @@ function Bookings({ user }) {
 
     const tokenPaid = booking.quotedAmount - booking.pendingAmount;
 
-    // Split inclusions & paid services if you store them together
-    // const inclusions = booking.extraDetails
-    //   ? booking.extraDetails
-    //     .split("\n")
-    //     .filter((i) =>
-    //       ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"]
-    //         .some((k) => i.includes(k))
-    //     )
-    //   : [];
-
-    // const paidServices = booking.extraDetails
-    //   ? booking.extraDetails
-    //     .split("\n")
-    //     .filter((i) =>
-    //       ["Drone", "DSLR"].some((k) => i.includes(k))
-    //     )
-    //   : [];
-
-    // const notes = booking.extraDetails
-    //   ? booking.extraDetails.split("Notes:").slice(1).join("Notes:").trim()
-    //   : "";
-
     const sanitizeText = (text = "") =>
       text
         .replace(/\u2022|\u2023|\u25E6/g, "-")
@@ -324,6 +271,8 @@ function Bookings({ user }) {
       ? extraDetails.split("Notes:").slice(1).join("Notes:").trim()
       : "";
 
+    const isPending = booking.status === "pending";
+
     const hardCodedDisclaimer = `Disclaimer:
 • Reporting time is 30 minutes prior to departure
 • No refund for late arrival or no-show
@@ -333,7 +282,8 @@ Thank you for booking with ${booking.company?.name}`
     const boardingPassText = `
 # Ticket Number: ${booking._id.slice(-5).toUpperCase()}
 
-Booking Status: ${booking.status.toUpperCase()}
+Booking Status: ${booking.status.toUpperCase()}${isPending ? `
+⚠️ NOTE: This is a TENTATIVE booking. Your slot is NOT yet confirmed. Please confirm by paying Token Amount.` : ""}
 
 👤 Guest Name: ${booking.customerId?.name}
 📞 Contact No.: ${booking.customerId?.contact}
@@ -346,12 +296,12 @@ Booking Status: ${booking.status.toUpperCase()}
 (1 Hour Sailing + 1 Hour Anchor)
 
 Booking Price: ₹${booking.quotedAmount}/-
-
+${!isPending ? `
 Token Paid: ₹${tokenPaid}/-
-Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)
+Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)` : ""}
 
 📍 Boarding Location
-🔗 ${booking.yachtId?.boardingLocation || "Location not provided"}
+🔗 ${isPending ? "Will be shared upon confirmation" : (booking.yachtId?.boardingLocation || "Location not provided")}
 
 ${inclusions.length
         ? `Extra Inclusions:\n${inclusions
@@ -497,7 +447,7 @@ Thank You`
         </div>
         {(user?.type === "admin" || user?.type === "backdesk") && (
           <button className="btn btn-success rounded-pill px-3" onClick={handleCreateBooking}>
-            + New Booking
+            + Quotaion
           </button>
         )}
       </div>
@@ -806,36 +756,16 @@ Thank You`
                             <Pencil size={16} />
                           </button>
                         )}
-                        {booking.status === "confirmed" && (
+                        {(booking.status === "confirmed" || booking.status === "pending") && (
                           <>
-                            {/* 📋 Copy Boarding Pass */}
+                            {/* 📋 Copy Boarding Pass / Tentative Pass */}
                             <button
-                              className="btn btn-sm btn-outline-success flex-grow-1 rounded-pill"
-                              title="Copy Boarding Pass"
+                              className={`btn btn-sm flex-grow-1 rounded-pill ${booking.status === "confirmed" ? "btn-outline-success" : "btn-outline-warning"}`}
+                              title={booking.status === "pending" ? "Copy Tentative Pass" : "Copy Boarding Pass"}
                               onClick={() => generateBoardingPass(booking)}
                             >
-                              Boarding Pass
+                              {booking.status === "pending" ? "Pass" : "Pass"}
                             </button>
-
-                            {/* ⬇️ PDF Download */}
-                            {/* {(
-                              <PDFDownloadLink
-                                document={<BoardingPassPDF booking={booking} />}
-                                fileName={`BoardingPass_${booking._id.slice(-5)}.pdf`}
-                              >
-                                {({ loading }) => (
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-success rounded-circle d-flex align-items-center justify-content-center"
-                                    title="Download PDF"
-                                    style={{ width: 34, height: 34 }}
-                                    disabled={loading}
-                                  >
-                                    <Download size={16} />
-                                  </button>
-                                )}
-                              </PDFDownloadLink>
-                            )} */}
                           </>
                         )}
 

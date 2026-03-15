@@ -131,6 +131,7 @@ function Login({ onLogin }) {
     const tktNum = `${booking._id.slice(-5).toUpperCase()}`
     const guestName = `${booking.customerId?.name}`
     const contactNum = `${booking.customerId?.contact}`
+    const isPending = booking.status === "pending";
     const hardCodedDisclaimer = `Disclaimer:
 • Reporting time is 30 minutes prior to departure
 • No refund for late arrival or no-show
@@ -139,7 +140,8 @@ Thank you for booking with ${booking.company?.name}`
 
     return `
 # Ticket Number: ${tktNum}
-Booking Status: ${booking.status.toUpperCase()}
+Booking Status: ${booking.status.toUpperCase()}${isPending ? `
+⚠️ NOTE: This is a TENTATIVE booking. Your slot is NOT yet confirmed. Please confirm by paying Token Amount` : ""}
 
 👤 Guest Name: ${guestName}
 📞 Contact No.: ${contactNum}
@@ -149,11 +151,11 @@ Booking Status: ${booking.status.toUpperCase()}
       booking.startTime
     )} to ${formatTime(booking.endTime)}
 (1 Hour Sailing + 1 Hour Anchor)
-
-Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)
+${!isPending ? `
+Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)` : ""}
 
 📍 Boarding Location
-🔗 ${booking.yachtId?.boardingLocation || "Location not provided"}
+🔗 ${isPending ? "Will be shared upon confirmation" : (booking.yachtId?.boardingLocation || "Location not provided")}
 
 Inclusions:
 ${inclusions.length
@@ -211,6 +213,7 @@ Thank You`
     return {
       ticketId: booking._id.slice(-5).toUpperCase(),
       status: booking.status,
+      isPending: booking.status === "pending",
       guestName: booking.customerId?.name,
       contact: booking.customerId?.contact,
       groupSize: booking.numPeople,
@@ -242,7 +245,7 @@ Thank You`
 
               {/* Header */}
               <div className={styles.modalHeader}>
-                <h3 className={styles.modalTitle}>⚓ Boarding Pass</h3>
+                <h3 className={styles.modalTitle}>{pass.isPending ? "⏳ Tentative Pass" : "⚓ Boarding Pass"}</h3>
                 <span className={styles.modalTicketId}>#{pass.ticketId}</span>
               </div>
 
@@ -261,6 +264,13 @@ Thank You`
                     {pass.status.toUpperCase()}
                   </span>
                 </div>
+
+                {/* Pending warning banner */}
+                {pass.isPending && (
+                  <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "8px 12px", marginBottom: 8, fontSize: "0.78rem", color: "#92400e", lineHeight: 1.5 }}>
+                    ⚠️ <strong>Tentative Booking</strong> — Your slot is not yet confirmed. Please confirm by paying Token Amount.
+                  </div>
+                )}
 
                 <div className={styles.passRow}>
                   <span className={styles.passLabel}>Guest</span>
@@ -292,14 +302,14 @@ Thank You`
                   <span className={styles.passValue}>{pass.time}</span>
                 </div>
 
-                {pass.boardingLocation && (
-                  <div className={styles.passRow}>
-                    <span className={styles.passLabel}>Location</span>
-                    <span className={styles.passValue} style={{ fontSize: "0.8rem" }}>{pass.boardingLocation}</span>
-                  </div>
-                )}
+                <div className={styles.passRow}>
+                  <span className={styles.passLabel}>Location</span>
+                  <span className={styles.passValue} style={{ fontSize: "0.8rem" }}>
+                    {pass.isPending ? "Will be shared upon confirmation" : (pass.boardingLocation || "Location not provided")}
+                  </span>
+                </div>
 
-                {pass.pendingAmount > 0 && (
+                {!pass.isPending && pass.pendingAmount > 0 && (
                   <div className={styles.passRow}>
                     <span className={styles.passLabel}>Balance Due</span>
                     <span className={styles.pendingAmount}>₹{pass.pendingAmount}/-</span>

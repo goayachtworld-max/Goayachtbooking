@@ -351,6 +351,7 @@ export default function BoardingPassPDF({ booking }) {
   if (!booking) return null;
 
   const ticket = booking._id.slice(-5).toUpperCase();
+  const isPending = booking.status === "pending";
 
   const storedUser = localStorage.getItem("user");
   const [user] = useState(storedUser ? JSON.parse(storedUser) : null);
@@ -403,7 +404,7 @@ export default function BoardingPassPDF({ booking }) {
               <Text style={S.companyName}>
                 {booking.company?.name?.toUpperCase() || "COMPANY"}
               </Text>
-              <Text style={S.boardingTitle}>BOARDING PASS</Text>
+              <Text style={S.boardingTitle}>{isPending ? "TENTATIVE PASS" : "BOARDING PASS"}</Text>
             </View>
             <View style={S.headerRight}>
               <Text style={S.ticketLabel}>TICKET ID</Text>
@@ -444,7 +445,7 @@ export default function BoardingPassPDF({ booking }) {
               <View style={[S.col, { flex: 2 }]}>
                 <Text style={S.label}>BOARDING LOCATION</Text>
                 <Text style={[S.value, { fontSize: 10, marginTop: 3, color: NAVY }]}>
-                  {booking.yachtId?.boardingLocation || "Location not provided"}
+                  {isPending ? "Will be shared upon confirmation" : (booking.yachtId?.boardingLocation || "Location not provided")}
                 </Text>
               </View>
             </View>
@@ -453,32 +454,35 @@ export default function BoardingPassPDF({ booking }) {
             <Perforated />
 
             {/* ── SECTION: Payment ── */}
-            <Text style={S.sectionTitle}>Payment Summary</Text>
-
-            {role === "admin" ? (
-              <View style={S.paymentStrip}>
-                <View style={S.paymentBlock}>
-                  <Text style={S.paymentLabel}>BOOKING AMOUNT</Text>
-                  <Text style={S.paymentValue}>0{booking.quotedAmount}/-</Text>
-                </View>
-                <View style={S.paymentDivider} />
-                <View style={S.paymentBlock}>
-                  <Text style={S.paymentLabel}>TOKEN PAID</Text>
-                  <Text style={S.paymentValue}>{tokenAmt}/-</Text>
-                </View>
-                <View style={S.paymentDivider} />
-                <View style={S.paymentBlock}>
-                  <Text style={S.paymentLabel}>PENDING BALANCE</Text>
-                  <Text style={S.pendingValue}>{booking.pendingAmount}/-</Text>
-                </View>
-              </View>
-            ) : (
-              <View style={S.paymentStrip}>
-                <View style={S.paymentBlock}>
-                  <Text style={S.paymentLabel}>PENDING BALANCE</Text>
-                  <Text style={S.pendingValue}>{booking.pendingAmount}/-</Text>
-                </View>
-              </View>
+            {!isPending && (
+              <>
+                <Text style={S.sectionTitle}>Payment Summary</Text>
+                {role === "admin" ? (
+                  <View style={S.paymentStrip}>
+                    <View style={S.paymentBlock}>
+                      <Text style={S.paymentLabel}>BOOKING AMOUNT</Text>
+                      <Text style={S.paymentValue}>0{booking.quotedAmount}/-</Text>
+                    </View>
+                    <View style={S.paymentDivider} />
+                    <View style={S.paymentBlock}>
+                      <Text style={S.paymentLabel}>TOKEN PAID</Text>
+                      <Text style={S.paymentValue}>{tokenAmt}/-</Text>
+                    </View>
+                    <View style={S.paymentDivider} />
+                    <View style={S.paymentBlock}>
+                      <Text style={S.paymentLabel}>PENDING BALANCE</Text>
+                      <Text style={S.pendingValue}>{booking.pendingAmount}/-</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={S.paymentStrip}>
+                    <View style={S.paymentBlock}>
+                      <Text style={S.paymentLabel}>PENDING BALANCE</Text>
+                      <Text style={S.pendingValue}>{booking.pendingAmount}/-</Text>
+                    </View>
+                  </View>
+                )}
+              </>
             )}
 
             {/* ── SECTION: Services ── */}

@@ -66,7 +66,10 @@ export const createBooking = async (req, res, next) => {
     let bookingStatus = "pending";
     let tripStatus = "pending";
 
-    if (["admin", "staff", "onsite"].includes(req.user.type)) {
+    if (req.user.type === "admin") {
+      bookingStatus = req.body.bookingStatus === "confirmed" ? "confirmed" : "pending";
+      tripStatus = bookingStatus === "confirmed" ? "initiated" : "pending";
+    } else if (["staff", "onsite"].includes(req.user.type)) {
       bookingStatus = "confirmed";
       tripStatus = "initiated";
     }
@@ -134,12 +137,10 @@ export const createBooking = async (req, res, next) => {
     }
     let roles;
     let title;
-    if (booking.status === "confirmed" && req.user.type === "admin") {
+    if (bookingStatus === "confirmed") {
       roles = ["onsite"];
       title = "Booking CONFIRMED";
-    }
-
-    if (booking.status === "pending" && req.user.type === "backdesk") {
+    } else {
       roles = ["admin", "onsite"];
       title = "Booking PENDING";
     }

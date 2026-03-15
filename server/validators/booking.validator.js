@@ -14,7 +14,7 @@ export const bookingSchema = z.object({
   startTime: z.string().min(1, "Start Time is required"),
   endTime: z.string().min(1, "Start Time is required"),
   quotedAmount: z.number().min(0, "Quoted amount must be >= 0"),
-  status: z.enum(["initiated", "success", "terminated"]).optional(),
+  status: z.enum(['pending', 'confirmed', 'cancelled']).optional(),
   numPeople : z.number().min(1, "Number of people must be >= 0"),
   extraDetails: z.string().optional()
 });

@@ -32,7 +32,8 @@ function CreateBooking() {
     numPeople: "",
     advanceAmount: "",
     onBehalfEmployeeId: user?._id,
-    extraDetails: ""
+    extraDetails: "",
+    bookingStatus: "pending"
   });
 
   const [yachts, setYachts] = useState([]);
@@ -299,8 +300,8 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         quotedAmount: Number(formData.totalAmount),
         numPeople: Number(formData.numPeople),
         onBehalfEmployeeId: formData.onBehalfEmployeeId || null,
-        // extraDetails: formData.extraDetails
-        extraDetails
+        extraDetails,
+        ...(isAdmin && { bookingStatus: formData.bookingStatus }),
       };
 
       console.log("Booking payload : ", bookingPayload)
@@ -425,6 +426,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         }
 
         .cb-g2 { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
+        .cb-g1 { display:grid; grid-template-columns:1fr; gap:0; }
         .cb-span2 { grid-column: span 2; }
         @media(max-width:600px){
           .cb-g2 { grid-template-columns:1fr; }
@@ -494,17 +496,55 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         }
         .cb-ext-toggle:hover { background:#dbeafe; }
         .cb-ext-toggle.open { background:#f1f5f9; color:#475569; border-color:#94a3b8; }
+
+        @media(max-width:600px){
+          /* Inputs — tighter */
+          .cb-inp { padding:8px 10px; font-size:13px; border-width:1.5px; border-radius:8px; }
+
+          /* Labels */
+          .cb-lbl { font-size:11px; margin-bottom:3px; }
+
+          /* Field spacing */
+          .cb-f { margin-bottom:10px; }
+
+          /* Panels — less padding, lighter border */
+          .cb-panel { padding:12px; border-width:1.5px; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+
+          /* Panel section header */
+          .cb-sh { font-size:12px; margin-bottom:10px; padding-bottom:8px; }
+          .cb-sh-dot { width:8px; height:8px; }
+
+          /* Summary bar — compact single-line scroll */
+          .cb-sumbar {
+            padding:8px 10px; gap:5px; border-radius:10px;
+            overflow-x:auto; flex-wrap:nowrap; margin-bottom:10px;
+          }
+          .cb-sum-pill { padding:3px 8px; font-size:11px; white-space:nowrap; flex-shrink:0; }
+
+          /* Submit button */
+          .cb-submit { padding:12px; font-size:15px; border-radius:10px; }
+
+          /* Pending balance */
+          .cb-pending { padding:9px 12px; }
+          .cb-pend-val { font-size:15px; }
+
+          /* Add-ons chips */
+          .cb-chip { padding:5px 10px; font-size:11px; }
+
+          /* Autocomplete */
+          .cb-ac-item { padding:8px 11px; }
+        }
       `}</style>
 
 
-      <div className="cb-wrap" style={{ background:"#f8fafc", minHeight:"100vh", padding:"12px" }}>
+      <div className="cb-wrap" style={{ background:"#f8fafc", minHeight:"100vh", padding:"8px" }}>
         <div style={{ maxWidth:960, margin:"0 auto" }}>
 
           {/* ── Header row ── */}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
             <div>
               <div style={{ fontSize:12, fontWeight:700, color:"#64748b", letterSpacing:"1.5px", textTransform:"uppercase", marginBottom:2 }}>New Booking</div>
-              <div style={{ fontSize:26, fontWeight:900, color:"#0f172a", lineHeight:1.1 }}>Create Booking</div>
+              <div style={{ fontSize:"clamp(18px, 5vw, 26px)", fontWeight:900, color:"#0f172a", lineHeight:1.1 }}>Create Booking</div>
             </div>
             <button onClick={() => navigate(-1)} style={{ padding:"9px 18px", background:"#fff", border:"2px solid #cbd5e1", borderRadius:9, fontSize:14, fontWeight:700, color:"#374151", cursor:"pointer" }}>
               ← Back
@@ -533,11 +573,16 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                 </b>
               </span>
             )}
+            {isAdmin && (
+              <span className="cb-sum-pill" style={{ background: formData.bookingStatus === "confirmed" ? "rgba(22,163,74,.25)" : "rgba(217,119,6,.2)" }}>
+                {formData.bookingStatus === "confirmed" ? "✓" : "⏳"} <b style={{ color: formData.bookingStatus === "confirmed" ? "#bbf7d0" : "#fde68a" }}>{formData.bookingStatus === "confirmed" ? "Confirmed" : "Pending"}</b>
+              </span>
+            )}
             {!formData.name && !formData.date && <span style={{ color:"#b0bec5", fontSize:12 }}>Fill in the form below…</span>}
           </div>
 
           {/* ── FORM ── */}
-          <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:8 }}>
 
             {/* ROW 1: Customer + Booking side by side on desktop */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:12 }}>
@@ -545,7 +590,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
               {/* ── Customer panel ── */}
               <div className="cb-panel">
                 <div className="cb-sh"><span className="cb-sh-dot" style={{background:"#3b82f6"}}></span>Customer</div>
-                <div className="cb-g2">
+                <div className="cb-g1">
 
                   <div className="cb-f" style={{ position:"relative" }}>
                     <label className="cb-lbl">Full Name</label>
@@ -628,6 +673,16 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                       <label className="cb-lbl">On Behalf Of</label>
                       <select className="cb-inp" name="onBehalfEmployeeId" value={formData.onBehalfEmployeeId} onChange={handleChange}>
                         {employees.map((emp) => <option key={emp._id} value={emp._id}>{emp.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {isAdmin && (
+                    <div className="cb-f cb-span2">
+                      <label className="cb-lbl">Booking Status</label>
+                      <select className="cb-inp" name="bookingStatus" value={formData.bookingStatus} onChange={handleChange}>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
                       </select>
                     </div>
                   )}
