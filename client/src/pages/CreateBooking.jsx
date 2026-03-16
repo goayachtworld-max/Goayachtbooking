@@ -19,6 +19,7 @@ function CreateBooking() {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const isAdmin = user?.type === "admin";
+  const isQuotation = prefill.source === "bookings";
   const [formData, setFormData] = useState({
     name: "",
     contact: "",
@@ -33,7 +34,8 @@ function CreateBooking() {
     advanceAmount: "",
     onBehalfEmployeeId: user?._id,
     extraDetails: "",
-    bookingStatus: "pending"
+    bookingStatus: "pending",
+    tokenAmount: ""
   });
 
   const [yachts, setYachts] = useState([]);
@@ -302,6 +304,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         onBehalfEmployeeId: formData.onBehalfEmployeeId || null,
         extraDetails,
         ...(isAdmin && { bookingStatus: formData.bookingStatus }),
+        ...(isQuotation && formData.tokenAmount && { tokenAmount: Number(formData.tokenAmount) }),
       };
 
       console.log("Booking payload : ", bookingPayload)
@@ -309,9 +312,10 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
       const response = await createBookingAPI(bookingPayload, token);
       const booking = response.data.booking;
 
-      toast.success("Booking created successfully!");
+      toast.success(isQuotation ? "Quotation created successfully!" : "Booking created successfully!");
 
-      if (response.data.success && formData.advanceAmount > 0) {
+      // Only trigger transaction for normal bookings, NOT quotations
+      if (!isQuotation && response.data.success && formData.advanceAmount > 0) {
         await createTransactionAndUpdateBooking(
           {
             bookingId: booking._id,
@@ -574,8 +578,8 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
               </span>
             )}
             {isAdmin && (
-              <span className="cb-sum-pill" style={{ background: formData.bookingStatus === "confirmed" ? "rgba(22,163,74,.25)" : "rgba(217,119,6,.2)" }}>
-                {formData.bookingStatus === "confirmed" ? "✓" : "⏳"} <b style={{ color: formData.bookingStatus === "confirmed" ? "#bbf7d0" : "#fde68a" }}>{formData.bookingStatus === "confirmed" ? "Confirmed" : "Pending"}</b>
+              <span className="cb-sum-pill" style={{ background: isQuotation ? "rgba(139,92,246,.25)" : formData.bookingStatus === "confirmed" ? "rgba(22,163,74,.25)" : "rgba(217,119,6,.2)" }}>
+                {isQuotation ? "📋" : formData.bookingStatus === "confirmed" ? "✓" : "⏳"} <b style={{ color: isQuotation ? "#e9d5ff" : formData.bookingStatus === "confirmed" ? "#bbf7d0" : "#fde68a" }}>{isQuotation ? "Quotation" : formData.bookingStatus === "confirmed" ? "Confirmed" : "Pending"}</b>
               </span>
             )}
             {!formData.name && !formData.date && <span style={{ color:"#b0bec5", fontSize:12 }}>Fill in the form below…</span>}
@@ -707,14 +711,24 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                       required placeholder="₹ 0" />
                     {isAmountInvalid && <div className="cb-err-msg">⚠ Below running cost ₹{Number(runningCost).toLocaleString("en-IN")}</div>}
                   </div>
-                  <div className="cb-f">
-                    <label className="cb-lbl">Advance <span style={{ color:"#b0bec5", textTransform:"lowercase", fontWeight:400 }}>opt.</span></label>
-                    <input className="cb-inp" type="number" name="advanceAmount" value={formData.advanceAmount}
-                      onChange={handleChange} placeholder="₹ 0" />
-                  </div>
+
+                  {isQuotation ? (
+                    <div className="cb-f">
+                      <label className="cb-lbl">Token Amount <span style={{ color:"#b0bec5", textTransform:"lowercase", fontWeight:400 }}>opt.</span></label>
+                      <input className="cb-inp" type="number" name="tokenAmount" value={formData.tokenAmount}
+                        onChange={handleChange} placeholder="₹ 0" />
+                      <div style={{ fontSize:11, color:"#94a3b8", marginTop:4 }}>Amount customer should pay as token to confirm</div>
+                    </div>
+                  ) : (
+                    <div className="cb-f">
+                      <label className="cb-lbl">Advance <span style={{ color:"#b0bec5", textTransform:"lowercase", fontWeight:400 }}>opt.</span></label>
+                      <input className="cb-inp" type="number" name="advanceAmount" value={formData.advanceAmount}
+                        onChange={handleChange} placeholder="₹ 0" />
+                    </div>
+                  )}
                 </div>
 
-                {pendingAmount !== null && (
+                {!isQuotation && pendingAmount !== null && (
                   <div className={`cb-pending ${pendingAmount > 0 ? "due" : ""}`}>
                     <span className="cb-pend-label">Pending Balance</span>
                     <span className="cb-pend-val" style={{ color: pendingAmount > 0 ? "#dc2626" : "#16a34a" }}>
@@ -781,7 +795,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
             {/* ── Submit ── */}
             <button type="submit" className="cb-submit" disabled={loading}>
-              {loading ? "Creating Booking…" : "✓ Create Booking"}
+              {loading ? (isQuotation ? "Creating Quotation…" : "Creating Booking…") : (isQuotation ? "📋 Create Quotation" : "✓ Create Booking")}
             </button>
 
           </form>

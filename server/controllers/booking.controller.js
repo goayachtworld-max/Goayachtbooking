@@ -19,7 +19,8 @@ export const createBooking = async (req, res, next) => {
       quotedAmount,
       numPeople,
       onBehalfEmployeeId,
-      extraDetails
+      extraDetails,
+      tokenAmount
     } = req.body;
 
     console.log("inc booking body : ", req.body)
@@ -113,6 +114,7 @@ export const createBooking = async (req, res, next) => {
       tripStatus,
       numPeople,
       extraDetails,
+      ...(tokenAmount && { tokenAmount: Number(tokenAmount) }),
     });
     console.log("booking", booking)
 

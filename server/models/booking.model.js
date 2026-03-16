@@ -80,6 +80,11 @@ const bookingSchema = new mongoose.Schema({
     extraDetails: {
         type: String,
     },
+    tokenAmount: {
+        type: Number,
+        min: 0,
+        default: null   // set only for quotation bookings
+    },
     ticketNo: {
         type: String,
         unique: true,

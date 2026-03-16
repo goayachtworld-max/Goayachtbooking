@@ -245,7 +245,7 @@ function Bookings({ user }) {
     };
 
     const tokenPaid = booking.quotedAmount - booking.pendingAmount;
-
+    const tokenAmount = booking?.tokenAmount
     const sanitizeText = (text = "") =>
       text
         .replace(/\u2022|\u2023|\u25E6/g, "-")
@@ -296,6 +296,8 @@ Booking Status: ${booking.status.toUpperCase()}${isPending ? `
 (1 Hour Sailing + 1 Hour Anchor)
 
 Booking Price: ₹${booking.quotedAmount}/-
+${isPending && tokenAmount ? `
+Token to be Paid: ₹${tokenAmount}/- (Please share screenshot Over WhatsApp)`:""}
 ${!isPending ? `
 Token Paid: ₹${tokenPaid}/-
 Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)` : ""}
@@ -310,7 +312,7 @@ ${inclusions.length
         : ""}
 
 ${paidServices.length
-        ? `\nExtra Purchased Services:\n${paidServices
+        ? `\nExtra Add On's Services:\n${paidServices
           .map((i) => `• ${i.replace("-", "").trim()}`)
           .join("\n")}`
         : ""}
@@ -335,7 +337,7 @@ Thank You`
   const handleViewDetails = (booking) =>
     navigate("/customer-details", { state: { booking } });
 
-  const handleCreateBooking = () => navigate("/create-booking");
+  const handleCreateBooking = () => navigate("/create-booking", { state: { source: "bookings" } });
 
   const handleUpdateBooking = (booking) =>
     navigate("/update-booking", { state: { booking } });
