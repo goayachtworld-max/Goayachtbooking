@@ -6,7 +6,8 @@ import {
   getCustomerByContactAPI,
   searchCustomersByNameAPI,
 } from "../services/operations/customerAPI";
-import { getAllYachtsAPI } from "../services/operations/yautAPI";
+import { getAllYachtsAPI, updateDaySlots } from "../services/operations/yautAPI";
+import { adjustSlots } from "../utils/slotEngine";
 import { toast } from "react-hot-toast";
 import { createTransactionAndUpdateBooking } from "../services/operations/transactionAPI";
 import { getEmployeesForBookingAPI } from "../services/operations/employeeAPI";
@@ -19,7 +20,6 @@ function CreateBooking() {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const isAdmin = user?.type === "admin";
-  const isQuotation = prefill.source === "bookings";
   const [formData, setFormData] = useState({
     name: "",
     contact: "",
@@ -38,6 +38,9 @@ function CreateBooking() {
     tokenAmount: ""
   });
 
+  // Quotation mode: coming from Bookings page AND status is pending
+  const isQuotation = prefill.source === "bookings" && formData.bookingStatus !== "confirmed";
+
   const [yachts, setYachts] = useState([]);
   const [startTimeOptions, setStartTimeOptions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -49,6 +52,12 @@ function CreateBooking() {
   const typingTimeoutRef = useRef(null);
   const [employees, setEmployees] = useState([]);
   const [showExtraDetails, setShowExtraDetails] = useState(false);
+  const [
+    customTimeEnabled, setCustomTimeEnabled] = useState(false);
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const [daySlotList, setDaySlotList] = useState([]);
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState(-1);
 
   const extraOptions = {
     inclusions: [
@@ -102,6 +111,31 @@ function CreateBooking() {
   const hhmmToMinutes = (time = "00:00") => {
     const [h, m] = time.split(":").map(Number);
     return h * 60 + m;
+  };
+
+  // Check if a slot overlaps any existing booking for the selected yacht/date
+  const isSlotBooked = (slot, bookings) => {
+    if (!bookings?.length) return false;
+    const slotStart = hhmmToMinutes(slot.start);
+    const slotEnd   = hhmmToMinutes(slot.end);
+    return bookings.some((b) => {
+      const bStart = hhmmToMinutes(b.startTime);
+      const bEnd   = hhmmToMinutes(b.endTime);
+      return slotStart < bEnd && slotEnd > bStart;
+    });
+  };
+
+  // Check if custom start/end collides with any booking (excluding the slot's own time)
+  const isCustomTimeColliding = (start, end, bookings) => {
+    if (!start || !end || !bookings?.length) return false;
+    const s = hhmmToMinutes(start);
+    const e = hhmmToMinutes(end);
+    if (e <= s) return false;
+    return bookings.some((b) => {
+      const bStart = hhmmToMinutes(b.startTime);
+      const bEnd   = hhmmToMinutes(b.endTime);
+      return s < bEnd && e > bStart;
+    });
   };
 
   const to12Hour = (time24) => {
@@ -210,7 +244,12 @@ function CreateBooking() {
     setRunningCost(selectedYacht.runningCost || 0);
 
     const slots = buildSlotsForYacht(selectedYacht, formData.date);
-    setStartTimeOptions(slots);
+    const slotsWithStatus = slots.map((slot) => ({
+      ...slot,
+      isBooked: isSlotBooked(slot, selectedYacht.bookings),
+    }));
+    setStartTimeOptions(slotsWithStatus);
+    setDaySlotList(slots); // keep full list (plain) for slot adjustment
 
     if (formData.startTime) {
       const match = slots.find((s) => s.start === formData.startTime);
@@ -241,6 +280,12 @@ function CreateBooking() {
   const handleStartSelect = (e) => {
     const start = e.target.value;
     const slot = startTimeOptions.find((s) => s.start === start);
+    const idx = startTimeOptions.findIndex((s) => s.start === start);
+    setCustomTimeEnabled(false);
+    setSelectedSlotIndex(idx);
+    // seed custom fields with slot times (but don't activate custom mode)
+    setCustomStart(start);
+    setCustomEnd(slot ? slot.end : "");
     setFormData((p) => ({
       ...p,
       startTime: start,
@@ -266,6 +311,8 @@ function CreateBooking() {
 
     try {
       const token = localStorage.getItem("authToken");
+      // Recompute fresh inside handler — avoids stale closure from render
+      const isQuotationNow = prefill.source === "bookings" && formData.bookingStatus !== "confirmed";
 
       const selectedYacht = yachts.find((y) => y.id === formData.yachtId);
       if (!selectedYacht) {
@@ -304,18 +351,65 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         onBehalfEmployeeId: formData.onBehalfEmployeeId || null,
         extraDetails,
         ...(isAdmin && { bookingStatus: formData.bookingStatus }),
-        ...(isQuotation && formData.tokenAmount && { tokenAmount: Number(formData.tokenAmount) }),
+        ...(isQuotationNow && formData.tokenAmount && { tokenAmount: Number(formData.tokenAmount) }),
       };
 
       console.log("Booking payload : ", bookingPayload)
 
+      // Resolve final start/end: use custom if enabled, else use slot selection
+      const finalStartTime = customTimeEnabled ? customStart : formData.startTime;
+      const finalEndTime   = customTimeEnabled ? customEnd   : formData.endTime;
+
+      // Guard: block submit if custom time is invalid
+      if (customTimeEnabled) {
+        if (hhmmToMinutes(finalStartTime) >= hhmmToMinutes(finalEndTime)) {
+          setError("End time must be after start time.");
+          setLoading(false);
+          return;
+        }
+        const yacht = yachts.find((y) => y.id === formData.yachtId);
+        if (isCustomTimeColliding(finalStartTime, finalEndTime, yacht?.bookings)) {
+          setError("Custom time overlaps an existing booking. Please choose a different time.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Update payload with resolved times
+      bookingPayload.startTime = finalStartTime;
+      bookingPayload.endTime = finalEndTime;
+
+      // If admin used custom time, update the day's slot layout before booking
+      const originalSlot = startTimeOptions[selectedSlotIndex];
+      const isTimeEdited = customTimeEnabled && originalSlot &&
+        (finalStartTime !== originalSlot.start || finalEndTime !== originalSlot.end);
+
+      if (isTimeEdited && selectedSlotIndex >= 0) {
+        const updatedSlots = adjustSlots({
+          allSlots: daySlotList,
+          targetIndex: selectedSlotIndex,
+          newStart: finalStartTime,
+          newEnd: finalEndTime,
+          durationMinutes: hhmmToMinutes(
+            yachts.find((y) => y.id === formData.yachtId)?.slotDurationMinutes ||
+            yachts.find((y) => y.id === formData.yachtId)?.duration || "120"
+          ),
+        });
+        await updateDaySlots(
+          formData.yachtId,
+          formData.date,
+          updatedSlots.map(({ start, end }) => ({ start, end })),
+          token
+        );
+      }
+
       const response = await createBookingAPI(bookingPayload, token);
       const booking = response.data.booking;
 
-      toast.success(isQuotation ? "Quotation created successfully!" : "Booking created successfully!");
+      toast.success(isQuotationNow ? "Quotation created successfully!" : "Booking created successfully!");
 
       // Only trigger transaction for normal bookings, NOT quotations
-      if (!isQuotation && response.data.success && formData.advanceAmount > 0) {
+      if (!isQuotationNow && response.data.success && formData.advanceAmount > 0) {
         await createTransactionAndUpdateBooking(
           {
             bookingId: booking._id,
@@ -326,7 +420,8 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         );
       }
 
-      navigate("/bookings");
+      // navigate("/bookings");
+      navigate("/bookings", { state: { bookingId: booking._id } });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create booking");
     } finally {
@@ -381,8 +476,8 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
     <>
       {/* Loading overlay */}
       {loading && (
-        <div style={{ position:"fixed",inset:0,backdropFilter:"blur(4px)",background:"rgba(0,0,0,0.4)",display:"flex",justifyContent:"center",alignItems:"center",zIndex:99999 }}>
-          <div style={{ width:44,height:44,border:"3px solid rgba(255,255,255,0.2)",borderTopColor:"#3b82f6",borderRadius:"50%",animation:"cb-spin 0.8s linear infinite" }} />
+        <div style={{ position: "fixed", inset: 0, backdropFilter: "blur(4px)", background: "rgba(0,0,0,0.4)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 99999 }}>
+          <div style={{ width: 44, height: 44, border: "3px solid rgba(255,255,255,0.2)", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "cb-spin 0.8s linear infinite" }} />
         </div>
       )}
 
@@ -541,36 +636,36 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
       `}</style>
 
 
-      <div className="cb-wrap" style={{ background:"#f8fafc", minHeight:"100vh", padding:"8px" }}>
-        <div style={{ maxWidth:960, margin:"0 auto" }}>
+      <div className="cb-wrap" style={{ background: "#f8fafc", minHeight: "100vh", padding: "8px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
 
           {/* ── Header row ── */}
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <div>
-              <div style={{ fontSize:12, fontWeight:700, color:"#64748b", letterSpacing:"1.5px", textTransform:"uppercase", marginBottom:2 }}>New Booking</div>
-              <div style={{ fontSize:"clamp(18px, 5vw, 26px)", fontWeight:900, color:"#0f172a", lineHeight:1.1 }}>Create Booking</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 2 }}>{isQuotation ? "New Quotation" : "New Booking"}</div>
+              <div style={{ fontSize: "clamp(18px, 5vw, 26px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1 }}>{isQuotation ? "Create Quotation" : "Create Booking"}</div>
             </div>
-            <button onClick={() => navigate(-1)} style={{ padding:"9px 18px", background:"#fff", border:"2px solid #cbd5e1", borderRadius:9, fontSize:14, fontWeight:700, color:"#374151", cursor:"pointer" }}>
+            <button onClick={() => navigate(-1)} style={{ padding: "9px 18px", background: "#fff", border: "2px solid #cbd5e1", borderRadius: 9, fontSize: 14, fontWeight: 700, color: "#374151", cursor: "pointer" }}>
               ← Back
             </button>
           </div>
 
           {/* ── Error banner ── */}
           {error && (
-            <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 14px", color:"#dc2626", fontSize:13, marginBottom:12 }}>
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", color: "#dc2626", fontSize: 13, marginBottom: 12 }}>
               ⚠ {error}
             </div>
           )}
 
           {/* ── Live summary bar ── */}
           <div className="cb-sumbar">
-            {formData.name    && <span className="cb-sum-pill">👤 <b>{formData.name}</b></span>}
-            {formData.date    && <span className="cb-sum-pill">📅 <b>{new Date(formData.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}</b></span>}
+            {formData.name && <span className="cb-sum-pill">👤 <b>{formData.name}</b></span>}
+            {formData.date && <span className="cb-sum-pill">📅 <b>{new Date(formData.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</b></span>}
             {selectedYachtObj && <span className="cb-sum-pill">⛵ <b>{selectedYachtObj.name}</b></span>}
             {formData.startTime && <span className="cb-sum-pill">🕐 <b>{to12Hour(formData.startTime)}–{to12Hour(formData.endTime)}</b></span>}
             {formData.numPeople && <span className="cb-sum-pill">👥 <b>{formData.numPeople} pax</b></span>}
             {formData.totalAmount && (
-              <span className="cb-sum-pill" style={{ marginLeft:"auto" }}>
+              <span className="cb-sum-pill" style={{ marginLeft: "auto" }}>
                 💰 <b style={{ color: pendingAmount > 0 ? "#ef4444" : "#22c55e" }}>
                   ₹{Number(formData.totalAmount).toLocaleString("en-IN")}
                   {formData.advanceAmount ? ` · ₹${pendingAmount.toLocaleString("en-IN")} due` : ""}
@@ -582,21 +677,21 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                 {isQuotation ? "📋" : formData.bookingStatus === "confirmed" ? "✓" : "⏳"} <b style={{ color: isQuotation ? "#e9d5ff" : formData.bookingStatus === "confirmed" ? "#bbf7d0" : "#fde68a" }}>{isQuotation ? "Quotation" : formData.bookingStatus === "confirmed" ? "Confirmed" : "Pending"}</b>
               </span>
             )}
-            {!formData.name && !formData.date && <span style={{ color:"#b0bec5", fontSize:12 }}>Fill in the form below…</span>}
+            {!formData.name && !formData.date && <span style={{ color: "#b0bec5", fontSize: 12 }}>Fill in the form below…</span>}
           </div>
 
           {/* ── FORM ── */}
-          <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
 
             {/* ROW 1: Customer + Booking side by side on desktop */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
 
               {/* ── Customer panel ── */}
               <div className="cb-panel">
-                <div className="cb-sh"><span className="cb-sh-dot" style={{background:"#3b82f6"}}></span>Customer</div>
+                <div className="cb-sh"><span className="cb-sh-dot" style={{ background: "#3b82f6" }}></span>Customer</div>
                 <div className="cb-g1">
 
-                  <div className="cb-f" style={{ position:"relative" }}>
+                  <div className="cb-f" style={{ position: "relative" }}>
                     <label className="cb-lbl">Full Name</label>
                     <input className="cb-inp" type="text" name="name" value={formData.name}
                       onChange={handleNameTyping} autoComplete="off" required placeholder="Search or type name" />
@@ -604,8 +699,8 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                       <div className="cb-ac">
                         {customerSuggestions.map((c) => (
                           <div key={c._id} className="cb-ac-item" onClick={() => handleCustomerSelect(c)}>
-                            <div style={{ fontWeight:600, fontSize:13, color:"#1e293b" }}>{c.name}</div>
-                            <div style={{ fontSize:11, color:"#94a3b8", marginTop:1 }}>{c.contact} · {c.email}</div>
+                            <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{c.name}</div>
+                            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>{c.contact} · {c.email}</div>
                           </div>
                         ))}
                       </div>
@@ -619,13 +714,13 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                   </div>
 
                   <div className="cb-f">
-                    <label className="cb-lbl">Email <span style={{ color:"#b0bec5", textTransform:"lowercase", fontWeight:400 }}>opt.</span></label>
+                    <label className="cb-lbl">Email <span style={{ color: "#b0bec5", textTransform: "lowercase", fontWeight: 400 }}>opt.</span></label>
                     <input className="cb-inp" type="email" name="email" value={formData.email}
                       onChange={handleChange} placeholder="email@example.com" />
                   </div>
 
                   <div className="cb-f">
-                    <label className="cb-lbl">Govt. ID <span style={{ color:"#b0bec5", textTransform:"lowercase", fontWeight:400 }}>opt.</span></label>
+                    <label className="cb-lbl">Govt. ID <span style={{ color: "#b0bec5", textTransform: "lowercase", fontWeight: 400 }}>opt.</span></label>
                     <input className="cb-inp" type="text" name="govtId" value={formData.govtId}
                       onChange={handleChange} placeholder="Aadhar / Passport" />
                   </div>
@@ -634,7 +729,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
               {/* ── Booking details panel ── */}
               <div className="cb-panel">
-                <div className="cb-sh"><span className="cb-sh-dot" style={{background:"#8b5cf6"}}></span>Booking Details</div>
+                <div className="cb-sh"><span className="cb-sh-dot" style={{ background: "#8b5cf6" }}></span>Booking Details</div>
                 <div className="cb-g2">
 
                   <div className="cb-f">
@@ -642,16 +737,6 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                     <input className="cb-inp" type="date" name="date"
                       min={new Date().toISOString().split("T")[0]}
                       value={formData.date} onChange={handleChange} required />
-                  </div>
-
-                  <div className="cb-f">
-                    <label className="cb-lbl">Guests</label>
-                    <input className={`cb-inp ${isCapacityExceeded ? "warn" : ""}`} type="number"
-                      name="numPeople" value={formData.numPeople} onChange={handleChange}
-                      required placeholder="0" min="1" />
-                    {isCapacityExceeded && (
-                      <div className="cb-warn-msg">⚠ Exceeds cap ({yachts.find(y=>y.id===formData.yachtId)?.capacity})</div>
-                    )}
                   </div>
 
                   <div className="cb-f">
@@ -663,14 +748,120 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                   </div>
 
                   <div className="cb-f">
-                    <label className="cb-lbl">Time Slot</label>
-                    <select className="cb-inp" name="startTime" value={formData.startTime} onChange={handleStartSelect} required>
+                    <label className="cb-lbl">
+                      Time Slot
+                      {customTimeEnabled && <span style={{ fontSize: 10, color: "#94a3b8", marginLeft: 6, fontWeight: 400 }}>overridden by custom</span>}
+                    </label>
+                    <select
+                      className="cb-inp"
+                      name="startTime"
+                      value={formData.startTime}
+                      onChange={handleStartSelect}
+                      required
+                      disabled={customTimeEnabled}
+                      style={{ opacity: customTimeEnabled ? 0.4 : 1, cursor: customTimeEnabled ? "not-allowed" : "pointer" }}
+                    >
                       <option value="">— Select —</option>
                       {startTimeOptions.map((opt, i) => (
-                        <option key={i} value={opt.start}>{to12Hour(opt.start)} – {to12Hour(opt.end)}</option>
+                        <option key={i} value={opt.start} disabled={opt.isBooked}>
+                          {to12Hour(opt.start)} – {to12Hour(opt.end)}{opt.isBooked ? " (booked)" : ""}
+                        </option>
                       ))}
                     </select>
                   </div>
+
+                  <div className="cb-f">
+                    <label className="cb-lbl">Guests</label>
+                    <input className={`cb-inp ${isCapacityExceeded ? "warn" : ""}`} type="number"
+                      name="numPeople" value={formData.numPeople} onChange={handleChange}
+                      required placeholder="0" min="1" />
+                    {isCapacityExceeded && (
+                      <div className="cb-warn-msg">⚠ Exceeds cap ({yachts.find(y => y.id === formData.yachtId)?.capacity})</div>
+                    )}
+                  </div>
+                  {/* ── Admin custom time override ── */}
+                  {isAdmin && formData.startTime && (
+                    <div className="cb-f cb-span2">
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                        <label className="cb-lbl" style={{ margin: 0 }}>
+                          Custom Time
+                          <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 11, marginLeft: 6 }}>opt. — override selected slot</span>
+                        </label>
+                        <button
+                          type="button"
+                          style={{
+                            fontSize: 11, padding: "2px 10px", borderRadius: 6,
+                            border: customTimeEnabled ? "1.5px solid #dc2626" : "1.5px solid #2563eb",
+                            background: customTimeEnabled ? "#fef2f2" : "#eff6ff",
+                            color: customTimeEnabled ? "#dc2626" : "#2563eb",
+                            cursor: "pointer", fontWeight: 600
+                          }}
+                          onClick={() => {
+                            if (customTimeEnabled) {
+                              // Cancel: restore formData to the original slot times
+                              setFormData(p => ({ ...p, startTime: customStart, endTime: customEnd }));
+                            } else {
+                              // Open: seed inputs from current formData (slot times)
+                              setCustomStart(formData.startTime);
+                              setCustomEnd(formData.endTime);
+                            }
+                            setCustomTimeEnabled(p => !p);
+                          }}
+                        >
+                          {customTimeEnabled ? "✕ Cancel" : "✎ Edit"}
+                        </button>
+                      </div>
+                      {customTimeEnabled && (
+                        (() => {
+                          const selectedYacht = yachts.find((y) => y.id === formData.yachtId);
+                          const isInvalidTime = customStart && customEnd && hhmmToMinutes(customStart) >= hhmmToMinutes(customEnd);
+                          const hasCollision  = !isInvalidTime && isCustomTimeColliding(customStart, customEnd, selectedYacht?.bookings);
+                          const hasError = isInvalidTime || hasCollision;
+                          const errorBorder = hasError ? "2px solid #dc2626" : undefined;
+                          const errorBg     = hasError ? "#fef2f2" : undefined;
+                          const labelColor  = hasError ? "#dc2626" : "#64748b";
+                          const labelWeight = hasError ? 700 : 400;
+                          return (
+                            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                              <div>
+                                <label style={{ fontSize:11, color: labelColor, display:"block", marginBottom:3, fontWeight: labelWeight }}>Start Time</label>
+                                <input
+                                  className="cb-inp"
+                                  type="time"
+                                  value={customStart}
+                                  style={{ border: errorBorder, background: errorBg }}
+                                  onChange={(e) => setCustomStart(e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ fontSize:11, color: labelColor, display:"block", marginBottom:3, fontWeight: labelWeight }}>End Time</label>
+                                <input
+                                  className="cb-inp"
+                                  type="time"
+                                  value={customEnd}
+                                  style={{ border: errorBorder, background: errorBg }}
+                                  onChange={(e) => setCustomEnd(e.target.value)}
+                                />
+                              </div>
+                              {isInvalidTime ? (
+                                <div style={{ gridColumn:"span 2", fontSize:11, color:"#dc2626", background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:6, padding:"5px 8px", fontWeight:600 }}>
+                                  ⛔ End time must be after start time.
+                                </div>
+                              ) : hasCollision ? (
+                                <div style={{ gridColumn:"span 2", fontSize:11, color:"#dc2626", background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:6, padding:"5px 8px", fontWeight:600 }}>
+                                  ⛔ This time overlaps an existing booking — please choose a different time.
+                                </div>
+                              ) : (
+                                <div style={{ gridColumn:"span 2", fontSize:11, color:"#92400e", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:6, padding:"5px 8px" }}>
+                                  ⚠ Slot layout for this date will be updated to reflect the custom time.
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()
+                      )}
+                    </div>
+                  )}
 
                   {isAdmin && (
                     <div className="cb-f cb-span2">
@@ -691,20 +882,22 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                     </div>
                   )}
                 </div>
+
+
               </div>
             </div>
 
             {/* ROW 2: Payment + Extras side by side on desktop */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
 
               {/* ── Payment panel ── */}
               <div className="cb-panel">
-                <div className="cb-sh"><span className="cb-sh-dot" style={{background:"#16a34a"}}></span>Payment</div>
+                <div className="cb-sh"><span className="cb-sh-dot" style={{ background: "#16a34a" }}></span>Payment</div>
                 <div className="cb-g2">
                   <div className="cb-f">
                     <label className="cb-lbl">
                       Total Amount
-                      {runningCost > 0 && <span style={{ color:"#64748b", fontWeight:500, marginLeft:6, fontSize:12, textTransform:"none" }}>min ₹{Number(runningCost).toLocaleString("en-IN")}</span>}
+                      {runningCost > 0 && <span style={{ color: "#64748b", fontWeight: 500, marginLeft: 6, fontSize: 12, textTransform: "none" }}>min ₹{Number(runningCost).toLocaleString("en-IN")}</span>}
                     </label>
                     <input className={`cb-inp ${isAmountInvalid ? "err" : ""}`} type="number"
                       name="totalAmount" value={formData.totalAmount} onChange={handleChange}
@@ -714,14 +907,14 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
                   {isQuotation ? (
                     <div className="cb-f">
-                      <label className="cb-lbl">Token Amount <span style={{ color:"#b0bec5", textTransform:"lowercase", fontWeight:400 }}>opt.</span></label>
+                      <label className="cb-lbl">Token Amount <span style={{ color: "#b0bec5", textTransform: "lowercase", fontWeight: 400 }}>opt.</span></label>
                       <input className="cb-inp" type="number" name="tokenAmount" value={formData.tokenAmount}
                         onChange={handleChange} placeholder="₹ 0" />
-                      <div style={{ fontSize:11, color:"#94a3b8", marginTop:4 }}>Amount customer should pay as token to confirm</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Amount customer should pay as token to confirm</div>
                     </div>
                   ) : (
                     <div className="cb-f">
-                      <label className="cb-lbl">Advance <span style={{ color:"#b0bec5", textTransform:"lowercase", fontWeight:400 }}>opt.</span></label>
+                      <label className="cb-lbl">Advance <span style={{ color: "#b0bec5", textTransform: "lowercase", fontWeight: 400 }}>opt.</span></label>
                       <input className="cb-inp" type="number" name="advanceAmount" value={formData.advanceAmount}
                         onChange={handleChange} placeholder="₹ 0" />
                     </div>
@@ -741,8 +934,8 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
               {/* ── Extras panel ── */}
               <div className="cb-panel">
                 <div className="cb-ext-bar" onClick={() => setShowExtraDetails(p => !p)}>
-                  <div className="cb-sh" style={{ margin:0, border:"none", padding:0 }}>
-                    <span className="cb-sh-dot" style={{background:"#f59e0b"}}></span>Add-ons & Notes
+                  <div className="cb-sh" style={{ margin: 0, border: "none", padding: 0 }}>
+                    <span className="cb-sh-dot" style={{ background: "#f59e0b" }}></span>Add-ons & Notes
                   </div>
                   <button type="button" className={`cb-ext-toggle ${showExtraDetails ? "open" : ""}`}>
                     {showExtraDetails ? "− Hide" : "+ Add"}
@@ -750,10 +943,10 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                 </div>
 
                 {!showExtraDetails && (
-                  <div style={{ marginTop:8, display:"flex", flexWrap:"wrap", gap:5 }}>
+                  <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 5 }}>
                     {selectedExtras.map(ex => (
                       <span key={ex} style={{
-                        fontSize:11, padding:"2px 8px", borderRadius:12, fontWeight:500,
+                        fontSize: 11, padding: "2px 8px", borderRadius: 12, fontWeight: 500,
                         background: extraOptions.paidServices.includes(ex) ? "#fffbeb" : "#f0fdf4",
                         color: extraOptions.paidServices.includes(ex) ? "#92400e" : "#15803d",
                         border: `1px solid ${extraOptions.paidServices.includes(ex) ? "#fde68a" : "#bbf7d0"}`,
@@ -763,9 +956,9 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                 )}
 
                 {showExtraDetails && (
-                  <div style={{ marginTop:12 }}>
-                    <div style={{ fontSize:12, fontWeight:800, color:"#16a34a", letterSpacing:".5px", marginBottom:8 }}>✓ INCLUDED SERVICES</div>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:12 }}>
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#16a34a", letterSpacing: ".5px", marginBottom: 8 }}>✓ INCLUDED SERVICES</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
                       {extraOptions.inclusions.map((item) => (
                         <div key={item} className={`cb-chip ${selectedExtras.includes(item) ? "g" : ""}`}
                           onClick={() => handleExtraToggle(item)}>
@@ -773,8 +966,8 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                         </div>
                       ))}
                     </div>
-                    <div style={{ fontSize:12, fontWeight:800, color:"#d97706", letterSpacing:".5px", marginBottom:8 }}>★ PAID ADD-ONS</div>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#d97706", letterSpacing: ".5px", marginBottom: 8 }}>★ PAID ADD-ONS</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
                       {extraOptions.paidServices.map((item) => (
                         <div key={item} className={`cb-chip ${selectedExtras.includes(item) ? "a" : ""}`}
                           onClick={() => handleExtraToggle(item)}>
@@ -784,7 +977,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                     </div>
                     <div className="cb-f">
                       <label className="cb-lbl">Notes</label>
-                      <textarea className="cb-inp" rows={2} style={{ resize:"none" }}
+                      <textarea className="cb-inp" rows={2} style={{ resize: "none" }}
                         placeholder="Special requests, decoration, snacks…"
                         value={manualNotes} onChange={(e) => setManualNotes(e.target.value)} />
                     </div>

@@ -20,10 +20,12 @@ export const createBooking = async (req, res, next) => {
       numPeople,
       onBehalfEmployeeId,
       extraDetails,
-      tokenAmount
+      tokenAmount,
+      bookingStatus: incomingBookingStatus,
     } = req.body;
 
     console.log("inc booking body : ", req.body)
+    console.log("incomingBookingStatus:", incomingBookingStatus)
     const loggedInEmployeeId = req.user.id;
     let employeeId = loggedInEmployeeId;
     let createdBy = null;
@@ -68,7 +70,7 @@ export const createBooking = async (req, res, next) => {
     let tripStatus = "pending";
 
     if (req.user.type === "admin") {
-      bookingStatus = req.body.bookingStatus === "confirmed" ? "confirmed" : "pending";
+      bookingStatus = incomingBookingStatus === "confirmed" ? "confirmed" : "pending";
       tripStatus = bookingStatus === "confirmed" ? "initiated" : "pending";
     } else if (["staff", "onsite"].includes(req.user.type)) {
       bookingStatus = "confirmed";
