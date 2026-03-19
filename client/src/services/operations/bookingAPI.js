@@ -1,5 +1,5 @@
 import { apiConnector } from "../apiConnector";
-import { booking } from "../apis"; // import booking here
+import { booking } from "../apis";
 
 export const createBookingAPI = async (payload, token) => {
   return apiConnector(
@@ -12,23 +12,11 @@ export const createBookingAPI = async (payload, token) => {
     }
   );
 };
+
 export const getPublicBookingByIdAPI = async (bookingId) => {
-  return apiConnector(
-    "GET",
-    booking.GET_PUBLIC_BOOKING_BY_TKT_API(bookingId)
-  );
+  return apiConnector("GET", booking.GET_PUBLIC_BOOKING_BY_TKT_API(bookingId));
 };
 
-// export const getBookingsAPI = async (token) => {
-//   return apiConnector(
-//     "GET",
-//     booking.GET_BOOKINGS_API,
-//     null,
-//     { Authorization: `Bearer ${token}` }
-//   );
-// };
-
-// bookingAPI.js
 export const getBookingsAPI = async (token, filters = {}) => {
   const params = new URLSearchParams(filters).toString();
   const url = params
@@ -43,14 +31,17 @@ export const getBookingsAPI = async (token, filters = {}) => {
   return response;
 };
 
-
-
-// As of not used, made changes in backend and integrated with create Transaction
+// As of now not used directly — integrated with createTransaction
 export const updateBookingAPI = async (id, payload, token) => {
-  const response = await apiConnector("PUT", booking.UPDATE_BOOKING_API(id), payload, {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  });
+  const response = await apiConnector(
+    "PUT",
+    booking.UPDATE_BOOKING_API(id),
+    payload,
+    {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }
+  );
   return response.data;
 };
 
@@ -66,12 +57,23 @@ export const rescheduleBookingAPI = async (bookingId, payload, token) => {
   );
 };
 
-// services/operations/bookingAPI.js
-
 export const updateBookingExtrasAPI = async (bookingId, payload, token) => {
   return apiConnector(
-    "PATCH", // Using PATCH since we are updating only a part of the booking
+    "PATCH",
     `${booking.UPDATE_EXTRA_DETAILS_BOOKING_API}/extra-details/${bookingId}`,
+    payload,
+    {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }
+  );
+};
+
+// Admin only: update quotedAmount and/or tokenAmount
+export const updateBookingAmountsAPI = async (bookingId, payload, token) => {
+  return apiConnector(
+    "PATCH",
+    booking.UPDATE_BOOKING_AMOUNTS_API(bookingId),
     payload,
     {
       Authorization: `Bearer ${token}`,
@@ -84,9 +86,9 @@ export const createPublicBookingAPI = async (data) => {
   try {
     const response = await apiConnector(
       "POST",
-      booking.CREATE_PUBLIC_BOOKING_API,  // → BASE_URL/bookings/public
+      booking.CREATE_PUBLIC_BOOKING_API,
       data,
-      {},   // no Authorization header
+      {},
       null
     );
     return response;

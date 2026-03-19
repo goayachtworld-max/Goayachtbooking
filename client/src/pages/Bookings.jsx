@@ -340,7 +340,7 @@ Thank You`
   const handleCreateBooking = () => navigate("/create-booking", { state: { source: "bookings" } });
 
   const handleUpdateBooking = (booking) =>
-    navigate("/update-booking", { state: { booking } });
+    navigate("/update-booking", { state: { booking, user } });
 
   const filteredBookings = bookings
     // 🔥 0️⃣ Month / Date Filter (UI only)

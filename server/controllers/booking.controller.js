@@ -6,7 +6,6 @@ import { sendEmail } from "../utils/sendEmail.js";
 import { YachtModel } from "../models/yacht.model.js";
 import { sendNotification } from "../services/notification.service.js";
 import { EmployeeModel } from "../models/employee.model.js";
-import { email } from "zod";
 
 export const createBooking = async (req, res, next) => {
   try {
@@ -24,8 +23,8 @@ export const createBooking = async (req, res, next) => {
       bookingStatus: incomingBookingStatus,
     } = req.body;
 
-    console.log("inc booking body : ", req.body)
-    console.log("incomingBookingStatus:", incomingBookingStatus)
+    console.log("inc booking body : ", req.body);
+    console.log("incomingBookingStatus:", incomingBookingStatus);
     const loggedInEmployeeId = req.user.id;
     let employeeId = loggedInEmployeeId;
     let createdBy = null;
@@ -37,7 +36,7 @@ export const createBooking = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Yacht not found" });
     }
 
-    console.log("Yacht", yacht)
+    console.log("Yacht", yacht);
     const companyId = yacht.company;
 
     // 2️⃣ Handle on-behalf logic (ADMIN ONLY)
@@ -48,13 +47,13 @@ export const createBooking = async (req, res, next) => {
     ) {
       const targetEmployee = await EmployeeModel.findOne({
         _id: onBehalfEmployeeId,
-        company: companyId
+        company: companyId,
       });
 
       if (!targetEmployee) {
         return res.status(403).json({
           success: false,
-          message: "Invalid employee selected"
+          message: "Invalid employee selected",
         });
       }
 
@@ -62,7 +61,7 @@ export const createBooking = async (req, res, next) => {
       employeeId = onBehalfEmployeeId;
       isOnBehalf = true;
 
-      console.log("On behalf of", isOnBehalf)
+      console.log("On behalf of", isOnBehalf);
     }
 
     // 3️⃣ Booking & trip status
@@ -70,7 +69,8 @@ export const createBooking = async (req, res, next) => {
     let tripStatus = "pending";
 
     if (req.user.type === "admin") {
-      bookingStatus = incomingBookingStatus === "confirmed" ? "confirmed" : "pending";
+      bookingStatus =
+        incomingBookingStatus === "confirmed" ? "confirmed" : "pending";
       tripStatus = bookingStatus === "confirmed" ? "initiated" : "pending";
     } else if (["staff", "onsite"].includes(req.user.type)) {
       bookingStatus = "confirmed";
@@ -82,22 +82,21 @@ export const createBooking = async (req, res, next) => {
     const [endHour, endMinute] = endTime.split(":");
     const tripEnd = new Date(year, month - 1, day, endHour, endMinute);
 
-    console.log("Before avail")
+    console.log("Before avail");
     // 5️⃣ Slot availability (NOW correct employeeId)
-    const { available, conflictSlot, reason } =
-      await checkSlotAvailability({
-        yachtId,
-        date,
-        startTime,
-        endTime,
-        employeeId,
-        userType: req.user.type
-      });
+    const { available, conflictSlot, reason } = await checkSlotAvailability({
+      yachtId,
+      date,
+      startTime,
+      endTime,
+      employeeId,
+      userType: req.user.type,
+    });
 
     if (!available) {
       return res.status(400).json({ success: false, message: reason });
     }
-    console.log("avail ", available)
+    console.log("avail ", available);
 
     // 6️⃣ Create booking
     const booking = await BookingModel.create({
@@ -118,7 +117,7 @@ export const createBooking = async (req, res, next) => {
       extraDetails,
       ...(tokenAmount && { tokenAmount: Number(tokenAmount) }),
     });
-    console.log("booking", booking)
+    console.log("booking", booking);
 
     // 7️⃣ Update availability
     if (conflictSlot) {
@@ -136,9 +135,10 @@ export const createBooking = async (req, res, next) => {
         status: "booked",
         appliedBy: employeeId,
         bookingId: booking._id,
-        deleteAfter: tripEnd
+        deleteAfter: tripEnd,
       });
     }
+
     let roles;
     let title;
     if (bookingStatus === "confirmed") {
@@ -153,16 +153,14 @@ export const createBooking = async (req, res, next) => {
       company: companyId,
       roles: roles,
       title: title,
-      message: `${yacht.name}
-${date} ${startTime} – ${endTime}`,
+      message: `${yacht.name}\n${date} ${startTime} – ${endTime}`,
       type: "booking_created",
       bookingId: booking._id,
       excludeUserId: req.user.id,
     });
 
-    console.log("booking : ", booking)
+    console.log("booking : ", booking);
     res.status(201).json({ success: true, booking });
-
   } catch (err) {
     console.error("Create booking error:", err);
     next(err);
@@ -182,17 +180,17 @@ export const updateBooking = async (req, res, next) => {
     const booking = await BookingModel.findById(bookingId);
     if (!booking) return res.status(404).json({ error: "Booking not found" });
 
-    // ----------------------------
     // ✅ determine tripStatus
     let tripStatus = booking.tripStatus;
 
     if (status === "cancelled") {
       tripStatus = "cancelled";
     } else if (status === "confirmed") {
-      const bookingEnd = new Date(`${booking.date.toISOString().split("T")[0]}T${booking.endTime}`);
+      const bookingEnd = new Date(
+        `${booking.date.toISOString().split("T")[0]}T${booking.endTime}`
+      );
       tripStatus = bookingEnd < new Date() ? "success" : "initiated";
     }
-
 
     const updatedBooking = await BookingModel.findByIdAndUpdate(
       bookingId,
@@ -200,7 +198,7 @@ export const updateBooking = async (req, res, next) => {
         $push: { transactionId },
         pendingAmount: Math.max(booking.pendingAmount - amount, 0),
         ...(status && { status }),
-        tripStatus, // ✅ synced
+        tripStatus,
       },
       { new: true }
     ).populate("customerId employeeId transactionId");
@@ -218,6 +216,7 @@ export const getBookings = async (req, res) => {
     const { company, id: loggedInEmployeeId, type } = req.user;
 
     const filter = { company };
+
     // 📅 DATE FILTER
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -255,11 +254,14 @@ export const getBookings = async (req, res) => {
     // ⏱ AUTO UPDATE tripStatus (response level)
     const now = new Date();
     const updatedBookings = bookings.map((b) => {
-      const bookingEnd = new Date(`${b.date.toISOString().split("T")[0]}T${b.endTime}`);
+      const bookingEnd = new Date(
+        `${b.date.toISOString().split("T")[0]}T${b.endTime}`
+      );
 
       let tripStatus = b.tripStatus;
       if (b.status === "cancelled") tripStatus = "cancelled";
-      else if (b.status === "confirmed" && bookingEnd < now) tripStatus = "success";
+      else if (b.status === "confirmed" && bookingEnd < now)
+        tripStatus = "success";
       else if (b.status === "confirmed") tripStatus = "initiated";
       else tripStatus = "pending";
 
@@ -268,7 +270,6 @@ export const getBookings = async (req, res) => {
         tripStatus,
       };
     });
-
 
     res.json({ success: true, bookings: updatedBookings });
   } catch (error) {
@@ -282,8 +283,9 @@ export const getBookings = async (req, res) => {
 
 export const getBookingById = async (req, res) => {
   try {
-    const booking = await BookingModel.findById(req.params.id)
-      .populate("customerId employeeId transactionId");
+    const booking = await BookingModel.findById(req.params.id).populate(
+      "customerId employeeId transactionId"
+    );
 
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
@@ -308,10 +310,12 @@ export const getBookingById = async (req, res) => {
 export const getPublicBookingByTicket = async (req, res) => {
   try {
     const { id } = req.params;
-    const ticketNo = id
-    console.log("tkt : ", ticketNo)
+    const ticketNo = id;
+    console.log("tkt : ", ticketNo);
     if (!ticketNo || ticketNo.length !== 5) {
-      return res.status(400).json({ success: false, message: "Invalid ticket number" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid ticket number" });
     }
 
     const ticket = ticketNo.toUpperCase();
@@ -322,7 +326,7 @@ export const getPublicBookingByTicket = async (req, res) => {
       .populate("yachtId", "name boardingLocation")
       .populate("company : ", "name disclaimer")
       .populate("customerId", "name contact email alternateContact")
-      .populate("employeeId", "name type")
+      .populate("employeeId", "name type");
 
     if (booking) {
       return res.json({ success: true, booking });
@@ -332,34 +336,35 @@ export const getPublicBookingByTicket = async (req, res) => {
     const fallback = await BookingModel.aggregate([
       { $addFields: { idStr: { $toString: "$_id" } } },
       { $match: { idStr: { $regex: `${ticket}$`, $options: "i" } } },
-      { $limit: 1 }
+      { $limit: 1 },
     ]);
 
     if (!fallback.length) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
     }
 
     booking = await BookingModel.findById(fallback[0]._id)
       .populate("yachtId", "name boardingLocation")
       .populate("company : ", "name disclaimer")
       .populate("customerId", "name contact email alternateContact")
-      .populate("employeeId", "name type")
+      .populate("employeeId", "name type");
 
     if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
     }
 
     console.log("Fallback booking found:", booking._id);
 
     res.json({ success: true, booking });
-
   } catch (err) {
     console.error("Error in getPublicBookingByTicket:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-
 
 // Used to update YachtRelatedInfo
 export const updateBookingYachtInfo = async (req, res, next) => {
@@ -370,13 +375,17 @@ export const updateBookingYachtInfo = async (req, res, next) => {
     // 1️⃣ Fetch booking
     const booking = await BookingModel.findById(bookingId);
     if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
     }
 
     // 2️⃣ Fetch yacht
     const yacht = await YachtModel.findById(yachtId).select("_id company name");
     if (!yacht) {
-      return res.status(404).json({ success: false, message: "Yacht not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Yacht not found" });
     }
 
     // 3️⃣ Permission check (basic)
@@ -384,7 +393,9 @@ export const updateBookingYachtInfo = async (req, res, next) => {
       req.user.type !== "admin" &&
       booking.employeeId.toString() !== req.user.id
     ) {
-      return res.status(403).json({ success: false, message: "Unauthorized" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Unauthorized" });
     }
 
     // 4️⃣ Trip end datetime
@@ -393,15 +404,14 @@ export const updateBookingYachtInfo = async (req, res, next) => {
     const tripEnd = new Date(year, month - 1, day, endHour, endMinute);
 
     // 5️⃣ Check slot availability (ignore current booking)
-    const { available, conflictSlot, reason } =
-      await checkSlotAvailability({
-        yachtId,
-        date,
-        startTime,
-        endTime,
-        employeeId: booking.employeeId,
-        ignoreBookingId: booking._id // IMPORTANT
-      });
+    const { available, conflictSlot, reason } = await checkSlotAvailability({
+      yachtId,
+      date,
+      startTime,
+      endTime,
+      employeeId: booking.employeeId,
+      ignoreBookingId: booking._id,
+    });
 
     if (!available) {
       return res.status(400).json({ success: false, message: reason });
@@ -409,7 +419,7 @@ export const updateBookingYachtInfo = async (req, res, next) => {
 
     // 6️⃣ Remove old availability slot
     await AvailabilityModel.findOneAndDelete({
-      bookingId: booking._id
+      bookingId: booking._id,
     });
 
     // 7️⃣ Update booking
@@ -437,53 +447,160 @@ export const updateBookingYachtInfo = async (req, res, next) => {
         status: "booked",
         appliedBy: booking.employeeId,
         bookingId: booking._id,
-        deleteAfter: tripEnd
+        deleteAfter: tripEnd,
       });
     }
 
     res.status(200).json({
       success: true,
       message: "Booking updated successfully",
-      booking
+      booking,
     });
-
   } catch (err) {
     console.error("Update booking error:", err);
     next(err);
   }
 };
 
-// controllers/bookingController.js
-
 export const updateBookingExtraDetails = async (req, res, next) => {
   try {
     const { bookingId } = req.params;
     const { extraDetails } = req.body;
 
-    console.log("Extra update is called")
+    console.log("Extra update is called");
 
     if (extraDetails === undefined) {
-      return res.status(400).json({ success: false, message: "Extra details required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Extra details required" });
     }
 
     // 1️⃣ Fetch booking
     const booking = await BookingModel.findById(bookingId);
     if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
     }
 
-    // Update only extraDetails
     booking.extraDetails = extraDetails;
     await booking.save();
 
     res.status(200).json({
       success: true,
       message: "Extra details updated successfully",
-      booking
+      booking,
     });
-
   } catch (err) {
     console.error("Update extra details error:", err);
+    next(err);
+  }
+};
+
+// -------------------------
+// Admin-only: Update Booking Amounts
+// PATCH /bookings/:bookingId/amounts
+// -------------------------
+export const updateBookingAmounts = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;
+
+    // 1️⃣ Admin only guard
+    if (req.user.type !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can update booking amounts",
+      });
+    }
+
+    const { quotedAmount, tokenAmount } = req.body;
+
+    // 2️⃣ At least one field must be provided
+    if (quotedAmount === undefined && tokenAmount === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Provide at least quotedAmount or tokenAmount to update",
+      });
+    }
+
+    // 3️⃣ Validate values if provided
+    if (quotedAmount !== undefined && Number(quotedAmount) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "quotedAmount must be greater than 0",
+      });
+    }
+
+    if (tokenAmount !== undefined && Number(tokenAmount) < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "tokenAmount cannot be negative",
+      });
+    }
+
+    // 4️⃣ Fetch booking with transactions
+    const booking = await BookingModel.findById(bookingId).populate(
+      "transactionIds"
+    );
+
+    if (!booking) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
+    }
+
+    // 5️⃣ Block edit if cancelled
+    if (booking.status === "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot update amounts for a cancelled booking",
+      });
+    }
+
+    // 6️⃣ Calculate totalPaid from existing transactions
+    const totalPaid = booking.transactionIds.reduce((sum, txn) => {
+      return sum + (txn.amount || 0);
+    }, 0);
+
+    // 7️⃣ If quotedAmount is being changed, recalculate pendingAmount
+    if (quotedAmount !== undefined) {
+      const newQuotedAmount = Number(quotedAmount);
+
+      // Cannot set quotedAmount less than what's already paid
+      if (newQuotedAmount < totalPaid) {
+        return res.status(400).json({
+          success: false,
+          message: `quotedAmount cannot be less than total already paid (₹${totalPaid})`,
+        });
+      }
+
+      booking.quotedAmount = newQuotedAmount;
+      booking.pendingAmount = newQuotedAmount - totalPaid;
+    }
+
+    // 8️⃣ Update tokenAmount independently (just a reference target, no recalculation)
+    if (tokenAmount !== undefined) {
+      booking.tokenAmount = Number(tokenAmount);
+    }
+
+    await booking.save();
+
+    // 9️⃣ Return fully populated booking
+    const updatedBooking = await BookingModel.findById(bookingId)
+      .populate("customerId", "name contact email")
+      .populate("employeeId", "name type")
+      .populate("transactionIds")
+      .populate("yachtId", "name")
+      .populate("company", "name");
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking amounts updated successfully",
+      totalPaid,
+      booking: updatedBooking,
+    });
+  } catch (err) {
+    console.error("updateBookingAmounts error:", err);
     next(err);
   }
 };
