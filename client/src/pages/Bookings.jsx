@@ -17,18 +17,23 @@ function Bookings({ user }) {
   const createdParam = params.get("created");
 
   // ---------------- IST HELPERS ----------------
-  // Returns a Date object representing "now" in IST (UTC+5:30)
+  // Returns current time as a plain Date whose numeric value equals IST wall-clock time.
+  // We use toLocaleString with timeZone to get the correct IST wall-clock, then parse it.
   const getNowIST = () => {
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000; // 5h 30m in ms
-    return new Date(now.getTime() + istOffset - now.getTimezoneOffset() * 60 * 1000);
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
   };
 
   // Returns "YYYY-MM-DD" string in IST for today
-  const getTodayIST = () => getNowIST().toISOString().slice(0, 10);
+  const getTodayIST = () => {
+    const now = getNowIST();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
 
   // Returns "YYYY-MM" string in IST for current month
-  const getMonthIST = () => getNowIST().toISOString().slice(0, 7);
+  const getMonthIST = () => getTodayIST().slice(0, 7);
 
   // Returns a Date at midnight IST for a given YYYY-MM-DD string
   const toMidnightIST = (dateStr) => {
@@ -195,7 +200,12 @@ function Bookings({ user }) {
 
     if (filterEmployee) filters.employeeId = filterEmployee;
 
-    // ✅ FIX: Pass 7days range to API
+    // Pass month to API when no specific date or range is active
+    if (selectedMonth && !filterDate && rangeParam !== "7days" && createdParam !== "today") {
+      filters.month = selectedMonth;
+    }
+
+    // Pass 7days range to API
     if (rangeParam === "7days") {
       const today = getTodayIST();
       const next7 = new Date(`${today}T00:00:00+05:30`);
@@ -204,7 +214,7 @@ function Bookings({ user }) {
       filters.endDate = next7.toISOString().slice(0, 10);
     }
 
-    // ✅ FIX: Pass createdToday flag to API
+    // Pass createdToday flag to API
     if (createdParam === "today") {
       filters.createdToday = true;
     }
@@ -217,6 +227,7 @@ function Bookings({ user }) {
     location.state?.refresh,
     rangeParam,
     createdParam,
+    selectedMonth, // ✅ was missing — caused stale fetch when arriving from dashboard with ?month=
   ]);
 
   // ---------------- AUTO SEARCH FROM NOTIFICATION ----------------
@@ -363,7 +374,7 @@ Thank You`
 
   const handleShareWhatsApp = (booking, e) => {
     e.stopPropagation();
-    const baseUrl = import.meta.env.VITE_SOCKET_URL || "";
+    const baseUrl = "https://goaboat.com" || "";
     const ticketNumber = booking._id.slice(-5).toUpperCase();
     const customerName = booking.customerId?.name || "Customer";
     const passLink = `${baseUrl}/?ticket=${ticketNumber}`;
@@ -430,6 +441,11 @@ Thank You`
     })
     // 1️⃣ Status logic
     .filter((booking) => {
+      // When a specific date is selected (e.g. navigating from "Today" on dashboard),
+      // show ALL non-cancelled bookings for that date regardless of time-completion.
+      // This ensures dashboard "Today = 3" matches Bookings "Today = 3".
+      const isDateFiltered = !!filterDate || rangeParam === "7days" || createdParam === "today";
+
       if (filterStatus === "completed") {
         return (
           booking.status !== "cancelled" &&
@@ -437,8 +453,26 @@ Thank You`
         );
       }
 
+      if (filterStatus === "confirmed") {
+        // When filtered by date, show confirmed regardless of time-completion (trip may be ongoing/done today)
+        if (isDateFiltered) return booking.status === "confirmed";
+        // Otherwise match dashboard: confirmed = not yet time-completed
+        return booking.status === "confirmed" && !isBookingCompleted(booking);
+      }
+
+      if (filterStatus === "pending") {
+        if (isDateFiltered) return booking.status === "pending";
+        return booking.status === "pending" && !isBookingCompleted(booking);
+      }
+
       if (filterStatus) {
         return booking.status === filterStatus;
+      }
+
+      // No status filter: when viewing a specific date, show all non-cancelled
+      // (includes time-completed ones so count matches dashboard)
+      if (isDateFiltered) {
+        return booking.status !== "cancelled";
       }
 
       return (

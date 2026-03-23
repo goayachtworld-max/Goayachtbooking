@@ -90,12 +90,25 @@ export default function AdminDashboard({ user }) {
   });
   const [loaded, setLoaded] = useState(false);
 
+  // Returns current time as a plain Date whose numeric value equals IST wall-clock time.
+  const getNowIST = () => {
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  };
+
+  // Returns "YYYY-MM-DD" string in IST for today
+  const getTodayIST = () => {
+    const now = getNowIST();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
   const isBookingCompleted = (b) => {
     if (!b.date || !b.endTime) return false;
-    const end = new Date(b.date);
-    const [h, m] = b.endTime.split(":").map(Number);
-    end.setHours(h, m, 0, 0);
-    return end < new Date();
+    const bookingDateIST = b.date.split("T")[0];
+    const bookingEnd = new Date(`${bookingDateIST}T${b.endTime}:00+05:30`);
+    return bookingEnd < getNowIST();
   };
 
   useEffect(() => {
@@ -105,21 +118,31 @@ export default function AdminDashboard({ user }) {
         const res = await getBookingsAPI(token, {});
         const bookings = res?.data?.bookings || [];
 
-        const now = new Date(); now.setHours(0, 0, 0, 0);
-        const next7 = new Date(now); next7.setDate(now.getDate() + 7);
-        const cm = now.getMonth(), cy = now.getFullYear();
+        // All IST-based date comparisons
+        const todayIST = getTodayIST(); // "YYYY-MM-DD"
+        const nowIST = getNowIST();
+        const next7IST = new Date(`${todayIST}T00:00:00+05:30`);
+        next7IST.setDate(next7IST.getDate() + 7);
+        const cm = nowIST.getMonth(), cy = nowIST.getFullYear();
 
         let todayCount=0, upcoming7Days=0, monthCount=0, createdToday=0,
             confirmed=0, pending=0, cancelled=0, completed=0;
 
         bookings.forEach((b) => {
-          const bd = new Date(b.date), ca = new Date(b.createdAt);
+          const bookingDate = b.date.split("T")[0]; // "YYYY-MM-DD"
+          const bookingDateObj = new Date(`${bookingDate}T00:00:00+05:30`);
+
+          // Convert createdAt to IST date string
+          const ca = new Date(b.createdAt);
+          const caIST = new Date(ca.getTime() + (5.5 * 60 - ca.getTimezoneOffset()) * 60 * 1000);
+          const caISTStr = caIST.toISOString().slice(0, 10);
+
           if (b.status === "cancelled") { cancelled++; return; }
-          if (bd.toDateString() === now.toDateString()) todayCount++;
+          if (bookingDate === todayIST) todayCount++;
           if (isBookingCompleted(b)) { completed++; return; }
-          if (bd > now && bd <= next7) upcoming7Days++;
-          if (bd.getMonth() === cm && bd.getFullYear() === cy) monthCount++;
-          if (ca.toDateString() === now.toDateString()) createdToday++;
+          if (bookingDateObj > new Date(`${todayIST}T00:00:00+05:30`) && bookingDateObj <= next7IST) upcoming7Days++;
+          if (bookingDateObj.getMonth() === cm && bookingDateObj.getFullYear() === cy) monthCount++;
+          if (caISTStr === todayIST) createdToday++;
           if (b.status === "confirmed") confirmed++;
           if (b.status === "pending")   pending++;
         });
@@ -130,8 +153,9 @@ export default function AdminDashboard({ user }) {
     })();
   }, []);
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const monthStr = new Date().toISOString().slice(0, 7);
+  // Use IST for nav URLs so ?date= and ?month= params match IST-based Bookings filters
+  const todayStr = getTodayIST();
+  const monthStr = getTodayIST().slice(0, 7);
 
   /* ── Data ── */
   const STATS = [
