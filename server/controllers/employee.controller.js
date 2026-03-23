@@ -59,7 +59,7 @@ export const loginEmployee = async (req, res, next) => {
     const token = jwt.sign(
       { id: employee._id, type: employee.type, company: employee.company },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "30d" }
     );
     employee.lastLoginAt = new Date();
     await employee.save();
