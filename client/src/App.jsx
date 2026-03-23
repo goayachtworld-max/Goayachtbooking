@@ -46,18 +46,24 @@ function App() {
     navigate("/");
   };
 
+  // ✅ FIX 1: Removed the `|| localStorage.getItem("authToken")` fallback
+  // that could accidentally pick up an old expired token.
+  // The token always comes fresh from the login response.
   const handleLogin = (data) => {
-    setUser(data);
-    localStorage.setItem("user", JSON.stringify(data));
+    const token = data?.token;
 
-    const token = data?.token || localStorage.getItem("authToken");
-
-    if (token) {
-      localStorage.setItem("authToken", token);
-      socket.auth = { token };
-      socket.connect();
-      scheduleAutoLogout(token);
+    if (!token) {
+      console.error("Login response missing token");
+      return;
     }
+
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("user", JSON.stringify(data));
+    setUser(data);
+
+    socket.auth = { token };
+    socket.connect();
+    scheduleAutoLogout(token);
   };
 
   const scheduleAutoLogout = (token) => {
@@ -129,12 +135,34 @@ function App() {
     }
   }, []);
 
+  // ✅ FIX 2: Interceptor now checks whether the stored token is genuinely
+  // expired before logging out. This prevents a race condition where a
+  // background request with an old token triggers logout immediately after
+  // a fresh login has already saved a valid new token.
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       (res) => res,
       (err) => {
         if (err.response?.status === 401) {
-          logoutUser();
+          const token = localStorage.getItem("authToken");
+
+          if (!token) {
+            // No token at all — definitely log out
+            logoutUser();
+            return Promise.reject(err);
+          }
+
+          try {
+            const decoded = jwtDecode(token);
+            if (Date.now() >= decoded.exp * 1000) {
+              // Token is genuinely expired — log out
+              logoutUser();
+            }
+            // If token is still valid, a specific API call just returned 401
+            // (e.g. permissions issue). Don't log the user out globally.
+          } catch {
+            logoutUser();
+          }
         }
         return Promise.reject(err);
       }

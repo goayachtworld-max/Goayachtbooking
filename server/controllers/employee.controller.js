@@ -33,7 +33,9 @@ export const createEmployee = async (req, res, next) => {
 // ✅ Login Employee
 export const loginEmployee = async (req, res, next) => {
   try {
+    console.log("iside login")
     const { username, password } = req.body;
+    console.log("Inside login")
     const uname = username.toLowerCase();
     const pass = password;
     const employee = await EmployeeModel.findOne({ username: uname });
@@ -59,11 +61,12 @@ export const loginEmployee = async (req, res, next) => {
     const token = jwt.sign(
       { id: employee._id, type: employee.type, company: employee.company },
       process.env.JWT_SECRET,
-      { expiresIn: "30d" }
+      { expiresIn: "1d" }
     );
     employee.lastLoginAt = new Date();
     await employee.save();
     employee.password = null;
+    console.log("Login sucess : ", token)
     res.json({ success: true, token, employee });
   } catch (error) {
     next(error);
