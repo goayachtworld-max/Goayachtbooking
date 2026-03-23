@@ -204,3 +204,121 @@
     transform: translateY(0);
   }
 }
+
+/* ── Add-ons section ─────────────────────────────────── */
+.addon-section {
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Toggle + paid chips on the same line */
+.addon-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.addon-inline-row .addon-toggle-btn {
+  flex-shrink: 0;
+}
+
+.addon-paid-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+/* Fallback row when no inclusions, only paid */
+.addon-paid-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* Shared chip base */
+.addon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+/* Paid chip — amber/orange */
+.addon-chip--paid {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+/* Included chip — teal */
+.addon-chip--included {
+  background: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+}
+
+/* Collapsible toggle button */
+.addon-toggle-btn {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  user-select: none;
+}
+
+.addon-toggle-btn:hover {
+  color: #334155;
+}
+
+.addon-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.addon-count-pill {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.addon-chevron {
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
+  display: inline-block;
+  transform: rotate(0deg);
+}
+
+.addon-chevron.open {
+  transform: rotate(90deg);
+}
+
+.addon-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  animation: fadeSlideIn 0.15s ease;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

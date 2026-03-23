@@ -67,6 +67,41 @@ function Bookings({ user }) {
   const parsedEmployeeId = employeeParam?.split("~")[1] || "";
   const [filterEmployee, setFilterEmployee] = useState(parsedEmployeeId);
   const [boardingPassBooking, setBoardingPassBooking] = useState();
+  const [expandedAddons, setExpandedAddons] = useState({});
+
+  // ---------------- ADDON PARSER ----------------
+  const ADDON_CONFIG = [
+    { key: "drone",       label: "🚁 Drone",         match: "Drone",              paid: true  },
+    { key: "dslr",        label: "📷 DSLR",           match: "DSLR",               paid: true  },
+    { key: "softdrink",   label: "🥤 Soft Drink",     match: "Soft Drink",         paid: false },
+    { key: "icecube",     label: "🧊 Ice Cube",       match: "Ice Cube",           paid: false },
+    { key: "water",       label: "💧 Water",          match: "Water Bottles",      paid: false },
+    { key: "speaker",     label: "🔊 Speaker",        match: "Bluetooth Speaker",  paid: false },
+    { key: "crew",        label: "👨‍✈️ Crew",          match: "Captain",            paid: false },
+    { key: "snacks",      label: "🍿 Snacks",         match: "Snacks",             paid: false },
+    { key: "balloon",     label: "🎈 Decoration",     match: "Balloon",            paid: true  },
+    { key: "decoration",  label: "🎈 Decoration",     match: "decoration",         paid: true  },
+  ];
+
+  const parseAddons = (extraDetails = "") => {
+    const text = extraDetails.toLowerCase();
+    const seen = new Set();
+    const all = ADDON_CONFIG.filter(({ key, match }) => {
+      if (text.includes(match.toLowerCase()) && !seen.has(key)) {
+        seen.add(key);
+        return true;
+      }
+      return false;
+    });
+    return {
+      paid:     all.filter((a) => a.paid),
+      included: all.filter((a) => !a.paid),
+    };
+  };
+
+  const toggleAddons = (bookingId) =>
+    setExpandedAddons((prev) => ({ ...prev, [bookingId]: !prev[bookingId] }));
+
   // ---------------- COLORS ----------------
   const statusColorMap = {
     pending: "info",
@@ -801,6 +836,59 @@ Thank You`
                         </div>
                         
                       </div>
+                      {/* ADD-ONS */}
+                      {(() => {
+                        const { paid, included } = parseAddons(booking.extraDetails);
+                        const hasAny = paid.length || included.length;
+                        if (!hasAny) return null;
+                        const isOpen = expandedAddons[booking._id];
+                        return (
+                          <div className="addon-section">
+                            {/* Inclusions toggle + paid chips on same line */}
+                            {included.length > 0 && (
+                              <div className="addon-inline-row">
+                                <button
+                                  className="addon-toggle-btn"
+                                  onClick={() => toggleAddons(booking._id)}
+                                  aria-expanded={isOpen}
+                                >
+                                  <span className="addon-toggle-label">
+                                    ⭐ Add-ons
+                                    <span className="addon-count-pill">{included.length}</span>
+                                  </span>
+                                  <span className={`addon-chevron ${isOpen ? "open" : ""}`}>›</span>
+                                </button>
+                                {paid.length > 0 && (
+                                  <div className="addon-paid-inline">
+                                    {paid.map(({ key, label }) => (
+                                      <span key={key} className="addon-chip addon-chip--paid">{label}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* If only paid (no included) */}
+                            {included.length === 0 && paid.length > 0 && (
+                              <div className="addon-paid-row">
+                                {paid.map(({ key, label }) => (
+                                  <span key={key} className="addon-chip addon-chip--paid">{label}</span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Included chips — collapsible */}
+                            {included.length > 0 && isOpen && (
+                              <div className="addon-chips-wrap">
+                                {included.map(({ key, label }) => (
+                                  <span key={key} className="addon-chip addon-chip--included">{label}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       <div className="d-flex gap-2 mt-1 align-items-center">
                         {/* 👁 VIEW */}
                         <button
