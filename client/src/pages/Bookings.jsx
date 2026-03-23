@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { getBookingsAPI } from "../services/operations/bookingAPI";
 import { getEmployeesForBookingAPI } from "../services/operations/employeeAPI";
 import { FiSliders } from "react-icons/fi";
-import { Eye, Pencil } from "lucide-react";
+import { Eye } from "lucide-react";
 import toast from "react-hot-toast";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -15,6 +15,26 @@ function Bookings({ user }) {
   const params = new URLSearchParams(location.search);
   const rangeParam = params.get("range");
   const createdParam = params.get("created");
+
+  // ---------------- IST HELPERS ----------------
+  // Returns a Date object representing "now" in IST (UTC+5:30)
+  const getNowIST = () => {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5h 30m in ms
+    return new Date(now.getTime() + istOffset - now.getTimezoneOffset() * 60 * 1000);
+  };
+
+  // Returns "YYYY-MM-DD" string in IST for today
+  const getTodayIST = () => getNowIST().toISOString().slice(0, 10);
+
+  // Returns "YYYY-MM" string in IST for current month
+  const getMonthIST = () => getNowIST().toISOString().slice(0, 7);
+
+  // Returns a Date at midnight IST for a given YYYY-MM-DD string
+  const toMidnightIST = (dateStr) => {
+    return new Date(`${dateStr}T00:00:00+05:30`);
+  };
+
   // ---------------- STATE ----------------
   const [bookings, setBookings] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -29,8 +49,7 @@ function Bookings({ user }) {
   const [filterDate, setFilterDate] = useState(params.get("date") || "");
   const [filterStatus, setFilterStatus] = useState(params.get("status") || "");
 
-  const today = new Date();
-  const todayMonth = today.toISOString().slice(0, 7);
+  const todayMonth = getMonthIST();
 
   const monthParam = params.get("month");
   const [selectedMonth, setSelectedMonth] = useState(
@@ -61,6 +80,8 @@ function Bookings({ user }) {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+
 
   // ---------------- HELPERS ----------------
   const to12HourFormat = (time24) => {
@@ -93,18 +114,6 @@ function Bookings({ user }) {
   }, []);
 
   // ---------------- FETCH BOOKINGS ----------------
-  // const fetchBookings = async (filters = {}) => {
-  //   try {
-  //     setLoading(true);
-  //     const token = localStorage.getItem("authToken");
-  //     const res = await getBookingsAPI(token, filters);
-  //     setBookings(res?.data?.bookings || []);
-  //   } catch (e) {
-  //     console.error("❌ Error fetching bookings", e);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
   const fetchBookings = async (filters = {}) => {
     try {
       setLoading(true);
@@ -167,16 +176,38 @@ function Bookings({ user }) {
     createdParam,
   ]);
 
+  useEffect(() => {
+    if (rangeParam === "7days") {
+      setSelectedMonth("");
+      setFilterDate("");
+    }
+  }, [rangeParam]);
+
   // ---------------- FILTER / REFRESH → FETCH ----------------
   useEffect(() => {
     const filters = {};
+
     if (filterDate) filters.date = filterDate;
-    // if (filterStatus) filters.status = filterStatus;
+
     if (filterStatus && filterStatus !== "completed") {
       filters.status = filterStatus;
     }
 
     if (filterEmployee) filters.employeeId = filterEmployee;
+
+    // ✅ FIX: Pass 7days range to API
+    if (rangeParam === "7days") {
+      const today = getTodayIST();
+      const next7 = new Date(`${today}T00:00:00+05:30`);
+      next7.setDate(next7.getDate() + 7);
+      filters.startDate = today;
+      filters.endDate = next7.toISOString().slice(0, 10);
+    }
+
+    // ✅ FIX: Pass createdToday flag to API
+    if (createdParam === "today") {
+      filters.createdToday = true;
+    }
 
     fetchBookings(filters);
   }, [
@@ -188,12 +219,6 @@ function Bookings({ user }) {
     createdParam,
   ]);
 
-  useEffect(() => {
-    if (rangeParam === "7days") {
-      setSelectedMonth("");
-      setFilterDate("");
-    }
-  }, [rangeParam]);
   // ---------------- AUTO SEARCH FROM NOTIFICATION ----------------
   useEffect(() => {
     if (location.state?.bookingId || location.state?.status) {
@@ -219,12 +244,11 @@ function Bookings({ user }) {
   const isBookingCompleted = (booking) => {
     if (!booking.date || !booking.endTime) return false;
 
-    const bookingEnd = new Date(booking.date);
-    const [h, m] = booking.endTime.split(":").map(Number);
+    // Build the booking end datetime in IST
+    const bookingDateIST = booking.date.split("T")[0]; // "YYYY-MM-DD"
+    const bookingEnd = new Date(`${bookingDateIST}T${booking.endTime}:00+05:30`);
 
-    bookingEnd.setHours(h, m, 0, 0);
-
-    return bookingEnd < new Date();
+    return bookingEnd < getNowIST();
   };
 
   const generateBoardingPass = (booking) => {
@@ -337,6 +361,22 @@ Thank You`
   const handleViewDetails = (booking) =>
     navigate("/customer-details", { state: { booking } });
 
+  const handleShareWhatsApp = (booking, e) => {
+    e.stopPropagation();
+    const baseUrl = import.meta.env.VITE_SOCKET_URL || "";
+    const ticketNumber = booking._id.slice(-5).toUpperCase();
+    const customerName = booking.customerId?.name || "Customer";
+    const passLink = `${baseUrl}/?ticket=${ticketNumber}`;
+    const companyName = booking.company?.name || "Us";
+    const yachtName = booking.yachtId?.name || "your yacht";
+    const tripDate = booking.date?.split("T")[0];
+    const message = `Hi ${customerName}! \n\nThank you for booking with ${companyName} \n\nYour boarding pass for *${yachtName}* on *${tripDate}* is ready.\n${passLink}\n\nSee you onboard!`;
+    let phone = booking.customerId?.contact?.replace(/\D/g, "");
+    if (phone && !phone.startsWith("91") && phone.length === 10) phone = "91" + phone;
+    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, "_blank");
+  };
+
   const handleCreateBooking = () => navigate("/create-booking", { state: { source: "bookings" } });
 
   const handleUpdateBooking = (booking) =>
@@ -345,34 +385,32 @@ Thank You`
   const filteredBookings = bookings
     // 🔥 0️⃣ Month / Date Filter (UI only)
     .filter((booking) => {
-      const bookingDateObj = new Date(booking.date);
+      const bookingDateObj = toMidnightIST(booking.date.split("T")[0]);
       const bookingDate = booking.date?.split("T")[0];
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
       // ✅ CREATED TODAY FILTER (highest priority from dashboard)
       if (createdParam === "today") {
         const createdAt = new Date(booking.createdAt);
+        const todayIST = getTodayIST(); // "YYYY-MM-DD" in IST
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Convert createdAt to IST date string for comparison
+        const createdIST = new Date(
+          createdAt.getTime() + (5.5 * 60 - createdAt.getTimezoneOffset()) * 60 * 1000
+        ).toISOString().slice(0, 10);
 
-        return (
-          createdAt.getFullYear() === today.getFullYear() &&
-          createdAt.getMonth() === today.getMonth() &&
-          createdAt.getDate() === today.getDate() &&
-          booking.status !== "cancelled"
-        );
+        return createdIST === todayIST && booking.status !== "cancelled";
       }
 
       // ✅ 1️⃣ RANGE = 7 DAYS (highest priority from dashboard)
       if (rangeParam === "7days") {
-        const next7Days = new Date(today);
-        next7Days.setDate(today.getDate() + 7);
+        const todayMidnightIST = toMidnightIST(getTodayIST());
+        const next7Days = new Date(todayMidnightIST);
+        next7Days.setDate(todayMidnightIST.getDate() + 7);
+
+        const bookingDateIST = toMidnightIST(booking.date.split("T")[0]);
 
         return (
-          bookingDateObj > today &&
-          bookingDateObj <= next7Days
+          bookingDateIST > todayMidnightIST &&
+          bookingDateIST <= next7Days
         );
       }
 
@@ -387,12 +425,8 @@ Thank You`
       }
 
       // ✅ 4️⃣ Month filter
-      const year = bookingDateObj.getFullYear();
-      const month = String(
-        bookingDateObj.getMonth() + 1
-      ).padStart(2, "0");
-
-      return `${year}-${month}` === selectedMonth;
+      const bookingMonth = booking.date.split("T")[0].slice(0, 7); // "YYYY-MM" direct from stored date
+      return bookingMonth === selectedMonth;
     })
     // 1️⃣ Status logic
     .filter((booking) => {
@@ -482,10 +516,10 @@ Thank You`
           >
             <option value="">📅 Month</option>
             {Array.from({ length: 6 }).map((_, i) => {
-              const date = new Date();
-              date.setMonth(date.getMonth() + i);
-              const value = date.toISOString().slice(0, 7);
-              const label = date.toLocaleString("en-GB", { month: "short", year: "2-digit" });
+              const base = getNowIST();
+              base.setMonth(base.getMonth() + i);
+              const value = base.toISOString().slice(0, 7);
+              const label = base.toLocaleString("en-GB", { month: "short", year: "2-digit" });
               return (
                 <option key={value} value={value}>{label}</option>
               );
@@ -497,7 +531,7 @@ Thank You`
             type="date"
             className={`form-control filter-select ${filterDate ? "filter-active" : ""}`}
             value={filterDate}
-            min={new Date().toISOString().split("T")[0]}
+            min={getTodayIST()}
             onChange={(e) => setFilterDate(e.target.value)}
             style={{ maxWidth: "150px" }}
             title="Filter by specific date"
@@ -608,10 +642,10 @@ Thank You`
             >
               <option value="">All Months</option>
               {Array.from({ length: 6 }).map((_, i) => {
-                const date = new Date();
-                date.setMonth(date.getMonth() + i);
-                const value = date.toISOString().slice(0, 7);
-                const label = date.toLocaleString("en-GB", { month: "long", year: "numeric" });
+                const base = getNowIST();
+                base.setMonth(base.getMonth() + i);
+                const value = base.toISOString().slice(0, 7);
+                const label = base.toLocaleString("en-GB", { month: "long", year: "numeric" });
                 return <option key={value} value={value}>{label}</option>;
               })}
             </select>
@@ -621,7 +655,7 @@ Thank You`
               type="date"
               className={`form-control mb-3 ${filterDate ? "filter-active" : ""}`}
               value={filterDate}
-              min={new Date().toISOString().split("T")[0]}
+              min={getTodayIST()}
               onChange={(e) => setFilterDate(e.target.value)}
             />
 
@@ -726,16 +760,15 @@ Thank You`
                           {to12HourFormat(booking.endTime)}
                         </div>
                         <div className="fw-semibold text-dark">
+                          🧑‍💼 Pax: {booking.numPeople}
+                        </div>
+                        <div className="fw-semibold text-dark">
                           💰 Balance: {booking.pendingAmount}
                         </div>
-                        {/* {booking.employeeId?.type == "backdesk" && user.type != "backdesk" && */}
-                        <div className="fw-semibold text-dark">
-                          🧑‍💼 Agent: {booking.employeeId?.name}
-                        </div>
-                        {/* } */}
+                        
                       </div>
                       <div className="d-flex gap-2 mt-1 align-items-center">
-                        {/* VIEW (icon only) */}
+                        {/* 👁 VIEW */}
                         <button
                           className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                           title="View Booking"
@@ -745,39 +778,35 @@ Thank You`
                           <Eye size={16} />
                         </button>
 
-                        {/* EDIT (icon only) */}
-                        {(user?.type === "admin" || user?.type === "backdesk") && !isBookingCompleted(booking) && (
+                        {/* 💬 WHATSAPP SHARE */}
+                        <button
+                          className="btn btn-sm rounded-circle d-flex align-items-center justify-content-center"
+                          title="Share on WhatsApp"
+                          style={{ width: 34, height: 34, background: "transparent", border: "1.5px solid #25D366", color: "#25D366", flexShrink: 0 }}
+                          onClick={(e) => handleShareWhatsApp(booking, e)}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+                          </svg>
+                        </button>
+
+                        {/* 📋 PASS */}
+                        {(booking.status === "confirmed" || booking.status === "pending") && (
                           <button
-                            className="btn btn-sm btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
-                            title="Edit Booking Details"
-                            style={{ width: 34, height: 34 }}
-                            onClick={() =>
-                              navigate("/edit-booking", { state: { booking } })
-                            }
+                            className={`btn btn-sm flex-grow-1 rounded-pill ${booking.status === "confirmed" ? "btn-outline-success" : "btn-outline-warning"}`}
+                            title={booking.status === "pending" ? "Copy Tentative Pass" : "Copy Boarding Pass"}
+                            onClick={() => generateBoardingPass(booking)}
                           >
-                            <Pencil size={16} />
+                            Pass
                           </button>
                         )}
-                        {(booking.status === "confirmed" || booking.status === "pending") && (
-                          <>
-                            {/* 📋 Copy Boarding Pass / Tentative Pass */}
-                            <button
-                              className={`btn btn-sm flex-grow-1 rounded-pill ${booking.status === "confirmed" ? "btn-outline-success" : "btn-outline-warning"}`}
-                              title={booking.status === "pending" ? "Copy Tentative Pass" : "Copy Boarding Pass"}
-                              onClick={() => generateBoardingPass(booking)}
-                            >
-                              {booking.status === "pending" ? "Pass" : "Pass"}
-                            </button>
-                          </>
-                        )}
 
-
-                        {/* UPDATE (take remaining space) */}
-                        {(user?.type === "admin" || user?.type === "onsite") && (
+                        {/* ✏ UPDATE */}
+                        {(user?.type === "admin" || user?.type === "backdesk" || user?.type === "onsite") && !isBookingCompleted(booking) && (
                           <button
-                            className="btn btn-sm btn-outline-info flex-grow-1 rounded-pill"
-                            title="Update Payment / Status"
-                            onClick={() => handleUpdateBooking(booking)}
+                            className="btn btn-sm btn-outline-primary flex-grow-1 rounded-pill"
+                            title="Update Booking"
+                            onClick={() => navigate("/update-booking", { state: { booking, user } })}
                           >
                             Update
                           </button>

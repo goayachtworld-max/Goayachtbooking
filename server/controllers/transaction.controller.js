@@ -199,3 +199,67 @@ export const getTransactionById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const updateTransaction = async (req, res, next) => {
+  console.log("🔵 [updateTransaction] HIT — params:", req.params, "body:", req.body);
+  try {
+    const { id } = req.params;
+    const { amount: newAmount } = req.body;
+
+    console.log("🔵 [updateTransaction] id:", id, "newAmount:", newAmount, "type:", typeof newAmount);
+
+    if (newAmount === undefined || newAmount === null || Number(newAmount) < 0) {
+      console.log("🔴 [updateTransaction] Invalid amount — rejected");
+      return res.status(400).json({ error: "Invalid amount" });
+    }
+
+    // 1️⃣ Fetch transaction
+    const transaction = await TransactionModel.findById(id);
+    console.log("🔵 [updateTransaction] transaction found:", transaction ? `id=${transaction._id} amount=${transaction.amount}` : "NULL");
+    if (!transaction) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    const oldAmount = transaction.amount;
+    const diff = Number(newAmount) - oldAmount;
+    console.log("🔵 [updateTransaction] oldAmount:", oldAmount, "diff:", diff);
+
+    // 2️⃣ Fetch booking
+    const booking = await BookingModel.findById(transaction.bookingId);
+    console.log("🔵 [updateTransaction] booking found:", booking ? `id=${booking._id} pendingAmount=${booking.pendingAmount}` : "NULL");
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const newPending = booking.pendingAmount - diff;
+    console.log("🔵 [updateTransaction] newPending will be:", newPending);
+    if (newPending < 0) {
+      console.log("🔴 [updateTransaction] Would exceed quoted — rejected");
+      return res.status(400).json({ error: "Edited amount would exceed the quoted amount" });
+    }
+
+    // 3️⃣ Save transaction
+    transaction.amount = Number(newAmount);
+    const savedTxn = await transaction.save();
+    console.log("✅ [updateTransaction] transaction saved — new amount:", savedTxn.amount);
+
+    // 4️⃣ Update booking
+    const updatedBooking = await BookingModel.findByIdAndUpdate(
+      transaction.bookingId,
+      { $inc: { pendingAmount: -diff } },
+      { new: true }
+    );
+    console.log("✅ [updateTransaction] booking updated — new pendingAmount:", updatedBooking?.pendingAmount);
+
+    return res.status(200).json({
+      success: true,
+      message: "Transaction updated successfully",
+      transaction: savedTxn,
+      newPendingAmount: updatedBooking?.pendingAmount,
+    });
+
+  } catch (error) {
+    console.log("🔴 [updateTransaction] CAUGHT ERROR:", error.message, error.stack);
+    return next(error);
+  }
+};

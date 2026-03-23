@@ -35,6 +35,7 @@ export const booking = {
 export const transaction = {
   CREATE_TRANSACTION_API: `${BASE_URL}/transactions`,
   CREATE_WITH_BOOKING_UPDATE: `${BASE_URL}/transactions/create-with-booking-update`,
+  UPDATE_TRANSACTION_API: (id) => `${BASE_URL}/transactions/${id}`,
 };
 
 export const availability = {

@@ -1,5 +1,5 @@
 import express from "express";
-import { createTransaction, getTransactions, getTransactionById, createTransactionAndUpdateBooking } from "../controllers/transaction.controller.js";
+import { createTransaction, getTransactions, getTransactionById, createTransactionAndUpdateBooking, updateTransaction } from "../controllers/transaction.controller.js";
 import { transactionSchema } from "../validators/transaction.validator.js";
 import { validate } from "../middleware/validate.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -40,6 +40,7 @@ router.post(
 );
 
 router.get("/", authMiddleware, getTransactions);
+router.patch("/:id", authMiddleware, updateTransaction);
 router.get("/:id", authMiddleware, getTransactionById);
 
 export default router;

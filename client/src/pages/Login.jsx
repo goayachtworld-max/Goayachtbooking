@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FiEye, FiEyeOff, FiUser, FiLock } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { loginAPI } from "../services/operations/authAPI";
@@ -20,6 +20,46 @@ function Login({ onLogin }) {
   const [searching, setSearching] = useState(false);
   const [boardingPassBooking, setBoardingPassBooking] = useState(null);
   const [showModal, setShowModal] = useState(false);
+
+  const [autoDownload, setAutoDownload] = useState(false);
+  const downloadRef = useRef(null);
+
+  // Auto-trigger from URL: ?ticket=ABCDE
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ticketParam = params.get("ticket");
+    if (!ticketParam) return;
+
+    const cleanTicket = ticketParam.replace("#", "").toUpperCase();
+    if (cleanTicket.length !== 5) return;
+
+    const autoSearch = async () => {
+      try {
+        setSearching(true);
+        setAutoDownload(true);
+        const res = await getPublicBookingByIdAPI(cleanTicket);
+        setBoardingPassBooking(res.data.booking);
+        setShowModal(true);
+      } catch (err) {
+        toast.error(err?.response?.data?.message || "Booking not found");
+      } finally {
+        setSearching(false);
+      }
+    };
+
+    autoSearch();
+  }, []);
+
+  // Auto-click the download link once PDF is ready
+  useEffect(() => {
+    if (autoDownload && downloadRef.current) {
+      const timer = setTimeout(() => {
+        downloadRef.current?.click();
+        setAutoDownload(false);
+      }, 800); // small delay so @react-pdf finishes rendering
+      return () => clearTimeout(timer);
+    }
+  }, [autoDownload, boardingPassBooking]);
 
   const handleTicketChange = (e) => {
     let value = e.target.value.toUpperCase();
@@ -366,6 +406,7 @@ Thank You`
                   <PDFDownloadLink
                     document={<BoardingPassPDF booking={boardingPassBooking} />}
                     fileName={`${pass.yacht}_${pass.guestName}_${pass.date}.pdf`}
+                    ref={downloadRef}
                   >
                     {({ loading }) => (
                       <button type="button" className={styles.downloadBtn}>
@@ -454,5 +495,4 @@ Thank You`
     </>
   );
 }
-
 export default Login;

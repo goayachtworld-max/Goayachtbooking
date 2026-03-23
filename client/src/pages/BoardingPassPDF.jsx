@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Line,
   Svg,
+  Link,
 } from "@react-pdf/renderer";
 import { useState } from "react";
 
@@ -426,7 +427,16 @@ export default function BoardingPassPDF({ booking }) {
 
             <View style={S.row}>
               <InfoField label="PASSENGER NAME" value={booking.customerId?.name} />
-              <InfoField label="CONTACT NUMBER" value={booking.customerId?.contact} />
+              <View style={S.col}>
+                <Text style={S.label}>CONTACT NUMBER</Text>
+                {booking.customerId?.contact ? (
+                  <Link src={`tel:${booking.customerId.contact}`} style={[S.value, { color: NAVY, textDecoration: "none" }]}>
+                    {booking.customerId.contact}
+                  </Link>
+                ) : (
+                  <Text style={S.value}>—</Text>
+                )}
+              </View>
               <InfoField label="YACHT" value={booking.yachtId?.name} />
               <InfoField label="GUESTS" value={`${booking.numPeople} Pax`} />
             </View>
@@ -444,9 +454,22 @@ export default function BoardingPassPDF({ booking }) {
               />
               <View style={[S.col, { flex: 2 }]}>
                 <Text style={S.label}>BOARDING LOCATION</Text>
-                <Text style={[S.value, { fontSize: 10, marginTop: 3, color: NAVY }]}>
-                  {isPending ? "Will be shared upon confirmation" : (booking.yachtId?.boardingLocation || "Location not provided")}
-                </Text>
+                {isPending ? (
+                  <Text style={[S.value, { fontSize: 10, marginTop: 3, color: NAVY }]}>
+                    Will be shared upon confirmation
+                  </Text>
+                ) : booking.yachtId?.boardingLocation ? (
+                  <Link
+                    src={booking.yachtId.boardingLocation}
+                    style={[S.value, { fontSize: 10, marginTop: 3, color: "#1A56DB", textDecoration: "underline" }]}
+                  >
+                    Location
+                  </Link>
+                ) : (
+                  <Text style={[S.value, { fontSize: 10, marginTop: 3, color: NAVY }]}>
+                    Location not provided
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -461,7 +484,7 @@ export default function BoardingPassPDF({ booking }) {
                   <View style={S.paymentStrip}>
                     <View style={S.paymentBlock}>
                       <Text style={S.paymentLabel}>BOOKING AMOUNT</Text>
-                      <Text style={S.paymentValue}>0{booking.quotedAmount}/-</Text>
+                      <Text style={S.paymentValue}>{booking.quotedAmount}/-</Text>
                     </View>
                     <View style={S.paymentDivider} />
                     <View style={S.paymentBlock}>

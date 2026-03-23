@@ -1,5 +1,5 @@
 import { apiConnector } from "../apiConnector";
-import {transaction  } from "../apis";
+import { transaction } from "../apis";
 
 export const createTransactionAPI = async (payload, token) => {
     const formData = new FormData();
@@ -14,10 +14,6 @@ export const createTransactionAPI = async (payload, token) => {
 };
 
 export const createTransactionAndUpdateBooking = async (payload, token) => {
-    // console.log("FormData values:");
-    //   for (let [key, value] of payload.entries()) {
-    //     console.log(key, value);
-    //   }
     console.log("Request " , payload)
     return apiConnector(
         "POST",
@@ -28,4 +24,16 @@ export const createTransactionAndUpdateBooking = async (payload, token) => {
             "Content-Type": "application/json",
         }
     );
-}
+};
+
+// Admin only — edit the amount of an existing transaction
+export const updateTransactionAPI = async (id, payload, token) => {
+    return apiConnector(
+        "PATCH",
+        transaction.UPDATE_TRANSACTION_API(id),
+        payload,
+        {
+            Authorization: `Bearer ${token}`,
+        }
+    );
+};
