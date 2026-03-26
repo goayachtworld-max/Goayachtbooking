@@ -636,7 +636,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
       `}</style>
 
 
-      <div className="cb-wrap" style={{ background: "#f8fafc", minHeight: "100vh", padding: "8px" }}>
+      <div className="cb-wrap" style={{ background: "#f8fafc", minHeight: "100dvh", padding: "8px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
 
           {/* ── Header row ── */}

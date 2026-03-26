@@ -12,7 +12,7 @@ export const GLOBAL_CSS = `
   .cm-wrap * { box-sizing:border-box; }
   .cm-wrap {
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    background:#f1f5f9; min-height:100vh; padding:16px;
+    background:#f1f5f9; min-height:100dvh; padding:16px;
   }
   .cm-page { max-width:1000px; margin:0 auto; }
 

@@ -1,5 +1,5 @@
 body, #root {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: #f1f5f9;
   font-family: 'Roboto', sans-serif;
 }
@@ -7,7 +7,7 @@ body, #root {
 /* Logged-in content area — offset for navbar */
 .app-content {
   padding-top: 72px;
-  min-height: calc(100vh - 72px);
+  /* removed min-height: avoids large blank space when few items are on screen */
 }
 
 input {
@@ -21,7 +21,7 @@ select {
 @media (max-width: 991.98px) {
   .app-content {
     padding-top: 56px !important;
-    padding-bottom: 72px !important; /* clears bottom nav for admin/backdesk */
+    padding-bottom: 80px !important; /* clears 64px bottom nav + 16px breathing room */
   }
 
   /* onsite has no bottom nav — no extra bottom padding needed */

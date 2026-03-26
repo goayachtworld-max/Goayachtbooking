@@ -18,7 +18,7 @@
 
 /* ── Wrapper ── */
 .dashboardWrapper {
-  min-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
   background: var(--bg);
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   padding: 0 0 3rem;

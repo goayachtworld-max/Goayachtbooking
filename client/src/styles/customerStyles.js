@@ -13,7 +13,7 @@ export const GLOBAL_CSS = `
   .cm-wrap {
     font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
     background: #f8f9fa;
-    min-height: 100vh;
+    min-height: 100dvh;
     padding: 1rem;
     color: #212529;
   }

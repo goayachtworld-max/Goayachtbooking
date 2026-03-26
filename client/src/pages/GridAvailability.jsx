@@ -706,6 +706,8 @@ function GridAvailability() {
           height: "100%",
           width: "100%",
           minWidth: 600,
+          overflow: "visible",
+          zIndex: 1,
         }}
       >
         {row.slots.map((slot, idx) => {
@@ -743,7 +745,7 @@ function GridAvailability() {
                 position: "absolute",
                 left: `${left}%`,
                 width: `${width}%`,
-                height: `{100%}`,
+                height: `100%`,
                 cursor: past || unauthorized ? "not-allowed" : "pointer",
               }}
               onClick={() => {
@@ -794,7 +796,7 @@ function GridAvailability() {
 
             {showFilters && (
               <div style={{ position: "relative", zIndex: 1050, marginBottom: "1.5rem", isolation: "isolate" }}>
-              <div className="d-flex gap-3 align-items-end">
+              <div className="d-flex flex-wrap gap-3 align-items-end">
                 <div style={{ flex: "0 0 260px", position: "relative" }}>
                   <label className="form-label small text-muted mb-1">⛵ Yacht</label>
                   <div className={styles.comboWrapper}>

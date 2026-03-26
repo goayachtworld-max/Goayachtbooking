@@ -31,7 +31,7 @@
   font-family: "DM Sans", system-ui, sans-serif;
   color: var(--text);
   background: var(--sand);
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .page {
