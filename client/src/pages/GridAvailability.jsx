@@ -782,6 +782,7 @@ function GridAvailability() {
         {/* ── DESKTOP header + filters ── */}
         {!isMobile && (
           <>
+          <div className={styles.stickyHeader}>
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h3 className="fw-bold mb-0">Calendar View</h3>
               <button
@@ -846,12 +847,14 @@ function GridAvailability() {
               </div>
               </div>
             )}
+          </div>
           </>
         )}
 
         {/* ── MOBILE: one row — selected yacht + single filter button ── */}
         {isMobile && (
           <>
+          <div className={styles.stickyHeader}>
             <div className={styles.mobileTopBar}>
               {/* Yacht chip — clickable, opens combined filter sheet */}
               <button
@@ -889,12 +892,12 @@ function GridAvailability() {
                   <div className={styles.sheetDateRow}>
                     <div className={styles.sheetDateField}>
                       <label className={styles.dateSheetLabel}>From</label>
-                      <input type="date" className={styles.dateSheetInput} value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                      <input type="date" className={styles.dateSheetInput} value={fromDate} onChange={(e) => { setFromDate(e.target.value); setShowYachtSheet(false); }} />
                     </div>
                     <span className={styles.sheetDateArrow}>→</span>
                     <div className={styles.sheetDateField}>
                       <label className={styles.dateSheetLabel}>To</label>
-                      <input type="date" className={styles.dateSheetInput} value={toDate} min={fromDate} onChange={(e) => setToDate(e.target.value)} />
+                      <input type="date" className={styles.dateSheetInput} value={toDate} min={fromDate} onChange={(e) => { setToDate(e.target.value); setShowYachtSheet(false); }} />
                     </div>
                   </div>
 
@@ -922,7 +925,7 @@ function GridAvailability() {
                       <li
                         key={y._id}
                         className={`${styles.sheetItem} ${y._id === yachtId ? styles.sheetItemActive : ""}`}
-                        onClick={() => { setYachtId(y._id); setYachtName(y.name); }}
+                        onClick={() => { setYachtId(y._id); setYachtName(y.name); setShowYachtSheet(false); }}
                       >
                         <span className={styles.sheetItemName}>{y.name}</span>
                         {y._id === yachtId && <span className={styles.sheetItemCheck}>✓</span>}
@@ -942,6 +945,7 @@ function GridAvailability() {
                 </div>
               </div>
             )}
+          </div>
           </>
         )}
         <div className={`mb-2 d-flex justify-content-between align-items-center flex-wrap gap-2 ${isMobile ? styles.mobileInfoBar : ""}`}>

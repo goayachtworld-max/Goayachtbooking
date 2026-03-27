@@ -1,4 +1,23 @@
 /* ================================
+   Sticky Header
+================================ */
+.stickyHeader {
+  position: sticky;
+  top: 60px;          /* desktop navbar height */
+  z-index: 200;
+  background: #f1f5f9;
+  padding-top: 8px;
+  padding-bottom: 4px;
+  margin-bottom: 0;
+}
+
+@media (max-width: 991.98px) {
+  .stickyHeader {
+    top: 56px;         /* mobile navbar height */
+  }
+}
+
+/* ================================
    Searchable Yacht Combobox
 ================================ */
 .comboWrapper {
