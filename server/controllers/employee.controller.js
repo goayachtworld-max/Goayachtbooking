@@ -33,12 +33,35 @@ export const createEmployee = async (req, res, next) => {
 // ✅ Login Employee
 export const loginEmployee = async (req, res, next) => {
   try {
-    console.log("iside login")
-    const { username, password } = req.body;
-    console.log("Inside login")
-    const uname = username.toLowerCase();
-    const pass = password;
-    const employee = await EmployeeModel.findOne({ username: uname });
+    console.log("inside login");
+    const { identifier, password, pin } = req.body;
+
+    if (!identifier) {
+      const err = new Error("Username or mobile number is required");
+      err.status = 400;
+      throw err;
+    }
+    if (!password && !pin) {
+      const err = new Error("Password or PIN is required");
+      err.status = 400;
+      throw err;
+    }
+
+    // Determine if identifier is a mobile number (digits only, 10-15 chars)
+    const isMobile = /^[0-9]{10,15}$/.test(identifier.trim());
+
+    let employee;
+    if (isMobile) {
+      employee = await EmployeeModel.findOne({
+        $or: [
+          { contact: identifier.trim() },
+          { contact: `+91${identifier.trim()}` },
+          { contact: identifier.trim().replace(/^\+91/, "") }
+        ]
+      });
+    } else {
+      employee = await EmployeeModel.findOne({ username: identifier.toLowerCase().trim() });
+    }
 
     if (!employee) {
       const err = new Error("Employee not found");
@@ -51,8 +74,20 @@ export const loginEmployee = async (req, res, next) => {
       throw err;
     }
 
-    const isMatch = await bcrypt.compare(pass, employee.password);
-    if (!isMatch) {
+    // Verify credential: pin OR password
+    let isValid = false;
+    if (pin) {
+      if (!employee.pin) {
+        const err = new Error("PIN not set for this account. Please use password.");
+        err.status = 401;
+        throw err;
+      }
+      isValid = await bcrypt.compare(pin.toString(), employee.pin);
+    } else {
+      isValid = await bcrypt.compare(password, employee.password);
+    }
+
+    if (!isValid) {
       const err = new Error("Invalid credentials");
       err.status = 401;
       throw err;
@@ -61,13 +96,32 @@ export const loginEmployee = async (req, res, next) => {
     const token = jwt.sign(
       { id: employee._id, type: employee.type, company: employee.company },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "15d" }
     );
     employee.lastLoginAt = new Date();
     await employee.save();
-    employee.password = null;
-    console.log("Login sucess : ", token)
+    employee.password = undefined;
+    employee.pin = undefined;
+    console.log("Login success:", employee.username || employee.contact);
     res.json({ success: true, token, employee });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// ✅ Set / Update PIN for logged-in employee
+export const setPin = async (req, res, next) => {
+  try {
+    const { pin } = req.body;
+    if (!pin || !/^\d{4}$/.test(pin.toString())) {
+      const err = new Error("PIN must be exactly 4 digits.");
+      err.status = 400;
+      throw err;
+    }
+    const hashedPin = await bcrypt.hash(pin.toString(), 10);
+    await EmployeeModel.findByIdAndUpdate(req.user.id, { pin: hashedPin });
+    res.json({ success: true, message: "PIN updated successfully." });
   } catch (error) {
     next(error);
   }

@@ -2,8 +2,18 @@
 import { apiConnector } from "../apiConnector";
 import { employee } from "../apis";
 
-export const loginAPI = async (username, password) => {
-  return apiConnector("POST", employee.LOGIN_API, { username, password });
+/**
+ * identifier = username OR mobile number
+ * credential = { password } OR { pin }
+ */
+export const loginAPI = async (identifier, credential) => {
+  return apiConnector("POST", employee.LOGIN_API, { identifier, ...credential });
+};
+
+export const setPinAPI = async (pin, token) => {
+  return apiConnector("POST", employee.SET_PIN_API, { pin }, {
+    Authorization: `Bearer ${token}`,
+  });
 };
 
 export const createEmployeeAPI = async (data, token) => {
@@ -11,4 +21,3 @@ export const createEmployeeAPI = async (data, token) => {
     Authorization: `Bearer ${token}`,
   });
 };
-

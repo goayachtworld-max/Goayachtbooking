@@ -11,7 +11,8 @@ import {
   updateEmployeeProfile,
   updateEmployeeProfileByAdmin,
   addCompanyToEmployee,
-  getAvailableAgentsAndBackdesk
+  getAvailableAgentsAndBackdesk,
+  setPin
 } from "../controllers/employee.controller.js";
 import { upload, uploadFileToCloudinaryV2, uploadToCloudinary } from "../middleware/upload.js";
 import { employeeSchema } from "../validators/employee.validator.js";
@@ -22,6 +23,7 @@ const router = express.Router();
 
 router.get("/", authMiddleware, onlyAdmin, getEmployees);
 router.post("/login", loginEmployee);
+router.post("/set-pin", authMiddleware, setPin);
 router.post("/createEmployee", authMiddleware, onlyAdmin, validate(employeeSchema), createEmployee);
 router.get("/bookingpage",authMiddleware, getEmployeesForBooking);
 router.get("/not-in-company", authMiddleware, onlyAdmin, getAvailableAgentsAndBackdesk);

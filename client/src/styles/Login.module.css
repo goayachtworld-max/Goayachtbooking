@@ -8,135 +8,242 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
   background: #f0f4f8;
   padding: 1.5rem 1rem;
 }
 
 .loginCard {
   width: 100%;
-  max-width: 360px;
-  padding: 2rem 1.75rem;
-  border-radius: 14px;
+  max-width: 380px;
+  padding: 2rem 2rem 1.75rem;
+  border-radius: 18px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.08);
 }
 
+/* ── Brand ── */
+.loginBrand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.75rem;
+}
+.loginBrandIcon {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+}
 .loginTitle {
   text-align: center;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #0d1f3c;
-  margin-bottom: 1.5rem;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .loginForm { margin: 0; }
 
+/* ── Input groups ── */
 .inputGroup {
-  margin-bottom: 1rem;
-  position: relative;
+  margin-bottom: 1.1rem;
 }
 
-.inputGroup label {
+.inputLabel {
   display: block;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   color: #64748b;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
 
-.leftIcon {
-  position: absolute;
-  left: 12px;
-  top: 37px;
-  color: #94a3b8;
+/* wrapper gives us icon + pill positioning */
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.passwordToggle {
+.inputIcon {
   position: absolute;
-  right: 12px;
-  top: 36px;
-  cursor: pointer;
+  left: 13px;
   color: #94a3b8;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 1;
 }
-.passwordToggle:hover { color: #0d1f3c; }
 
 .inputField {
   width: 100%;
-  padding: 10px 42px;
-  border-radius: 10px;
+  padding: 11px 44px 11px 40px;
+  border-radius: 11px;
   border: 1.5px solid #e2e8f0;
   font-size: 0.9rem;
   background: #f8fafc;
   color: #0d1f3c;
   outline: none;
-  transition: 0.2s;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
 }
-.inputField::placeholder { color: #94a3b8; }
+.inputField::placeholder { color: #b0bec5; }
 .inputField:focus {
-  border-color: #0d1f3c;
+  border-color: #0d6efd;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(13,31,60,0.08);
+  box-shadow: 0 0 0 3px rgba(13,110,253,0.1);
 }
 
+/* eye toggle button */
+.eyeBtn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  z-index: 1;
+  transition: color 0.15s;
+}
+.eyeBtn:hover { color: #0d1f3c; }
+
+/* auto-detected type pill */
+.idPill {
+  position: absolute;
+  right: 12px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+.idPillMobile {
+  background: rgba(13,110,253,0.1);
+  color: #0d6efd;
+  border: 1px solid rgba(13,110,253,0.2);
+}
+.idPillUser {
+  background: rgba(22,163,74,0.08);
+  color: #16a34a;
+  border: 1px solid rgba(22,163,74,0.2);
+}
+
+/* ── Credential header row: label + mini tab on same line ── */
+.credHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.miniTabRow {
+  display: flex;
+  gap: 2px;
+  background: #f1f5f9;
+  padding: 2px;
+  border-radius: 8px;
+}
+
+.miniTab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #94a3b8;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.miniTab:hover { color: #0d1f3c; }
+.miniTabActive {
+  background: #fff !important;
+  color: #0d1f3c !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* PIN field — big spaced dots */
+.pinField {
+  letter-spacing: 0.5em !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  text-align: center;
+  padding-right: 44px !important;
+}
+
+.pinHint {
+  font-size: 0.67rem;
+  color: #94a3b8;
+  margin: 4px 0 0 2px;
+}
+
+/* ── Error ── */
 .errorMsg {
   color: #dc2626;
-  background: rgba(220,38,38,0.07);
+  background: rgba(220,38,38,0.06);
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: 9px;
   border-left: 3px solid #dc2626;
-  font-size: 0.82rem;
+  font-size: 0.81rem;
   margin-bottom: 12px;
 }
 
+/* ── Submit button ── */
 .loginButton {
   width: 100%;
-  padding: 11px;
-  border-radius: 10px;
+  padding: 12px;
+  border-radius: 11px;
   border: none;
-  font-size: 0.92rem;
+  font-size: 0.93rem;
   font-weight: 600;
   cursor: pointer;
   background: #0d1f3c;
   color: #fff;
-  transition: 0.2s;
-  margin-top: 0.25rem;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  margin-top: 0.35rem;
+  letter-spacing: 0.01em;
 }
-.loginButton:hover {
+.loginButton:hover:not(:disabled) {
   background: #1a3a5c;
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(13,31,60,0.25);
+  box-shadow: 0 4px 16px rgba(13,31,60,0.22);
 }
-.loginButton:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.loginButton:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* Ticket search — sits below login card */
+/* ── Ticket search ── */
 .ticketSearchWrap {
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   text-align: center;
 }
-
 .ticketSearchLabel {
-  font-size: 0.68rem;
+  font-size: 0.67rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #94a3b8;
   margin-bottom: 6px;
 }
-
 .ticketSearchRow {
   display: flex;
-  border-radius: 10px;
+  border-radius: 11px;
   overflow: hidden;
   border: 1.5px solid #e2e8f0;
   background: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
-
 .ticketSearchRow input {
   flex: 1;
   padding: 10px 14px;
@@ -149,7 +256,6 @@
   background: transparent;
 }
 .ticketSearchRow input::placeholder { color: #94a3b8; }
-
 .ticketSearchRow button {
   padding: 10px 16px;
   background: #0d1f3c;
@@ -166,7 +272,6 @@
 /* ==============================
    MODAL OVERLAY
 ============================== */
-
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -182,7 +287,6 @@
 /* ==============================
    BOARDING PASS
 ============================== */
-
 .modalContent {
   background: #fff;
   border-radius: 16px;
@@ -193,13 +297,10 @@
   box-shadow: 0 20px 60px rgba(0,0,0,0.2);
   animation: slideUp 0.25s ease;
 }
-
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-/* Dark header strip */
 .modalHeader {
   background: #0d1f3c;
   padding: 1rem 1.25rem;
@@ -208,7 +309,6 @@
   align-items: center;
   justify-content: space-between;
 }
-
 .modalTitle {
   font-size: 0.95rem;
   font-weight: 700;
@@ -217,7 +317,6 @@
   text-transform: uppercase;
   margin: 0;
 }
-
 .modalTicketId {
   font-family: 'Courier New', monospace;
   font-size: 0.8rem;
@@ -229,170 +328,35 @@
   border-radius: 999px;
   border: 1px solid rgba(201,168,76,0.35);
 }
-
-/* Dashed tear line */
-.tearLine {
-  display: flex;
-  align-items: center;
-  padding: 0 1.25rem;
-  margin: 0;
-}
-.tearLine::before, .tearLine::after {
-  content: '';
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #f0f4f8;
-  flex-shrink: 0;
-  margin: 0 -9px;
-}
-.tearLine hr {
-  flex: 1;
-  border: none;
-  border-top: 2px dashed #e2e8f0;
-  margin: 10px 8px;
-}
-
-/* Pass body */
-.boardingPassBody {
-  padding: 0.75rem 1.25rem 1rem;
-}
-
-/* Row-based info layout */
-.passRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 0.55rem 0;
-  border-bottom: 1px solid #f1f5f9;
-}
+.tearLine { display: flex; align-items: center; padding: 0 1.25rem; margin: 0; }
+.tearLine::before, .tearLine::after { content: ''; width: 18px; height: 18px; border-radius: 50%; background: #f0f4f8; flex-shrink: 0; margin: 0 -9px; }
+.tearLine hr { flex: 1; border: none; border-top: 2px dashed #e2e8f0; margin: 10px 8px; }
+.boardingPassBody { padding: 0.75rem 1.25rem 1rem; }
+.passRow { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 0.55rem 0; border-bottom: 1px solid #f1f5f9; }
 .passRow:last-child { border-bottom: none; }
-
-.passLabel {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #94a3b8;
-  min-width: 90px;
-  flex-shrink: 0;
-}
-
-.passValue {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #0d1f3c;
-  text-align: right;
-  flex: 1;
-}
-
-.passValueMono {
-  font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #0d1f3c;
-  text-align: right;
-}
-
-.statusBadge {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
+.passLabel { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; min-width: 90px; flex-shrink: 0; }
+.passValue { font-size: 0.88rem; font-weight: 600; color: #0d1f3c; text-align: right; flex: 1; }
+.passValueMono { font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: 700; color: #0d1f3c; text-align: right; }
+.statusBadge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .statusConfirmed { background: rgba(22,163,74,0.1); color: #16a34a; }
-.statusPending   { background: rgba(37,99,235,0.1); color: #2563eb; }
-.statusCancelled { background: rgba(220,38,38,0.1); color: #dc2626; }
-
-/* Section heading inside pass */
-.passSection {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #94a3b8;
-  margin: 0.75rem 0 0.4rem;
-}
-
-.inclusionList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0;
-}
-
-.inclusionChip {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: #f0f4f8;
-  color: #0d1f3c;
-  border: 1px solid #e2e8f0;
-}
-
-.notesBox {
-  font-size: 0.82rem;
-  color: #64748b;
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 8px 10px;
-  border-left: 3px solid #e2e8f0;
-  margin-top: 0.4rem;
-  line-height: 1.5;
-}
-
-.disclaimerBox {
-  font-size: 0.72rem;
-  color: #94a3b8;
-  line-height: 1.6;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed #e2e8f0;
-}
-
-.pendingAmount {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #dc2626;
-  text-align: right;
-}
-
-/* Actions */
-.actions {
-  display: flex;
-  gap: 8px;
-  padding: 0.75rem 1.25rem 1.25rem;
-}
-
-.actions button {
-  flex: 1;
-  padding: 9px 12px;
-  border-radius: 9px;
-  font-weight: 600;
-  font-size: 0.82rem;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-}
-
+.statusPending   { background: rgba(37,99,235,0.1);  color: #2563eb; }
+.statusCancelled { background: rgba(220,38,38,0.1);  color: #dc2626; }
+.passSection { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin: 0.75rem 0 0.4rem; }
+.inclusionList { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.inclusionChip { font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: #f0f4f8; color: #0d1f3c; border: 1px solid #e2e8f0; }
+.notesBox { font-size: 0.82rem; color: #64748b; background: #f8fafc; border-radius: 8px; padding: 8px 10px; border-left: 3px solid #e2e8f0; margin-top: 0.4rem; line-height: 1.5; }
+.disclaimerBox { font-size: 0.72rem; color: #94a3b8; line-height: 1.6; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #e2e8f0; }
+.pendingAmount { font-size: 0.88rem; font-weight: 700; color: #dc2626; text-align: right; }
+.actions { display: flex; gap: 8px; padding: 0.75rem 1.25rem 1.25rem; }
+.actions button { flex: 1; padding: 9px 12px; border-radius: 9px; font-weight: 600; font-size: 0.82rem; cursor: pointer; border: none; transition: all 0.2s; }
 .copyBtn    { background: #0d1f3c; color: #fff; }
 .copyBtn:hover { background: #1a3a5c; transform: translateY(-1px); }
-
 .downloadBtn    { background: #16a34a; color: #fff; }
 .downloadBtn:hover { background: #15803d; transform: translateY(-1px); }
-
 .closeBtn    { background: #f1f5f9; color: #64748b; }
 .closeBtn:hover { background: #e2e8f0; }
-
 .actions a { flex: 1; text-decoration: none; }
 .actions a button { width: 100%; }
-
-/* Scrollbar */
 .modalContent::-webkit-scrollbar { width: 4px; }
 .modalContent::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
 
@@ -401,12 +365,9 @@
 ============================== */
 @media (max-width: 480px) {
   .loginCard { padding: 1.5rem 1.25rem; }
-
   .modalContent { border-radius: 14px; max-height: 94vh; }
-
   .passRow { flex-direction: column; gap: 2px; }
   .passValue, .passValueMono { text-align: left; }
-
   .actions { flex-wrap: wrap; }
   .actions button { min-width: calc(50% - 4px); }
 }

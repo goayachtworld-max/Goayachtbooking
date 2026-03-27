@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import styles from "../styles/Navbar.module.css";
 import toast from "react-hot-toast";
 import { updateEmployeeProfileAPI } from "../services/operations/employeeAPI";
+import { setPinAPI } from "../services/operations/authAPI";
 
 function Navbar({ user, onLogout }) {
   const collapseRef = useRef(null);
@@ -26,6 +27,11 @@ function Navbar({ user, onLogout }) {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // ── PIN state ──────────────────────────────────────────────────────────────
+  const [pinForm, setPinForm] = useState({ newPin: "", confirmPin: "" });
+  const [showPin, setShowPin] = useState(false);
+  const [pinLoading, setPinLoading] = useState(false);
+
   const handleNavLinkClick = () => {
     const collapseEl = collapseRef.current;
     if (collapseEl && collapseEl.classList.contains("show")) {
@@ -43,7 +49,7 @@ function Navbar({ user, onLogout }) {
       : parts[0][0].toUpperCase();
   };
 
-  const handleProfileUpdate = async () => {
+  const handleCombinedUpdate = async () => {
     try {
       const newErrors = {};
       if (!editForm.name.trim()) newErrors.name = "Name is required";
@@ -87,11 +93,22 @@ function Navbar({ user, onLogout }) {
         profilePhoto: updatedEmployee.profilePhoto,
       }));
       setEditForm((prev) => ({ ...prev, currentPassword: "", newPassword: "" }));
+
+      // Handle PIN update if provided
+      if (pinForm.newPin.length === 4) {
+        if (pinForm.newPin !== pinForm.confirmPin) {
+          toast.error("PINs do not match.");
+          return;
+        }
+        await setPinAPI(pinForm.newPin, token);
+        setPinForm({ newPin: "", confirmPin: "" });
+      }
+
       toast.success("Profile updated successfully 🎉");
       setShowEditProfile(false);
       setShowProfile(false);
     } catch (err) {
-      toast.error("Profile update failed ❌");
+      toast.error(err?.response?.data?.message || "Profile update failed ❌");
     }
   };
 
@@ -570,44 +587,148 @@ function Navbar({ user, onLogout }) {
       {showEditProfile && (
         <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.55)" }} onClick={() => setShowEditProfile(false)}>
           <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-content shadow-lg" style={{ borderRadius: "16px", overflow: "hidden", border: "none" }}>
-              <div className="modal-header bg-warning">
-                <h5 className="modal-title">Edit Profile</h5>
-                <button type="button" className="btn-close" onClick={() => setShowEditProfile(false)}></button>
+            <div className="modal-content shadow-lg" style={{ borderRadius: "18px", overflow: "hidden", border: "none" }}>
+
+              {/* Header */}
+              <div className="modal-header" style={{ background: "linear-gradient(90deg,#0d6efd,#0b5ed7)", border: "none" }}>
+                <h5 className="modal-title text-white fw-bold" style={{ fontSize: "1rem" }}>Edit Profile</h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setShowEditProfile(false)} />
               </div>
-              <div className="modal-body">
-                <input className={`form-control mb-2 ${errors.name ? "is-invalid" : ""}`} placeholder="Name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
-                {errors.name && <div className="text-danger small mb-2">{errors.name}</div>}
 
-                <input className={`form-control mb-2 ${errors.email ? "is-invalid" : ""}`} placeholder="Email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
-                {errors.email && <div className="text-danger small mb-2">{errors.email}</div>}
+              <div className="modal-body" style={{ padding: "1.5rem" }}>
 
-                <input className={`form-control mb-3 ${errors.contact ? "is-invalid" : ""}`} placeholder="Contact" value={editForm.contact} onChange={(e) => setEditForm({ ...editForm, contact: e.target.value })} />
-                {errors.contact && <div className="text-danger small mb-3">{errors.contact}</div>}
+                {/* ── Basic Info ── */}
+                <p style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", marginBottom: "0.65rem" }}>Basic Info</p>
 
-                <div className="mb-3 text-start">
-                  <label className="form-label fw-semibold">Profile Photo</label>
-                  <input type="file" className="form-control" accept="image/*" onChange={(e) => setEditForm({ ...editForm, profilePhoto: e.target.files[0] })} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1.1rem" }}>
+                  <div>
+                    <input
+                      className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                      placeholder="Full name"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      style={{ borderRadius: 10 }}
+                    />
+                    {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                  </div>
+                  <div>
+                    <input
+                      className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                      placeholder="Email address"
+                      value={editForm.email}
+                      onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                      style={{ borderRadius: 10 }}
+                    />
+                    {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                  </div>
+                  <div>
+                    <input
+                      className={`form-control ${errors.contact ? "is-invalid" : ""}`}
+                      placeholder="Mobile number"
+                      value={editForm.contact}
+                      onChange={(e) => setEditForm({ ...editForm, contact: e.target.value })}
+                      style={{ borderRadius: 10 }}
+                    />
+                    {errors.contact && <div className="invalid-feedback">{errors.contact}</div>}
+                  </div>
+                  <div>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", marginBottom: 4, display: "block" }}>Profile Photo</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept="image/*"
+                      onChange={(e) => setEditForm({ ...editForm, profilePhoto: e.target.files[0] })}
+                      style={{ borderRadius: 10 }}
+                    />
+                  </div>
                 </div>
 
-                <hr />
+                {/* ── Change Password ── */}
+                <div style={{ height: 1, background: "#f0f4ff", margin: "0.75rem 0" }} />
+                <p style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", marginBottom: "0.65rem" }}>Change Password <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></p>
 
-                <div className="input-group mb-2">
-                  <input type={showCurrentPassword ? "text" : "password"} className={`form-control ${errors.currentPassword ? "is-invalid" : ""}`} placeholder="Current Password" value={editForm.currentPassword} onChange={(e) => setEditForm({ ...editForm, currentPassword: e.target.value })} />
-                  <button className="btn btn-outline-secondary" type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>{showCurrentPassword ? "Hide" : "Show"}</button>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "0.5rem" }}>
+                  <div className="input-group" style={{ borderRadius: 10, overflow: "hidden" }}>
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      className={`form-control ${errors.currentPassword ? "is-invalid" : ""}`}
+                      placeholder="Current password"
+                      value={editForm.currentPassword}
+                      onChange={(e) => setEditForm({ ...editForm, currentPassword: e.target.value })}
+                      style={{ borderRadius: "10px 0 0 10px" }}
+                    />
+                    <button className="btn btn-outline-secondary" type="button" style={{ fontSize: "0.78rem" }} onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
+                      {showCurrentPassword ? "Hide" : "Show"}
+                    </button>
+                    {errors.currentPassword && <div className="invalid-feedback">{errors.currentPassword}</div>}
+                  </div>
+                  <div className="input-group" style={{ borderRadius: 10, overflow: "hidden" }}>
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      className={`form-control ${errors.newPassword ? "is-invalid" : ""}`}
+                      placeholder="New password"
+                      value={editForm.newPassword}
+                      disabled={!editForm.currentPassword}
+                      onChange={(e) => setEditForm({ ...editForm, newPassword: e.target.value })}
+                      style={{ borderRadius: "10px 0 0 10px" }}
+                    />
+                    <button className="btn btn-outline-secondary" type="button" style={{ fontSize: "0.78rem" }} disabled={!editForm.currentPassword} onClick={() => setShowNewPassword(!showNewPassword)}>
+                      {showNewPassword ? "Hide" : "Show"}
+                    </button>
+                    {errors.newPassword && <div className="invalid-feedback">{errors.newPassword}</div>}
+                  </div>
                 </div>
-                {errors.currentPassword && <div className="text-danger small mb-2">{errors.currentPassword}</div>}
 
-                <div className="input-group">
-                  <input type={showNewPassword ? "text" : "password"} className={`form-control ${errors.newPassword ? "is-invalid" : ""}`} placeholder="New Password" value={editForm.newPassword} disabled={!editForm.currentPassword} onChange={(e) => setEditForm({ ...editForm, newPassword: e.target.value })} />
-                  <button className="btn btn-outline-secondary" type="button" disabled={!editForm.currentPassword} onClick={() => setShowNewPassword(!showNewPassword)}>{showNewPassword ? "Hide" : "Show"}</button>
+                {/* ── Set PIN ── */}
+                <div style={{ height: 1, background: "#f0f4ff", margin: "0.75rem 0" }} />
+                <p style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", marginBottom: "0.65rem" }}>Quick Login PIN <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></p>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                  <div className="input-group" style={{ borderRadius: 10, overflow: "hidden" }}>
+                    <input
+                      type={showPin ? "text" : "password"}
+                      inputMode="numeric"
+                      className="form-control"
+                      placeholder="New 4-digit PIN"
+                      maxLength={4}
+                      value={pinForm.newPin}
+                      onChange={(e) => setPinForm((p) => ({ ...p, newPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                      style={{ borderRadius: "10px 0 0 10px", letterSpacing: "0.4em", fontWeight: 700, textAlign: "center" }}
+                    />
+                    <button className="btn btn-outline-secondary" type="button" style={{ fontSize: "0.78rem" }} onClick={() => setShowPin((v) => !v)}>
+                      {showPin ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                  <input
+                    type={showPin ? "text" : "password"}
+                    inputMode="numeric"
+                    className="form-control"
+                    placeholder="Confirm PIN"
+                    maxLength={4}
+                    value={pinForm.confirmPin}
+                    onChange={(e) => setPinForm((p) => ({ ...p, confirmPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                    style={{ borderRadius: 10, letterSpacing: "0.4em", fontWeight: 700, textAlign: "center" }}
+                  />
+                  {pinForm.newPin.length > 0 && pinForm.newPin !== pinForm.confirmPin && pinForm.confirmPin.length > 0 && (
+                    <p style={{ fontSize: "0.75rem", color: "#dc2626", margin: "0 0 0 2px" }}>PINs do not match</p>
+                  )}
                 </div>
-                {errors.newPassword && <div className="text-danger small mt-1">{errors.newPassword}</div>}
+
               </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setShowEditProfile(false)}>Cancel</button>
-                <button className="btn btn-success" onClick={handleProfileUpdate}>Update</button>
+
+              {/* Single Update button */}
+              <div className="modal-footer" style={{ border: "none", padding: "0.75rem 1.5rem 1.5rem", gap: "0.5rem" }}>
+                <button className="btn btn-light" style={{ borderRadius: 10, fontWeight: 600, flex: 1 }} onClick={() => setShowEditProfile(false)}>Cancel</button>
+                <button
+                  className="btn btn-primary"
+                  style={{ borderRadius: 10, fontWeight: 600, flex: 2 }}
+                  onClick={handleCombinedUpdate}
+                  disabled={pinLoading}
+                >
+                  {pinLoading ? "Saving…" : "Update"}
+                </button>
               </div>
+
             </div>
           </div>
         </div>

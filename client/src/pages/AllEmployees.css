@@ -1,0 +1,551 @@
+/* ============================================================
+   AllEmployees.css — polished employee management UI
+   ============================================================ */
+
+/* ── Page shell ── */
+.emp-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+}
+
+/* ── Page header ── */
+.emp-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.emp-page-title {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #0f2744;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.emp-page-title span {
+  color: #1d6fa4;
+}
+
+/* ── Add button ── */
+.emp-btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #1d6fa4;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  text-decoration: none;
+}
+.emp-btn-add:hover  { background: #155f8a; color: #fff; }
+.emp-btn-add:active { transform: scale(0.98); }
+
+/* ── Tabs ── */
+.emp-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 2px solid #e3e8ef;
+  margin-bottom: 1.25rem;
+}
+
+.emp-tab {
+  padding: 8px 18px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #7a8799;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.emp-tab:hover { color: #1d6fa4; }
+.emp-tab.active {
+  color: #1d6fa4;
+  font-weight: 700;
+  border-bottom-color: #1d6fa4;
+}
+
+.emp-tab-count {
+  background: #e8f4fc;
+  color: #1d6fa4;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Table card ── */
+.emp-table-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(15, 39, 68, 0.09);
+  border: 1px solid #e3e8ef;
+  overflow: hidden;
+}
+
+.emp-table-wrap {
+  overflow-x: auto;
+}
+
+/* ── Table ── */
+.emp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.emp-table thead {
+  background: #0f2744;
+}
+
+.emp-table thead th {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.emp-table tbody tr {
+  border-bottom: 1px solid #e3e8ef;
+  transition: background 0.1s;
+}
+.emp-table tbody tr:last-child { border-bottom: none; }
+.emp-table tbody tr:hover { background: #e8f4fc; }
+
+.emp-table tbody td {
+  padding: 10px 14px;
+  color: #1a2332;
+  vertical-align: middle;
+}
+
+/* ── Avatar cell ── */
+.emp-avatar-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.emp-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d6fa4, #0e9e8a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.emp-name {
+  font-weight: 600;
+  color: #0f2744;
+  line-height: 1.3;
+}
+
+.emp-email-sub {
+  font-size: 11px;
+  color: #7a8799;
+  margin-top: 1px;
+}
+
+/* ── Role badge ── */
+.emp-role-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.emp-role-admin    { background: #fef3c7; color: #92400e; }
+.emp-role-agent    { background: #e8f4fc; color: #1d6fa4; }
+.emp-role-staff    { background: #e6f7f5; color: #0e6e5f; }
+.emp-role-default  { background: #f3f4f6; color: #7a8799; }
+
+/* ── Status / Login badge ── */
+.emp-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.emp-badge-today     { background: #d1fae5; color: #065f46; }
+.emp-badge-yesterday { background: #fef9c3; color: #854d0e; }
+.emp-badge-older     { background: #f3f4f6; color: #7a8799; }
+.emp-badge-never     { background: #fff1f2; color: #be123c; }
+
+/* ── Action buttons ── */
+.emp-action-btns {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.emp-btn-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1.5px solid #e3e8ef;
+  background: #fff;
+  color: #7a8799;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 12px;
+}
+.emp-btn-icon:disabled { opacity: 0.3; cursor: not-allowed; }
+.emp-btn-icon.edit:hover     { border-color: #1d6fa4; color: #1d6fa4; background: #e8f4fc; }
+.emp-btn-icon.deactivate:hover { border-color: #dc3545; color: #dc3545; background: #fff1f2; }
+.emp-btn-icon.activate:hover   { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
+
+/* ── Responsive hide ── */
+@media (max-width: 768px) { .emp-hide-sm { display: none; } }
+@media (max-width: 480px) { .emp-hide-xs { display: none; } }
+
+/* ── Empty state ── */
+.emp-empty {
+  padding: 3rem;
+  text-align: center;
+  color: #7a8799;
+  font-size: 14px;
+}
+
+.emp-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Mobile cards ── */
+.emp-mobile-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 39, 68, 0.07);
+  border: 1px solid #e3e8ef;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.emp-mobile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.emp-mobile-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f2744;
+  margin: 0 0 3px;
+}
+
+.emp-mobile-card-meta {
+  font-size: 12px;
+  color: #7a8799;
+  margin: 0;
+}
+
+.emp-mobile-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.emp-mobile-card-divider {
+  height: 1px;
+  background: #e3e8ef;
+  margin: 8px 0;
+}
+
+.emp-mobile-card-info {
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.emp-mobile-card-info strong {
+  color: #1a2332;
+}
+
+/* ── Modal backdrop & shell ── */
+.emp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 39, 68, 0.45);
+  z-index: 1040;
+  backdrop-filter: blur(2px);
+}
+
+.emp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.emp-modal-dialog {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(15, 39, 68, 0.2);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.emp-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e3e8ef;
+  background: #0f2744;
+  flex-shrink: 0;
+}
+
+.emp-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.emp-modal-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.emp-modal-close:hover { background: rgba(255, 255, 255, 0.28); }
+
+.emp-modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.emp-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid #e3e8ef;
+  background: #fafbfc;
+  flex-shrink: 0;
+}
+
+/* ── Modal form fields ── */
+.emp-field {
+  margin-bottom: 0.85rem;
+}
+
+.emp-field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7a8799;
+  margin-bottom: 4px;
+}
+
+.emp-field-required { color: #dc3545; margin-left: 2px; }
+
+.emp-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1.5px solid #e3e8ef;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #1a2332;
+  background: #fafbfc;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.emp-input:focus {
+  border-color: #1d6fa4;
+  box-shadow: 0 0 0 3px rgba(29, 111, 164, 0.1);
+  background: #fff;
+}
+.emp-input.error { border-color: #dc3545; }
+.emp-field-error {
+  font-size: 11px;
+  color: #dc3545;
+  margin-top: 3px;
+}
+
+.emp-pw-wrap {
+  position: relative;
+}
+.emp-pw-wrap .emp-input { padding-right: 52px; }
+.emp-pw-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: #7a8799;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.emp-pw-toggle:hover { color: #1a2332; }
+
+.emp-divider {
+  height: 1px;
+  background: #e3e8ef;
+  margin: 1rem 0;
+}
+
+.emp-section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #1d6fa4;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Private toggle ── */
+.emp-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.85rem;
+}
+
+.emp-toggle-track {
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.emp-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.2s;
+}
+
+.emp-toggle-label {
+  font-size: 13px;
+  color: #1a2332;
+}
+
+/* ── Modal footer buttons ── */
+.emp-btn-secondary {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #e3e8ef;
+  background: #fff;
+  color: #1a2332;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.emp-btn-secondary:hover { border-color: #b0bec9; background: #f8fafc; }
+
+.emp-btn-primary {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #1d6fa4;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.emp-btn-primary:hover { background: #155f8a; }
+
+.emp-btn-danger-sm {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #dc3545;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.emp-btn-success-sm {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #16a34a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Loading spinner ── */
+.emp-spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: #7a8799;
+  font-size: 14px;
+}
+
+.emp-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e3e8ef;
+  border-top-color: #1d6fa4;
+  border-radius: 50%;
+  animation: empSpin 0.7s linear infinite;
+}
+
+@keyframes empSpin { to { transform: rotate(360deg); } }

@@ -29,6 +29,10 @@ const employeeSchema = new mongoose.Schema({
     required: true,
     minlength: 6       // 👈 Basic password rule
   },
+  pin: {
+    type: String,      // hashed 4-digit PIN (optional)
+    default: null
+  },
   name: {
     type: String,
     required: true,
@@ -38,6 +42,7 @@ const employeeSchema = new mongoose.Schema({
   contact: {
     type: String,
     required: true,
+    unique: true,      // 👈 Allow mobile-based login
     match: [/^\+?[0-9]{10,15}$/, 'Contact number must be 10–15 digits, optionally starting with +']
   },
   email: {
