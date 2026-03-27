@@ -9,16 +9,23 @@ import toast from "react-hot-toast";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Bookings.css";
 
+// ── Shared IST helper: converts any UTC timestamp string to "YYYY-MM-DD" in IST ──
+// Uses the browser's Intl engine via toLocaleString — avoids the
+// getTimezoneOffset() double-correction bug that was in the original code.
+const toISTDateStr = (utcStr) => {
+  const d = new Date(new Date(utcStr).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 function Bookings({ user }) {
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const rangeParam = params.get("range");
+  const rangeParam   = params.get("range");
   const createdParam = params.get("created");
 
   // ---------------- IST HELPERS ----------------
   // Returns current time as a plain Date whose numeric value equals IST wall-clock time.
-  // We use toLocaleString with timeZone to get the correct IST wall-clock, then parse it.
   const getNowIST = () => {
     return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
   };
@@ -41,52 +48,44 @@ function Bookings({ user }) {
   };
 
   // ---------------- STATE ----------------
-  const [bookings, setBookings] = useState([]);
+  const [bookings,  setBookings]  = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading,   setLoading]   = useState(false);
 
   // Screen
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 550);
+  const [isMobile,    setIsMobile]    = useState(window.innerWidth < 550);
   const [showFilters, setShowFilters] = useState(false);
 
   // ---------------- FILTER STATES (FROM URL) ----------------
-  const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
-  const [filterDate, setFilterDate] = useState(params.get("date") || "");
-  const [filterStatus, setFilterStatus] = useState(params.get("status") || "");
+  const [searchQuery,    setSearchQuery]    = useState(params.get("search") || "");
+  const [filterDate,     setFilterDate]     = useState(params.get("date")   || "");
+  const [filterStatus,   setFilterStatus]   = useState(params.get("status") || "");
+  const [selectedMonth,  setSelectedMonth]  = useState(params.get("month")  || "");
 
-  const todayMonth = getMonthIST();
-
-  const monthParam = params.get("month");
-  const [selectedMonth, setSelectedMonth] = useState(
-    monthParam || ""
-  );
-
-
-  // employee=John Doe~65ab123
-  const employeeParam = params.get("employee");
+  const employeeParam    = params.get("employee");
   const parsedEmployeeId = employeeParam?.split("~")[1] || "";
   const [filterEmployee, setFilterEmployee] = useState(parsedEmployeeId);
-  const [boardingPassBooking, setBoardingPassBooking] = useState();
+
   const [expandedAddons, setExpandedAddons] = useState({});
 
   // ---------------- ADDON PARSER ----------------
   const ADDON_CONFIG = [
-    { key: "drone",       label: "🚁 Drone",         match: "Drone",              paid: true  },
-    { key: "dslr",        label: "📷 DSLR",           match: "DSLR",               paid: true  },
-    { key: "softdrink",   label: "🥤 Soft Drink",     match: "Soft Drink",         paid: false },
-    { key: "icecube",     label: "🧊 Ice Cube",       match: "Ice Cube",           paid: false },
-    { key: "water",       label: "💧 Water",          match: "Water Bottles",      paid: false },
-    { key: "speaker",     label: "🔊 Speaker",        match: "Bluetooth Speaker",  paid: false },
-    { key: "crew",        label: "👨‍✈️ Crew",          match: "Captain",            paid: false },
-    { key: "snacks",      label: "🍿 Snacks",         match: "Snacks",             paid: false },
-    { key: "balloon",     label: "🎈 Decoration",     match: "Balloon",            paid: true  },
-    { key: "decoration",  label: "🎈 Decoration",     match: "decoration",         paid: true  },
+    { key: "drone",      label: "🚁 Drone",        match: "Drone",             paid: true  },
+    { key: "dslr",       label: "📷 DSLR",          match: "DSLR",              paid: true  },
+    { key: "softdrink",  label: "🥤 Soft Drink",    match: "Soft Drink",        paid: false },
+    { key: "icecube",    label: "🧊 Ice Cube",      match: "Ice Cube",          paid: false },
+    { key: "water",      label: "💧 Water",         match: "Water Bottles",     paid: false },
+    { key: "speaker",    label: "🔊 Speaker",       match: "Bluetooth Speaker", paid: false },
+    { key: "crew",       label: "👨‍✈️ Crew",         match: "Captain",           paid: false },
+    { key: "snacks",     label: "🍿 Snacks",        match: "Snacks",            paid: false },
+    { key: "balloon",    label: "🎈 Decoration",    match: "Balloon",           paid: true  },
+    { key: "decoration", label: "🎈 Decoration",    match: "decoration",        paid: true  },
   ];
 
   const parseAddons = (extraDetails = "") => {
     const text = extraDetails.toLowerCase();
-    const seen = new Set();
-    const all = ADDON_CONFIG.filter(({ key, match }) => {
+    const seen  = new Set();
+    const all   = ADDON_CONFIG.filter(({ key, match }) => {
       if (text.includes(match.toLowerCase()) && !seen.has(key)) {
         seen.add(key);
         return true;
@@ -104,10 +103,10 @@ function Bookings({ user }) {
 
   // ---------------- COLORS ----------------
   const statusColorMap = {
-    pending: "info",
+    pending:   "info",
     confirmed: "success",
     cancelled: "danger",
-    completed: "primary"
+    completed: "primary",
   };
 
   // ---------------- SCREEN RESIZE ----------------
@@ -120,8 +119,6 @@ function Bookings({ user }) {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-
-
 
   // ---------------- HELPERS ----------------
   const to12HourFormat = (time24) => {
@@ -138,18 +135,25 @@ function Bookings({ user }) {
     return emp ? `${encodeURIComponent(emp.name)}~${emp._id}` : "";
   };
 
+  // A booking is "completed" when its end time has already passed (in IST)
+  const isBookingCompleted = (booking) => {
+    if (!booking.date || !booking.endTime) return false;
+    const bookingDateIST = booking.date.split("T")[0];
+    const bookingEnd     = new Date(`${bookingDateIST}T${booking.endTime}:00+05:30`);
+    return bookingEnd < getNowIST();
+  };
+
   // ---------------- FETCH EMPLOYEES ----------------
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
         const token = localStorage.getItem("authToken");
-        const res = await getEmployeesForBookingAPI(token);
+        const res   = await getEmployeesForBookingAPI(token);
         setEmployees(res?.data?.employees || []);
       } catch (e) {
         console.error("❌ Failed to load employees", e);
       }
     };
-
     fetchEmployees();
   }, []);
 
@@ -158,19 +162,12 @@ function Bookings({ user }) {
     try {
       setLoading(true);
       const token = localStorage.getItem("authToken");
-      const res = await getBookingsAPI(token, filters);
+      const res   = await getBookingsAPI(token, filters);
 
-      const updatedBookings = (res?.data?.bookings || []).map((booking) => {
-        if (
-          booking.status === "confirmed" &&
-          isBookingCompleted(booking)
-        ) {
-          return { ...booking, status: "completed" };
-        }
-        return booking;
-      });
-
-      setBookings(updatedBookings);
+      // NOTE: we do NOT mutate status to "completed" here — we keep the raw DB status
+      // and derive completion purely via isBookingCompleted() in the filter pipeline.
+      // This ensures the dashboard stat counts and Bookings view always agree.
+      setBookings(res?.data?.bookings || []);
     } catch (e) {
       console.error("❌ Error fetching bookings", e);
     } finally {
@@ -178,44 +175,27 @@ function Bookings({ user }) {
     }
   };
 
+  // ---------------- SYNC URL PARAMS ----------------
   useEffect(() => {
     const p = new URLSearchParams(location.search);
 
-    // 🔥 PRESERVE DASHBOARD PARAMS
-    if (rangeParam) p.set("range", rangeParam);
-    else p.delete("range");
-
-    if (createdParam) p.set("created", createdParam);
-    else p.delete("created");
-
-    if (searchQuery) p.set("search", searchQuery);
-    else p.delete("search");
-
-    if (filterDate) p.set("date", filterDate);
-    else p.delete("date");
-
-    if (filterStatus) p.set("status", filterStatus);
-    else p.delete("status");
-
-    if (selectedMonth) p.set("month", selectedMonth);
-    else p.delete("month");
+    if (rangeParam)   p.set("range",   rangeParam);   else p.delete("range");
+    if (createdParam) p.set("created", createdParam); else p.delete("created");
+    if (searchQuery)  p.set("search",  searchQuery);  else p.delete("search");
+    if (filterDate)   p.set("date",    filterDate);   else p.delete("date");
+    if (filterStatus) p.set("status",  filterStatus); else p.delete("status");
+    if (selectedMonth) p.set("month",  selectedMonth); else p.delete("month");
 
     const employeeValue = getEmployeeParamValue();
-    if (employeeValue) p.set("employee", employeeValue);
-    else p.delete("employee");
+    if (employeeValue) p.set("employee", employeeValue); else p.delete("employee");
 
     navigate({ search: p.toString() }, { replace: true });
   }, [
-    searchQuery,
-    filterDate,
-    filterStatus,
-    filterEmployee,
-    selectedMonth,
-    employees,
-    rangeParam,
-    createdParam,
+    searchQuery, filterDate, filterStatus, filterEmployee,
+    selectedMonth, employees, rangeParam, createdParam,
   ]);
 
+  // Clear date/month when navigating via 7-days range
   useEffect(() => {
     if (rangeParam === "7days") {
       setSelectedMonth("");
@@ -223,46 +203,42 @@ function Bookings({ user }) {
     }
   }, [rangeParam]);
 
-  // ---------------- FILTER / REFRESH → FETCH ----------------
+  // ---------------- TRIGGER FETCH ----------------
   useEffect(() => {
     const filters = {};
 
     if (filterDate) filters.date = filterDate;
 
+    // "completed" is derived client-side from endTime, not a real DB status, so don't pass it
     if (filterStatus && filterStatus !== "completed") {
       filters.status = filterStatus;
     }
 
     if (filterEmployee) filters.employeeId = filterEmployee;
 
-    // Pass month to API when no specific date or range is active
     if (selectedMonth && !filterDate && rangeParam !== "7days" && createdParam !== "today") {
       filters.month = selectedMonth;
     }
 
-    // Pass 7days range to API
     if (rangeParam === "7days") {
-      const today = getTodayIST();
-      const next7 = new Date(`${today}T00:00:00+05:30`);
+      const today  = getTodayIST();
+      const next7  = new Date(`${today}T00:00:00+05:30`);
       next7.setDate(next7.getDate() + 7);
       filters.startDate = today;
-      filters.endDate = next7.toISOString().slice(0, 10);
+      filters.endDate   = next7.toISOString().slice(0, 10);
     }
 
-    // Pass createdToday flag to API
     if (createdParam === "today") {
-      filters.createdToday = true;
+      // Do NOT send createdToday to server — server filters by UTC date which may
+      // differ from IST date (e.g. bookings created 11pm–midnight UTC = next day IST).
+      // Instead, fetch the current month and filter client-side, exactly as the dashboard does.
+      filters.month = getMonthIST();
     }
 
     fetchBookings(filters);
   }, [
-    filterDate,
-    filterStatus,
-    filterEmployee,
-    location.state?.refresh,
-    rangeParam,
-    createdParam,
-    selectedMonth, // ✅ was missing — caused stale fetch when arriving from dashboard with ?month=
+    filterDate, filterStatus, filterEmployee,
+    location.state?.refresh, rangeParam, createdParam, selectedMonth,
   ]);
 
   // ---------------- AUTO SEARCH FROM NOTIFICATION ----------------
@@ -270,11 +246,9 @@ function Bookings({ user }) {
     if (location.state?.bookingId || location.state?.status) {
       setSearchQuery(location.state.bookingId?.slice(-5) || "");
       setFilterStatus(location.state.status || "");
-
       navigate(".", { replace: true, state: {} });
     }
   }, [location.state?.refresh]);
-
 
   // ---------------- ACTIONS ----------------
   const handleClear = () => {
@@ -283,30 +257,14 @@ function Bookings({ user }) {
     setFilterStatus("");
     setFilterEmployee("");
     setSelectedMonth("");
-
-      navigate("/bookings", { replace: true });
-  };
-
-  const isBookingCompleted = (booking) => {
-    if (!booking.date || !booking.endTime) return false;
-
-    // Build the booking end datetime in IST
-    const bookingDateIST = booking.date.split("T")[0]; // "YYYY-MM-DD"
-    const bookingEnd = new Date(`${bookingDateIST}T${booking.endTime}:00+05:30`);
-
-    return bookingEnd < getNowIST();
+    navigate("/bookings", { replace: true });
   };
 
   const generateBoardingPass = (booking) => {
     const formatDate = (dateStr) => {
       const d = new Date(dateStr);
-      return d.toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
+      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
     };
-
     const formatTime = (time24) => {
       let [h, m] = time24.split(":").map(Number);
       const period = h >= 12 ? "PM" : "AM";
@@ -314,8 +272,9 @@ function Bookings({ user }) {
       return `${h}.${m.toString().padStart(2, "0")} ${period}`;
     };
 
-    const tokenPaid = booking.quotedAmount - booking.pendingAmount;
-    const tokenAmount = booking?.tokenAmount
+    const tokenPaid  = booking.quotedAmount - booking.pendingAmount;
+    const tokenAmount = booking?.tokenAmount;
+
     const sanitizeText = (text = "") =>
       text
         .replace(/\u2022|\u2023|\u25E6/g, "-")
@@ -325,98 +284,71 @@ function Bookings({ user }) {
         .trim();
 
     const extraDetails = sanitizeText(booking.extraDetails || "");
+    const lines        = extraDetails.split("\n").map((l) => l.trim()).filter(Boolean);
 
-    const lines = extraDetails.split("\n").map(l => l.trim()).filter(Boolean);
-
-    const inclusions = lines.filter((i) =>
+    const inclusions   = lines.filter((i) =>
       ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"]
         .some((k) => i.includes(k))
     );
-
     const paidServices = lines.filter((i) =>
       ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
     );
-
     const notes = extraDetails.includes("Notes:")
       ? extraDetails.split("Notes:").slice(1).join("Notes:").trim()
       : "";
 
     const isPending = booking.status === "pending";
 
-    const hardCodedDisclaimer = `Disclaimer:
-• Reporting time is 30 minutes prior to departure
-• No refund for late arrival or no-show
-• Subject to weather and government regulations
-Thank you for booking with ${booking.company?.name}`
+    const hardCodedDisclaimer = `Disclaimer:\n• Reporting time is 30 minutes prior to departure\n• No refund for late arrival or no-show\n• Subject to weather and government regulations\nThank you for booking with ${booking.company?.name}`;
 
-    const boardingPassText = `
-# Ticket Number: ${booking._id.slice(-5).toUpperCase()}
-
-Booking Status: ${booking.status.toUpperCase()}${isPending ? `
-⚠️ NOTE: This is a TENTATIVE booking. Your slot is NOT yet confirmed. Please confirm by paying Token Amount.` : ""}
-
-👤 Guest Name: ${booking.customerId?.name}
-📞 Contact No.: ${booking.customerId?.contact}
-👥 Group Size: ${booking.numPeople} Pax
-⛵ Yacht Name: ${booking.yachtId?.name}
-
-🗓️ Trip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(
-      booking.startTime
-    )} to ${formatTime(booking.endTime)}
-(1 Hour Sailing + 1 Hour Anchor)
-
-Booking Price: ₹${booking.quotedAmount}/-
-${isPending && tokenAmount ? `
-Token to be Paid: ₹${tokenAmount}/- (Please share screenshot Over WhatsApp)`:""}
-${!isPending ? `
-Token Paid: ₹${tokenPaid}/-
-Balance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)` : ""}
-
-📍 Boarding Location
-🔗 ${isPending ? "Will be shared upon confirmation" : (booking.yachtId?.boardingLocation || "Location not provided")}
-
-${inclusions.length
-        ? `Extra Inclusions:\n${inclusions
-          .map((i) => `• ${i.replace("-", "").trim()}`)
-          .join("\n")}`
-        : ""}
-
-${paidServices.length
-        ? `\nExtra Add On's Services:\n${paidServices
-          .map((i) => `• ${i.replace("-", "").trim()}`)
-          .join("\n")}`
-        : ""}
-
-${notes
-        ? `\nNotes:\n• ${notes.replace(/\n/g, "\n• ")}`
-        : ""}
-`.trim() +
-      `\n\n${booking?.company?.disclaimer
-        ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]
-
-Thank You`
-        : hardCodedDisclaimer
-      }
-`;
+    const boardingPassText =
+      `# Ticket Number: ${booking._id.slice(-5).toUpperCase()}\n\nBooking Status: ${booking.status.toUpperCase()}${
+        isPending
+          ? "\n⚠️ NOTE: This is a TENTATIVE booking. Your slot is NOT yet confirmed. Please confirm by paying Token Amount."
+          : ""
+      }\n\n👤 Guest Name: ${booking.customerId?.name}\n📞 Contact No.: ${booking.customerId?.contact}\n👥 Group Size: ${
+        booking.numPeople
+      } Pax\n⛵ Yacht Name: ${booking.yachtId?.name}\n\n🗓️ Trip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(
+        booking.startTime
+      )} to ${formatTime(booking.endTime)}\n(1 Hour Sailing + 1 Hour Anchor)\n\nBooking Price: ₹${booking.quotedAmount}/-\n${
+        isPending && tokenAmount ? `\nToken to be Paid: ₹${tokenAmount}/- (Please share screenshot Over WhatsApp)` : ""
+      }${
+        !isPending
+          ? `\nToken Paid: ₹${tokenPaid}/-\nBalance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)`
+          : ""
+      }\n\n📍 Boarding Location\n🔗 ${
+        isPending ? "Will be shared upon confirmation" : booking.yachtId?.boardingLocation || "Location not provided"
+      }\n\n${
+        inclusions.length
+          ? `Extra Inclusions:\n${inclusions.map((i) => `• ${i.replace("-", "").trim()}`).join("\n")}`
+          : ""
+      }\n${
+        paidServices.length
+          ? `\nExtra Add On's Services:\n${paidServices.map((i) => `• ${i.replace("-", "").trim()}`).join("\n")}`
+          : ""
+      }\n${notes ? `\nNotes:\n• ${notes.replace(/\n/g, "\n• ")}` : ""}`.trim() +
+      `\n\n${
+        booking?.company?.disclaimer
+          ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]\n\nThank You`
+          : hardCodedDisclaimer
+      }\n`;
 
     navigator.clipboard.writeText(boardingPassText);
     toast.success("Boarding Pass copied to clipboard");
   };
 
-
-  const handleViewDetails = (booking) =>
-    navigate("/customer-details", { state: { booking } });
+  const handleViewDetails   = (booking) => navigate("/customer-details", { state: { booking } });
 
   const handleShareWhatsApp = (booking, e) => {
     e.stopPropagation();
-    const baseUrl = "https://goaboat.com" || "";
+    const baseUrl      = "https://goaboat.com";
     const ticketNumber = booking._id.slice(-5).toUpperCase();
     const customerName = booking.customerId?.name || "Customer";
-    const passLink = `${baseUrl}/?ticket=${ticketNumber}`;
-    const companyName = booking.company?.name || "Us";
-    const yachtName = booking.yachtId?.name || "your yacht";
-    const tripDate = booking.date?.split("T")[0];
-    const message = `Hi ${customerName}! \n\nThank you for booking with ${companyName} \n\nYour boarding pass for *${yachtName}* on *${tripDate}* is ready.\n${passLink}\n\nSee you onboard!`;
+    const passLink     = `${baseUrl}/?ticket=${ticketNumber}`;
+    const companyName  = booking.company?.name || "Us";
+    const yachtName    = booking.yachtId?.name || "your yacht";
+    const tripDate     = booking.date?.split("T")[0];
+    const message      = `Hi ${customerName}! \n\nThank you for booking with ${companyName} \n\nYour boarding pass for *${yachtName}* on *${tripDate}* is ready.\n${passLink}\n\nSee you onboard!`;
     let phone = booking.customerId?.contact?.replace(/\D/g, "");
     if (phone && !phone.startsWith("91") && phone.length === 10) phone = "91" + phone;
     const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
@@ -425,102 +357,75 @@ Thank You`
 
   const handleCreateBooking = () => navigate("/create-booking", { state: { source: "bookings" } });
 
-  const handleUpdateBooking = (booking) =>
-    navigate("/update-booking", { state: { booking, user } });
-
+  // ---------------- FILTER PIPELINE ----------------
   const filteredBookings = bookings
-    // 🔥 0️⃣ Month / Date Filter (UI only)
+
+    // ── 0️⃣  Date / Range / Month filter ──
     .filter((booking) => {
-      const bookingDateObj = toMidnightIST(booking.date.split("T")[0]);
-      const bookingDate = booking.date?.split("T")[0];
-      // ✅ CREATED TODAY FILTER (highest priority from dashboard)
+      const bookingDate = booking.date?.split("T")[0]; // "YYYY-MM-DD"
+
+      // "New Today": show ALL non-cancelled bookings created today in IST,
+      // including completed ones — matches dashboard's createdToday count exactly.
       if (createdParam === "today") {
-        const createdAt = new Date(booking.createdAt);
-        const todayIST = getTodayIST(); // "YYYY-MM-DD" in IST
-
-        // Convert createdAt to IST date string for comparison
-        const createdIST = new Date(
-          createdAt.getTime() + (5.5 * 60 - createdAt.getTimezoneOffset()) * 60 * 1000
-        ).toISOString().slice(0, 10);
-
-        return createdIST === todayIST && booking.status !== "cancelled";
+        const createdIST = toISTDateStr(booking.createdAt);
+        return createdIST === getTodayIST() && booking.status !== "cancelled";
       }
 
-      // ✅ 1️⃣ RANGE = 7 DAYS (highest priority from dashboard)
+      // 7-day range: strictly after today midnight up to +7 days (matches dashboard count)
       if (rangeParam === "7days") {
         const todayMidnightIST = toMidnightIST(getTodayIST());
-        const next7Days = new Date(todayMidnightIST);
+        const next7Days        = new Date(todayMidnightIST);
         next7Days.setDate(todayMidnightIST.getDate() + 7);
-
-        const bookingDateIST = toMidnightIST(booking.date.split("T")[0]);
-
-        return (
-          bookingDateIST > todayMidnightIST &&
-          bookingDateIST <= next7Days
-        );
+        const bookingDateIST   = toMidnightIST(bookingDate);
+        return bookingDateIST > todayMidnightIST && bookingDateIST <= next7Days;
       }
 
-      // ✅ 2️⃣ Specific Date
-      if (filterDate) {
-        return bookingDate === filterDate;
-      }
+      // Specific date
+      if (filterDate) return bookingDate === filterDate;
 
-      // ✅ 3️⃣ If no month selected → show all
-      if (!selectedMonth) {
-        return true;
-      }
+      // No month selected → show everything
+      if (!selectedMonth) return true;
 
-      // ✅ 4️⃣ Month filter
-      const bookingMonth = booking.date.split("T")[0].slice(0, 7); // "YYYY-MM" direct from stored date
-      return bookingMonth === selectedMonth;
+      // Month filter
+      return bookingDate.slice(0, 7) === selectedMonth;
     })
-    // 1️⃣ Status logic
+
+    // ── 1️⃣  Status filter ──
     .filter((booking) => {
-      // When a specific date is selected (e.g. navigating from "Today" on dashboard),
-      // show ALL non-cancelled bookings for that date regardless of time-completion.
-      // This ensures dashboard "Today = 3" matches Bookings "Today = 3".
-      const isDateFiltered = !!filterDate || rangeParam === "7days" || createdParam === "today";
+      const completed = isBookingCompleted(booking);
 
       if (filterStatus === "completed") {
-        return (
-          booking.status !== "cancelled" &&
-          isBookingCompleted(booking)
-        );
+        return booking.status !== "cancelled" && completed;
       }
 
       if (filterStatus === "confirmed") {
-        // When filtered by date, show confirmed regardless of time-completion (trip may be ongoing/done today)
-        if (isDateFiltered) return booking.status === "confirmed";
-        // Otherwise match dashboard: confirmed = not yet time-completed
-        return booking.status === "confirmed" && !isBookingCompleted(booking);
+        return booking.status === "confirmed" && !completed;
       }
 
       if (filterStatus === "pending") {
-        if (isDateFiltered) return booking.status === "pending";
-        return booking.status === "pending" && !isBookingCompleted(booking);
+        return booking.status === "pending" && !completed;
       }
 
-      if (filterStatus) {
-        return booking.status === filterStatus;
+      if (filterStatus === "cancelled") {
+        return booking.status === "cancelled";
       }
 
-      // No status filter: when viewing a specific date, show all non-cancelled
-      // (includes time-completed ones so count matches dashboard)
-      if (isDateFiltered) {
+      // No status filter:
+      // - When browsing by specific date OR created=today: show ALL non-cancelled
+      //   (including completed) so the count matches the dashboard stat exactly.
+      // - In all other views (month, 7days, no filter): hide completed so the list
+      //   only shows actionable/active bookings.
+      if (filterDate || createdParam === "today") {
         return booking.status !== "cancelled";
       }
 
-      return (
-        booking.status !== "cancelled" &&
-        !isBookingCompleted(booking)
-      );
+      return booking.status !== "cancelled" && !completed;
     })
 
-    // 2️⃣ Search filter
+    // ── 2️⃣  Search filter ──
     .filter((booking) => {
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
-
       return (
         booking.customerId?.name?.toLowerCase().includes(q) ||
         booking.customerId?.contact?.includes(q) ||
@@ -530,18 +435,16 @@ Thank You`
       );
     })
 
-    // 3️⃣ Sort
+    // ── 3️⃣  Sort by date → start time → yacht name ──
     .sort((a, b) => {
       const dateDiff = new Date(a.date) - new Date(b.date);
       if (dateDiff !== 0) return dateDiff;
-
       const timeDiff = a.startTime.localeCompare(b.startTime);
       if (timeDiff !== 0) return timeDiff;
-
-      return a.yachtId?.name.localeCompare(b.yachtId?.name);
+      return a.yachtId?.name?.localeCompare(b.yachtId?.name);
     });
 
-
+  // ---------------- RENDER ----------------
   return (
     <div className="container mt-1 pb-2">
       {/* Header */}
@@ -552,15 +455,14 @@ Thank You`
         </div>
         {(user?.type === "admin" || user?.type === "backdesk") && (
           <button className="btn btn-success rounded-pill px-3" onClick={handleCreateBooking}>
-            + Quotaion
+            + Quotation
           </button>
         )}
       </div>
 
-      {/* Filters */}
+      {/* Desktop Filters */}
       {!isMobile && (
         <div className="filter-bar d-flex flex-wrap gap-2 mb-3 align-items-center">
-          {/* Search */}
           <div className="filter-input-wrapper">
             <span className="filter-icon">🔍</span>
             <input
@@ -573,29 +475,22 @@ Thank You`
             />
           </div>
 
-          {/* Month */}
           <select
             className={`form-select filter-select ${selectedMonth ? "filter-active" : ""}`}
             value={selectedMonth || ""}
-            onChange={(e) => {
-              setSelectedMonth(e.target.value);
-              setFilterDate("");
-            }}
+            onChange={(e) => { setSelectedMonth(e.target.value); setFilterDate(""); }}
             style={{ maxWidth: "110px" }}
           >
             <option value="">📅 Month</option>
             {Array.from({ length: 6 }).map((_, i) => {
-              const base = getNowIST();
+              const base  = getNowIST();
               base.setMonth(base.getMonth() + i);
               const value = base.toISOString().slice(0, 7);
               const label = base.toLocaleString("en-GB", { month: "short", year: "2-digit" });
-              return (
-                <option key={value} value={value}>{label}</option>
-              );
+              return <option key={value} value={value}>{label}</option>;
             })}
           </select>
 
-          {/* Specific Date Picker */}
           <input
             type="date"
             className={`form-control filter-select ${filterDate ? "filter-active" : ""}`}
@@ -606,7 +501,6 @@ Thank You`
             title="Filter by specific date"
           />
 
-          {/* Agent */}
           <select
             className={`form-select filter-select ${filterEmployee ? "filter-active" : ""}`}
             value={filterEmployee}
@@ -619,7 +513,6 @@ Thank You`
             ))}
           </select>
 
-          {/* Status */}
           <select
             className={`form-select filter-select ${filterStatus ? "filter-active" : ""}`}
             value={filterStatus}
@@ -633,7 +526,6 @@ Thank You`
             <option value="cancelled">🔴 Cancelled</option>
           </select>
 
-          {/* Clear — only visible when any filter is active */}
           {(searchQuery || filterDate || filterStatus || filterEmployee || selectedMonth) && (
             <button className="btn btn-clear-filter" onClick={handleClear} title="Clear all filters">
               ✕ Clear
@@ -642,9 +534,9 @@ Thank You`
         </div>
       )}
 
+      {/* Mobile search + filter icon */}
       {isMobile && (
         <div className="d-flex align-items-center gap-2 mb-3">
-          {/* Search Bar */}
           <div className="filter-input-wrapper" style={{ flex: 1 }}>
             <span className="filter-icon">🔍</span>
             <input
@@ -656,15 +548,10 @@ Thank You`
               style={{ paddingLeft: "2rem" }}
             />
             {searchQuery && (
-              <button
-                className="filter-clear-x"
-                onClick={() => setSearchQuery("")}
-                title="Clear search"
-              >✕</button>
+              <button className="filter-clear-x" onClick={() => setSearchQuery("")} title="Clear search">✕</button>
             )}
           </div>
 
-          {/* Filter Icon with active badge */}
           <button
             className={`btn mobile-filter-btn ${[filterDate, filterStatus, filterEmployee, selectedMonth].filter(Boolean).length > 0 ? "has-active" : ""}`}
             onClick={() => setShowFilters(true)}
@@ -680,16 +567,10 @@ Thank You`
         </div>
       )}
 
+      {/* Mobile filter drawer */}
       {isMobile && showFilters && (
-        <div
-          className="mobile-filter-backdrop"
-          onClick={() => setShowFilters(false)}
-        >
-          <div
-            className="mobile-filter-drawer"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Drawer handle + header */}
+        <div className="mobile-filter-backdrop" onClick={() => setShowFilters(false)}>
+          <div className="mobile-filter-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="drawer-handle" />
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h6 className="mb-0 fw-semibold">Filters</h6>
@@ -704,14 +585,11 @@ Thank You`
             <select
               className={`form-select mb-3 ${selectedMonth ? "filter-active" : ""}`}
               value={selectedMonth}
-              onChange={(e) => {
-                setSelectedMonth(e.target.value);
-                setFilterDate("");
-              }}
+              onChange={(e) => { setSelectedMonth(e.target.value); setFilterDate(""); }}
             >
               <option value="">All Months</option>
               {Array.from({ length: 6 }).map((_, i) => {
-                const base = getNowIST();
+                const base  = getNowIST();
                 base.setMonth(base.getMonth() + i);
                 const value = base.toISOString().slice(0, 7);
                 const label = base.toLocaleString("en-GB", { month: "long", year: "numeric" });
@@ -743,8 +621,8 @@ Thank You`
             <label className="form-label small text-muted mb-1">Status</label>
             <div className="status-pill-group mb-4">
               {[
-                { value: "", label: "All", color: "#6c757d" },
-                { value: "pending", label: "Pending", color: "#0dcaf0" },
+                { value: "",          label: "All",       color: "#6c757d" },
+                { value: "pending",   label: "Pending",   color: "#0dcaf0" },
                 { value: "confirmed", label: "Confirmed", color: "#198754" },
                 { value: "completed", label: "Completed", color: "#0d6efd" },
                 { value: "cancelled", label: "Cancelled", color: "#dc3545" },
@@ -760,17 +638,14 @@ Thank You`
               ))}
             </div>
 
-            <button
-              className="btn btn-primary w-100 rounded-pill"
-              onClick={() => setShowFilters(false)}
-            >
+            <button className="btn btn-primary w-100 rounded-pill" onClick={() => setShowFilters(false)}>
               Show {filteredBookings.length} Bookings
             </button>
           </div>
         </div>
       )}
 
-      {/* BOOKINGS – ORIGINAL CARD UI */}
+      {/* Booking cards */}
       {loading ? (
         <div className="text-center py-5 text-muted">
           <div className="spinner-border spinner-border-sm me-2" role="status" />
@@ -780,27 +655,19 @@ Thank You`
         <div className="row">
           {filteredBookings.length > 0 ? (
             filteredBookings.map((booking) => {
-              const statusColor =
-                statusColorMap[booking.status] || "info";
+              // Derive display status: show "completed" if end time has passed, else use DB status
+              const displayStatus = isBookingCompleted(booking) ? "completed" : booking.status;
+              const statusColor   = statusColorMap[displayStatus] || "info";
 
               return (
                 <div key={booking._id} className="col-lg-4 col-md-6 mb-3">
-                  <div
-                    className={`card border-0 shadow-sm h-100 border-start border-4 border-${statusColor} booking-card`}
-                  >
+                  <div className={`card border-0 shadow-sm h-100 border-start border-4 border-${statusColor} booking-card`}>
                     <div className="card-body p-3">
                       <div className="d-flex justify-content-between align-items-start mb-2">
                         <div>
-                          <h6 className="mb-0 fw-semibold text-dark">
-                            {booking.customerId?.name}
-                          </h6>
-
-                          {/* Ticket + Call on same line */}
+                          <h6 className="mb-0 fw-semibold text-dark">{booking.customerId?.name}</h6>
                           <small className="d-flex align-items-center gap-3">
-                            <small className="text-muted">
-                              Ticket #{booking._id.slice(-5).toUpperCase()}
-                            </small>
-
+                            <small className="text-muted">Ticket #{booking._id.slice(-5).toUpperCase()}</small>
                             <a
                               href={`tel:${booking?.customerId?.contact}`}
                               className="text-decoration-none text-dark d-inline-flex align-items-center gap-1"
@@ -809,33 +676,23 @@ Thank You`
                             </a>
                           </small>
                         </div>
-
-                        <span
-                          className={`badge bg-${statusColor} bg-opacity-10 text-${statusColor}`}
-                        >
-                          {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                        <span className={`badge bg-${statusColor} bg-opacity-10 text-${statusColor}`}>
+                          {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
                         </span>
                       </div>
                       <hr className="my-2" />
 
                       <div className="small text-muted booking-info">
                         <div>🚤 <b>Yacht:</b> {booking.yachtId?.name}</div>
-                        <div>
-                          📅 <b>Date:</b> {booking.date?.split("T")[0]}
-                        </div>
+                        <div>📅 <b>Date:</b> {booking.date?.split("T")[0]}</div>
                         <div>
                           ⏰ <b>Time:</b>{" "}
-                          {to12HourFormat(booking.startTime)} –{" "}
-                          {to12HourFormat(booking.endTime)}
+                          {to12HourFormat(booking.startTime)} – {to12HourFormat(booking.endTime)}
                         </div>
-                        <div className="fw-semibold text-dark">
-                          🧑‍💼 Pax: {booking.numPeople}
-                        </div>
-                        <div className="fw-semibold text-dark">
-                          💰 Balance: {booking.pendingAmount}
-                        </div>
-                        
+                        <div className="fw-semibold text-dark">🧑‍💼 Pax: {booking.numPeople}</div>
+                        <div className="fw-semibold text-dark">💰 Balance: {booking.pendingAmount}</div>
                       </div>
+
                       {/* ADD-ONS */}
                       {(() => {
                         const { paid, included } = parseAddons(booking.extraDetails);
@@ -844,7 +701,6 @@ Thank You`
                         const isOpen = expandedAddons[booking._id];
                         return (
                           <div className="addon-section">
-                            {/* Inclusions toggle + paid chips on same line */}
                             {included.length > 0 && (
                               <div className="addon-inline-row">
                                 <button
@@ -868,7 +724,6 @@ Thank You`
                               </div>
                             )}
 
-                            {/* If only paid (no included) */}
                             {included.length === 0 && paid.length > 0 && (
                               <div className="addon-paid-row">
                                 {paid.map(({ key, label }) => (
@@ -877,7 +732,6 @@ Thank You`
                               </div>
                             )}
 
-                            {/* Included chips — collapsible */}
                             {included.length > 0 && isOpen && (
                               <div className="addon-chips-wrap">
                                 {included.map(({ key, label }) => (
@@ -890,7 +744,7 @@ Thank You`
                       })()}
 
                       <div className="d-flex gap-2 mt-1 align-items-center">
-                        {/* 👁 VIEW */}
+                        {/* VIEW */}
                         <button
                           className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                           title="View Booking"
@@ -900,7 +754,7 @@ Thank You`
                           <Eye size={16} />
                         </button>
 
-                        {/* 💬 WHATSAPP SHARE */}
+                        {/* WHATSAPP */}
                         <button
                           className="btn btn-sm rounded-circle d-flex align-items-center justify-content-center"
                           title="Share on WhatsApp"
@@ -908,14 +762,17 @@ Thank You`
                           onClick={(e) => handleShareWhatsApp(booking, e)}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+                            <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />
                           </svg>
                         </button>
 
-                        {/* 📋 PASS */}
-                        {(booking.status === "confirmed" || booking.status === "pending") && (
+                        {/* BOARDING PASS — only for non-completed bookings */}
+                        {(booking.status === "confirmed" || booking.status === "pending") &&
+                          !isBookingCompleted(booking) && (
                           <button
-                            className={`btn btn-sm flex-grow-1 rounded-pill ${booking.status === "confirmed" ? "btn-outline-success" : "btn-outline-warning"}`}
+                            className={`btn btn-sm flex-grow-1 rounded-pill ${
+                              booking.status === "confirmed" ? "btn-outline-success" : "btn-outline-warning"
+                            }`}
                             title={booking.status === "pending" ? "Copy Tentative Pass" : "Copy Boarding Pass"}
                             onClick={() => generateBoardingPass(booking)}
                           >
@@ -923,8 +780,9 @@ Thank You`
                           </button>
                         )}
 
-                        {/* ✏ UPDATE */}
-                        {(user?.type === "admin" || user?.type === "backdesk" || user?.type === "onsite") && !isBookingCompleted(booking) && (
+                        {/* UPDATE — only for non-completed bookings */}
+                        {(user?.type === "admin" || user?.type === "backdesk" || user?.type === "onsite") &&
+                          !isBookingCompleted(booking) && (
                           <button
                             className="btn btn-sm btn-outline-primary flex-grow-1 rounded-pill"
                             title="Update Booking"
@@ -946,7 +804,9 @@ Thank You`
               <small>Try adjusting your filters</small>
               {(searchQuery || filterDate || filterStatus || filterEmployee || selectedMonth) && (
                 <div className="mt-2">
-                  <button className="btn btn-sm btn-outline-secondary rounded-pill" onClick={handleClear}>Clear filters</button>
+                  <button className="btn btn-sm btn-outline-secondary rounded-pill" onClick={handleClear}>
+                    Clear filters
+                  </button>
                 </div>
               )}
             </div>

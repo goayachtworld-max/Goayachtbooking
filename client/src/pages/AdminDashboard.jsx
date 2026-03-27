@@ -82,6 +82,14 @@ const Icon = {
   ),
 };
 
+// ── Shared IST helper: converts any UTC timestamp string to "YYYY-MM-DD" in IST ──
+// Uses the browser's Intl engine via toLocaleString — avoids the
+// getTimezoneOffset() double-correction bug that was in the original code.
+const toISTDateStr = (utcStr) => {
+  const d = new Date(new Date(utcStr).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 export default function AdminDashboard({ user }) {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
@@ -104,6 +112,7 @@ export default function AdminDashboard({ user }) {
     return `${y}-${m}-${d}`;
   };
 
+  // A booking is "completed" when its end time has already passed (in IST)
   const isBookingCompleted = (b) => {
     if (!b.date || !b.endTime) return false;
     const bookingDateIST = b.date.split("T")[0];
@@ -118,33 +127,50 @@ export default function AdminDashboard({ user }) {
         const res = await getBookingsAPI(token, {});
         const bookings = res?.data?.bookings || [];
 
-        // All IST-based date comparisons
-        const todayIST = getTodayIST(); // "YYYY-MM-DD"
-        const nowIST = getNowIST();
-        const next7IST = new Date(`${todayIST}T00:00:00+05:30`);
+        const todayIST         = getTodayIST();                            // "YYYY-MM-DD"
+        const nowIST           = getNowIST();
+        const todayMidnightIST = new Date(`${todayIST}T00:00:00+05:30`);
+        const next7IST         = new Date(todayMidnightIST);
         next7IST.setDate(next7IST.getDate() + 7);
-        const cm = nowIST.getMonth(), cy = nowIST.getFullYear();
+        const cm = nowIST.getMonth();
+        const cy = nowIST.getFullYear();
 
-        let todayCount=0, upcoming7Days=0, monthCount=0, createdToday=0,
-            confirmed=0, pending=0, cancelled=0, completed=0;
+        let todayCount = 0, upcoming7Days = 0, monthCount = 0, createdToday = 0,
+            confirmed  = 0, pending = 0, cancelled = 0, completed = 0;
 
         bookings.forEach((b) => {
-          const bookingDate = b.date.split("T")[0]; // "YYYY-MM-DD"
+          const bookingDate    = b.date.split("T")[0];                     // "YYYY-MM-DD"
           const bookingDateObj = new Date(`${bookingDate}T00:00:00+05:30`);
 
-          // Convert createdAt to IST date string
-          const ca = new Date(b.createdAt);
-          const caIST = new Date(ca.getTime() + (5.5 * 60 - ca.getTimezoneOffset()) * 60 * 1000);
-          const caISTStr = caIST.toISOString().slice(0, 10);
+          // FIX A: use Intl-based helper — avoids getTimezoneOffset() double-correction
+          const caISTStr = toISTDateStr(b.createdAt);
 
+          // ── Cancelled: count and skip everything else ──
           if (b.status === "cancelled") { cancelled++; return; }
+
+          const alreadyCompleted = isBookingCompleted(b);
+
+          // Completed count: non-cancelled bookings whose end time has passed
+          if (alreadyCompleted) { completed++; }
+
+          // Today: ALL non-cancelled bookings whose trip date is today
+          // (includes completed ones — so clicking Today shows the same bookings)
           if (bookingDate === todayIST) todayCount++;
-          if (isBookingCompleted(b)) { completed++; return; }
-          if (bookingDateObj > new Date(`${todayIST}T00:00:00+05:30`) && bookingDateObj <= next7IST) upcoming7Days++;
-          if (bookingDateObj.getMonth() === cm && bookingDateObj.getFullYear() === cy) monthCount++;
+
+          // Next 7 days: strictly after today midnight up to +7 days
+          // Excludes completed so the list matches what Bookings shows for active future trips
+          if (!alreadyCompleted && bookingDateObj > todayMidnightIST && bookingDateObj <= next7IST) upcoming7Days++;
+
+          // This month: active bookings in the current calendar month (excludes completed)
+          if (!alreadyCompleted && bookingDateObj.getMonth() === cm && bookingDateObj.getFullYear() === cy) monthCount++;
+
+          // New today: ALL bookings created today in IST — regardless of completion
+          // so clicking "New Today" always shows the same bookings the stat counted
           if (caISTStr === todayIST) createdToday++;
-          if (b.status === "confirmed") confirmed++;
-          if (b.status === "pending")   pending++;
+
+          // Status counts (active only — completed and cancelled excluded)
+          if (!alreadyCompleted && b.status === "confirmed") confirmed++;
+          if (!alreadyCompleted && b.status === "pending")   pending++;
         });
 
         setStats({ today: todayCount, upcoming7Days, month: monthCount, createdToday, confirmed, pending, cancelled, completed });
@@ -159,46 +185,46 @@ export default function AdminDashboard({ user }) {
 
   /* ── Data ── */
   const STATS = [
-    { label:"Today",       value: stats.today,         accent:"#3b82f6", nav:`/bookings?date=${todayStr}` },
-    { label:"Next 7 Days", value: stats.upcoming7Days, accent:"#f59e0b", nav:"/bookings?range=7days" },
-    { label:"This Month",  value: stats.month,         accent:"#8b5cf6", nav:`/bookings?month=${monthStr}` },
-    { label:"New Today",   value: stats.createdToday,  accent:"#06b6d4", nav:"/bookings?created=today" },
-    { label:"Pending",     value: stats.pending,       accent:"#f97316", nav:"/bookings?status=pending" },
-    { label:"Confirmed",   value: stats.confirmed,     accent:"#10b981", nav:"/bookings?status=confirmed" },
-    { label:"Completed",   value: stats.completed,     accent:"#6366f1", nav:"/bookings?status=completed" },
-    { label:"Cancelled",   value: stats.cancelled,     accent:"#ef4444", nav:"/bookings?status=cancelled" },
+    { label: "Today",       value: stats.today,         accent: "#3b82f6", nav: `/bookings?date=${todayStr}` },
+    { label: "Next 7 Days", value: stats.upcoming7Days, accent: "#f59e0b", nav: "/bookings?range=7days" },
+    { label: "This Month",  value: stats.month,         accent: "#8b5cf6", nav: `/bookings?month=${monthStr}` },
+    { label: "New Today",   value: stats.createdToday,  accent: "#06b6d4", nav: "/bookings?created=today" },
+    { label: "Pending",     value: stats.pending,       accent: "#f97316", nav: "/bookings?status=pending" },
+    { label: "Confirmed",   value: stats.confirmed,     accent: "#10b981", nav: "/bookings?status=confirmed" },
+    { label: "Completed",   value: stats.completed,     accent: "#6366f1", nav: "/bookings?status=completed" },
+    { label: "Cancelled",   value: stats.cancelled,     accent: "#ef4444", nav: "/bookings?status=cancelled" },
   ];
 
   const MGMT = [
     {
-      label:"Create Booking", desc:"Add a new yacht reservation",
-      iconBg:"#dbeafe", iconColor:"#1d4ed8", icon:<Icon.Clipboard />,
-      linkColor:"#1d4ed8", nav:"/create-booking",
+      label: "Create Booking", desc: "Add a new yacht reservation",
+      iconBg: "#dbeafe", iconColor: "#1d4ed8", icon: <Icon.Clipboard />,
+      linkColor: "#1d4ed8", nav: "/create-booking",
     },
     {
-      label:"All Bookings", desc:"Browse and manage reservations",
-      iconBg:"#dcfce7", iconColor:"#15803d", icon:<Icon.Grid />,
-      linkColor:"#15803d", nav:`/bookings?month=${monthStr}`,
+      label: "All Bookings", desc: "Browse and manage reservations",
+      iconBg: "#dcfce7", iconColor: "#15803d", icon: <Icon.Grid />,
+      linkColor: "#15803d", nav: `/bookings?month=${monthStr}`,
     },
     {
-      label:"Availability", desc:"Yacht calendar overview",
-      iconBg:"#fef3c7", iconColor:"#b45309", icon:<Icon.Yacht />,
-      linkColor:"#b45309", nav:"/grid-availability",
+      label: "Availability", desc: "Yacht overview",
+      iconBg: "#fef3c7", iconColor: "#b45309", icon: <Icon.Yacht />,
+      linkColor: "#b45309", nav: "/availability",
     },
   ];
 
   const ACTIONS = [
     ...(user?.systemAdministrator ? [{
-      label:"Create Company", iconBg:"#e0e7ff", iconColor:"#4338ca", icon:<Icon.Building />, nav:"/register-company",
+      label: "Create Company", iconBg: "#e0e7ff", iconColor: "#4338ca", icon: <Icon.Building />, nav: "/register-company",
     }] : []),
-    { label:"New Customer",  iconBg:"#fce7f3", iconColor:"#be185d", icon:<Icon.Person />,   nav:"/create-customer" },
-    { label:"Book Yacht",    iconBg:"#d1fae5", iconColor:"#065f46", icon:<Icon.Yacht />,    nav:"/availability" },
+    { label: "New Customer", iconBg: "#fce7f3", iconColor: "#be185d", icon: <Icon.Person />,  nav: "/create-customer" },
+    { label: "Book Yacht",   iconBg: "#d1fae5", iconColor: "#065f46", icon: <Icon.Yacht />,   nav: "/availability" },
   ];
 
   return (
     <div className={styles.dashboardWrapper}>
 
-      {/* ── Slim Top Bar (replaces hero) ── */}
+      {/* ── Slim Top Bar ── */}
       <div className={styles.topBar}>
         <div className={styles.topBarInner}>
           <div>
@@ -207,7 +233,7 @@ export default function AdminDashboard({ user }) {
           </div>
           <p className={styles.topBarDate}>
             {new Date().toLocaleDateString("en-US", {
-              weekday:"short", month:"short", day:"numeric",
+              weekday: "short", month: "short", day: "numeric",
             })}
           </p>
         </div>
