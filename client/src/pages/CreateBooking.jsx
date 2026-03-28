@@ -34,7 +34,7 @@ function CreateBooking() {
     advanceAmount: "",
     onBehalfEmployeeId: user?._id,
     extraDetails: "",
-    bookingStatus: "pending",
+    bookingStatus: (location.state?.source === "bookings") ? "pending" : (isAdmin ? "confirmed" : "pending"),
     tokenAmount: ""
   });
 
@@ -147,9 +147,26 @@ function CreateBooking() {
     return diff > 0 ? diff / 60 : 0;
   }, [formData.startTime, formData.endTime, customStart, customEnd, customTimeEnabled]);
 
+  // Auto-populate sailing/anchoring hours when arriving with prefilled slot data
+  // (e.g. from Calendar view). Runs once yachts have loaded and prefill has start+end times.
+  useEffect(() => {
+    if (!prefill.startTime || !prefill.endTime || !prefill.yachtId) return;
+    if (!yachts.length) return;
+    // Only auto-fill if not already set (don't override manual edits)
+    if (sailingHours !== "" || anchoringHours !== "") return;
+    const yacht = yachts.find((y) => (y.id || y._id) === prefill.yachtId);
+    if (!yacht) return;
+    const totalMins = hhmmToMinutes(prefill.endTime) - hhmmToMinutes(prefill.startTime);
+    const totalHrs  = totalMins / 60;
+    if (totalHrs <= 0) return;
+    const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
+    setSailingHours(sailing);
+    setAnchoringHours(anchoring);
+  }, [yachts]);
+
   // Auto-calculate price whenever hours or yacht changes
   useEffect(() => {
-    const yacht = yachts.find((y) => y.id === formData.yachtId);
+    const yacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
     if (!yacht) return;
     const sHrs = parseFloat(sailingHours) || 0;
     const aHrs = parseFloat(anchoringHours) || 0;
@@ -282,7 +299,7 @@ function CreateBooking() {
   };
 
   useEffect(() => {
-    const selectedYacht = yachts.find((y) => y.id === formData.yachtId);
+    const selectedYacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
     if (!selectedYacht) {
       setStartTimeOptions([]);
       return;
@@ -300,7 +317,17 @@ function CreateBooking() {
 
     if (formData.startTime) {
       const match = slots.find((s) => s.start === formData.startTime);
-      if (match) setFormData((p) => ({ ...p, endTime: match.end }));
+      if (match) {
+        setFormData((p) => ({ ...p, endTime: match.end }));
+        // Auto-populate sailing/anchoring hours from prefilled slot
+        const totalMins = hhmmToMinutes(match.end) - hhmmToMinutes(match.start);
+        const totalHrs  = totalMins / 60;
+        if (totalHrs > 0 && sailingHours === "" && anchoringHours === "") {
+          const { sailing, anchoring } = splitHoursForSlot(totalHrs, selectedYacht);
+          setSailingHours(sailing);
+          setAnchoringHours(anchoring);
+        }
+      }
     }
   }, [formData.yachtId, yachts, formData.date]);
 
@@ -357,7 +384,7 @@ function CreateBooking() {
     if (slot) {
       const totalMins = hhmmToMinutes(slotEnd) - hhmmToMinutes(slotStart);
       const totalHrs = totalMins / 60;
-      const yacht = yachts.find((y) => y.id === formData.yachtId);
+      const yacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
       const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
       setSailingHours(sailing);
       setAnchoringHours(anchoring);
@@ -380,9 +407,9 @@ function CreateBooking() {
 
   const isCapacityExceeded =
     formData.numPeople &&
-    yachts.find((y) => y.id === formData.yachtId)?.capacity &&
+    yachts.find((y) => (y.id || y._id) === formData.yachtId)?.capacity &&
     Number(formData.numPeople) >
-    yachts.find((y) => y.id === formData.yachtId).capacity;
+    yachts.find((y) => (y.id || y._id) === formData.yachtId).capacity;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -394,7 +421,7 @@ function CreateBooking() {
       // Recompute fresh inside handler — avoids stale closure from render
       const isQuotationNow = prefill.source === "bookings" && formData.bookingStatus !== "confirmed";
 
-      const selectedYacht = yachts.find((y) => y.id === formData.yachtId);
+      const selectedYacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
       if (!selectedYacht) {
         alert("Please select a yacht first.");
         setLoading(false);
@@ -465,7 +492,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
           setLoading(false);
           return;
         }
-        const yacht = yachts.find((y) => y.id === formData.yachtId);
+        const yacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
         if (isCustomTimeColliding(finalStartTime, finalEndTime, yacht?.bookings)) {
           setError("Custom time overlaps an existing booking. Please choose a different time.");
           setLoading(false);
@@ -489,8 +516,8 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
           newStart: finalStartTime,
           newEnd: finalEndTime,
           durationMinutes: hhmmToMinutes(
-            yachts.find((y) => y.id === formData.yachtId)?.slotDurationMinutes ||
-            yachts.find((y) => y.id === formData.yachtId)?.duration || "120"
+            yachts.find((y) => (y.id || y._id) === formData.yachtId)?.slotDurationMinutes ||
+            yachts.find((y) => (y.id || y._id) === formData.yachtId)?.duration || "120"
           ),
         });
         await updateDaySlots(
@@ -564,7 +591,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
     setShowSuggestions(false);
   };
 
-  const selectedYachtObj = yachts.find((y) => y.id === formData.yachtId);
+  const selectedYachtObj = yachts.find((y) => (y.id || y._id) === formData.yachtId);
   const isMobileView = typeof window !== "undefined" && window.innerWidth < 768;
   const pendingAmount = formData.totalAmount
     ? Math.max(0, Number(formData.totalAmount) - Number(formData.advanceAmount || 0))
@@ -841,7 +868,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                     <label className="cb-lbl">Yacht</label>
                     <select className="cb-inp" name="yachtId" value={formData.yachtId} onChange={handleChange} required>
                       <option value="">— Select —</option>
-                      {yachts.map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                      {yachts.map((y) => <option key={y.id || y._id} value={y.id || y._id}>{y.name}</option>)}
                     </select>
                   </div>
 
@@ -874,7 +901,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                       name="numPeople" value={formData.numPeople} onChange={handleChange}
                       required placeholder="0" min="1" />
                     {isCapacityExceeded && (
-                      <div className="cb-warn-msg">⚠ Exceeds cap ({yachts.find(y => y.id === formData.yachtId)?.capacity})</div>
+                      <div className="cb-warn-msg">⚠ Exceeds cap ({yachts.find(y => (y.id || y._id) === formData.yachtId)?.capacity})</div>
                     )}
                   </div>
 
@@ -905,7 +932,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                               // Reset sailing/anchoring to original slot ratio
                               if (start && end && hhmmToMinutes(start) < hhmmToMinutes(end)) {
                                 const totalHrs = (hhmmToMinutes(end) - hhmmToMinutes(start)) / 60;
-                                const yacht = yachts.find((y) => y.id === formData.yachtId);
+                                const yacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
                                 const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
                                 setSailingHours(sailing);
                                 setAnchoringHours(anchoring);
@@ -923,7 +950,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                       </div>
                       {customTimeEnabled && (
                         (() => {
-                          const selectedYacht = yachts.find((y) => y.id === formData.yachtId);
+                          const selectedYacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
                           const isInvalidTime = customStart && customEnd && hhmmToMinutes(customStart) >= hhmmToMinutes(customEnd);
                           const hasCollision  = !isInvalidTime && isCustomTimeColliding(customStart, customEnd, selectedYacht?.bookings);
                           const hasError = isInvalidTime || hasCollision;
@@ -945,7 +972,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                                     setCustomStart(newStart);
                                     if (newStart && customEnd && hhmmToMinutes(newStart) < hhmmToMinutes(customEnd)) {
                                       const totalHrs = (hhmmToMinutes(customEnd) - hhmmToMinutes(newStart)) / 60;
-                                      const yacht = yachts.find((y) => y.id === formData.yachtId);
+                                      const yacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
                                       const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
                                       setSailingHours(sailing);
                                       setAnchoringHours(anchoring);
@@ -965,7 +992,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                                     setCustomEnd(newEnd);
                                     if (customStart && newEnd && hhmmToMinutes(customStart) < hhmmToMinutes(newEnd)) {
                                       const totalHrs = (hhmmToMinutes(newEnd) - hhmmToMinutes(customStart)) / 60;
-                                      const yacht = yachts.find((y) => y.id === formData.yachtId);
+                                      const yacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
                                       const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
                                       setSailingHours(sailing);
                                       setAnchoringHours(anchoring);
@@ -995,7 +1022,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
                   {/* ── Sailing / Anchoring hours (shown once slot is selected) ── */}
                   {formData.yachtId && (formData.startTime || (customTimeEnabled && customStart && customEnd)) && (() => {
-                    const yacht = yachts.find((y) => y.id === formData.yachtId);
+                    const yacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
                     const sHrs = parseFloat(sailingHours) || 0;
                     const aHrs = parseFloat(anchoringHours) || 0;
                     const totalEntered = sHrs + aHrs;

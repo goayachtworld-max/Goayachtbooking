@@ -22,7 +22,7 @@ function Bookings({ user }) {
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const rangeParam   = params.get("range");
+  const rangeParam = params.get("range");
   const createdParam = params.get("created");
 
   // ---------------- IST HELPERS ----------------
@@ -49,21 +49,21 @@ function Bookings({ user }) {
   };
 
   // ---------------- STATE ----------------
-  const [bookings,  setBookings]  = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [loading,   setLoading]   = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Screen
-  const [isMobile,    setIsMobile]    = useState(window.innerWidth < 550);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 550);
   const [showFilters, setShowFilters] = useState(false);
 
   // ---------------- FILTER STATES (FROM URL) ----------------
-  const [searchQuery,    setSearchQuery]    = useState(params.get("search") || "");
-  const [filterDate,     setFilterDate]     = useState(params.get("date")   || "");
-  const [filterStatus,   setFilterStatus]   = useState(params.get("status") || "");
-  const [selectedMonth,  setSelectedMonth]  = useState(params.get("month")  || "");
+  const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
+  const [filterDate, setFilterDate] = useState(params.get("date") || "");
+  const [filterStatus, setFilterStatus] = useState(params.get("status") || "");
+  const [selectedMonth, setSelectedMonth] = useState(params.get("month") || "");
 
-  const employeeParam    = params.get("employee");
+  const employeeParam = params.get("employee");
   const parsedEmployeeId = employeeParam?.split("~")[1] || "";
   const [filterEmployee, setFilterEmployee] = useState(parsedEmployeeId);
 
@@ -71,22 +71,23 @@ function Bookings({ user }) {
 
   // ---------------- ADDON PARSER ----------------
   const ADDON_CONFIG = [
-    { key: "drone",      label: "Drone",        match: "Drone",             paid: true  },
-    { key: "dslr",       label: "DSLR",          match: "DSLR",              paid: true  },
-    { key: "softdrink",  label: "Soft Drink",    match: "Soft Drink",        paid: false },
-    { key: "icecube",    label: "Ice Cube",      match: "Ice Cube",          paid: false },
-    { key: "water",      label: "Water",         match: "Water Bottles",     paid: false },
-    { key: "speaker",    label: "Speaker",       match: "Bluetooth Speaker", paid: false },
-    { key: "crew",       label: "Crew",          match: "Captain",           paid: false },
-    { key: "snacks",     label: "Snacks",        match: "Snacks",            paid: false },
-    // { key: "balloon",    label: "Decoration",    match: "Balloon",           paid: true  },
-    // { key: "decoration", label: "Decoration",    match: "decoration",        paid: true  },
+    { key: "drone", label: "Drone", match: "Drone", paid: true },
+    { key: "dslr", label: "DSLR", match: "DSLR", paid: true },
+    { key: "softdrink", label: "Soft Drink", match: "Soft Drink", paid: false },
+    { key: "icecube", label: "Ice Cube", match: "Ice Cube", paid: false },
+    { key: "water", label: "Water", match: "Water Bottles", paid: false },
+    { key: "speaker", label: "Speaker", match: "Bluetooth Speaker", paid: false },
+    { key: "crew", label: "Crew", match: "Captain", paid: false },
+    { key: "snacks", label: "Snacks", match: "Snacks", paid: false },
+    { key: "balloon", label: "Balloon", match: "Balloon", paid: true },
+    { key: "decoration", label: "Decoration", match: "decoration", paid: true },
+    { key: "cake", label: "Cake", match: "cake", paid: true },
   ];
 
   const parseAddons = (extraDetails = "") => {
     const text = extraDetails.toLowerCase();
-    const seen  = new Set();
-    const all   = ADDON_CONFIG.filter(({ key, match }) => {
+    const seen = new Set();
+    const all = ADDON_CONFIG.filter(({ key, match }) => {
       if (text.includes(match.toLowerCase()) && !seen.has(key)) {
         seen.add(key);
         return true;
@@ -94,7 +95,7 @@ function Bookings({ user }) {
       return false;
     });
     return {
-      paid:     all.filter((a) => a.paid),
+      paid: all.filter((a) => a.paid),
       included: all.filter((a) => !a.paid),
     };
   };
@@ -104,7 +105,7 @@ function Bookings({ user }) {
 
   // ---------------- COLORS ----------------
   const statusColorMap = {
-    pending:   "info",
+    pending: "info",
     confirmed: "success",
     cancelled: "danger",
     completed: "primary",
@@ -140,7 +141,7 @@ function Bookings({ user }) {
   const isBookingCompleted = (booking) => {
     if (!booking.date || !booking.endTime) return false;
     const bookingDateIST = booking.date.split("T")[0];
-    const bookingEnd     = new Date(`${bookingDateIST}T${booking.endTime}:00+05:30`);
+    const bookingEnd = new Date(`${bookingDateIST}T${booking.endTime}:00+05:30`);
     return bookingEnd < getNowIST();
   };
 
@@ -149,7 +150,7 @@ function Bookings({ user }) {
     const fetchEmployees = async () => {
       try {
         const token = localStorage.getItem("authToken");
-        const res   = await getEmployeesForBookingAPI(token);
+        const res = await getEmployeesForBookingAPI(token);
         setEmployees(res?.data?.employees || []);
       } catch (e) {
         console.error("❌ Failed to load employees", e);
@@ -163,7 +164,7 @@ function Bookings({ user }) {
     try {
       setLoading(true);
       const token = localStorage.getItem("authToken");
-      const res   = await getBookingsAPI(token, filters);
+      const res = await getBookingsAPI(token, filters);
 
       // NOTE: we do NOT mutate status to "completed" here — we keep the raw DB status
       // and derive completion purely via isBookingCompleted() in the filter pipeline.
@@ -180,12 +181,12 @@ function Bookings({ user }) {
   useEffect(() => {
     const p = new URLSearchParams(location.search);
 
-    if (rangeParam)   p.set("range",   rangeParam);   else p.delete("range");
+    if (rangeParam) p.set("range", rangeParam); else p.delete("range");
     if (createdParam) p.set("created", createdParam); else p.delete("created");
-    if (searchQuery)  p.set("search",  searchQuery);  else p.delete("search");
-    if (filterDate)   p.set("date",    filterDate);   else p.delete("date");
-    if (filterStatus) p.set("status",  filterStatus); else p.delete("status");
-    if (selectedMonth) p.set("month",  selectedMonth); else p.delete("month");
+    if (searchQuery) p.set("search", searchQuery); else p.delete("search");
+    if (filterDate) p.set("date", filterDate); else p.delete("date");
+    if (filterStatus) p.set("status", filterStatus); else p.delete("status");
+    if (selectedMonth) p.set("month", selectedMonth); else p.delete("month");
 
     const employeeValue = getEmployeeParamValue();
     if (employeeValue) p.set("employee", employeeValue); else p.delete("employee");
@@ -222,11 +223,11 @@ function Bookings({ user }) {
     }
 
     if (rangeParam === "7days") {
-      const today  = getTodayIST();
-      const next7  = new Date(`${today}T00:00:00+05:30`);
+      const today = getTodayIST();
+      const next7 = new Date(`${today}T00:00:00+05:30`);
       next7.setDate(next7.getDate() + 7);
       filters.startDate = today;
-      filters.endDate   = next7.toISOString().slice(0, 10);
+      filters.endDate = next7.toISOString().slice(0, 10);
     }
 
     if (createdParam === "today") {
@@ -273,7 +274,7 @@ function Bookings({ user }) {
       return `${h}.${m.toString().padStart(2, "0")} ${period}`;
     };
 
-    const tokenPaid  = booking.quotedAmount - booking.pendingAmount;
+    const tokenPaid = booking.quotedAmount - booking.pendingAmount;
     const tokenAmount = booking?.tokenAmount;
 
     const sanitizeText = (text = "") =>
@@ -285,9 +286,9 @@ function Bookings({ user }) {
         .trim();
 
     const extraDetails = sanitizeText(booking.extraDetails || "");
-    const lines        = extraDetails.split("\n").map((l) => l.trim()).filter(Boolean);
+    const lines = extraDetails.split("\n").map((l) => l.trim()).filter(Boolean);
 
-    const inclusions   = lines.filter((i) =>
+    const inclusions = lines.filter((i) =>
       ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"]
         .some((k) => i.includes(k))
     );
@@ -303,53 +304,45 @@ function Bookings({ user }) {
     const hardCodedDisclaimer = `Disclaimer:\n• Reporting time is 30 minutes prior to departure\n• No refund for late arrival or no-show\n• Subject to weather and government regulations\nThank you for booking with ${booking.company?.name}`;
 
     const boardingPassText =
-      `# Ticket Number: ${booking._id.slice(-5).toUpperCase()}\n\nBooking Status: ${booking.status.toUpperCase()}${
-        isPending
+      `# Ticket Number: ${booking._id.slice(-5).toUpperCase()}\n\nBooking Status: ${booking.status.toUpperCase()}${isPending
           ? "\n⚠️ NOTE: This is a TENTATIVE booking. Your slot is NOT yet confirmed. Please confirm by paying Token Amount."
           : ""
-      }\n\n👤 Guest Name: ${booking.customerId?.name}\n📞 Contact No.: ${booking.customerId?.contact}\n👥 Group Size: ${
-        booking.numPeople
-      } Pax\n⛵ Yacht Name: ${booking.yachtId?.name}\n\n🗓️ Trip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(
-        booking.startTime
-      )} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)\n\nBooking Price: ₹${booking.quotedAmount}/-\n${
-        isPending && tokenAmount ? `\nToken to be Paid: ₹${tokenAmount}/- (Please share screenshot Over WhatsApp)` : ""
-      }${
-        !isPending
+        }\n\n👤 Guest Name: ${booking.customerId?.name}\n📞 Contact No.: ${booking.customerId?.contact}\n👥 Group Size: ${booking.numPeople
+        } Pax\n⛵ Yacht Name: ${booking.yachtId?.name}\n\n🗓️ Trip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(
+          booking.startTime
+        )} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)\n\nBooking Price: ₹${booking.quotedAmount}/-\n${isPending && tokenAmount ? `\nToken to be Paid: ₹${tokenAmount}/- (Please share screenshot Over WhatsApp)` : ""
+        }${!isPending
           ? `\nToken Paid: ₹${tokenPaid}/-\nBalance Pending: ₹${booking.pendingAmount}/- (to be collected before boarding)`
           : ""
-      }\n\n📍 Boarding Location\n🔗 ${
-        isPending ? "Will be shared upon confirmation" : booking.yachtId?.boardingLocation || "Location not provided"
-      }\n\n${
-        inclusions.length
+        }\n\n📍 Boarding Location\n🔗 ${isPending ? "Will be shared upon confirmation" : booking.yachtId?.boardingLocation || "Location not provided"
+        }\n\n${inclusions.length
           ? `Extra Inclusions:\n${inclusions.map((i) => `• ${i.replace("-", "").trim()}`).join("\n")}`
           : ""
-      }\n${
-        paidServices.length
+        }\n${paidServices.length
           ? `\nExtra Add On's Services:\n${paidServices.map((i) => `• ${i.replace("-", "").trim()}`).join("\n")}`
           : ""
-      }\n${notes ? `\nNotes:\n• ${notes.replace(/\n/g, "\n• ")}` : ""}`.trim() +
-      `\n\n${
-        booking?.company?.disclaimer
-          ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]\n\nThank You`
-          : hardCodedDisclaimer
+        }\n${notes ? `\nNotes:\n• ${notes.replace(/\n/g, "\n• ")}` : ""}`.trim() +
+      `\n\n${booking?.company?.disclaimer
+        ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]\n\nThank You`
+        : hardCodedDisclaimer
       }\n`;
 
     navigator.clipboard.writeText(boardingPassText);
     toast.success("Boarding Pass copied to clipboard");
   };
 
-  const handleViewDetails   = (booking) => navigate("/customer-details", { state: { booking } });
+  const handleViewDetails = (booking) => navigate("/customer-details", { state: { booking } });
 
   const handleShareWhatsApp = (booking, e) => {
     e.stopPropagation();
 
-    const baseUrl      = "https://goaboat.com";
+    const baseUrl = "https://goaboat.com";
     const ticketNumber = booking._id.slice(-5).toUpperCase();
     const customerName = booking.customerId?.name || "Customer";
-    const passLink     = `${baseUrl}/?ticket=${ticketNumber}`;
-    const companyName  = booking.company?.name || "GoaYachtWorld";
-    const yachtName    = booking.yachtId?.name || "your yacht";
-    const tripDate     = booking.date?.split("T")[0];
+    const passLink = `${baseUrl}/?ticket=${ticketNumber}`;
+    const companyName = booking.company?.name || "GoaYachtWorld";
+    const yachtName = booking.yachtId?.name || "your yacht";
+    const tripDate = booking.date?.split("T")[0];
 
     const formatDate = (dateStr) => {
       const d = new Date(dateStr);
@@ -409,10 +402,10 @@ function Bookings({ user }) {
     try {
       const data = new FormData();
       data.append("bookingId", booking._id);
-      data.append("type",      "settlement");
-      data.append("status",    "confirmed");
+      data.append("type", "settlement");
+      data.append("status", "confirmed");
       // Record the pending balance as a final payment (amount = pendingAmount, even if 0)
-      data.append("amount",    booking.pendingAmount > 0 ? booking.pendingAmount : 0);
+      data.append("amount", booking.pendingAmount > 0 ? booking.pendingAmount : 0);
       await createTransactionAndUpdateBooking(data, token);
       toast.success("Trip marked as complete ✅");
       // Refresh list
@@ -445,9 +438,9 @@ function Bookings({ user }) {
       // 7-day range: strictly after today midnight up to +7 days (matches dashboard count)
       if (rangeParam === "7days") {
         const todayMidnightIST = toMidnightIST(getTodayIST());
-        const next7Days        = new Date(todayMidnightIST);
+        const next7Days = new Date(todayMidnightIST);
         next7Days.setDate(todayMidnightIST.getDate() + 7);
-        const bookingDateIST   = toMidnightIST(bookingDate);
+        const bookingDateIST = toMidnightIST(bookingDate);
         return bookingDateIST > todayMidnightIST && bookingDateIST <= next7Days;
       }
 
@@ -554,7 +547,7 @@ function Bookings({ user }) {
           >
             <option value="">📅 Month</option>
             {Array.from({ length: 6 }).map((_, i) => {
-              const base  = getNowIST();
+              const base = getNowIST();
               base.setMonth(base.getMonth() + i);
               const value = base.toISOString().slice(0, 7);
               const label = base.toLocaleString("en-GB", { month: "short", year: "2-digit" });
@@ -660,7 +653,7 @@ function Bookings({ user }) {
             >
               <option value="">All Months</option>
               {Array.from({ length: 6 }).map((_, i) => {
-                const base  = getNowIST();
+                const base = getNowIST();
                 base.setMonth(base.getMonth() + i);
                 const value = base.toISOString().slice(0, 7);
                 const label = base.toLocaleString("en-GB", { month: "long", year: "numeric" });
@@ -692,8 +685,8 @@ function Bookings({ user }) {
             <label className="form-label small text-muted mb-1">Status</label>
             <div className="status-pill-group mb-4">
               {[
-                { value: "",          label: "All",       color: "#6c757d" },
-                { value: "pending",   label: "Pending",   color: "#0dcaf0" },
+                { value: "", label: "All", color: "#6c757d" },
+                { value: "pending", label: "Pending", color: "#0dcaf0" },
                 { value: "confirmed", label: "Confirmed", color: "#198754" },
                 { value: "completed", label: "Completed", color: "#0d6efd" },
                 { value: "cancelled", label: "Cancelled", color: "#dc3545" },
@@ -728,7 +721,7 @@ function Bookings({ user }) {
             filteredBookings.map((booking) => {
               // Derive display status: show "completed" if end time has passed, else use DB status
               const displayStatus = isBookingCompleted(booking) ? "completed" : booking.status;
-              const statusColor   = statusColorMap[displayStatus] || "info";
+              const statusColor = statusColorMap[displayStatus] || "info";
 
               return (
                 <div key={booking._id} className="col-lg-4 col-md-6 mb-3">
@@ -769,8 +762,8 @@ function Bookings({ user }) {
                               const extraDetails = sanitizeText(booking.extraDetails || "");
                               const lines = extraDetails.split("\n").map((l) => l.trim()).filter(Boolean);
                               const INCLUDED_KEYS = ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"];
-                              const PAID_KEYS     = ["Drone - Photography & Videography", "DSLR Photography"];
-                              const inclusions  = lines.filter((i) => INCLUDED_KEYS.some((k) => i.includes(k)));
+                              const PAID_KEYS = ["Drone - Photography & Videography", "DSLR Photography"];
+                              const inclusions = lines.filter((i) => INCLUDED_KEYS.some((k) => i.includes(k)));
                               const paidServices = lines.filter((i) => PAID_KEYS.some((k) => i.toLowerCase().includes(k.toLowerCase())));
                               const parts = [
                                 `Ticket Number: ${booking._id.slice(-5).toUpperCase()}`,
@@ -881,41 +874,40 @@ function Bookings({ user }) {
                         {/* BOARDING PASS — only for non-completed bookings */}
                         {(booking.status === "confirmed" || booking.status === "pending") &&
                           !isBookingCompleted(booking) && (
-                          <button
-                            className={`btn btn-sm flex-grow-1 rounded-pill ${
-                              booking.status === "confirmed" ? "btn-outline-success" : "btn-outline-warning"
-                            }`}
-                            title={booking.status === "pending" ? "Copy Tentative Pass" : "Copy Boarding Pass"}
-                            onClick={() => generateBoardingPass(booking)}
-                          >
-                            Pass
-                          </button>
-                        )}
+                            <button
+                              className={`btn btn-sm flex-grow-1 rounded-pill ${booking.status === "confirmed" ? "btn-outline-success" : "btn-outline-warning"
+                                }`}
+                              title={booking.status === "pending" ? "Copy Tentative Pass" : "Copy Boarding Pass"}
+                              onClick={() => generateBoardingPass(booking)}
+                            >
+                              Pass
+                            </button>
+                          )}
 
                         {/* UPDATE — only for non-completed bookings */}
                         {(user?.type === "admin" || user?.type === "backdesk" || user?.type === "onsite") &&
                           !isBookingCompleted(booking) && (
-                          <button
-                            className="btn btn-sm btn-outline-primary flex-grow-1 rounded-pill"
-                            title="Update Booking"
-                            onClick={() => navigate("/update-booking", { state: { booking, user } })}
-                          >
-                            Update
-                          </button>
-                        )}
+                            <button
+                              className="btn btn-sm btn-outline-primary flex-grow-1 rounded-pill"
+                              title="Update Booking"
+                              onClick={() => navigate("/update-booking", { state: { booking, user } })}
+                            >
+                              Update
+                            </button>
+                          )}
 
                         {/* COMPLETE TRIP — for past bookings still pending or with balance */}
                         {(user?.type === "admin" || user?.type === "onsite") &&
                           isBookingCompleted(booking) &&
                           (booking.status === "pending" || booking.pendingAmount > 0) && (
-                          <button
-                            className="btn btn-sm btn-success flex-grow-1 rounded-pill"
-                            title="Mark trip as complete and settle balance"
-                            onClick={() => handleCompleteTrip(booking)}
-                          >
-                            Complete Trip
-                          </button>
-                        )}
+                            <button
+                              className="btn btn-sm btn-success flex-grow-1 rounded-pill"
+                              title="Mark trip as complete and settle balance"
+                              onClick={() => handleCompleteTrip(booking)}
+                            >
+                              Complete Trip
+                            </button>
+                          )}
                       </div>
                     </div>
                   </div>

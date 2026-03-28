@@ -457,7 +457,7 @@ export const getDayAvailability = async (req, res, next) => {
       date,
       status: "locked"
     })
-      .select("startTime endTime appliedBy")
+      .select("startTime endTime appliedBy deleteAfter")
       .populate({ path: "appliedBy", select: "name" });
 
     const lockedSlots = lockedSlotsDb.map((l) => ({
@@ -465,7 +465,8 @@ export const getDayAvailability = async (req, res, next) => {
       end: l.endTime,
       status: "locked",
       appliedBy: l.appliedBy?._id,
-      empName: l.appliedBy?.name
+      empName: l.appliedBy?.name,
+      deleteAfter: l.deleteAfter,
     }));
 
     // ===========================================

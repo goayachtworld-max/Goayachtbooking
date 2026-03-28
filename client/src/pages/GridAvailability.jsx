@@ -271,6 +271,40 @@ function GridAvailability() {
   const [showYachtSheet, setShowYachtSheet] = useState(false);
   const [mobileYachtSearch, setMobileYachtSearch] = useState("");
 
+  // ── Double-click support ──
+  const clickTimerRef = useRef(null);
+  const DBLCLICK_DELAY = 250; // ms
+
+  // ── Lock countdown timer component ──
+  const LockTimer = ({ deleteAfter }) => {
+    const [remaining, setRemaining] = useState(null);
+
+    useEffect(() => {
+      if (!deleteAfter) return;
+      const tick = () => {
+        const diff = new Date(deleteAfter) - Date.now();
+        setRemaining(diff > 0 ? diff : 0);
+      };
+      tick();
+      const id = setInterval(tick, 1000);
+      return () => clearInterval(id);
+    }, [deleteAfter]);
+
+    if (remaining === null || !deleteAfter) return null;
+    if (remaining <= 0) return <span style={{ color: "#dc3545", fontSize: "10px", fontWeight: 600 }}>⏰ Expired</span>;
+
+    const totalSec = Math.ceil(remaining / 1000);
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    const color = remaining < 60000 ? "#dc3545" : remaining < 180000 ? "#fd7e14" : "#6c757d";
+
+    return (
+      <span style={{ color, fontSize: "10px", fontWeight: 600, display: "block", lineHeight: 1.2 }}>
+        ⏱ {mins}:{String(secs).padStart(2, "0")}
+      </span>
+    );
+  };
+
 
   useEffect(() => {
     (async () => {
@@ -408,6 +442,7 @@ function GridAvailability() {
               type: "locked",
               empName: lockedOverlap.empName || lockedOverlap.employeeName || "",
               appliedBy: lockedOverlap.appliedBy || null,
+              deleteAfter: lockedOverlap.deleteAfter || null,
             };
           }
 
@@ -522,7 +557,8 @@ function GridAvailability() {
           date,
           type: "locked",
           empName: lockedOverlap.empName || "",
-          appliedBy: lockedOverlap.appliedBy || null
+          appliedBy: lockedOverlap.appliedBy || null,
+          deleteAfter: lockedOverlap.deleteAfter || null,
         };
       }
 
@@ -580,6 +616,61 @@ function GridAvailability() {
       const el = document.getElementById(modalId);
       if (el) new window.bootstrap.Modal(el).show();
     }, 50);
+  };
+
+  // ── Quick-action: double-click handlers ──
+  const handleSlotDoubleClick = async (slot) => {
+    if (slot.type === "free") {
+      // Double-click on free → lock instantly, then go straight to confirm booking
+      updateGridSlot(slot.date, slot.start, slot.end, { type: "locked", empName: "You" });
+
+      try {
+        await lockSlot(yachtId, slot.date, slot.start, slot.end, token);
+        // Lock succeeded — navigate straight to confirm booking
+        navigate("/create-booking", {
+          state: {
+            yachtId,
+            yachtName: yacht?.name,
+            date: slot.date,
+            startTime: slot.start,
+            endTime: slot.end,
+          },
+        });
+      } catch {
+        toast.error("Failed to lock slot");
+        await reloadSingleDay(slot.date);
+      }
+    } else if (slot.type === "locked") {
+      // Double-click on locked → go straight to confirm booking
+      navigate("/create-booking", {
+        state: {
+          yachtId,
+          yachtName: yacht?.name,
+          date: slot.date,
+          startTime: slot.start,
+          endTime: slot.end,
+        },
+      });
+    } else if (slot.type === "booked" || slot.type === "pending") {
+      // Double-click on booked → open detail modal
+      handleSlotClick(slot, "booked");
+    }
+  };
+
+  // Unified click dispatcher — distinguishes single vs double click
+  const handleSlotInteraction = (slot, type) => {
+    if (clickTimerRef.current) {
+      // Second click within delay → double-click
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+      handleSlotDoubleClick(slot);
+    } else {
+      // First click — wait to see if second comes
+      clickTimerRef.current = setTimeout(() => {
+        clickTimerRef.current = null;
+        handleSlotClick(slot, type); // single click → open modal
+      }, DBLCLICK_DELAY);
+    }
   };
   const handleSaveAndLock = async (e) => {
     e.preventDefault();
@@ -752,7 +843,7 @@ function GridAvailability() {
                 if (past || unauthorized) return; // 🚫 BLOCK ACCESS
                 const typeToOpen =
                   slot.type === "pending" ? "booked" : slot.type;
-                handleSlotClick(slot, typeToOpen);
+                handleSlotInteraction(slot, typeToOpen);
               }}
 
               title={
@@ -766,7 +857,8 @@ function GridAvailability() {
                   : "")
               }
             >
-              {to12HourFormat(slot.start)} – {to12HourFormat(slot.end)}
+              <span style={{ display: "block" }}>{to12HourFormat(slot.start)}–{to12HourFormat(slot.end)}</span>
+              {slot.type === "locked" && <LockTimer deleteAfter={slot.deleteAfter} />}
             </div>
           );
         })}
@@ -1011,11 +1103,12 @@ function GridAvailability() {
                           onClick={() => {
                             if (past || unauthorized) return;
                             const typeToOpen = slot.type === "pending" ? "booked" : slot.type;
-                            handleSlotClick(slot, typeToOpen);
+                            handleSlotInteraction(slot, typeToOpen);
                           }}
                           title={`${to12HourFormat(slot.start)} - ${to12HourFormat(slot.end)}`}
                         >
-                          {to12HourFormat(slot.start)}–{to12HourFormat(slot.end)}
+                          <span style={{ display: "block" }}>{to12HourFormat(slot.start)}–{to12HourFormat(slot.end)}</span>
+                          {slot.type === "locked" && <LockTimer deleteAfter={slot.deleteAfter} />}
                         </div>
                       );
                     })}
@@ -1164,9 +1257,15 @@ function GridAvailability() {
                       <div className="text-muted small mt-1 mb-3">
                         {selectedDate && new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
                       </div>
-                      <div className="text-muted small">
+                      <div className="text-muted small mb-2">
                         🔒 Locked by: <span className="fw-semibold text-dark">{selectedSlot.empName || "—"}</span>
                       </div>
+                      {selectedSlot.deleteAfter && (
+                        <div className="mt-1">
+                          <span className="text-muted small">Auto-releases in: </span>
+                          <LockTimer deleteAfter={selectedSlot.deleteAfter} />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
