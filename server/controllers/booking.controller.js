@@ -21,6 +21,9 @@ export const createBooking = async (req, res, next) => {
       extraDetails,
       tokenAmount,
       bookingStatus: incomingBookingStatus,
+      sailingHours,
+      anchoringHours,
+      calculatedAmount,
     } = req.body;
 
     console.log("inc booking body : ", req.body);
@@ -116,6 +119,9 @@ export const createBooking = async (req, res, next) => {
       numPeople,
       extraDetails,
       ...(tokenAmount && { tokenAmount: Number(tokenAmount) }),
+      ...(sailingHours != null && { sailingHours: Number(sailingHours) }),
+      ...(anchoringHours != null && { anchoringHours: Number(anchoringHours) }),
+      ...(calculatedAmount != null && { calculatedAmount: Number(calculatedAmount) }),
     });
     console.log("booking", booking);
 

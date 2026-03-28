@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getBookingsAPI } from "../services/operations/bookingAPI";
 import { getEmployeesForBookingAPI } from "../services/operations/employeeAPI";
+import { createTransactionAndUpdateBooking } from "../services/operations/transactionAPI";
 import { FiSliders } from "react-icons/fi";
-import { Eye } from "lucide-react";
+import { Eye, Copy } from "lucide-react";
 import toast from "react-hot-toast";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -70,16 +71,16 @@ function Bookings({ user }) {
 
   // ---------------- ADDON PARSER ----------------
   const ADDON_CONFIG = [
-    { key: "drone",      label: "🚁 Drone",        match: "Drone",             paid: true  },
-    { key: "dslr",       label: "📷 DSLR",          match: "DSLR",              paid: true  },
-    { key: "softdrink",  label: "🥤 Soft Drink",    match: "Soft Drink",        paid: false },
-    { key: "icecube",    label: "🧊 Ice Cube",      match: "Ice Cube",          paid: false },
-    { key: "water",      label: "💧 Water",         match: "Water Bottles",     paid: false },
-    { key: "speaker",    label: "🔊 Speaker",       match: "Bluetooth Speaker", paid: false },
-    { key: "crew",       label: "👨‍✈️ Crew",         match: "Captain",           paid: false },
-    { key: "snacks",     label: "🍿 Snacks",        match: "Snacks",            paid: false },
-    { key: "balloon",    label: "🎈 Decoration",    match: "Balloon",           paid: true  },
-    { key: "decoration", label: "🎈 Decoration",    match: "decoration",        paid: true  },
+    { key: "drone",      label: "Drone",        match: "Drone",             paid: true  },
+    { key: "dslr",       label: "DSLR",          match: "DSLR",              paid: true  },
+    { key: "softdrink",  label: "Soft Drink",    match: "Soft Drink",        paid: false },
+    { key: "icecube",    label: "Ice Cube",      match: "Ice Cube",          paid: false },
+    { key: "water",      label: "Water",         match: "Water Bottles",     paid: false },
+    { key: "speaker",    label: "Speaker",       match: "Bluetooth Speaker", paid: false },
+    { key: "crew",       label: "Crew",          match: "Captain",           paid: false },
+    { key: "snacks",     label: "Snacks",        match: "Snacks",            paid: false },
+    // { key: "balloon",    label: "Decoration",    match: "Balloon",           paid: true  },
+    // { key: "decoration", label: "Decoration",    match: "decoration",        paid: true  },
   ];
 
   const parseAddons = (extraDetails = "") => {
@@ -310,7 +311,7 @@ function Bookings({ user }) {
         booking.numPeople
       } Pax\n⛵ Yacht Name: ${booking.yachtId?.name}\n\n🗓️ Trip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(
         booking.startTime
-      )} to ${formatTime(booking.endTime)}\n(1 Hour Sailing + 1 Hour Anchor)\n\nBooking Price: ₹${booking.quotedAmount}/-\n${
+      )} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)\n\nBooking Price: ₹${booking.quotedAmount}/-\n${
         isPending && tokenAmount ? `\nToken to be Paid: ₹${tokenAmount}/- (Please share screenshot Over WhatsApp)` : ""
       }${
         !isPending
@@ -341,14 +342,60 @@ function Bookings({ user }) {
 
   const handleShareWhatsApp = (booking, e) => {
     e.stopPropagation();
+
     const baseUrl      = "https://goaboat.com";
     const ticketNumber = booking._id.slice(-5).toUpperCase();
     const customerName = booking.customerId?.name || "Customer";
     const passLink     = `${baseUrl}/?ticket=${ticketNumber}`;
-    const companyName  = booking.company?.name || "Us";
+    const companyName  = booking.company?.name || "GoaYachtWorld";
     const yachtName    = booking.yachtId?.name || "your yacht";
     const tripDate     = booking.date?.split("T")[0];
-    const message      = `Hi ${customerName}! \n\nThank you for booking with ${companyName} \n\nYour boarding pass for *${yachtName}* on *${tripDate}* is ready.\n${passLink}\n\nSee you onboard!`;
+
+    const formatDate = (dateStr) => {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    };
+    const formatTime = (time24) => {
+      if (!time24) return "";
+      let [h, m] = time24.split(":").map(Number);
+      const period = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      return `${h}.${m.toString().padStart(2, "0")} ${period}`;
+    };
+    const sanitizeText = (text = "") =>
+      text
+        .replace(/\u2022|\u2023|\u25E6/g, "-")
+        .replace(/\u200B|\u200C|\u200D|\uFEFF/g, "")
+        .replace(/\r\n/g, "\n")
+        .replace(/\n{2,}/g, "\n")
+        .trim();
+
+    const tokenPaid = booking.quotedAmount - booking.pendingAmount;
+    const extraDetails = sanitizeText(booking.extraDetails || "");
+    const lines = extraDetails.split("\n").map((l) => l.trim()).filter(Boolean);
+
+    const inclusions = lines.filter((i) =>
+      ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"].some((k) => i.includes(k))
+    );
+    const paidServices = lines.filter((i) =>
+      ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
+    );
+    const notesRaw = extraDetails.includes("Notes:")
+      ? extraDetails.split("Notes:").slice(1).join("Notes:").trim()
+      : "";
+
+    const boardingLocation = booking.yachtId?.boardingLocation || "Location not provided";
+    const disclaimer = booking?.company?.disclaimer
+      ? `${booking.company.disclaimer}[${ticketNumber}]\n\nThank You`
+      : `Terms & Conditions: \n- Please reach 10mins before boarding time at the boarding point.\n- Token amount is not refundable in case of no show or cancellation from guest side. \n- Full refundable if cancelled from yacht owners side due to change in weather conditions or technical issues.\n- You will have to do full payment before boarding to authorised person and can read more about terms & conditions https://goayachtworld.com/condtions .\nFind your ticket details at https://goaboat.com/ with ticket id :[${ticketNumber}]\n\nThank You`;
+
+    const message =
+      `Hi ${customerName}! \n\nThank you for booking with ${companyName} \n\nYour boarding pass for ${yachtName} on ${tripDate} is ready.\n${passLink}\n\n\nBooking summary\nTicket Number: ${ticketNumber}\n\nBooking Status: ${booking.status.toUpperCase()}\n\nGuest Name: ${booking.customerId?.name}\nContact No.: ${booking.customerId?.contact}\nGroup Size: ${booking.numPeople} Pax\nYacht Name: ${yachtName}\n\nTrip Date: ${formatDate(booking.date)} | Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)\n\nBooking Price: Rs.${booking.quotedAmount}/-\n\nToken Paid: Rs.${tokenPaid}/-\nBalance Pending: Rs.${booking.pendingAmount}/- (to be collected before boarding)\n\nBoarding Location\n${boardingLocation}` +
+      (inclusions.length ? `\n\nExtra Inclusions:\n${inclusions.map((i) => `* ${i.replace(/^-/, "").trim()}`).join("\n")}` : "") +
+      (paidServices.length ? `\n\nExtra Add On's Services:\n${paidServices.map((i) => `* ${i.replace(/^-/, "").trim()}`).join("\n")}` : "") +
+      (notesRaw ? `\n\nNotes:\n* ${notesRaw.replace(/\n/g, "\n* ")}` : "") +
+      `\n\n${disclaimer}`;
+
     let phone = booking.customerId?.contact?.replace(/\D/g, "");
     if (phone && !phone.startsWith("91") && phone.length === 10) phone = "91" + phone;
     const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
@@ -356,6 +403,30 @@ function Bookings({ user }) {
   };
 
   const handleCreateBooking = () => navigate("/create-booking", { state: { source: "bookings" } });
+
+  const handleCompleteTrip = async (booking) => {
+    const token = localStorage.getItem("authToken");
+    try {
+      const data = new FormData();
+      data.append("bookingId", booking._id);
+      data.append("type",      "settlement");
+      data.append("status",    "confirmed");
+      // Record the pending balance as a final payment (amount = pendingAmount, even if 0)
+      data.append("amount",    booking.pendingAmount > 0 ? booking.pendingAmount : 0);
+      await createTransactionAndUpdateBooking(data, token);
+      toast.success("Trip marked as complete ✅");
+      // Refresh list
+      setBookings((prev) =>
+        prev.map((b) =>
+          b._id === booking._id
+            ? { ...b, status: "confirmed", pendingAmount: 0 }
+            : b
+        )
+      );
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to complete trip");
+    }
+  };
 
   // ---------------- FILTER PIPELINE ----------------
   const filteredBookings = bookings
@@ -585,7 +656,7 @@ function Bookings({ user }) {
             <select
               className={`form-select mb-3 ${selectedMonth ? "filter-active" : ""}`}
               value={selectedMonth}
-              onChange={(e) => { setSelectedMonth(e.target.value); setFilterDate(""); }}
+              onChange={(e) => { setSelectedMonth(e.target.value); setFilterDate(""); setShowFilters(false); }}
             >
               <option value="">All Months</option>
               {Array.from({ length: 6 }).map((_, i) => {
@@ -603,14 +674,14 @@ function Bookings({ user }) {
               className={`form-control mb-3 ${filterDate ? "filter-active" : ""}`}
               value={filterDate}
               min={getTodayIST()}
-              onChange={(e) => setFilterDate(e.target.value)}
+              onChange={(e) => { setFilterDate(e.target.value); setShowFilters(false); }}
             />
 
             <label className="form-label small text-muted mb-1">Agent</label>
             <select
               className={`form-select mb-3 ${filterEmployee ? "filter-active" : ""}`}
               value={filterEmployee}
-              onChange={(e) => setFilterEmployee(e.target.value)}
+              onChange={(e) => { setFilterEmployee(e.target.value); setShowFilters(false); }}
             >
               <option value="">All Agents</option>
               {employees.map((emp) => (
@@ -631,7 +702,7 @@ function Bookings({ user }) {
                   key={value}
                   className={`status-pill ${filterStatus === value ? "active" : ""}`}
                   style={{ "--pill-color": color }}
-                  onClick={() => setFilterStatus(value)}
+                  onClick={() => { setFilterStatus(value); setShowFilters(false); }}
                 >
                   {label}
                 </button>
@@ -683,7 +754,48 @@ function Bookings({ user }) {
                       <hr className="my-2" />
 
                       <div className="small text-muted booking-info">
-                        <div>🚤 <b>Yacht:</b> {booking.yachtId?.name}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          🚤 <b>Yacht:</b> {booking.yachtId?.name}
+                          <button
+                            title="Copy booking summary"
+                            onClick={() => {
+                              const sanitizeText = (text = "") =>
+                                text
+                                  .replace(/\u2022|\u2023|\u25E6/g, "-")
+                                  .replace(/\u200B|\u200C|\u200D|\uFEFF/g, "")
+                                  .replace(/\r\n/g, "\n")
+                                  .replace(/\n{2,}/g, "\n")
+                                  .trim();
+                              const extraDetails = sanitizeText(booking.extraDetails || "");
+                              const lines = extraDetails.split("\n").map((l) => l.trim()).filter(Boolean);
+                              const INCLUDED_KEYS = ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"];
+                              const PAID_KEYS     = ["Drone - Photography & Videography", "DSLR Photography"];
+                              const inclusions  = lines.filter((i) => INCLUDED_KEYS.some((k) => i.includes(k)));
+                              const paidServices = lines.filter((i) => PAID_KEYS.some((k) => i.toLowerCase().includes(k.toLowerCase())));
+                              const parts = [
+                                `Ticket Number: ${booking._id.slice(-5).toUpperCase()}`,
+                                `Yacht Name: ${booking.yachtId?.name || ""}`,
+                                `Booking Name: ${booking.customerId?.name || ""}`,
+                                `Phone Number: ${booking.customerId?.contact || ""}`,
+                                `Date: ${booking.date?.split("T")[0] || ""}`,
+                                `Time: ${to12HourFormat(booking.startTime)} - ${to12HourFormat(booking.endTime)}`,
+                                `#Pax: ${booking.numPeople}`,
+                                `Balance Amount: ${booking.pendingAmount}`,
+                              ];
+                              if (inclusions.length) {
+                                parts.push(`\nExtra Inclusions:\n${inclusions.map((i) => `* ${i.replace(/^[-*]\s*/, "").trim()}`).join("\n")}`);
+                              }
+                              if (paidServices.length) {
+                                parts.push(`Extra Add On's Services:\n${paidServices.map((i) => `* ${i.replace(/^[-*]\s*/, "").trim()}`).join("\n")}`);
+                              }
+                              navigator.clipboard.writeText(parts.join("\n"));
+                              toast.success("Booking summary copied!");
+                            }}
+                            style={{ background: "none", border: "none", padding: "0 0 0 2px", cursor: "pointer", color: "#6c757d", lineHeight: 1, verticalAlign: "middle", flexShrink: 0 }}
+                          >
+                            <Copy size={12} />
+                          </button>
+                        </div>
                         <div>📅 <b>Date:</b> {booking.date?.split("T")[0]}</div>
                         <div>
                           ⏰ <b>Time:</b>{" "}
@@ -789,6 +901,19 @@ function Bookings({ user }) {
                             onClick={() => navigate("/update-booking", { state: { booking, user } })}
                           >
                             Update
+                          </button>
+                        )}
+
+                        {/* COMPLETE TRIP — for past bookings still pending or with balance */}
+                        {(user?.type === "admin" || user?.type === "onsite") &&
+                          isBookingCompleted(booking) &&
+                          (booking.status === "pending" || booking.pendingAmount > 0) && (
+                          <button
+                            className="btn btn-sm btn-success flex-grow-1 rounded-pill"
+                            title="Mark trip as complete and settle balance"
+                            onClick={() => handleCompleteTrip(booking)}
+                          >
+                            Complete Trip
                           </button>
                         )}
                       </div>

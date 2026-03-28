@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createBookingAPI } from "../services/operations/bookingAPI";
 import {
@@ -50,6 +50,7 @@ function CreateBooking() {
   const [customerSuggestions, setCustomerSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const typingTimeoutRef = useRef(null);
+  const originalSlotRef = useRef({ start: "", end: "" }); // stores the clean slot times before any custom override
   const [employees, setEmployees] = useState([]);
   const [showExtraDetails, setShowExtraDetails] = useState(false);
   const [
@@ -58,6 +59,11 @@ function CreateBooking() {
   const [customEnd, setCustomEnd] = useState("");
   const [daySlotList, setDaySlotList] = useState([]);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(-1);
+
+  // Dynamic pricing
+  const [sailingHours, setSailingHours] = useState("");
+  const [anchoringHours, setAnchoringHours] = useState("");
+  const [calculatedAmount, setCalculatedAmount] = useState(null);
 
   const extraOptions = {
     inclusions: [
@@ -112,6 +118,47 @@ function CreateBooking() {
     const [h, m] = time.split(":").map(Number);
     return h * 60 + m;
   };
+
+  // Given a total slot duration and a yacht's default split, return proportional sailing/anchoring hours.
+  // Falls back to 50/50 if no defaults are set.
+  const splitHoursForSlot = (totalHrs, yacht) => {
+    const fmt = (v) => v % 1 === 0 ? String(v) : parseFloat(v.toFixed(2)).toString();
+    const defSail  = parseFloat(yacht?.defaultSailingHours);
+    const defAnch  = parseFloat(yacht?.defaultAnchoringHours);
+    const hasDefaults = !isNaN(defSail) && !isNaN(defAnch) && (defSail + defAnch) > 0;
+    if (hasDefaults) {
+      const defTotal = defSail + defAnch;
+      const sailRatio = defSail / defTotal;
+      const sailHrs   = parseFloat((totalHrs * sailRatio).toFixed(2));
+      const anchHrs   = parseFloat((totalHrs - sailHrs).toFixed(2));
+      return { sailing: fmt(sailHrs), anchoring: fmt(anchHrs) };
+    }
+    // Fallback: 50/50
+    const half = totalHrs / 2;
+    return { sailing: fmt(half), anchoring: fmt(totalHrs - half) };
+  };
+
+  // Total slot duration in hours (decimal), e.g. 3.0 for a 3-hr slot
+  const slotTotalHours = useMemo(() => {
+    const start = customTimeEnabled ? customStart : formData.startTime;
+    const end   = customTimeEnabled ? customEnd   : formData.endTime;
+    if (!start || !end) return 0;
+    const diff = hhmmToMinutes(end) - hhmmToMinutes(start);
+    return diff > 0 ? diff / 60 : 0;
+  }, [formData.startTime, formData.endTime, customStart, customEnd, customTimeEnabled]);
+
+  // Auto-calculate price whenever hours or yacht changes
+  useEffect(() => {
+    const yacht = yachts.find((y) => y.id === formData.yachtId);
+    if (!yacht) return;
+    const sHrs = parseFloat(sailingHours) || 0;
+    const aHrs = parseFloat(anchoringHours) || 0;
+    if (sHrs === 0 && aHrs === 0) { setCalculatedAmount(null); return; }
+    const calc = (sHrs * (yacht.sailingCost || 0)) + (aHrs * (yacht.anchorageCost || 0));
+    setCalculatedAmount(calc);
+    // Pre-fill total amount only if it hasn't been manually touched
+    setFormData((p) => ({ ...p, totalAmount: String(Math.round(calc)) }));
+  }, [sailingHours, anchoringHours, formData.yachtId, yachts]);
 
   // Check if a slot overlaps any existing booking for the selected yacht/date
   const isSlotBooked = (slot, bookings) => {
@@ -265,12 +312,21 @@ function CreateBooking() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "yachtId") {
+    if (name === "yachtId" || name === "date") {
+      // Changing yacht or date invalidates the slot + all custom/pricing state
+      setCustomTimeEnabled(false);
+      setCustomStart("");
+      setCustomEnd("");
+      originalSlotRef.current = { start: "", end: "" };
+      setSailingHours("");
+      setAnchoringHours("");
+      setCalculatedAmount(null);
       setFormData((p) => ({
         ...p,
-        yachtId: value,
+        [name]: value,
         startTime: "",
         endTime: "",
+        ...(name === "yachtId" ? {} : {}),
       }));
     } else {
       setFormData((p) => ({ ...p, [name]: value }));
@@ -281,15 +337,39 @@ function CreateBooking() {
     const start = e.target.value;
     const slot = startTimeOptions.find((s) => s.start === start);
     const idx = startTimeOptions.findIndex((s) => s.start === start);
+
+    // Always reset custom mode when a new slot is picked
     setCustomTimeEnabled(false);
     setSelectedSlotIndex(idx);
-    // seed custom fields with slot times (but don't activate custom mode)
-    setCustomStart(start);
-    setCustomEnd(slot ? slot.end : "");
+
+    const slotStart = start;
+    const slotEnd = slot ? slot.end : "";
+
+    // Store original slot so Cancel can always restore cleanly
+    originalSlotRef.current = { start: slotStart, end: slotEnd };
+
+    // Seed custom fields with slot times (so Edit opens pre-filled correctly)
+    setCustomStart(slotStart);
+    setCustomEnd(slotEnd);
+    setCalculatedAmount(null);
+
+    // Prefill sailing/anchoring using yacht's default ratio (falls back to 50/50)
+    if (slot) {
+      const totalMins = hhmmToMinutes(slotEnd) - hhmmToMinutes(slotStart);
+      const totalHrs = totalMins / 60;
+      const yacht = yachts.find((y) => y.id === formData.yachtId);
+      const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
+      setSailingHours(sailing);
+      setAnchoringHours(anchoring);
+    } else {
+      setSailingHours("");
+      setAnchoringHours("");
+    }
+
     setFormData((p) => ({
       ...p,
-      startTime: start,
-      endTime: slot ? slot.end : "",
+      startTime: slotStart,
+      endTime: slotEnd,
     }));
   };
 
@@ -352,9 +432,27 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         extraDetails,
         ...(isAdmin && { bookingStatus: formData.bookingStatus }),
         ...(isQuotationNow && formData.tokenAmount && { tokenAmount: Number(formData.tokenAmount) }),
+        // Dynamic pricing breakdown
+        ...(sailingHours !== "" && { sailingHours: parseFloat(sailingHours) }),
+        ...(anchoringHours !== "" && { anchoringHours: parseFloat(anchoringHours) }),
+        ...(calculatedAmount !== null && { calculatedAmount }),
       };
 
       console.log("Booking payload : ", bookingPayload)
+
+      // Guard: sailing + anchoring must add up to total slot hours
+      const finalStartForCalc = customTimeEnabled ? customStart : formData.startTime;
+      const finalEndForCalc   = customTimeEnabled ? customEnd   : formData.endTime;
+      if (finalStartForCalc && finalEndForCalc) {
+        const slotHrs = (hhmmToMinutes(finalEndForCalc) - hhmmToMinutes(finalStartForCalc)) / 60;
+        const sHrs = parseFloat(sailingHours) || 0;
+        const aHrs = parseFloat(anchoringHours) || 0;
+        if (Math.abs(sHrs + aHrs - slotHrs) > 0.001) {
+          setError(`Sailing + Anchoring hours must add up to ${slotHrs % 1 === 0 ? slotHrs : slotHrs.toFixed(1)} hrs (currently ${(sHrs + aHrs).toFixed(1)} hrs).`);
+          setLoading(false);
+          return;
+        }
+      }
 
       // Resolve final start/end: use custom if enabled, else use slot selection
       const finalStartTime = customTimeEnabled ? customStart : formData.startTime;
@@ -779,6 +877,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                       <div className="cb-warn-msg">⚠ Exceeds cap ({yachts.find(y => y.id === formData.yachtId)?.capacity})</div>
                     )}
                   </div>
+
                   {/* ── Admin custom time override ── */}
                   {isAdmin && formData.startTime && (
                     <div className="cb-f cb-span2">
@@ -798,10 +897,21 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                           }}
                           onClick={() => {
                             if (customTimeEnabled) {
-                              // Cancel: restore formData to the original slot times
-                              setFormData(p => ({ ...p, startTime: customStart, endTime: customEnd }));
+                              // Cancel: restore everything back to the original slot
+                              const { start, end } = originalSlotRef.current;
+                              setCustomStart(start);
+                              setCustomEnd(end);
+                              setFormData(p => ({ ...p, startTime: start, endTime: end }));
+                              // Reset sailing/anchoring to original slot ratio
+                              if (start && end && hhmmToMinutes(start) < hhmmToMinutes(end)) {
+                                const totalHrs = (hhmmToMinutes(end) - hhmmToMinutes(start)) / 60;
+                                const yacht = yachts.find((y) => y.id === formData.yachtId);
+                                const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
+                                setSailingHours(sailing);
+                                setAnchoringHours(anchoring);
+                              }
                             } else {
-                              // Open: seed inputs from current formData (slot times)
+                              // Open: seed custom inputs with current slot times
                               setCustomStart(formData.startTime);
                               setCustomEnd(formData.endTime);
                             }
@@ -830,7 +940,17 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                                   type="time"
                                   value={customStart}
                                   style={{ border: errorBorder, background: errorBg }}
-                                  onChange={(e) => setCustomStart(e.target.value)}
+                                  onChange={(e) => {
+                                    const newStart = e.target.value;
+                                    setCustomStart(newStart);
+                                    if (newStart && customEnd && hhmmToMinutes(newStart) < hhmmToMinutes(customEnd)) {
+                                      const totalHrs = (hhmmToMinutes(customEnd) - hhmmToMinutes(newStart)) / 60;
+                                      const yacht = yachts.find((y) => y.id === formData.yachtId);
+                                      const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
+                                      setSailingHours(sailing);
+                                      setAnchoringHours(anchoring);
+                                    }
+                                  }}
                                 />
                               </div>
                               <div>
@@ -840,7 +960,17 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                                   type="time"
                                   value={customEnd}
                                   style={{ border: errorBorder, background: errorBg }}
-                                  onChange={(e) => setCustomEnd(e.target.value)}
+                                  onChange={(e) => {
+                                    const newEnd = e.target.value;
+                                    setCustomEnd(newEnd);
+                                    if (customStart && newEnd && hhmmToMinutes(customStart) < hhmmToMinutes(newEnd)) {
+                                      const totalHrs = (hhmmToMinutes(newEnd) - hhmmToMinutes(customStart)) / 60;
+                                      const yacht = yachts.find((y) => y.id === formData.yachtId);
+                                      const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
+                                      setSailingHours(sailing);
+                                      setAnchoringHours(anchoring);
+                                    }
+                                  }}
                                 />
                               </div>
                               {isInvalidTime ? (
@@ -862,6 +992,78 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                       )}
                     </div>
                   )}
+
+                  {/* ── Sailing / Anchoring hours (shown once slot is selected) ── */}
+                  {formData.yachtId && (formData.startTime || (customTimeEnabled && customStart && customEnd)) && (() => {
+                    const yacht = yachts.find((y) => y.id === formData.yachtId);
+                    const sHrs = parseFloat(sailingHours) || 0;
+                    const aHrs = parseFloat(anchoringHours) || 0;
+                    const totalEntered = sHrs + aHrs;
+                    const isUnder = slotTotalHours > 0 && totalEntered > 0 && totalEntered < slotTotalHours - 0.001;
+                    return (
+                      <>
+                        <div className="cb-f">
+                          <label className="cb-lbl">
+                            Sailing Hrs
+                            {yacht?.sailingCost > 0 && <span style={{ color: "#64748b", fontWeight: 400, fontSize: 11, marginLeft: 5 }}>₹{Number(yacht.sailingCost).toLocaleString("en-IN")}/hr</span>}
+                          </label>
+                          <input
+                            className="cb-inp"
+                            type="number" step="0.5" min="0"
+                            max={slotTotalHours || undefined}
+                            placeholder="0"
+                            required
+                            value={sailingHours}
+                            onChange={(e) => {
+                              const raw = parseFloat(e.target.value);
+                              const clamped = slotTotalHours > 0 ? Math.min(raw, slotTotalHours) : raw;
+                              const val = isNaN(clamped) ? "" : (clamped % 1 === 0 ? String(clamped) : clamped.toFixed(1));
+                              setSailingHours(val);
+                              if (slotTotalHours > 0 && val !== "") {
+                                const remaining = Math.max(0, slotTotalHours - parseFloat(val));
+                                setAnchoringHours(remaining % 1 === 0 ? String(remaining) : remaining.toFixed(1));
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="cb-f">
+                          <label className="cb-lbl">
+                            Anchoring Hrs
+                            {yacht?.anchorageCost > 0 && <span style={{ color: "#64748b", fontWeight: 400, fontSize: 11, marginLeft: 5 }}>₹{Number(yacht.anchorageCost).toLocaleString("en-IN")}/hr</span>}
+                          </label>
+                          <input
+                            className="cb-inp"
+                            type="number" step="0.5" min="0"
+                            max={slotTotalHours || undefined}
+                            placeholder="0"
+                            required
+                            value={anchoringHours}
+                            onChange={(e) => {
+                              const raw = parseFloat(e.target.value);
+                              const clamped = slotTotalHours > 0 ? Math.min(raw, slotTotalHours) : raw;
+                              const val = isNaN(clamped) ? "" : (clamped % 1 === 0 ? String(clamped) : clamped.toFixed(1));
+                              setAnchoringHours(val);
+                              if (slotTotalHours > 0 && val !== "") {
+                                const remaining = Math.max(0, slotTotalHours - parseFloat(val));
+                                setSailingHours(remaining % 1 === 0 ? String(remaining) : remaining.toFixed(1));
+                              }
+                            }}
+                          />
+                        </div>
+                        {/* Inline hint */}
+                        {isUnder && (
+                          <div className="cb-span2" style={{ fontSize: 11, color: "#92400e", marginTop: -8 }}>
+                            ⚠ {(slotTotalHours - totalEntered).toFixed(1)} hrs unaccounted
+                          </div>
+                        )}
+                        {calculatedAmount !== null && (sHrs > 0 || aHrs > 0) && !isUnder && (
+                          <div className="cb-span2" style={{ fontSize: 12, color: "#15803d", fontWeight: 600, marginTop: -6 }}>
+                            ₹{Math.round(calculatedAmount).toLocaleString("en-IN")} calculated → pre-filled below
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
 
                   {isAdmin && (
                     <div className="cb-f cb-span2">

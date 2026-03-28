@@ -37,6 +37,8 @@ function CreateYacht() {
     capacity: "",
     sailingCost: "",
     anchorageCost: "",
+    defaultSailingHours: "",
+    defaultAnchoringHours: "",
     maxSellingPrice: "",
     sellingPrice: "",
     sailStartTime: "06:00",
@@ -56,17 +58,32 @@ function CreateYacht() {
   const [photoError, setPhotoError] = useState("");
   const [photoPreviews, setPhotoPreviews] = useState([]);
 
+  // Slot duration in hours (derived from duration field)
+  const slotDurationHours = (() => {
+    if (yacht.duration === "custom") return Number(yacht.customDuration || 0) / 60;
+    return Number(yacht.duration || 0) / 60;
+  })();
+
   // Price validation
   useEffect(() => {
     const errors = {};
-    const running = Number(yacht.sailingCost || 0) + Number(yacht.anchorageCost || 0);
+    const sHrs = Number(yacht.defaultSailingHours || 0);
+    const aHrs = Number(yacht.defaultAnchoringHours || 0);
+    const totalDefaultHrs = sHrs + aHrs;
+
+    // Validate default hrs don't exceed slot duration
+    if (slotDurationHours > 0 && totalDefaultHrs > slotDurationHours + 0.001) {
+      errors.defaultHours = `Default sailing + anchoring (${totalDefaultHrs} hrs) exceeds slot duration (${slotDurationHours} hrs)`;
+    }
+
+    const running = (Number(yacht.sailingCost || 0) * sHrs) + (Number(yacht.anchorageCost || 0) * aHrs);
     const maxSell = Number(yacht.maxSellingPrice || 0);
     const sell = Number(yacht.sellingPrice || 0);
     if (running && maxSell && maxSell <= running) errors.maxSellingPrice = "Max selling price must be > running cost";
     if (running && sell && sell < running) errors.sellingPrice = "Selling price must be ≥ running cost";
     if (maxSell && sell && sell > maxSell) errors.sellingPrice = "Selling price must be ≤ max selling price";
     setFieldErrors(errors);
-  }, [yacht.sailingCost, yacht.anchorageCost, yacht.maxSellingPrice, yacht.sellingPrice]);
+  }, [yacht.sailingCost, yacht.anchorageCost, yacht.defaultSailingHours, yacht.defaultAnchoringHours, yacht.maxSellingPrice, yacht.sellingPrice, yacht.duration, yacht.customDuration]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -99,7 +116,7 @@ function CreateYacht() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (Object.keys(fieldErrors).length > 0) { setError("Fix all validation errors first."); return; }
+    if (Object.keys(fieldErrors).length > 0) { setError(fieldErrors.defaultHours || "Fix all validation errors first."); return; }
     if (photoError) { setError("Please fix the photo upload error first."); return; }
     const { value: durationHHMM, error: durationError } = validateDuration();
     if (durationError) { setError(durationError); return; }
@@ -116,7 +133,8 @@ function CreateYacht() {
       formData.append("capacity", yacht.capacity);
       formData.append("sailingCost", yacht.sailingCost);
       formData.append("anchorageCost", yacht.anchorageCost);
-      formData.append("runningCost", Number(yacht.sailingCost) + Number(yacht.anchorageCost));
+      const runningCostCalc = (Number(yacht.sailingCost) * Number(yacht.defaultSailingHours || 0)) + (Number(yacht.anchorageCost) * Number(yacht.defaultAnchoringHours || 0));
+      formData.append("runningCost", runningCostCalc);
       formData.append("maxSellingPrice", yacht.maxSellingPrice);
       formData.append("sellingPrice", yacht.sellingPrice);
       formData.append("sailStartTime", yacht.sailStartTime);
@@ -125,6 +143,8 @@ function CreateYacht() {
       formData.append("status", yacht.status);
       formData.append("specialSlotTimes", JSON.stringify(specialSlotArr));
       if (yacht.boardingLocation?.trim()) formData.append("boardingLocation", yacht.boardingLocation.trim());
+      if (yacht.defaultSailingHours !== "") formData.append("defaultSailingHours", yacht.defaultSailingHours);
+      if (yacht.defaultAnchoringHours !== "") formData.append("defaultAnchoringHours", yacht.defaultAnchoringHours);
       for (const file of (yacht.photos || [])) formData.append("yachtPhotos", file);
 
       await createYachtAPI(formData, token);
@@ -137,7 +157,7 @@ function CreateYacht() {
     }
   };
 
-  const runningCost = Number(yacht.sailingCost || 0) + Number(yacht.anchorageCost || 0);
+  const runningCost = (Number(yacht.sailingCost || 0) * Number(yacht.defaultSailingHours || 0)) + (Number(yacht.anchorageCost || 0) * Number(yacht.defaultAnchoringHours || 0));
 
   return (
     <div className={`${s.root} ${s.page}`}>
@@ -151,8 +171,6 @@ function CreateYacht() {
         <h1 className={s.pageTitle}>Create <span>Yacht</span></h1>
         <button className={s.btnSecondary} onClick={() => navigate(-1)}>← Back</button>
       </div>
-
-      {error && <div className={s.errorBanner}>{error}</div>}
 
       <div className={s.formCard}>
         <form onSubmit={handleSubmit}>
@@ -179,35 +197,6 @@ function CreateYacht() {
               <div className={`${s.field} ${s.colSpan3}`}>
                 <label className={s.label}>Boarding Location</label>
                 <input className={s.input} type="text" name="boardingLocation" placeholder="e.g. West Goa Marina" value={yacht.boardingLocation} onChange={handleChange} />
-              </div>
-            </div>
-          </div>
-
-          {/* ── Pricing ── */}
-          <div className={s.formSection}>
-            <div className={s.formSectionTitle}>Pricing</div>
-            <div className={s.formGrid}>
-              <div className={s.field}>
-                <label className={s.label}>Sailing Cost <span className={s.required}>*</span></label>
-                <input className={s.input} type="number" name="sailingCost" placeholder="₹" value={yacht.sailingCost} onChange={handleChange} required />
-              </div>
-              <div className={s.field}>
-                <label className={s.label}>Anchorage Cost <span className={s.required}>*</span></label>
-                <input className={s.input} type="number" name="anchorageCost" placeholder="₹" value={yacht.anchorageCost} onChange={handleChange} required />
-              </div>
-              <div className={s.field}>
-                <label className={s.label}>Running Cost</label>
-                <div className={s.costDisplay}><span>₹</span>{runningCost ? runningCost.toLocaleString() : "—"}</div>
-              </div>
-              <div className={s.field}>
-                <label className={s.label}>Selling Price <span className={s.required}>*</span></label>
-                <input className={`${s.input}${fieldErrors.sellingPrice ? " " + s.error : ""}`} type="number" name="sellingPrice" placeholder="₹" value={yacht.sellingPrice} onChange={handleChange} required />
-                {fieldErrors.sellingPrice && <span className={s.fieldError}>{fieldErrors.sellingPrice}</span>}
-              </div>
-              <div className={s.field}>
-                <label className={s.label}>Max Selling Price <span className={s.required}>*</span></label>
-                <input className={`${s.input}${fieldErrors.maxSellingPrice ? " " + s.error : ""}`} type="number" name="maxSellingPrice" placeholder="₹" value={yacht.maxSellingPrice} onChange={handleChange} required />
-                {fieldErrors.maxSellingPrice && <span className={s.fieldError}>{fieldErrors.maxSellingPrice}</span>}
               </div>
             </div>
           </div>
@@ -264,6 +253,78 @@ function CreateYacht() {
             </div>
           </div>
 
+          {/* ── Pricing ── */}
+          <div className={s.formSection}>
+            <div className={s.formSectionTitle}>Pricing</div>
+            <div className={s.formGrid}>
+              <div className={s.field}>
+                <label className={s.label}>Sailing Cost / hr <span className={s.required}>*</span></label>
+                <input className={s.input} type="number" name="sailingCost" placeholder="₹ per hour" value={yacht.sailingCost} onChange={handleChange} required />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Anchorage Cost / hr <span className={s.required}>*</span></label>
+                <input className={s.input} type="number" name="anchorageCost" placeholder="₹ per hour" value={yacht.anchorageCost} onChange={handleChange} required />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Running Cost</label>
+                <div className={s.costDisplay}><span>₹</span>{runningCost ? runningCost.toLocaleString() : "—"}</div>
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>
+                  Default Sailing Hrs
+                  <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>per slot</span>
+                </label>
+                <input className={`${s.input}${fieldErrors.defaultHours ? " " + s.error : ""}`} type="number" step="0.5" min="0" name="defaultSailingHours"
+                  placeholder="e.g. 1" value={yacht.defaultSailingHours} onChange={handleChange} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>
+                  Default Anchoring Hrs
+                  <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>per slot</span>
+                </label>
+                <input className={`${s.input}${fieldErrors.defaultHours ? " " + s.error : ""}`} type="number" step="0.5" min="0" name="defaultAnchoringHours"
+                  placeholder="e.g. 1" value={yacht.defaultAnchoringHours} onChange={handleChange} />
+              </div>
+              {(() => {
+                const sv = parseFloat(yacht.defaultSailingHours);
+                const av = parseFloat(yacht.defaultAnchoringHours);
+                if (!sv && !av) return null;
+                const total = (sv || 0) + (av || 0);
+                const sPct = total > 0 ? Math.round((sv || 0) / total * 100) : 0;
+                const aPct = 100 - sPct;
+                const isOver = slotDurationHours > 0 && total > slotDurationHours + 0.001;
+                const matchesSlot = slotDurationHours > 0 && Math.abs(total - slotDurationHours) <= 0.001;
+                return (
+                  <div style={{ gridColumn: "span 3", fontSize: 12, color: isOver ? "#dc2626" : "#0f172a", background: isOver ? "#fef2f2" : "#f0fdf4", border: `1px solid ${isOver ? "#fca5a5" : "#86efac"}`, borderRadius: 8, padding: "8px 12px", display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    <span>⛵ Sailing: <b>{sv || 0} hr{sv !== 1 ? "s" : ""}</b> ({sPct}%)</span>
+                    <span>⚓ Anchoring: <b>{av || 0} hr{av !== 1 ? "s" : ""}</b> ({aPct}%)</span>
+                    {isOver
+                      ? <span style={{ fontWeight: 700 }}>⛔ Total {total} hrs exceeds {slotDurationHours} hr slot</span>
+                      : matchesSlot
+                        ? <span style={{ color: "#15803d" }}>✓ Matches slot duration exactly</span>
+                        : <span style={{ color: "#64748b" }}>→ ratio applied proportionally to any slot length</span>
+                    }
+                  </div>
+                );
+              })()}
+              {fieldErrors.defaultHours && (
+                <div style={{ gridColumn: "span 3", fontSize: 12, fontWeight: 700, color: "#dc2626", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "7px 12px" }}>
+                  ⛔ {fieldErrors.defaultHours}
+                </div>
+              )}
+              <div className={s.field}>
+                <label className={s.label}>Selling Price <span className={s.required}>*</span></label>
+                <input className={`${s.input}${fieldErrors.sellingPrice ? " " + s.error : ""}`} type="number" name="sellingPrice" placeholder="₹" value={yacht.sellingPrice} onChange={handleChange} required />
+                {fieldErrors.sellingPrice && <span className={s.fieldError}>{fieldErrors.sellingPrice}</span>}
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Max Selling Price <span className={s.required}>*</span></label>
+                <input className={`${s.input}${fieldErrors.maxSellingPrice ? " " + s.error : ""}`} type="number" name="maxSellingPrice" placeholder="₹" value={yacht.maxSellingPrice} onChange={handleChange} required />
+                {fieldErrors.maxSellingPrice && <span className={s.fieldError}>{fieldErrors.maxSellingPrice}</span>}
+              </div>
+            </div>
+          </div>
+
           {/* ── Photos ── */}
           <div className={s.formSection}>
             <div className={s.formSectionTitle}>Photos <span className={s.inputHint}>(optional · max 1 MB each)</span></div>
@@ -281,9 +342,10 @@ function CreateYacht() {
             )}
           </div>
 
-          <button type="submit" className={s.submitBtn} disabled={loading}>
+          <button type="submit" className={s.submitBtn} style={{ width: "100%" }} disabled={loading}>
             {loading ? <><div className={s.spinner} style={{ width: 16, height: 16, borderWidth: 2 }} /> Creating…</> : "Create Yacht"}
           </button>
+          {error && <div className={s.errorBanner} style={{ marginTop: "12px" }}>{error}</div>}
         </form>
       </div>
     </div>

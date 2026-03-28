@@ -69,5 +69,13 @@ export const yachtSchema = z.object({
     },
     z.array(z.string())
   ).optional(),
-  boardingLocation: z.string().optional()
+  boardingLocation: z.string().optional(),
+  defaultSailingHours: z.preprocess(
+    (val) => (val !== undefined && val !== "" ? Number(val) : undefined),
+    z.number().min(0).optional().nullable()
+  ),
+  defaultAnchoringHours: z.preprocess(
+    (val) => (val !== undefined && val !== "" ? Number(val) : undefined),
+    z.number().min(0).optional().nullable()
+  ),
 });

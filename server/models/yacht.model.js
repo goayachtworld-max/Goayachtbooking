@@ -10,8 +10,10 @@ const yachtSchema = new mongoose.Schema(
     name: { type: String, required: true },
     capacity: { type: Number, required: true }, // max pax
     runningCost: { type: Number, required: true },
-    anchorageCost: { type: Number, required: true },
-    sailingCost: { type: Number, required: true },
+    anchorageCost: { type: Number, required: true },      // cost per hour at anchor
+    sailingCost: { type: Number, required: true },         // cost per hour while sailing
+    defaultSailingHours: { type: Number, default: null },   // default sailing hrs for one standard slot (e.g. 1 for a 2hr slot)
+    defaultAnchoringHours: { type: Number, default: null }, // default anchoring hrs for one standard slot (e.g. 1 for a 2hr slot)
     maxSellingPrice: { type: Number, required: true },
     sellingPrice: { type: Number, required: true },
     yachtPhotos: [String],

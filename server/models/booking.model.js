@@ -85,6 +85,23 @@ const bookingSchema = new mongoose.Schema({
         min: 0,
         default: null   // set only for quotation bookings
     },
+
+    // Dynamic pricing breakdown
+    sailingHours: {
+        type: Number,
+        min: 0,
+        default: null
+    },
+    anchoringHours: {
+        type: Number,
+        min: 0,
+        default: null
+    },
+    calculatedAmount: {
+        type: Number,
+        min: 0,
+        default: null   // system-computed price; quotedAmount is what's actually charged
+    },
     ticketNo: {
         type: String,
         unique: true,

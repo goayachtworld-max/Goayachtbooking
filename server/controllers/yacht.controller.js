@@ -71,9 +71,14 @@ export const getAllYachts = async (req, res, next) => {
       slotDurationMinutes: yacht.duration,
       specialSlots: yacht.specialSlotTimes,
       runningCost: yacht.runningCost,
+      sailingCost: yacht.sailingCost,
+      anchorageCost: yacht.anchorageCost,
+      defaultSailingHours: yacht.defaultSailingHours,
+      defaultAnchoringHours: yacht.defaultAnchoringHours,
+      capacity: yacht.capacity,
       status: yacht.status,
       slots: yacht.slots || [],
-      bookings: bookingsMap[yacht._id.toString()] || [], // ✅ Added bookings
+      bookings: bookingsMap[yacht._id.toString()] || [],
     }));
 
     res.json({ success: true, yachts: formatted });
