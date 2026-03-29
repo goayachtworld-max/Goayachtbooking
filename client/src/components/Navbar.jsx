@@ -585,84 +585,185 @@ function Navbar({ user, onLogout }) {
 
       {/* ─── EDIT PROFILE MODAL ─── */}
       {showEditProfile && (
-        <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.55)" }} onClick={() => setShowEditProfile(false)}>
-          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-content shadow-lg" style={{ borderRadius: "18px", overflow: "hidden", border: "none" }}>
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 1055,
+            backgroundColor: "rgba(0,0,0,0.45)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center",
+            padding: 0,
+          }}
+          onClick={() => setShowEditProfile(false)}
+        >
+          {/* Sheet — slides up from bottom on mobile, centered on desktop */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              width: "100%",
+              maxWidth: 480,
+              borderRadius: "20px 20px 0 0",
+              maxHeight: "92dvh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              /* center on desktop */
+            }}
+            className="edit-profile-sheet"
+          >
+            {/* ── Handle bar (mobile feel) ── */}
+            <div style={{ display: "flex", justifyContent: "center", paddingTop: 10, paddingBottom: 2 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 4, background: "#e2e8f0" }} />
+            </div>
 
-              {/* Header */}
-              <div className="modal-header" style={{ background: "linear-gradient(90deg,#0d6efd,#0b5ed7)", border: "none" }}>
-                <h5 className="modal-title text-white fw-bold" style={{ fontSize: "1rem" }}>Edit Profile</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setShowEditProfile(false)} />
+            {/* ── Header ── */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "10px 20px 12px",
+              borderBottom: "1px solid #f1f5f9",
+            }}>
+              <h6 style={{ margin: 0, fontWeight: 700, fontSize: "1rem", color: "#1e293b" }}>Edit Profile</h6>
+              <button
+                onClick={() => setShowEditProfile(false)}
+                style={{
+                  border: "none", background: "#f1f5f9", borderRadius: "50%",
+                  width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: "#64748b", flexShrink: 0,
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* ── Scrollable body ── */}
+            <div style={{ overflowY: "auto", flex: 1, padding: "20px 20px 8px" }}>
+
+              {/* Profile Photo */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24 }}>
+                <div style={{ position: "relative", display: "inline-block" }}>
+                  {/* Avatar circle */}
+                  <div style={{
+                    width: 84, height: 84, borderRadius: "50%",
+                    background: "#e8f0fe",
+                    overflow: "hidden",
+                    border: "3px solid #e2e8f0",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    {editForm.profilePhoto && typeof editForm.profilePhoto !== "string" ? (
+                      <img
+                        src={URL.createObjectURL(editForm.profilePhoto)}
+                        alt="preview"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : user?.profilePhoto ? (
+                      <img
+                        src={user.profilePhoto}
+                        alt="profile"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: "1.6rem", fontWeight: 700, color: "#3b82f6" }}>
+                        {getInitials(user?.name)}
+                      </span>
+                    )}
+                  </div>
+                  {/* Camera button */}
+                  <label
+                    htmlFor="profilePhotoInput"
+                    style={{
+                      position: "absolute", bottom: 0, right: 0,
+                      width: 28, height: 28, borderRadius: "50%",
+                      background: "#1e293b", border: "2px solid #fff",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#fff" viewBox="0 0 16 16">
+                      <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.828 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/>
+                      <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                    </svg>
+                    <input
+                      id="profilePhotoInput"
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={(e) => setEditForm({ ...editForm, profilePhoto: e.target.files[0] })}
+                    />
+                  </label>
+                </div>
+                <p style={{ margin: "8px 0 0", fontSize: "0.75rem", color: "#94a3b8" }}>Tap camera to change photo</p>
               </div>
 
-              <div className="modal-body" style={{ padding: "1.5rem" }}>
+              {/* ── Section: Basic Info ── */}
+              <p style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#94a3b8", marginBottom: 10 }}>Basic Info</p>
 
-                {/* ── Basic Info ── */}
-                <p style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", marginBottom: "0.65rem" }}>Basic Info</p>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1.1rem" }}>
-                  <div>
-                    <input
-                      className={`form-control ${errors.name ? "is-invalid" : ""}`}
-                      placeholder="Full name"
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      style={{ borderRadius: 10 }}
-                    />
-                    {errors.name && <div className="invalid-feedback">{errors.name}</div>}
-                  </div>
-                  <div>
-                    <input
-                      className={`form-control ${errors.email ? "is-invalid" : ""}`}
-                      placeholder="Email address"
-                      value={editForm.email}
-                      onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                      style={{ borderRadius: 10 }}
-                    />
-                    {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-                  </div>
-                  <div>
-                    <input
-                      className={`form-control ${errors.contact ? "is-invalid" : ""}`}
-                      placeholder="Mobile number"
-                      value={editForm.contact}
-                      onChange={(e) => setEditForm({ ...editForm, contact: e.target.value })}
-                      style={{ borderRadius: 10 }}
-                    />
-                    {errors.contact && <div className="invalid-feedback">{errors.contact}</div>}
-                  </div>
-                  <div>
-                    <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", marginBottom: 4, display: "block" }}>Profile Photo</label>
-                    <input
-                      type="file"
-                      className="form-control"
-                      accept="image/*"
-                      onChange={(e) => setEditForm({ ...editForm, profilePhoto: e.target.files[0] })}
-                      style={{ borderRadius: 10 }}
-                    />
-                  </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                <div>
+                  <input
+                    className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                    placeholder="Full name"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    style={{ borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc" }}
+                  />
+                  {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                 </div>
+                <div>
+                  <input
+                    className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                    placeholder="Email address"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    style={{ borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc" }}
+                  />
+                  {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                </div>
+                <div>
+                  <input
+                    className={`form-control ${errors.contact ? "is-invalid" : ""}`}
+                    placeholder="Mobile number"
+                    value={editForm.contact}
+                    onChange={(e) => setEditForm({ ...editForm, contact: e.target.value })}
+                    style={{ borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc" }}
+                  />
+                  {errors.contact && <div className="invalid-feedback">{errors.contact}</div>}
+                </div>
+              </div>
 
-                {/* ── Change Password ── */}
-                <div style={{ height: 1, background: "#f0f4ff", margin: "0.75rem 0" }} />
-                <p style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", marginBottom: "0.65rem" }}>Change Password <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></p>
+              {/* ── Section: Change Password ── */}
+              <div style={{ height: 1, background: "#f1f5f9", marginBottom: 16 }} />
+              <p style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#94a3b8", marginBottom: 10 }}>
+                Change Password <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#b0bec5" }}>(optional)</span>
+              </p>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "0.5rem" }}>
-                  <div className="input-group" style={{ borderRadius: 10, overflow: "hidden" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                <div>
+                  <div style={{ position: "relative" }}>
                     <input
                       type={showCurrentPassword ? "text" : "password"}
                       className={`form-control ${errors.currentPassword ? "is-invalid" : ""}`}
                       placeholder="Current password"
                       value={editForm.currentPassword}
                       onChange={(e) => setEditForm({ ...editForm, currentPassword: e.target.value })}
-                      style={{ borderRadius: "10px 0 0 10px" }}
+                      style={{ borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc", paddingRight: 64 }}
                     />
-                    <button className="btn btn-outline-secondary" type="button" style={{ fontSize: "0.78rem" }} onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      style={{
+                        position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                        border: "none", background: "none", fontSize: "0.75rem", color: "#64748b",
+                        cursor: "pointer", fontWeight: 600, padding: "2px 6px",
+                      }}
+                    >
                       {showCurrentPassword ? "Hide" : "Show"}
                     </button>
                     {errors.currentPassword && <div className="invalid-feedback">{errors.currentPassword}</div>}
                   </div>
-                  <div className="input-group" style={{ borderRadius: 10, overflow: "hidden" }}>
+                </div>
+                <div>
+                  <div style={{ position: "relative" }}>
                     <input
                       type={showNewPassword ? "text" : "password"}
                       className={`form-control ${errors.newPassword ? "is-invalid" : ""}`}
@@ -670,66 +771,110 @@ function Navbar({ user, onLogout }) {
                       value={editForm.newPassword}
                       disabled={!editForm.currentPassword}
                       onChange={(e) => setEditForm({ ...editForm, newPassword: e.target.value })}
-                      style={{ borderRadius: "10px 0 0 10px" }}
+                      style={{ borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: !editForm.currentPassword ? "#f1f5f9" : "#f8fafc", paddingRight: 64 }}
                     />
-                    <button className="btn btn-outline-secondary" type="button" style={{ fontSize: "0.78rem" }} disabled={!editForm.currentPassword} onClick={() => setShowNewPassword(!showNewPassword)}>
+                    <button
+                      type="button"
+                      disabled={!editForm.currentPassword}
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      style={{
+                        position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                        border: "none", background: "none", fontSize: "0.75rem", color: "#64748b",
+                        cursor: !editForm.currentPassword ? "default" : "pointer", fontWeight: 600, padding: "2px 6px",
+                        opacity: !editForm.currentPassword ? 0.4 : 1,
+                      }}
+                    >
                       {showNewPassword ? "Hide" : "Show"}
                     </button>
                     {errors.newPassword && <div className="invalid-feedback">{errors.newPassword}</div>}
                   </div>
                 </div>
+              </div>
 
-                {/* ── Set PIN ── */}
-                <div style={{ height: 1, background: "#f0f4ff", margin: "0.75rem 0" }} />
-                <p style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", marginBottom: "0.65rem" }}>Quick Login PIN <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></p>
+              {/* ── Section: Quick Login PIN ── */}
+              <div style={{ height: 1, background: "#f1f5f9", marginBottom: 16 }} />
+              <p style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#94a3b8", marginBottom: 10 }}>
+                Quick Login PIN <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#b0bec5" }}>(optional)</span>
+              </p>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-                  <div className="input-group" style={{ borderRadius: 10, overflow: "hidden" }}>
-                    <input
-                      type={showPin ? "text" : "password"}
-                      inputMode="numeric"
-                      className="form-control"
-                      placeholder="New 4-digit PIN"
-                      maxLength={4}
-                      value={pinForm.newPin}
-                      onChange={(e) => setPinForm((p) => ({ ...p, newPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                      style={{ borderRadius: "10px 0 0 10px", letterSpacing: "0.4em", fontWeight: 700, textAlign: "center" }}
-                    />
-                    <button className="btn btn-outline-secondary" type="button" style={{ fontSize: "0.78rem" }} onClick={() => setShowPin((v) => !v)}>
-                      {showPin ? "Hide" : "Show"}
-                    </button>
-                  </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 8 }}>
+                <div style={{ position: "relative" }}>
                   <input
                     type={showPin ? "text" : "password"}
                     inputMode="numeric"
                     className="form-control"
-                    placeholder="Confirm PIN"
+                    placeholder="New 4-digit PIN"
                     maxLength={4}
-                    value={pinForm.confirmPin}
-                    onChange={(e) => setPinForm((p) => ({ ...p, confirmPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                    style={{ borderRadius: 10, letterSpacing: "0.4em", fontWeight: 700, textAlign: "center" }}
+                    value={pinForm.newPin}
+                    onChange={(e) => setPinForm((p) => ({ ...p, newPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                    style={{
+                      borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc",
+                      letterSpacing: "0.35em", fontWeight: 700, textAlign: "center", paddingRight: 64,
+                    }}
                   />
-                  {pinForm.newPin.length > 0 && pinForm.newPin !== pinForm.confirmPin && pinForm.confirmPin.length > 0 && (
-                    <p style={{ fontSize: "0.75rem", color: "#dc2626", margin: "0 0 0 2px" }}>PINs do not match</p>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowPin((v) => !v)}
+                    style={{
+                      position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                      border: "none", background: "none", fontSize: "0.75rem", color: "#64748b",
+                      cursor: "pointer", fontWeight: 600, padding: "2px 6px",
+                    }}
+                  >
+                    {showPin ? "Hide" : "Show"}
+                  </button>
                 </div>
-
-              </div>
-
-              {/* Single Update button */}
-              <div className="modal-footer" style={{ border: "none", padding: "0.75rem 1.5rem 1.5rem", gap: "0.5rem" }}>
-                <button className="btn btn-light" style={{ borderRadius: 10, fontWeight: 600, flex: 1 }} onClick={() => setShowEditProfile(false)}>Cancel</button>
-                <button
-                  className="btn btn-primary"
-                  style={{ borderRadius: 10, fontWeight: 600, flex: 2 }}
-                  onClick={handleCombinedUpdate}
-                  disabled={pinLoading}
-                >
-                  {pinLoading ? "Saving…" : "Update"}
-                </button>
+                <input
+                  type={showPin ? "text" : "password"}
+                  inputMode="numeric"
+                  className="form-control"
+                  placeholder="Confirm PIN"
+                  maxLength={4}
+                  value={pinForm.confirmPin}
+                  onChange={(e) => setPinForm((p) => ({ ...p, confirmPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                  style={{
+                    borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc",
+                    letterSpacing: "0.35em", fontWeight: 700, textAlign: "center",
+                  }}
+                />
+                {pinForm.newPin.length > 0 && pinForm.confirmPin.length > 0 && pinForm.newPin !== pinForm.confirmPin && (
+                  <p style={{ fontSize: "0.75rem", color: "#ef4444", margin: "0 0 0 2px" }}>PINs do not match</p>
+                )}
               </div>
 
             </div>
+
+            {/* ── Footer ── */}
+            <div style={{
+              padding: "14px 20px 20px",
+              borderTop: "1px solid #f1f5f9",
+              display: "flex", gap: 10,
+              background: "#fff",
+            }}>
+              <button
+                onClick={() => setShowEditProfile(false)}
+                style={{
+                  flex: 1, borderRadius: 10, fontWeight: 600, fontSize: "0.9rem",
+                  border: "1.5px solid #e2e8f0", background: "#f8fafc",
+                  color: "#475569", padding: "11px 0", cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCombinedUpdate}
+                disabled={pinLoading}
+                style={{
+                  flex: 2, borderRadius: 10, fontWeight: 600, fontSize: "0.9rem",
+                  border: "none", background: "#1e293b",
+                  color: "#fff", padding: "11px 0", cursor: pinLoading ? "not-allowed" : "pointer",
+                  opacity: pinLoading ? 0.7 : 1,
+                }}
+              >
+                {pinLoading ? "Saving…" : "Save Changes"}
+              </button>
+            </div>
+
           </div>
         </div>
       )}
