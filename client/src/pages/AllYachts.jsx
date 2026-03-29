@@ -120,14 +120,23 @@ const AllYachts = () => {
   useEffect(() => {
     if (!selectedYacht) return;
     const errors = {};
-    const running = Number(selectedYacht.sailingCost || 0) + Number(selectedYacht.anchorageCost || 0);
+    const sHrs = Number(selectedYacht.defaultSailingHours || 0);
+    const aHrs = Number(selectedYacht.defaultAnchoringHours || 0);
+    const slotDurHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
+
+    // Default hrs must not exceed slot duration
+    if (slotDurHrs > 0 && (sHrs + aHrs) > slotDurHrs + 0.001) {
+      errors.defaultHours = `Default sailing + anchoring (${sHrs + aHrs} hrs) exceeds slot duration (${slotDurHrs} hrs)`;
+    }
+
+    const running = (Number(selectedYacht.sailingCost || 0) * sHrs) + (Number(selectedYacht.anchorageCost || 0) * aHrs);
     const maxSell = Number(selectedYacht.maxSellingPrice || 0);
     const sell = Number(selectedYacht.sellingPrice || 0);
     if (running && maxSell && maxSell <= running) errors.maxSellingPrice = "Max selling price must be > running cost";
     if (running && sell && sell < running) errors.sellingPrice = "Selling price must be ≥ running cost";
     if (maxSell && sell && sell > maxSell) errors.sellingPrice = "Selling price must be ≤ max selling price";
     setEditFieldErrors(errors);
-  }, [selectedYacht?.sailingCost, selectedYacht?.anchorageCost, selectedYacht?.maxSellingPrice, selectedYacht?.sellingPrice]);
+  }, [selectedYacht?.sailingCost, selectedYacht?.anchorageCost, selectedYacht?.defaultSailingHours, selectedYacht?.defaultAnchoringHours, selectedYacht?.duration, selectedYacht?.maxSellingPrice, selectedYacht?.sellingPrice]);
 
   // preload special slots
   useEffect(() => {
@@ -195,7 +204,10 @@ const AllYachts = () => {
       formData.append("capacity", selectedYacht.capacity);
       formData.append("sailingCost", selectedYacht.sailingCost);
       formData.append("anchorageCost", selectedYacht.anchorageCost);
-      formData.append("runningCost", Number(selectedYacht.sailingCost) + Number(selectedYacht.anchorageCost));
+      const runningCostCalc = (Number(selectedYacht.sailingCost) * Number(selectedYacht.defaultSailingHours || 0)) + (Number(selectedYacht.anchorageCost) * Number(selectedYacht.defaultAnchoringHours || 0));
+      formData.append("runningCost", runningCostCalc);
+      if (selectedYacht.defaultSailingHours != null) formData.append("defaultSailingHours", selectedYacht.defaultSailingHours);
+      if (selectedYacht.defaultAnchoringHours != null) formData.append("defaultAnchoringHours", selectedYacht.defaultAnchoringHours);
       formData.append("sellingPrice", selectedYacht.sellingPrice);
       formData.append("maxSellingPrice", selectedYacht.maxSellingPrice);
       formData.append("sailStartTime", selectedYacht.sailStartTime);
@@ -337,6 +349,8 @@ const AllYachts = () => {
                         ["Capacity", selectedYacht.capacity + " guests"],
                         ["Sail Time", `${to12Hour(selectedYacht.sailStartTime)} – ${to12Hour(selectedYacht.sailEndTime)}`],
                         ["Duration", calculateDuration(selectedYacht.sailStartTime, selectedYacht.sailEndTime)],
+                        ["Sailing Cost", `₹${Number(selectedYacht.sailingCost || 0).toLocaleString()}/hr${selectedYacht.defaultSailingHours ? ` × ${selectedYacht.defaultSailingHours} hr` : ""}`],
+                        ["Anchoring Cost", `₹${Number(selectedYacht.anchorageCost || 0).toLocaleString()}/hr${selectedYacht.defaultAnchoringHours ? ` × ${selectedYacht.defaultAnchoringHours} hr` : ""}`],
                         ["Running Cost", `₹${selectedYacht.runningCost?.toLocaleString()}`],
                         ["Selling Price", `₹${selectedYacht.sellingPrice?.toLocaleString()}`],
                         ["Max Selling", `₹${selectedYacht.maxSellingPrice?.toLocaleString()}`],
@@ -387,58 +401,18 @@ const AllYachts = () => {
                 <button className={s.modalClose} onClick={closeAllModals}>✕</button>
               </div>
               <div className={s.modalBody}>
+
+                {/* ── Basic Information ── */}
+                <div className={s.formSectionTitle}>Basic Information</div>
                 <div className={s.formGrid}>
-                  {/* Name */}
                   <div className={s.field}>
                     <label className={s.label}>Yacht Name <span className={s.required}>*</span></label>
                     <input className={s.input} value={selectedYacht.name || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, name: e.target.value }))} />
                   </div>
-                  {/* Capacity */}
                   <div className={s.field}>
                     <label className={s.label}>Capacity <span className={s.required}>*</span></label>
                     <input className={s.input} type="number" value={selectedYacht.capacity || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, capacity: Number(e.target.value) }))} />
                   </div>
-                  {/* Sailing Cost */}
-                  <div className={s.field}>
-                    <label className={s.label}>Sailing Cost</label>
-                    <input className={s.input} type="number" value={selectedYacht.sailingCost || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sailingCost: e.target.value }))} />
-                  </div>
-                  {/* Anchorage Cost */}
-                  <div className={s.field}>
-                    <label className={s.label}>Anchorage Cost</label>
-                    <input className={s.input} type="number" value={selectedYacht.anchorageCost || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, anchorageCost: e.target.value }))} />
-                  </div>
-                  {/* Selling Price */}
-                  <div className={s.field}>
-                    <label className={s.label}>Selling Price <span className={s.required}>*</span></label>
-                    <input className={`${s.input}${editFieldErrors.sellingPrice ? " " + s.error : ""}`} type="number" value={selectedYacht.sellingPrice || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sellingPrice: e.target.value }))} />
-                    {editFieldErrors.sellingPrice && <span className={s.fieldError}>{editFieldErrors.sellingPrice}</span>}
-                  </div>
-                  {/* Max Selling Price */}
-                  <div className={s.field}>
-                    <label className={s.label}>Max Selling Price <span className={s.required}>*</span></label>
-                    <input className={`${s.input}${editFieldErrors.maxSellingPrice ? " " + s.error : ""}`} type="number" value={selectedYacht.maxSellingPrice || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, maxSellingPrice: e.target.value }))} />
-                    {editFieldErrors.maxSellingPrice && <span className={s.fieldError}>{editFieldErrors.maxSellingPrice}</span>}
-                  </div>
-                  {/* Sail Start */}
-                  <div className={s.field}>
-                    <label className={s.label}>Sail Start</label>
-                    <input className={s.input} type="time" value={selectedYacht.sailStartTime || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sailStartTime: e.target.value }))} />
-                  </div>
-                  {/* Sail End */}
-                  <div className={s.field}>
-                    <label className={s.label}>Sail End</label>
-                    <input className={s.input} type="time" value={selectedYacht.sailEndTime || ""} min={selectedYacht.sailStartTime} onChange={(e) => {
-                      if (e.target.value < selectedYacht.sailStartTime) { toast.error("End time cannot be before start time"); return; }
-                      setSelectedYacht((p) => ({ ...p, sailEndTime: e.target.value }));
-                    }} />
-                  </div>
-                  {/* Duration */}
-                  <div className={s.field}>
-                    <label className={s.label}>Duration (minutes)</label>
-                    <input className={s.input} type="number" value={toMinutes(selectedYacht.duration)} onChange={(e) => setSelectedYacht((p) => ({ ...p, duration: Number(e.target.value) }))} />
-                  </div>
-                  {/* Status */}
                   <div className={s.field}>
                     <label className={s.label}>Status</label>
                     <select className={s.select} value={selectedYacht.status || "active"} onChange={(e) => setSelectedYacht((p) => ({ ...p, status: e.target.value }))}>
@@ -446,7 +420,48 @@ const AllYachts = () => {
                       <option value="inactive">Inactive</option>
                     </select>
                   </div>
-                  {/* Special Slot 1 */}
+                  <div className={`${s.field} ${s.colSpan3}`}>
+                    <label className={s.label}>Boarding Location</label>
+                    <input className={s.input} type="text" placeholder="e.g. West Goa Marina" value={selectedYacht.boardingLocation || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, boardingLocation: e.target.value }))} />
+                  </div>
+                </div>
+
+                {/* ── Schedule & Slots ── */}
+                <div className={s.formSectionTitle} style={{ marginTop: "1.25rem" }}>Schedule & Slots</div>
+                <div className={s.formGrid}>
+                  <div className={s.field}>
+                    <label className={s.label}>Start Time</label>
+                    <input className={s.input} type="time" value={selectedYacht.sailStartTime || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sailStartTime: e.target.value }))} />
+                  </div>
+                  <div className={s.field}>
+                    <label className={s.label}>End Time</label>
+                    <input className={s.input} type="time" value={selectedYacht.sailEndTime || ""} min={selectedYacht.sailStartTime} onChange={(e) => {
+                      if (e.target.value < selectedYacht.sailStartTime) { toast.error("End time cannot be before start time"); return; }
+                      setSelectedYacht((p) => ({ ...p, sailEndTime: e.target.value }));
+                    }} />
+                  </div>
+                  <div className={s.field}>
+                    <label className={s.label}>Slot Duration (mins)</label>
+                    <input className={s.input} type="number" value={toMinutes(selectedYacht.duration)}
+                      onChange={(e) => {
+                        const newMins = Number(e.target.value);
+                        const newHrs = newMins / 60;
+                        setSelectedYacht((p) => {
+                          const prevSail = parseFloat(p.defaultSailingHours);
+                          const prevAnch = parseFloat(p.defaultAnchoringHours);
+                          const prevTotal = (isNaN(prevSail) ? 0 : prevSail) + (isNaN(prevAnch) ? 0 : prevAnch);
+                          // Re-apply the same ratio to the new duration
+                          if (newHrs > 0 && prevTotal > 0) {
+                            const sailRatio = (isNaN(prevSail) ? 0 : prevSail) / prevTotal;
+                            const newSail = parseFloat((newHrs * sailRatio).toFixed(2));
+                            const newAnch = parseFloat((newHrs - newSail).toFixed(2));
+                            const fmt = (v) => v % 1 === 0 ? String(v) : String(v);
+                            return { ...p, duration: newMins, defaultSailingHours: fmt(newSail), defaultAnchoringHours: fmt(newAnch) };
+                          }
+                          return { ...p, duration: newMins };
+                        });
+                      }} />
+                  </div>
                   <div className={s.field}>
                     <label className={s.label}>Special Slot 1</label>
                     <select className={s.select} value={selectedYacht.specialSlot1 || "none"} onChange={(e) => {
@@ -457,7 +472,6 @@ const AllYachts = () => {
                       {SLOT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
-                  {/* Special Slot 2 */}
                   <div className={s.field}>
                     <label className={s.label}>Special Slot 2</label>
                     <select className={s.select} value={selectedYacht.specialSlot2 || "none"} disabled={!selectedYacht.specialSlot1 || selectedYacht.specialSlot1 === "none"} onChange={(e) => {
@@ -468,32 +482,128 @@ const AllYachts = () => {
                       {SLOT_OPTIONS.map((o) => <option key={o.value} value={o.value} disabled={selectedYacht.specialSlot1 === o.value}>{o.label}</option>)}
                     </select>
                   </div>
-                  {/* Boarding Location */}
-                  <div className={`${s.field} ${s.colSpan2}`}>
-                    <label className={s.label}>Boarding Location</label>
-                    <input className={s.input} type="text" placeholder="e.g. West Goa" value={selectedYacht.boardingLocation || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, boardingLocation: e.target.value }))} />
+                </div>
+
+                {/* ── Pricing ── */}
+                <div className={s.formSectionTitle} style={{ marginTop: "1.25rem" }}>Pricing</div>
+                <div className={s.formGrid}>
+                  <div className={s.field}>
+                    <label className={s.label}>Sailing Cost / hr</label>
+                    <input className={s.input} type="number" value={selectedYacht.sailingCost || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sailingCost: e.target.value }))} />
+                  </div>
+                  <div className={s.field}>
+                    <label className={s.label}>Anchorage Cost / hr</label>
+                    <input className={s.input} type="number" value={selectedYacht.anchorageCost || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, anchorageCost: e.target.value }))} />
+                  </div>
+                  {/* Running Cost — live */}
+                  {(() => {
+                    const sHrs = Number(selectedYacht.defaultSailingHours || 0);
+                    const aHrs = Number(selectedYacht.defaultAnchoringHours || 0);
+                    const rc = (Number(selectedYacht.sailingCost || 0) * sHrs) + (Number(selectedYacht.anchorageCost || 0) * aHrs);
+                    if (!rc) return null;
+                    return (
+                      <div className={s.field}>
+                        <label className={s.label}>Running Cost</label>
+                        <div className={s.costDisplay}><span>₹</span>{rc.toLocaleString()}</div>
+                      </div>
+                    );
+                  })()}
+                  <div className={s.field}>
+                    <label className={s.label}>
+                      Default Sailing Hrs
+                      <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>per slot</span>
+                    </label>
+                    <input className={s.input} type="number" step="0.5" min="0" placeholder="e.g. 1"
+                      value={selectedYacht.defaultSailingHours ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const slotHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
+                        const clamped = slotHrs > 0 ? Math.min(parseFloat(val), slotHrs) : parseFloat(val);
+                        const sail = isNaN(clamped) ? "" : (clamped % 1 === 0 ? String(clamped) : clamped.toFixed(1));
+                        const remaining = slotHrs > 0 && sail !== "" ? Math.max(0, slotHrs - parseFloat(sail)) : null;
+                        const anch = remaining !== null ? (remaining % 1 === 0 ? String(remaining) : remaining.toFixed(1)) : undefined;
+                        setSelectedYacht((p) => ({ ...p, defaultSailingHours: sail, ...(anch !== undefined && { defaultAnchoringHours: anch }) }));
+                      }} />
+                  </div>
+                  <div className={s.field}>
+                    <label className={s.label}>
+                      Default Anchoring Hrs
+                      <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>per slot</span>
+                    </label>
+                    <input className={s.input} type="number" step="0.5" min="0" placeholder="e.g. 1"
+                      value={selectedYacht.defaultAnchoringHours ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const slotHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
+                        const clamped = slotHrs > 0 ? Math.min(parseFloat(val), slotHrs) : parseFloat(val);
+                        const anch = isNaN(clamped) ? "" : (clamped % 1 === 0 ? String(clamped) : clamped.toFixed(1));
+                        const remaining = slotHrs > 0 && anch !== "" ? Math.max(0, slotHrs - parseFloat(anch)) : null;
+                        const sail = remaining !== null ? (remaining % 1 === 0 ? String(remaining) : remaining.toFixed(1)) : undefined;
+                        setSelectedYacht((p) => ({ ...p, defaultAnchoringHours: anch, ...(sail !== undefined && { defaultSailingHours: sail }) }));
+                      }} />
+                  </div>
+                  {/* Ratio preview */}
+                  {(() => {
+                    const sv = parseFloat(selectedYacht.defaultSailingHours);
+                    const av = parseFloat(selectedYacht.defaultAnchoringHours);
+                    if (!sv && !av) return null;
+                    const total = (sv || 0) + (av || 0);
+                    const sPct = total > 0 ? Math.round((sv || 0) / total * 100) : 0;
+                    const aPct = 100 - sPct;
+                    const slotDurHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
+                    const isOver = slotDurHrs > 0 && total > slotDurHrs + 0.001;
+                    const matchesSlot = slotDurHrs > 0 && Math.abs(total - slotDurHrs) <= 0.001;
+                    return (
+                      <div className={s.colSpan3} style={{ fontSize: 12, color: isOver ? "#dc2626" : "#0f172a", background: isOver ? "#fef2f2" : "#f0fdf4", border: `1px solid ${isOver ? "#fca5a5" : "#86efac"}`, borderRadius: 8, padding: "8px 12px", display: "flex", gap: 16, flexWrap: "wrap" }}>
+                        <span>⛵ Sailing: <b>{sv || 0} hr{sv !== 1 ? "s" : ""}</b> ({sPct}%)</span>
+                        <span>⚓ Anchoring: <b>{av || 0} hr{av !== 1 ? "s" : ""}</b> ({aPct}%)</span>
+                        {isOver
+                          ? <span style={{ fontWeight: 700 }}>⛔ Total {total} hrs exceeds {slotDurHrs} hr slot</span>
+                          : matchesSlot
+                            ? <span style={{ color: "#15803d" }}>✓ Matches slot duration exactly</span>
+                            : <span style={{ color: "#64748b" }}>→ ratio applied proportionally to any slot length</span>
+                        }
+                      </div>
+                    );
+                  })()}
+                  {editFieldErrors.defaultHours && (
+                    <div className={s.colSpan3} style={{ fontSize: 12, fontWeight: 700, color: "#dc2626", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "7px 12px" }}>
+                      ⛔ {editFieldErrors.defaultHours}
+                    </div>
+                  )}
+                  <div className={s.field}>
+                    <label className={s.label}>Selling Price <span className={s.required}>*</span></label>
+                    <input className={`${s.input}${editFieldErrors.sellingPrice ? " " + s.error : ""}`} type="number" value={selectedYacht.sellingPrice || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sellingPrice: e.target.value }))} />
+                    {editFieldErrors.sellingPrice && <span className={s.fieldError}>{editFieldErrors.sellingPrice}</span>}
+                  </div>
+                  <div className={s.field}>
+                    <label className={s.label}>Max Selling Price <span className={s.required}>*</span></label>
+                    <input className={`${s.input}${editFieldErrors.maxSellingPrice ? " " + s.error : ""}`} type="number" value={selectedYacht.maxSellingPrice || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, maxSellingPrice: e.target.value }))} />
+                    {editFieldErrors.maxSellingPrice && <span className={s.fieldError}>{editFieldErrors.maxSellingPrice}</span>}
                   </div>
                 </div>
 
-                {/* Image management */}
-                <div style={{ marginTop: "1.5rem" }}>
-                  <div className={s.formSectionTitle}>Yacht Images</div>
-                  <div className={s.previewGrid}>
-                    {imagePreviews.map((img, idx) => (
-                      <div className={s.previewBox} key={idx}>
-                        <img src={img} alt="preview" />
-                        <button className={s.previewRemove} onClick={() =>
-                          selectedYacht.yachtPhotos?.includes(img) ? removeExistingImage(img) : removeNewImage(idx)
-                        }>✕</button>
-                      </div>
-                    ))}
-                  </div>
-                  <input type="file" className={s.fileInput} style={{ marginTop: "0.75rem" }} multiple accept="image/*" onChange={handleNewImages} />
+                {/* ── Photos ── */}
+                <div className={s.formSectionTitle} style={{ marginTop: "1.25rem" }}>
+                  Yacht Images
+                  <span className={s.inputHint} style={{ marginLeft: 8 }}>(optional · max 1 MB each)</span>
                 </div>
+                <div className={s.previewGrid}>
+                  {imagePreviews.map((img, idx) => (
+                    <div className={s.previewBox} key={idx}>
+                      <img src={img} alt="preview" />
+                      <button className={s.previewRemove} onClick={() =>
+                        selectedYacht.yachtPhotos?.includes(img) ? removeExistingImage(img) : removeNewImage(idx)
+                      }>✕</button>
+                    </div>
+                  ))}
+                </div>
+                <input type="file" className={s.fileInput} style={{ marginTop: "0.75rem" }} multiple accept="image/*" onChange={handleNewImages} />
+
               </div>
               <div className={s.modalFooter}>
                 <button className={s.btnSecondary} onClick={closeAllModals}>Cancel</button>
-                <button className={s.btnPrimary} onClick={handleEditSave} disabled={Object.keys(editFieldErrors).length > 0}>Save Changes</button>
+                <button className={s.btnPrimary} onClick={handleEditSave} disabled={Object.keys(editFieldErrors).length > 0 || !!editFieldErrors.defaultHours}>Save Changes</button>
               </div>
             </div>
           </div>
