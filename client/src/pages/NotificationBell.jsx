@@ -1,62 +1,34 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { Bell } from "lucide-react";
-import { socket } from "../socket";
-import {
-    getNotificationsAPI,
-    markAllNotificationsReadAPI,
-    markNotificationReadAPI,
-} from "../services/operations/notificationAPI";
-import "../styles/NavbarNotification.css";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { socket } from "../socket";
+import { getNotificationsAPI } from "../services/operations/notificationAPI";
+import "../styles/NavbarNotification.css";
 
 export default function NotificationBell() {
-    const [open, setOpen] = useState(false);
-    const [notifications, setNotifications] = useState([]);
-    const bellRef = useRef(null);
+    const [unreadCount, setUnreadCount] = useState(0);
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem("user"));
     const userId = user?._id;
 
-    const unreadCount = notifications.filter(
-        (n) => !n.readBy?.includes(userId)
-    ).length;
-
-    const location = useLocation();
-
-    const handleBellClick = () => {
-        setOpen((prev) => !prev);
-
-        // 🔥 If already on /bookings (or /bookings/anything)
-        if (location.pathname.startsWith("/bookings")) {
-            navigate(".", {
-                replace: true,
-                state: {
-                    refresh: Date.now(), // force refresh
-                },
-            });
-        }
-    };
-
-
-    /* ---------------- FETCH EXISTING ---------------- */
-    const fetchNotifications = async () => {
+    const fetchCount = async () => {
         try {
             const token = localStorage.getItem("authToken");
             const res = await getNotificationsAPI(token);
-            console.log("fetch : ", res)
-            setNotifications(res.data.notifications || []);
+            const notifications = res.data.notifications || [];
+            const count = notifications.filter(
+                (n) => !n.readBy?.some((id) => id.toString() === userId)
+            ).length;
+            setUnreadCount(count);
         } catch (err) {
             console.error("Failed to fetch notifications", err);
         }
     };
 
-    /* ---------------- SOCKET ---------------- */
     useEffect(() => {
-        fetchNotifications();
+        fetchCount();
 
-        socket.on("notification:new", (data) => {
-            setNotifications((prev) => [data, ...prev]);
+        socket.on("notification:new", () => {
+            setUnreadCount((prev) => prev + 1);
         });
 
         return () => {
@@ -64,154 +36,39 @@ export default function NotificationBell() {
         };
     }, []);
 
-    /* ---------------- CLICK OUTSIDE ---------------- */
-    useEffect(() => {
-        const handler = (e) => {
-            if (bellRef.current && !bellRef.current.contains(e.target)) {
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, []);
-
-    const handleNotificationClick = async (notification) => {
-        const bookingId = notification.bookingId;
-
-
-        if (bookingId) {
-            navigate("/bookings", {
-                state: {
-                    refresh: Date.now(),
-                    bookingId,
-                    status: notification.title.toUpperCase().includes("CANCELLED")
-                        ? "cancelled"
-                        : notification.title.toUpperCase().includes("CONFIRMED")
-                            ? "confirmed"
-                            : "",
-                },
-            });
-
-        }
-
-        // mark as read
-        if (!notification.readBy?.includes(userId)) {
-            await markAsRead(notification._id);
-        }
-
-        setOpen(false); // optional: close dropdown
-    };
-
-    const handleMarkAllRead = async () => {
-        try {
-            const token = localStorage.getItem("authToken");
-            await markAllNotificationsReadAPI(token);
-
-            // 🔥 Update UI instantly
-            setNotifications((prev) =>
-                prev.map((n) =>
-                    n.readBy?.includes(userId)
-                        ? n
-                        : { ...n, readBy: [...(n.readBy || []), userId] }
-                )
-            );
-        } catch (err) {
-            console.error("Failed to mark all as read", err);
-        }
-    };
-
-    /* ---------------- MARK AS READ ---------------- */
-    const markAsRead = async (id) => {
-        try {
-            const token = localStorage.getItem("authToken");
-            await markNotificationReadAPI(id, token);
-
-
-            setNotifications((prev) =>
-                prev.map((n) =>
-                    n._id === id
-                        ? { ...n, readBy: [...(n.readBy || []), userId] }
-                        : n
-                )
-            );
-        } catch (err) {
-            console.error("Failed to mark notification as read", err);
-        }
-    };
-
     return (
-        <div className="nav-notification" ref={bellRef}>
-            <button
-                className="btn btn-link position-relative"
-                onClick={handleBellClick}
+        <button
+            className={`nb-bell${unreadCount > 0 ? " nb-bell--unread" : ""}`}
+            onClick={() => navigate("/notifications")}
+            title="Notifications"
+        >
+            <svg
+                className="nb-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
             >
-                <Bell size={30} fill="rgb(245, 245, 142)" />
+                <path
+                    d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+                <path
+                    d="M13.73 21a2 2 0 0 1-3.46 0"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            </svg>
 
-                {unreadCount > 0 && (
-                    <span className="badge bg-danger notification-badge">
-                        {unreadCount}
-                    </span>
-                )}
-            </button>
-
-            {open && (
-                <div className="notification-dropdown shadow">
-
-                    {/* ---------- HEADER ---------- */}
-                    <div className="notification-header">
-                        <span className="notification-title">Notifications</span>
-
-                        {unreadCount > 0 && (
-                            <button
-                                className="mark-all-btn"
-                                onClick={handleMarkAllRead}
-                            >
-                                Mark all read
-                            </button>
-                        )}
-                    </div>
-
-                    {/* ---------- EMPTY STATE ---------- */}
-                    {notifications.length === 0 && (
-                        <p className="text-muted text-center m-2">
-                            No notifications
-                        </p>
-                    )}
-
-                    {/* ---------- NOTIFICATION LIST ---------- */}
-                    {notifications.map((n) => (
-                        <div
-                            key={n._id}
-                            className={`notification-item
-    ${n.readBy?.some(id => id.toString() === userId) ? "read" : "unread"}
-    ${n.title.toUpperCase().includes("CONFIRMED") &&
-                                    (n.type === "booking_created" || n.type === "booking_status_updated")
-                                    ? "booked"
-                                    : ""
-                                }
-    ${n.type === "booking_created" &&
-                                    !n.title.toUpperCase().includes("CONFIRMED")
-                                    ? "pending"
-                                    : ""
-                                }
-    ${n.type === "slot_locked" ? "locked" : ""}
-    ${n.type === "booking_status_updated" &&
-                                    n.title.toUpperCase().includes("CANCELLED")
-                                    ? "cancelled"
-                                    : ""
-                                }
-  `}
-                            onClick={() => handleNotificationClick(n)}
-                        >
-
-                            <strong>{n.title}</strong>
-                            <p className="mb-0">{n.message}</p>
-                        </div>
-                    ))}
-                </div>
+            {unreadCount > 0 && (
+                <span className="nb-badge">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
             )}
-        </div>
+        </button>
     );
-
 }

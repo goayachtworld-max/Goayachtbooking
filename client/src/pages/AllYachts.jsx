@@ -94,6 +94,7 @@ const AllYachts = () => {
   const [removedImages, setRemovedImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
   // fetch
@@ -232,7 +233,11 @@ const AllYachts = () => {
     }
   };
 
-  const sortedYachts = [...yachts].sort((a, b) => {
+  const filteredYachts = search.trim()
+    ? yachts.filter((y) => y.name?.toLowerCase().includes(search.toLowerCase()))
+    : yachts;
+
+  const sortedYachts = [...filteredYachts].sort((a, b) => {
     if (!sortConfig.key) return 0;
     const aVal = a[sortConfig.key], bVal = b[sortConfig.key];
     if (typeof aVal === "string") return sortConfig.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
@@ -264,10 +269,25 @@ const AllYachts = () => {
   return (
     <div className={`${s.root} ${s.page}`}>
 
-      {/* header */}
-      <div className={s.pageHeader}>
-        <h1 className={s.pageTitle}>Yacht <span>Master</span></h1>
-        <button className={s.btnPrimary} onClick={() => navigate("/create-yacht")}>+ Create Yacht</button>
+      {/* fixed top bar */}
+      <div className={s.fixedTopBar}>
+        <div className={s.fixedTopBarInner}>
+          <button className="btn-back-icon" onClick={() => navigate(-1)} aria-label="Go back">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+          <input
+            className={s.searchInput}
+            type="text"
+            placeholder="Search yacht…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button className={s.fabAdd} onClick={() => navigate("/create-yacht")} title="Create Yacht">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 3V15M3 9H15" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* table */}
@@ -331,76 +351,125 @@ const AllYachts = () => {
         <div className={s.tableCard}><div className={s.emptyState}>No yachts found.</div></div>
       )}
 
-      {/* ── VIEW MODAL ── */}
+      {/* ── VIEW PAGE ── */}
       {showViewModal && selectedYacht && (
-        <>
-          <div className={s.backdrop} onClick={closeAllModals} />
-          <div className={s.modal}>
-            <div className={s.modalDialog}>
-              <div className={s.modalHeader}>
-                <h2 className={s.modalTitle}>{selectedYacht.name}</h2>
-                <button className={s.modalClose} onClick={closeAllModals}>✕</button>
+        <div className={s.viewPage}>
+          {/* Header */}
+          <div className={s.editPageHeader}>
+            <button className="btn-back-icon" onClick={closeAllModals} aria-label="Go back">
+              <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <h2 className={s.editPageTitle} style={{ flex: 1, textAlign: "center" }}>{selectedYacht.name}</h2>
+            <span className={`${s.viewStatus} ${selectedYacht.status === "active" ? s.viewStatusActive : s.viewStatusInactive}`}>
+              {selectedYacht.status}
+            </span>
+          </div>
+
+          {/* Body */}
+          <div className={s.viewPageBody}>
+
+            {/* Carousel hero */}
+            {selectedYacht.images?.length > 0 && (
+              <div className={s.viewCarouselWrap}>
+                <Carousel images={selectedYacht.images} />
               </div>
-              <div className={s.modalBody}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-                  <div>
-                    <div className={s.detailGrid}>
-                      {[
-                        ["Capacity", selectedYacht.capacity + " guests"],
-                        ["Sail Time", `${to12Hour(selectedYacht.sailStartTime)} – ${to12Hour(selectedYacht.sailEndTime)}`],
-                        ["Duration", calculateDuration(selectedYacht.sailStartTime, selectedYacht.sailEndTime)],
-                        ["Sailing Cost", `₹${Number(selectedYacht.sailingCost || 0).toLocaleString()}/hr${selectedYacht.defaultSailingHours ? ` × ${selectedYacht.defaultSailingHours} hr` : ""}`],
-                        ["Anchoring Cost", `₹${Number(selectedYacht.anchorageCost || 0).toLocaleString()}/hr${selectedYacht.defaultAnchoringHours ? ` × ${selectedYacht.defaultAnchoringHours} hr` : ""}`],
-                        ["Running Cost", `₹${selectedYacht.runningCost?.toLocaleString()}`],
-                        ["Selling Price", `₹${selectedYacht.sellingPrice?.toLocaleString()}`],
-                        ["Max Selling", `₹${selectedYacht.maxSellingPrice?.toLocaleString()}`],
-                        ["Status", selectedYacht.status],
-                        ["Boarding", selectedYacht.boardingLocation || "—"],
-                      ].map(([label, value]) => (
-                        <div className={s.detailItem} key={label}>
-                          <span className={s.detailLabel}>{label}</span>
-                          <span className={s.detailValue}>{value}</span>
-                        </div>
-                      ))}
-                      <div className={s.detailDivider} />
-                      <div className={s.detailItem} style={{ gridColumn: "1/-1" }}>
-                        <span className={s.detailLabel}>Special Slots</span>
-                        {selectedYacht.specialSlotTimes?.length > 0 ? (
-                          selectedYacht.specialSlotTimes.map((slot, i) => (
-                            <span key={i} className={s.detailValue}>
-                              {to12Hour(slot)} – {addTwoHoursTo12Hour(to12Hour(slot))}
-                            </span>
-                          ))
-                        ) : (
-                          <span className={s.detailValue} style={{ color: "var(--muted)", fontStyle: "italic" }}>None</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <Carousel images={selectedYacht.images} />
-                  </div>
+            )}
+
+            {/* Info cards */}
+            <div className={s.viewCardGrid}>
+
+              {/* Overview */}
+              <div className={s.viewCard}>
+                <div className={s.viewCardHead}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M2.5 14c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  Overview
+                </div>
+                <div className={s.viewRows}>
+                  <div className={s.viewRow}><span className={s.viewRowLabel}>Capacity</span><span className={s.viewRowValue}>{selectedYacht.capacity} guests</span></div>
+                  <div className={s.viewRow}><span className={s.viewRowLabel}>Boarding</span><span className={s.viewRowValue}>{selectedYacht.boardingLocation || "—"}</span></div>
                 </div>
               </div>
-              <div className={s.modalFooter}>
-                <button className={s.btnSecondary} onClick={closeAllModals}>Close</button>
+
+              {/* Schedule */}
+              <div className={s.viewCard}>
+                <div className={s.viewCardHead}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  Schedule
+                </div>
+                <div className={s.viewRows}>
+                  <div className={s.viewRow}><span className={s.viewRowLabel}>Sail Time</span><span className={s.viewRowValue}>{to12Hour(selectedYacht.sailStartTime)} – {to12Hour(selectedYacht.sailEndTime)}</span></div>
+                  <div className={s.viewRow}><span className={s.viewRowLabel}>Duration</span><span className={s.viewRowValue}>{calculateDuration(selectedYacht.sailStartTime, selectedYacht.sailEndTime)}</span></div>
+                </div>
               </div>
+
+              {/* Pricing */}
+              <div className={`${s.viewCard} ${s.viewCardWide}`}>
+                <div className={s.viewCardHead}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><path d="M1.5 6.5h13" stroke="currentColor" strokeWidth="1.5"/><path d="M5 10h2m3 0h1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  Pricing
+                </div>
+                <div className={s.viewRows}>
+                  <div className={s.viewRow}>
+                    <span className={s.viewRowLabel}>Sailing Cost</span>
+                    <span className={s.viewRowValue}>₹{Number(selectedYacht.sailingCost || 0).toLocaleString()}/hr{selectedYacht.defaultSailingHours ? <span className={s.viewRowMuted}> × {selectedYacht.defaultSailingHours} hr</span> : ""}</span>
+                  </div>
+                  <div className={s.viewRow}>
+                    <span className={s.viewRowLabel}>Anchoring Cost</span>
+                    <span className={s.viewRowValue}>₹{Number(selectedYacht.anchorageCost || 0).toLocaleString()}/hr{selectedYacht.defaultAnchoringHours ? <span className={s.viewRowMuted}> × {selectedYacht.defaultAnchoringHours} hr</span> : ""}</span>
+                  </div>
+                  <div className={s.viewRow}><span className={s.viewRowLabel}>Running Cost</span><span className={s.viewRowValue}>₹{Number(selectedYacht.runningCost || 0).toLocaleString()}</span></div>
+                  <div className={`${s.viewRow} ${s.viewRowHighlight}`}><span className={s.viewRowLabel}>Selling Price</span><span className={s.viewRowValue}>₹{Number(selectedYacht.sellingPrice || 0).toLocaleString()}</span></div>
+                  <div className={s.viewRow}><span className={s.viewRowLabel}>Max Selling</span><span className={s.viewRowValue}>₹{Number(selectedYacht.maxSellingPrice || 0).toLocaleString()}</span></div>
+                </div>
+              </div>
+
+              {/* Special Slots */}
+              <div className={s.viewCard}>
+                <div className={s.viewCardHead}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><path d="M5 1v3m6-3v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M1.5 7.5h13" stroke="currentColor" strokeWidth="1.5"/></svg>
+                  Special Slots
+                </div>
+                <div className={s.viewRows}>
+                  {selectedYacht.specialSlotTimes?.length > 0 ? (
+                    selectedYacht.specialSlotTimes.map((slot, i) => (
+                      <div className={s.viewRow} key={i}>
+                        <span className={s.viewRowLabel}>Slot {i + 1}</span>
+                        <span className={s.viewRowValue}>{to12Hour(slot)} – {addTwoHoursTo12Hour(to12Hour(slot))}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className={s.viewEmpty}>No special slots configured</span>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
-        </>
+
+          {/* Footer */}
+          <div className={s.editPageFooter}>
+            <button
+              className={s.btnSave}
+              onClick={() => { setShowViewModal(false); setShowEditModal(true); }}
+            >
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 11.5V14h2.5L11.5 7 9 4.5 2 11.5ZM13.7 4.8c.3-.3.3-.8 0-1.1l-1.4-1.4c-.3-.3-.8-.3-1.1 0L10 3.5 12.5 6l1.2-1.2Z" fill="currentColor"/></svg>
+              Edit Yacht
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* ── EDIT MODAL ── */}
+      {/* ── EDIT PAGE ── */}
       {showEditModal && selectedYacht && (
-        <>
-          <div className={s.backdrop} onClick={closeAllModals} />
-          <div className={s.modal}>
-            <div className={`${s.modalDialog} ${s.lg}`}>
-              <div className={s.modalHeader}>
-                <h2 className={s.modalTitle}>Edit Yacht</h2>
-                <button className={s.modalClose} onClick={closeAllModals}>✕</button>
-              </div>
-              <div className={s.modalBody}>
+        <div className={s.editPage}>
+          <div className={s.editPageHeader}>
+            <button className="btn-back-icon" onClick={closeAllModals} aria-label="Go back">
+              <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <h2 className={s.editPageTitle}>Edit Yacht</h2>
+            <div style={{ width: 38 }} />
+          </div>
+          <div className={s.editPageBody}>
 
                 {/* ── Basic Information ── */}
                 <div className={s.formSectionTitle}>Basic Information</div>
@@ -600,14 +669,20 @@ const AllYachts = () => {
                 </div>
                 <input type="file" className={s.fileInput} style={{ marginTop: "0.75rem" }} multiple accept="image/*" onChange={handleNewImages} />
 
-              </div>
-              <div className={s.modalFooter}>
-                <button className={s.btnSecondary} onClick={closeAllModals}>Cancel</button>
-                <button className={s.btnPrimary} onClick={handleEditSave} disabled={Object.keys(editFieldErrors).length > 0 || !!editFieldErrors.defaultHours}>Save Changes</button>
-              </div>
-            </div>
           </div>
-        </>
+          <div className={s.editPageFooter}>
+            <button
+              className={s.btnSave}
+              onClick={handleEditSave}
+              disabled={Object.keys(editFieldErrors).length > 0 || !!editFieldErrors.defaultHours}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13.5 4.5L6.5 11.5L2.5 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Save Changes
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ── DELETE MODAL ── */}

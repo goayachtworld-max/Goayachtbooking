@@ -602,7 +602,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
       {/* Loading overlay */}
       {loading && (
         <div style={{ position: "fixed", inset: 0, backdropFilter: "blur(4px)", background: "rgba(0,0,0,0.4)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 99999 }}>
-          <div style={{ width: 44, height: 44, border: "3px solid rgba(255,255,255,0.2)", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "cb-spin 0.8s linear infinite" }} />
+          <div style={{ width: 44, height: 44, border: "3px solid rgba(255,255,255,0.2)", borderTopColor: "#1d6fa4", borderRadius: "50%", animation: "cb-spin 0.8s linear infinite" }} />
         </div>
       )}
 
@@ -618,7 +618,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
           transition:border-color .18s, box-shadow .18s;
           font-family:inherit; line-height:1.4; -webkit-appearance:none;
         }
-        .cb-inp:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+        .cb-inp:focus { border-color:#1d6fa4; box-shadow:0 0 0 3px rgba(29,111,164,.15); }
         .cb-inp.warn  { border-color:#d97706; background:#fffbeb; }
         .cb-inp.err   { border-color:#dc2626; background:#fef2f2; }
         .cb-inp::placeholder { color:#94a3b8; font-weight:400; }
@@ -675,11 +675,11 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         }
         .cb-ac-item { padding:11px 14px; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background .12s; }
         .cb-ac-item:last-child { border-bottom:none; }
-        .cb-ac-item:hover { background:#eff6ff; }
+        .cb-ac-item:hover { background:#eef4fb; }
 
         .cb-sumbar {
           display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-          background:#0f172a; border-radius:12px; padding:13px 16px;
+          background:#051829; border-radius:12px; padding:13px 16px;
           margin-bottom:16px;
         }
         .cb-sum-pill {
@@ -702,24 +702,37 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
         .cb-submit {
           width:100%; padding:16px; font-size:17px; font-weight:800;
-          background:#2563eb; color:#fff; border:none; border-radius:12px;
+          background:#1d6fa4; color:#fff; border:none; border-radius:12px;
           cursor:pointer; transition:all .2s; letter-spacing:.3px;
-          box-shadow:0 4px 18px rgba(37,99,235,.4);
+          box-shadow:0 4px 18px rgba(13,74,110,.35);
         }
         .cb-submit:disabled { background:#94a3b8; box-shadow:none; cursor:not-allowed; }
-        .cb-submit:not(:disabled):hover { background:#1d4ed8; transform:translateY(-2px); box-shadow:0 8px 24px rgba(37,99,235,.45); }
+        .cb-submit:not(:disabled):hover { background:#0d4a6e; transform:translateY(-2px); box-shadow:0 8px 24px rgba(13,74,110,.45); }
 
         .cb-err-msg { font-size:12px; font-weight:700; color:#dc2626; margin-top:5px; }
         .cb-warn-msg { font-size:12px; font-weight:700; color:#d97706; margin-top:5px; }
 
         .cb-ext-bar { display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; }
         .cb-ext-toggle {
-          font-size:13px; font-weight:700; padding:6px 16px;
-          border-radius:8px; border:2px solid #bfdbfe; cursor:pointer;
-          background:#eff6ff; color:#1d4ed8; transition:all .15s;
+          display:inline-flex; align-items:center; gap:5px;
+          font-size:12px; font-weight:700; padding:6px 14px;
+          border-radius:20px; cursor:pointer; transition:all .15s;
+          border:2px dashed #f59e0b;
+          background:linear-gradient(135deg,#fffbeb,#fef3c7);
+          color:#92400e;
+          box-shadow:0 2px 6px rgba(245,158,11,.18);
         }
-        .cb-ext-toggle:hover { background:#dbeafe; }
-        .cb-ext-toggle.open { background:#f1f5f9; color:#475569; border-color:#94a3b8; }
+        .cb-ext-toggle:hover {
+          background:linear-gradient(135deg,#fef3c7,#fde68a);
+          box-shadow:0 3px 10px rgba(245,158,11,.28);
+          transform:translateY(-1px);
+        }
+        .cb-ext-toggle.open {
+          border:2px solid #94a3b8; border-style:solid;
+          background:#f8fafc; color:#475569;
+          box-shadow:none; transform:none;
+        }
+        .cb-ext-toggle.open:hover { background:#f1f5f9; }
 
         @media(max-width:600px){
           /* Inputs — tighter */
@@ -765,14 +778,13 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
 
           {/* ── Header row ── */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 2 }}>{isQuotation ? "New Quotation" : "New Booking"}</div>
-              <div style={{ fontSize: "clamp(18px, 5vw, 26px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1 }}>{isQuotation ? "Create Quotation" : "Create Booking"}</div>
-            </div>
-            <button onClick={() => navigate(-1)} style={{ padding: "9px 18px", background: "#fff", border: "2px solid #cbd5e1", borderRadius: 9, fontSize: 14, fontWeight: 700, color: "#374151", cursor: "pointer" }}>
-              ← Back
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <button className="btn-back-icon" onClick={() => navigate(-1)} title="Go back">
+              <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
+            <div>
+              <div style={{ fontSize: "clamp(18px, 5vw, 26px)", fontWeight: 900, color: "#051829", lineHeight: 1.1 }}>{isQuotation ? "Create Quotation" : "Create Booking"}</div>
+            </div>
           </div>
 
           {/* ── Error banner ── */}
@@ -813,7 +825,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
               {/* ── Customer panel ── */}
               <div className="cb-panel">
-                <div className="cb-sh"><span className="cb-sh-dot" style={{ background: "#3b82f6" }}></span>Customer</div>
+                <div className="cb-sh"><span className="cb-sh-dot" style={{ background: "#1d6fa4" }}></span>Customer</div>
                 <div className="cb-g1">
 
                   <div className="cb-f" style={{ position: "relative" }}>
@@ -854,7 +866,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
               {/* ── Booking details panel ── */}
               <div className="cb-panel">
-                <div className="cb-sh"><span className="cb-sh-dot" style={{ background: "#8b5cf6" }}></span>Booking Details</div>
+                <div className="cb-sh"><span className="cb-sh-dot" style={{ background: "#c9a84c" }}></span>Booking Details</div>
                 <div className="cb-g2">
 
                   <div className="cb-f">
@@ -917,9 +929,9 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                           type="button"
                           style={{
                             fontSize: 11, padding: "2px 10px", borderRadius: 6,
-                            border: customTimeEnabled ? "1.5px solid #dc2626" : "1.5px solid #2563eb",
-                            background: customTimeEnabled ? "#fef2f2" : "#eff6ff",
-                            color: customTimeEnabled ? "#dc2626" : "#2563eb",
+                            border: customTimeEnabled ? "1.5px solid #dc2626" : "1.5px solid #1d6fa4",
+                            background: customTimeEnabled ? "#fef2f2" : "#eef4fb",
+                            color: customTimeEnabled ? "#dc2626" : "#1d6fa4",
                             cursor: "pointer", fontWeight: 600
                           }}
                           onClick={() => {
@@ -1167,7 +1179,17 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                     <span className="cb-sh-dot" style={{ background: "#f59e0b" }}></span>Add-ons & Notes
                   </div>
                   <button type="button" className={`cb-ext-toggle ${showExtraDetails ? "open" : ""}`}>
-                    {showExtraDetails ? "− Hide" : "+ Add"}
+                    {showExtraDetails ? (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                        Collapse
+                      </>
+                    ) : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                        Add
+                      </>
+                    )}
                   </button>
                 </div>
 

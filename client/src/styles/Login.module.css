@@ -1,68 +1,253 @@
-/* ==============================
-   LOGIN PAGE
-============================== */
+/* ============================================================
+   PROFESSIONAL LOGIN PAGE — Split Panel
+============================================================ */
 
+/* Full-height split wrapper */
 .loginWrapper {
   min-height: 100dvh;
+  display: flex;
+  flex-direction: row;
+}
+
+/* ── Left panel: two vertical strips ── */
+.loginLeft {
+  flex: 1;
+  background: linear-gradient(155deg, #051829 0%, #0a2d4a 45%, #0d4a6e 100%);
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Strip 1: pricing */
+.leftStrip {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2.5rem 2rem 2rem;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  background: rgba(5,24,41,0.3);
+  backdrop-filter: blur(4px);
+  position: relative;
+  z-index: 1;
+  overflow-y: auto;
+  min-height: 100%;
+}
+
+/* Strip 2: yacht particle canvas */
+.rightStrip {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  background: radial-gradient(circle at center, hsla(200, 50%, 15%, 1) 0%, hsl(220, 40%, 4%) 100%);
+}
+.rightStrip canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.loginLeft::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(201,168,76,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 10% 90%, rgba(13,78,120,0.6) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.loginLeft::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  right: -80px;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  border: 60px solid rgba(201,168,76,0.06);
+  pointer-events: none;
+}
+
+.brandLogo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.brandAnchor {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #c9a84c, #e8c96a);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 16px rgba(201,168,76,0.35);
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.brandTagline {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 1px 0 0;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+}
+
+.heroEyebrow {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #c9a84c;
+  margin: 0 0 1rem;
+}
+
+.heroHeadline {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.12;
+  margin: 0 0 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.heroHeadline span {
+  color: #c9a84c;
+}
+
+.heroSub {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.65;
+  margin: 0;
+  max-width: 340px;
+}
+
+.heroDivider {
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #c9a84c, transparent);
+  border-radius: 2px;
+  margin: 1.5rem 0;
+}
+
+.heroStats {
+  display: flex;
+  gap: 2.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.heroStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.heroStatNum {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+}
+
+.heroStatLabel {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ── Right panel: form ── */
+.loginRight {
+  width: 440px;
+  flex-shrink: 0;
+  background: #f8fafc;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 1.25rem;
-  background: #f0f4f8;
-  padding: 1.5rem 1rem;
+  padding: 3rem 2.75rem;
+  border-left: 1px solid #e2e8f0;
+  overflow-y: auto;
 }
 
 .loginCard {
   width: 100%;
-  max-width: 380px;
-  padding: 2rem 2rem 1.75rem;
-  border-radius: 18px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+  max-width: 340px;
 }
 
-/* ── Brand ── */
-.loginBrand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 1.75rem;
-}
-.loginBrandIcon {
-  font-size: 2rem;
-  line-height: 1;
-  margin-bottom: 0.5rem;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
-}
-.loginTitle {
+.loginFormHeader {
+  margin-bottom: 2rem;
   text-align: center;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0d1f3c;
-  margin: 0;
-  letter-spacing: -0.01em;
 }
 
-.loginForm { margin: 0; }
+.loginFormEyebrow {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin: 0 0 6px;
+}
+
+.loginTitle {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0d1f3c;
+  margin: 0 0 6px;
+  letter-spacing: -0.03em;
+}
+
+.loginSubtitle {
+  font-size: 0.83rem;
+  color: #64748b;
+  margin: 0;
+  font-weight: 400;
+}
 
 /* ── Input groups ── */
+.loginForm { margin: 0; }
+
 .inputGroup {
   margin-bottom: 1.1rem;
 }
 
 .inputLabel {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.67rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #64748b;
-  margin-bottom: 6px;
+  letter-spacing: 0.09em;
+  color: #475569;
+  margin-bottom: 7px;
 }
 
-/* wrapper gives us icon + pill positioning */
 .inputWrap {
   position: relative;
   display: flex;
@@ -71,7 +256,7 @@
 
 .inputIcon {
   position: absolute;
-  left: 13px;
+  left: 14px;
   color: #94a3b8;
   display: flex;
   align-items: center;
@@ -81,26 +266,27 @@
 
 .inputField {
   width: 100%;
-  padding: 11px 44px 11px 40px;
-  border-radius: 11px;
+  padding: 12px 44px 12px 42px;
+  border-radius: 10px;
   border: 1.5px solid #e2e8f0;
-  font-size: 0.9rem;
-  background: #f8fafc;
+  font-size: 0.875rem;
+  background: #ffffff;
   color: #0d1f3c;
   outline: none;
-  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
-}
-.inputField::placeholder { color: #b0bec5; }
-.inputField:focus {
-  border-color: #0d6efd;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(13,110,253,0.1);
+  transition: border-color 0.18s, box-shadow 0.18s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
-/* eye toggle button */
+.inputField::placeholder { color: #c1ccd8; }
+
+.inputField:focus {
+  border-color: #0a2d4a;
+  box-shadow: 0 0 0 3px rgba(10,45,74,0.1);
+}
+
 .eyeBtn {
   position: absolute;
-  right: 12px;
+  right: 13px;
   background: none;
   border: none;
   cursor: pointer;
@@ -113,35 +299,33 @@
 }
 .eyeBtn:hover { color: #0d1f3c; }
 
-/* auto-detected type pill */
 .idPill {
   position: absolute;
-  right: 12px;
-  font-size: 0.62rem;
+  right: 13px;
+  font-size: 0.58rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   padding: 2px 8px;
   border-radius: 999px;
   pointer-events: none;
 }
 .idPillMobile {
-  background: rgba(13,110,253,0.1);
-  color: #0d6efd;
-  border: 1px solid rgba(13,110,253,0.2);
+  background: rgba(10,45,74,0.08);
+  color: #0a5d8a;
+  border: 1px solid rgba(10,45,74,0.15);
 }
 .idPillUser {
   background: rgba(22,163,74,0.08);
-  color: #16a34a;
-  border: 1px solid rgba(22,163,74,0.2);
+  color: #15803d;
+  border: 1px solid rgba(22,163,74,0.18);
 }
 
-/* ── Credential header row: label + mini tab on same line ── */
 .credHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 
 .miniTabRow {
@@ -159,7 +343,7 @@
   padding: 3px 10px;
   border: none;
   border-radius: 6px;
-  font-size: 0.7rem;
+  font-size: 0.67rem;
   font-weight: 600;
   cursor: pointer;
   background: transparent;
@@ -174,7 +358,6 @@
   box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
-/* PIN field — big spaced dots */
 .pinField {
   letter-spacing: 0.5em !important;
   font-size: 1.1rem !important;
@@ -184,72 +367,99 @@
 }
 
 .pinHint {
-  font-size: 0.67rem;
+  font-size: 0.65rem;
   color: #94a3b8;
   margin: 4px 0 0 2px;
 }
 
-/* ── Error ── */
 .errorMsg {
   color: #dc2626;
   background: rgba(220,38,38,0.06);
-  padding: 8px 12px;
-  border-radius: 9px;
+  padding: 9px 13px;
+  border-radius: 8px;
   border-left: 3px solid #dc2626;
-  font-size: 0.81rem;
+  font-size: 0.8rem;
   margin-bottom: 12px;
 }
 
-/* ── Submit button ── */
 .loginButton {
   width: 100%;
-  padding: 12px;
-  border-radius: 11px;
+  padding: 13px;
+  border-radius: 10px;
   border: none;
-  font-size: 0.93rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
-  background: #0d1f3c;
+  background: linear-gradient(135deg, #0a2d4a 0%, #0d4a6e 100%);
   color: #fff;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-  margin-top: 0.35rem;
-  letter-spacing: 0.01em;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  margin-top: 0.4rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(10,45,74,0.3);
 }
 .loginButton:hover:not(:disabled) {
-  background: #1a3a5c;
+  opacity: 0.9;
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(13,31,60,0.22);
+  box-shadow: 0 6px 20px rgba(10,45,74,0.38);
 }
-.loginButton:disabled { opacity: 0.55; cursor: not-allowed; }
+.loginButton:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Ticket search ── */
+/* ── Ticket search (right panel footer) ── */
+.ticketDivider {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 1.5rem 0 1.25rem;
+}
+.ticketDivider::before,
+.ticketDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+.ticketDividerText {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #b0bec5;
+}
+
 .ticketSearchWrap {
   width: 100%;
-  max-width: 380px;
-  text-align: center;
+  max-width: 340px;
 }
 .ticketSearchLabel {
   font-size: 0.67rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: #94a3b8;
-  margin-bottom: 6px;
+  margin: 0 0 7px;
+  display: block;
 }
 .ticketSearchRow {
   display: flex;
-  border-radius: 11px;
+  border-radius: 10px;
   overflow: hidden;
   border: 1.5px solid #e2e8f0;
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.ticketSearchRow:focus-within {
+  border-color: #0a2d4a;
+  box-shadow: 0 0 0 3px rgba(10,45,74,0.1);
 }
 .ticketSearchRow input {
   flex: 1;
-  padding: 10px 14px;
+  padding: 11px 14px;
   border: none;
   outline: none;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-family: 'Courier New', monospace;
   letter-spacing: 0.1em;
   color: #0d1f3c;
@@ -257,26 +467,30 @@
 }
 .ticketSearchRow input::placeholder { color: #94a3b8; }
 .ticketSearchRow button {
-  padding: 10px 16px;
-  background: #0d1f3c;
+  padding: 11px 16px;
+  background: #cbd5e1;
   border: none;
   color: #fff;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
   display: flex;
   align-items: center;
 }
-.ticketSearchRow button:hover { background: #1a3a5c; }
-.ticketSearchRow button:disabled { opacity: 0.5; cursor: not-allowed; }
+.ticketSearchRow button:disabled { opacity: 0.6; cursor: not-allowed; }
+.ticketSearchBtnActive {
+  background: linear-gradient(135deg, #0a2d4a 0%, #0d4a6e 100%) !important;
+  box-shadow: 0 4px 14px rgba(10,45,74,0.3);
+}
+.ticketSearchBtnActive:hover { background: linear-gradient(135deg, #0d4a6e 0%, #0f5e8e 100%) !important; }
 
-/* ==============================
-   MODAL OVERLAY
-============================== */
+/* ============================================================
+   MODAL / BOARDING PASS (unchanged logic, refined aesthetics)
+============================================================ */
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(4px);
+  background: rgba(5,24,41,0.65);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -284,75 +498,74 @@
   padding: 1rem;
 }
 
-/* ==============================
-   BOARDING PASS
-============================== */
 .modalContent {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 18px;
   max-width: 440px;
   width: 100%;
   max-height: 92vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  box-shadow: 0 24px 80px rgba(5,24,41,0.25);
   animation: slideUp 0.25s ease;
 }
+
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+
 .modalHeader {
-  background: #0d1f3c;
-  padding: 1rem 1.25rem;
-  border-radius: 16px 16px 0 0;
+  background: linear-gradient(135deg, #051829 0%, #0a2d4a 100%);
+  padding: 1.1rem 1.35rem;
+  border-radius: 18px 18px 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 .modalTitle {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #fff;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   margin: 0;
 }
 .modalTicketId {
   font-family: 'Courier New', monospace;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #c9a84c;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
   background: rgba(201,168,76,0.15);
-  padding: 3px 10px;
+  padding: 3px 11px;
   border-radius: 999px;
   border: 1px solid rgba(201,168,76,0.35);
 }
-.tearLine { display: flex; align-items: center; padding: 0 1.25rem; margin: 0; }
-.tearLine::before, .tearLine::after { content: ''; width: 18px; height: 18px; border-radius: 50%; background: #f0f4f8; flex-shrink: 0; margin: 0 -9px; }
+.tearLine { display: flex; align-items: center; padding: 0 1.35rem; margin: 0; }
+.tearLine::before, .tearLine::after { content: ''; width: 18px; height: 18px; border-radius: 50%; background: #f8fafc; flex-shrink: 0; margin: 0 -9px; }
 .tearLine hr { flex: 1; border: none; border-top: 2px dashed #e2e8f0; margin: 10px 8px; }
-.boardingPassBody { padding: 0.75rem 1.25rem 1rem; }
+.boardingPassBody { padding: 0.75rem 1.35rem 1rem; }
 .passRow { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 0.55rem 0; border-bottom: 1px solid #f1f5f9; }
 .passRow:last-child { border-bottom: none; }
-.passLabel { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; min-width: 90px; flex-shrink: 0; }
-.passValue { font-size: 0.88rem; font-weight: 600; color: #0d1f3c; text-align: right; flex: 1; }
-.passValueMono { font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: 700; color: #0d1f3c; text-align: right; }
-.statusBadge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.passLabel { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; min-width: 90px; flex-shrink: 0; }
+.passValue { font-size: 0.875rem; font-weight: 600; color: #0d1f3c; text-align: right; flex: 1; }
+.passValueMono { font-family: 'Courier New', monospace; font-size: 0.83rem; font-weight: 700; color: #0d1f3c; text-align: right; }
+.statusBadge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
 .statusConfirmed { background: rgba(22,163,74,0.1); color: #16a34a; }
 .statusPending   { background: rgba(37,99,235,0.1);  color: #2563eb; }
 .statusCancelled { background: rgba(220,38,38,0.1);  color: #dc2626; }
-.passSection { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin: 0.75rem 0 0.4rem; }
+.passSection { font-size: 0.63rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin: 0.75rem 0 0.4rem; }
 .inclusionList { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
-.inclusionChip { font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: #f0f4f8; color: #0d1f3c; border: 1px solid #e2e8f0; }
+.inclusionChip { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: #f0f4f8; color: #0d1f3c; border: 1px solid #e2e8f0; }
 .notesBox { font-size: 0.82rem; color: #64748b; background: #f8fafc; border-radius: 8px; padding: 8px 10px; border-left: 3px solid #e2e8f0; margin-top: 0.4rem; line-height: 1.5; }
-.disclaimerBox { font-size: 0.72rem; color: #94a3b8; line-height: 1.6; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #e2e8f0; }
-.pendingAmount { font-size: 0.88rem; font-weight: 700; color: #dc2626; text-align: right; }
-.actions { display: flex; gap: 8px; padding: 0.75rem 1.25rem 1.25rem; }
-.actions button { flex: 1; padding: 9px 12px; border-radius: 9px; font-weight: 600; font-size: 0.82rem; cursor: pointer; border: none; transition: all 0.2s; }
-.copyBtn    { background: #0d1f3c; color: #fff; }
-.copyBtn:hover { background: #1a3a5c; transform: translateY(-1px); }
-.downloadBtn    { background: #16a34a; color: #fff; }
-.downloadBtn:hover { background: #15803d; transform: translateY(-1px); }
+.disclaimerBox { font-size: 0.7rem; color: #94a3b8; line-height: 1.65; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #e2e8f0; }
+.pendingAmount { font-size: 0.875rem; font-weight: 700; color: #dc2626; text-align: right; }
+.actions { display: flex; gap: 8px; padding: 0.75rem 1.35rem 1.35rem; }
+.actions button { flex: 1; padding: 10px 12px; border-radius: 9px; font-weight: 700; font-size: 0.8rem; cursor: pointer; border: none; transition: all 0.2s; letter-spacing: 0.02em; }
+.copyBtn    { background: #0a2d4a; color: #fff; }
+.copyBtn:hover { background: #0d4a6e; transform: translateY(-1px); }
+.downloadBtn    { background: #15803d; color: #fff; }
+.downloadBtn:hover { background: #166534; transform: translateY(-1px); }
 .closeBtn    { background: #f1f5f9; color: #64748b; }
 .closeBtn:hover { background: #e2e8f0; }
 .actions a { flex: 1; text-decoration: none; }
@@ -360,11 +573,356 @@
 .modalContent::-webkit-scrollbar { width: 4px; }
 .modalContent::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
 
-/* ==============================
-   MOBILE
-============================== */
+/* ── Pricing Card ── */
+.pricingCard {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+}
+
+.pricingEyebrow {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #c9a84c;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pricingEyebrow::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(201,168,76,0.3);
+}
+
+.pricingToggle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pricingPlan {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: border-color 0.2s;
+}
+.pricingPlan:hover {
+  border-color: rgba(201,168,76,0.4);
+}
+
+.pricingAmount {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.pricingPer {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  margin-top: 2px;
+}
+
+.pricingSave {
+  margin-left: auto;
+  font-size: 0.52rem;
+  font-weight: 800;
+  background: rgba(201,168,76,0.18);
+  color: #e8c96a;
+  border: 1px solid rgba(201,168,76,0.4);
+  border-radius: 999px;
+  padding: 2px 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pricingDivider {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+}
+.pricingDivider::before,
+.pricingDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+
+/* ── Feature list ── */
+.featureList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.3;
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  transition: background 0.15s;
+}
+.featureItem:last-child {
+  border-bottom: none;
+}
+.featureItem:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.featureCheck {
+  width: 14px;
+  height: 14px;
+  background: rgba(201,168,76,0.15);
+  border: 1px solid rgba(201,168,76,0.45);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.48rem;
+  color: #c9a84c;
+  flex-shrink: 0;
+  font-weight: 900;
+}
+
+/* ── WhatsApp CTA ── */
+.whatsappBtn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  background: rgba(37,211,102,0.12);
+  border: 1px solid rgba(37,211,102,0.35);
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: background 0.2s, border-color 0.2s;
+  margin-top: 2px;
+}
+.whatsappBtn:hover {
+  background: rgba(37,211,102,0.2);
+  border-color: rgba(37,211,102,0.6);
+}
+.whatsappBtn span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #4ade80;
+  letter-spacing: 0.03em;
+}
+
+/* ── Platform Stats Strip ── */
+.statsStrip {
+  margin-top: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.18);
+  border-radius: 12px;
+  padding: 14px 10px;
+  gap: 0;
+}
+.statItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-align: center;
+}
+.statValue {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #c9a84c;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.statValue sup {
+  font-size: 0.65rem;
+  font-weight: 700;
+  vertical-align: super;
+  margin-left: 1px;
+  color: #e8d5a0;
+  opacity: 0.8;
+}
+.statIcon {
+  width: 18px;
+  height: 18px;
+  color: #c9a84c;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+.statLabel {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.statDivider {
+  width: 1px;
+  height: 32px;
+  background: rgba(201,168,76,0.2);
+  flex-shrink: 0;
+}
+
+/* ── Yacht Scene ── */
+.yachtScene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Background SVG fills the whole strip */
+.sceneBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Big yacht positioned over the scene */
+.bigYachtWrap {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 250px;
+  perspective: 550px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.bigYachtWrap:active { cursor: grabbing; }
+
+/* The element we rotate via JS — no CSS animation here */
+.bigYacht3d {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.bigYachtSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.dragHint {
+  margin-top: 6px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgba(201,168,76,0.5);
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Background small yachts bob via CSS */
+.bobA {
+  animation: bob 5s ease-in-out infinite;
+  will-change: transform;
+}
+.bobB {
+  animation: bob 4.2s ease-in-out infinite 0.9s;
+  will-change: transform;
+}
+
+.wave1 {
+  animation: waveDrift 3s ease-in-out infinite;
+  will-change: transform;
+}
+.wave2 {
+  animation: waveDrift 3s ease-in-out infinite reverse;
+  will-change: transform;
+}
+
+.birds {
+  animation: birdFloat 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes bob {
+  0%   { transform: translateY(0)   rotate(0deg); }
+  30%  { transform: translateY(-7px) rotate(0.7deg); }
+  60%  { transform: translateY(-3px) rotate(-0.4deg); }
+  80%  { transform: translateY(-9px) rotate(0.5deg); }
+  100% { transform: translateY(0)   rotate(0deg); }
+}
+
+@keyframes waveDrift {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(10px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes birdFloat {
+  0%   { transform: translate(0,0); }
+  40%  { transform: translate(8px,-6px); }
+  70%  { transform: translate(-5px,-10px); }
+  100% { transform: translate(0,0); }
+}
+
+/* ============================================================
+   RESPONSIVE — collapse to single column below 900px
+============================================================ */
+@media (max-width: 900px) {
+  .loginLeft { display: none; }
+  .loginRight {
+    width: 100%;
+    border-left: none;
+    background: #f0f4f8;
+    padding: 2.5rem 1.5rem;
+  }
+}
+
 @media (max-width: 480px) {
-  .loginCard { padding: 1.5rem 1.25rem; }
+  .loginRight { padding: 2rem 1.25rem; }
+  .loginTitle { font-size: 1.35rem; }
   .modalContent { border-radius: 14px; max-height: 94vh; }
   .passRow { flex-direction: column; gap: 2px; }
   .passValue, .passValueMono { text-align: left; }

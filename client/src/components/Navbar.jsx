@@ -1,17 +1,22 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import styles from "../styles/Navbar.module.css";
 import toast from "react-hot-toast";
 import { updateEmployeeProfileAPI } from "../services/operations/employeeAPI";
 import { setPinAPI } from "../services/operations/authAPI";
+import { socket } from "../socket";
+import { getNotificationsAPI } from "../services/operations/notificationAPI";
 
 function Navbar({ user, onLogout }) {
   const collapseRef = useRef(null);
   const [showProfile, setShowProfile] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const token = localStorage.getItem("authToken");
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
+  const [showMastersMenu, setShowMastersMenu] = useState(false);
+  const mastersMenuRef = useRef(null);
 
   const [editForm, setEditForm] = useState({
     name: user?.name || "",
@@ -31,6 +36,24 @@ function Navbar({ user, onLogout }) {
   const [pinForm, setPinForm] = useState({ newPin: "", confirmPin: "" });
   const [showPin, setShowPin] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
+
+  // ── Notification bell state ────────────────────────────────────────────────
+  const [unreadCount, setUnreadCount] = useState(0);
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const res = await getNotificationsAPI(token);
+        const notifications = res.data.notifications || [];
+        const count = notifications.filter(
+          (n) => !n.readBy?.some((id) => id.toString() === user?._id)
+        ).length;
+        setUnreadCount(count);
+      } catch (_) {}
+    };
+    fetchCount();
+    socket.on("notification:new", () => setUnreadCount((p) => p + 1));
+    return () => socket.off("notification:new");
+  }, []);
 
   const handleNavLinkClick = () => {
     const collapseEl = collapseRef.current;
@@ -133,8 +156,47 @@ function Navbar({ user, onLogout }) {
     return () => { document.body.style.overflow = ""; };
   }, [showSettingsDrawer]);
 
+  useEffect(() => {
+    if (!showMastersMenu) return;
+    const handler = (e) => {
+      if (mastersMenuRef.current && !mastersMenuRef.current.contains(e.target)) {
+        setShowMastersMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showMastersMenu]);
+
   const currentMonth = new Date().toISOString().slice(0, 7);
   const isActive = (path) => location.pathname === path;
+
+  // Dynamic header title based on current route (prefix match for dynamic segments)
+  const PAGE_TITLE_PREFIXES = [
+    ["/admin",               "Dashboard"],
+    ["/availability",        "Availability"],
+    ["/grid-availability",   "Calendar"],
+    ["/bookings",            "Bookings"],
+    ["/all-yachts",          "Yacht Master"],
+    ["/create-customer",     "Customers"],
+    ["/customer-management", "Customers"],
+    ["/customer-details",    "Customer Details"],
+    ["/all-employees",       "User Master"],
+    ["/create-booking",      "Create Booking"],
+    ["/update-booking",      "Bookings"],
+    ["/edit-booking",        "Edit Booking"],
+    ["/create-employee",     "Create Employee"],
+    ["/create-yacht",        "Create Yacht"],
+    ["/collections",         "Collections"],
+    ["/register-company",    "Register Company"],
+    ["/notifications",       "Notifications"],
+  ];
+  const pageTitle = (() => {
+    const path = location.pathname;
+    for (const [prefix, title] of PAGE_TITLE_PREFIXES) {
+      if (path === prefix || path.startsWith(prefix + "/")) return title;
+    }
+    return user.type === "admin" ? "Dashboard" : "Boating Assistance";
+  })();
 
   const allNavItems = [
     {
@@ -177,8 +239,22 @@ function Navbar({ user, onLogout }) {
       to: "/all-yachts",
       path: "/all-yachts",
       icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+          <rect x="11.25" y="2" width="1.5" height="10.5" rx="0.5"/>
+          <path d="M11 3.5 L3.5 13 L11 13 Z"/>
+          <path d="M13 3.5 L20.5 13 L13 13 Z"/>
+          <path d="M3 14 L21 14 L18.5 19.5 C17.5 21 6.5 21 5.5 19.5 Z"/>
+        </svg>
+      ),
+      show: user?.type === "admin",
+    },
+    {
+      label: "Create Company",
+      to: "/register-company",
+      path: "/register-company",
+      icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5v-4h3v4H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L8.354 1.146z"/>
+          <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/>
         </svg>
       ),
       show: user?.type === "admin",
@@ -220,13 +296,20 @@ function Navbar({ user, onLogout }) {
     ),
   };
 
+  const MASTERS_PATHS = ["/all-yachts", "/register-company", "/create-customer", "/all-employees"];
+
   const bottomBarPaths = ["/bookings", "/availability", "/grid-availability"];
   const bottomBarCoreItems = allNavItems.filter((item) => bottomBarPaths.includes(item.path));
   const bottomBarItems = user?.type === "admin"
     ? [homeItem, ...bottomBarCoreItems]
     : bottomBarCoreItems;
 
-  const drawerItems = allNavItems.filter((item) => !bottomBarPaths.includes(item.path));
+  const coreNavItems = allNavItems.filter((item) => !MASTERS_PATHS.includes(item.path));
+  const mastersNavItems = allNavItems.filter((item) => MASTERS_PATHS.includes(item.path));
+  const mastersActive = MASTERS_PATHS.includes(location.pathname);
+
+  const drawerCoreItems = allNavItems.filter((item) => !bottomBarPaths.includes(item.path) && !MASTERS_PATHS.includes(item.path));
+  const drawerMastersItems = allNavItems.filter((item) => !bottomBarPaths.includes(item.path) && MASTERS_PATHS.includes(item.path));
 
   const ProfileAvatar = ({ size = 38 }) => (
     <button
@@ -243,7 +326,7 @@ function Navbar({ user, onLogout }) {
       {user?.profilePhoto ? (
         <img src={user.profilePhoto} alt="profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
-        <span style={{ color: "#fff", fontWeight: 700, fontSize: size * 0.36 }}>{getInitials(user?.name)}</span>
+        <span style={{ color: "#fff", fontWeight: 700, fontSize: size * 0.32 }}>{user?.username?.toUpperCase()}</span>
       )}
     </button>
   );
@@ -256,84 +339,273 @@ function Navbar({ user, onLogout }) {
 
   return (
     <>
-      {/* ─── DESKTOP TOP NAVBAR (hidden on mobile) ─── */}
+      {/* ─── DESKTOP / TABLET TOP NAVBAR (≥ 768 px) ─── */}
       <nav
-        className="navbar navbar-expand-lg position-fixed w-100 d-none d-lg-flex"
+        className="d-none d-md-flex position-fixed w-100 align-items-center"
         style={{
           top: 0, left: 0, zIndex: 1030,
-          background: "linear-gradient(90deg, #0d6efd 0%, #0b5ed7 100%)",
-          boxShadow: "0 2px 12px rgba(13,110,253,0.25)",
-          height: "60px",
+          background: "linear-gradient(90deg, #051829 0%, #0a2d4a 55%, #0d4a6e 100%)",
+          boxShadow: "0 2px 20px rgba(5,24,41,0.45)",
+          height: "62px",
+          padding: "0 20px",
+          gap: 16,
+          borderBottom: "1px solid rgba(201,168,76,0.18)",
         }}
       >
-        <div className="container-fluid px-4">
-          <Link
-            className="navbar-brand fw-bold text-white me-4"
-            style={{ letterSpacing: "0.5px", fontSize: "1.15rem", flexShrink: 0 }}
-            to="/"
-          >
-            {user.type === "admin" ? "Dashboard" : "Boating Assistance"}
-          </Link>
+        {/* ── Dashboard link ── */}
+        <button
+          onClick={() => navigate(user?.type === "admin" ? "/admin" : "/bookings")}
+          style={{
+            background: "none", border: "none", cursor: "pointer",
+            flexShrink: 0, padding: "4px 14px 4px 4px",
+            borderRight: "1px solid rgba(255,255,255,0.1)",
+            marginRight: 4,
+            color: "#e8d5a0", fontWeight: 800, fontSize: "1rem",
+            letterSpacing: "0.02em", whiteSpace: "nowrap",
+          }}
+        >
+          Dashboard
+        </button>
 
-          <div className="collapse navbar-collapse" id="navbarNav" ref={collapseRef}>
-            <ul className="navbar-nav me-auto mb-0">
-              {allNavItems.map((item) => (
-                <li className="nav-item" key={item.path}>
-                  <Link
-                    className={`nav-link text-white px-3 py-2 ${styles.navHover || ""}`}
-                    style={{
-                      borderRadius: "8px",
-                      fontWeight: isActive(item.path) ? 600 : 400,
-                      background: isActive(item.path) ? "rgba(255,255,255,0.18)" : "transparent",
-                      transition: "background 0.15s",
-                      fontSize: "0.92rem",
-                    }}
-                    to={item.to}
-                    onClick={handleNavLinkClick}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <div className="d-flex align-items-center gap-2">
-              <ProfileAvatar size={38} />
-              <button
-                className="btn d-flex align-items-center justify-content-center"
+        {/* ── Nav items ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, overflowX: "auto", scrollbarWidth: "none" }}>
+          {/* Core nav items: Bookings, Availability, Calendar */}
+          {coreNavItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.to}
+                onClick={handleNavLinkClick}
                 style={{
-                  width: 38, height: 38,
-                  borderRadius: "50%",
-                  background: "rgba(255,255,255,0.12)",
-                  border: "1.5px solid rgba(255,255,255,0.35)",
-                  color: "#fff",
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "6px 12px",
+                  borderRadius: 10,
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  color: active ? "#c9a84c" : "rgba(255,255,255,0.72)",
+                  background: active ? "rgba(201,168,76,0.14)" : "transparent",
+                  border: active ? "1px solid rgba(201,168,76,0.3)" : "1px solid transparent",
+                  fontWeight: active ? 700 : 500,
+                  fontSize: "0.83rem",
+                  transition: "all 0.15s",
+                  letterSpacing: "0.01em",
                 }}
-                onClick={onLogout}
-                title="Logout"
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#fff"; } }}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.72)"; } }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M6 2a1 1 0 0 1 1-1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a1 1 0 0 1-1-1v-1h1v1h3a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7v1H6V2z"/>
-                  <path d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z"/>
-                </svg>
-              </button>
+                <span style={{ display: "flex", opacity: active ? 1 : 0.75, flexShrink: 0 }}>
+                  {React.cloneElement(item.icon, { width: 15, height: 15 })}
+                </span>
+                <span className="d-none d-lg-inline">{item.label}</span>
+              </Link>
+            );
+          })}
+
+          {/* Masters — inline expand on desktop/tablet */}
+          {mastersNavItems.length > 0 && (
+            <div ref={mastersMenuRef} style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+              {/* When collapsed: show "Masters ▸" toggle button */}
+              {!showMastersMenu ? (
+                <button
+                  onClick={() => setShowMastersMenu(true)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "6px 12px", borderRadius: 10,
+                    border: mastersActive ? "1px solid rgba(201,168,76,0.3)" : "1px solid transparent",
+                    background: mastersActive ? "rgba(201,168,76,0.14)" : "transparent",
+                    color: mastersActive ? "#c9a84c" : "rgba(255,255,255,0.72)",
+                    fontWeight: mastersActive ? 700 : 500,
+                    fontSize: "0.83rem", cursor: "pointer",
+                    whiteSpace: "nowrap", letterSpacing: "0.01em", transition: "all 0.15s",
+                  }}
+                  onMouseEnter={e => { if (!mastersActive) { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#fff"; } }}
+                  onMouseLeave={e => { if (!mastersActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.72)"; } }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style={{ opacity: 0.85 }}>
+                    <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/>
+                  </svg>
+                  <svg width="10" height="10" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="1 1 5 5 9 1"/>
+                  </svg>
+                </button>
+              ) : (
+                /* When expanded: close button + individual items inline */
+                <>
+                  {/* Subtle separator */}
+                  <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.15)", marginRight: 4 }} />
+
+                  {/* Close / collapse button */}
+                  <button
+                    onClick={() => setShowMastersMenu(false)}
+                    title="Close Masters"
+                    style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "5px 9px", borderRadius: 8,
+                      border: "1px solid rgba(201,168,76,0.35)",
+                      background: "rgba(201,168,76,0.12)",
+                      color: "#c9a84c", fontSize: "0.72rem", fontWeight: 700,
+                      cursor: "pointer", whiteSpace: "nowrap",
+                      letterSpacing: "0.06em", textTransform: "uppercase",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <line x1="10" y1="2" x2="2" y2="10"/><line x1="2" y1="2" x2="10" y2="10"/>
+                    </svg>
+                  </button>
+
+                  {/* Individual master items inline */}
+                  {mastersNavItems.map((item) => {
+                    const active = isActive(item.path);
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.to}
+                        onClick={() => { setShowMastersMenu(false); handleNavLinkClick(); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 6,
+                          padding: "6px 11px", borderRadius: 10,
+                          textDecoration: "none", whiteSpace: "nowrap",
+                          color: active ? "#c9a84c" : "rgba(255,255,255,0.72)",
+                          background: active ? "rgba(201,168,76,0.14)" : "transparent",
+                          border: active ? "1px solid rgba(201,168,76,0.3)" : "1px solid transparent",
+                          fontWeight: active ? 700 : 500,
+                          fontSize: "0.83rem", letterSpacing: "0.01em",
+                          transition: "all 0.15s",
+                          animation: "mastersDropIn 0.18s ease-out",
+                        }}
+                        onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#fff"; } }}
+                        onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.72)"; } }}
+                      >
+                        <span style={{ display: "flex", opacity: active ? 1 : 0.75, flexShrink: 0 }}>
+                          {React.cloneElement(item.icon, { width: 14, height: 14 })}
+                        </span>
+                        <span className="d-none d-lg-inline">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+
+                  {/* Closing separator */}
+                  <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.15)", marginLeft: 4 }} />
+                </>
+              )}
             </div>
-          </div>
+          )}
+        </div>
+
+        {/* ── Right: user info + logout ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+
+          {/* Bell */}
+          <button
+            onClick={() => navigate("/notifications")}
+            title="Notifications"
+            style={{
+              position: "relative",
+              width: 36, height: 36, borderRadius: 10,
+              background: unreadCount > 0 ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.08)",
+              border: unreadCount > 0 ? "1px solid rgba(201,168,76,0.4)" : "1px solid rgba(255,255,255,0.14)",
+              color: unreadCount > 0 ? "#c9a84c" : "rgba(255,255,255,0.8)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", flexShrink: 0,
+              transition: "all 0.15s",
+            }}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            {unreadCount > 0 && (
+              <span style={{
+                position: "absolute", top: 4, right: 4,
+                minWidth: 14, height: 14, padding: "0 3px",
+                borderRadius: 999, background: "#e74c3c",
+                color: "#fff", fontSize: 8, fontWeight: 800,
+                lineHeight: "14px", textAlign: "center",
+                border: "1.5px solid #051829", boxSizing: "border-box",
+              }}>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* User chip */}
+          <button
+            onClick={() => setShowProfile(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: 9,
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.14)",
+              borderRadius: 12, padding: "5px 12px 5px 6px",
+              cursor: "pointer",
+            }}
+          >
+            {/* Avatar */}
+            <div style={{
+              width: 32, height: 32, borderRadius: "50%",
+              background: user?.profilePhoto ? "transparent" : "rgba(201,168,76,0.2)",
+              border: "2px solid rgba(201,168,76,0.45)",
+              overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              {user?.profilePhoto
+                ? <img src={user.profilePhoto} alt="profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ color: "#c9a84c", fontWeight: 800, fontSize: "0.65rem" }}>{user?.username?.toUpperCase()}</span>
+              }
+            </div>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ color: "#fff", fontWeight: 700, fontSize: "0.8rem", lineHeight: 1.1, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {user?.name}
+              </div>
+              <div style={{ color: "rgba(201,168,76,0.8)", fontSize: "0.62rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                {user?.type === "backdesk" ? "Agent" : user?.type === "onsite" ? "Staff" : user?.type}
+              </div>
+            </div>
+          </button>
+
+          {/* Logout */}
+          <button
+            onClick={onLogout}
+            title="Logout"
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: "rgba(220,53,69,0.12)",
+              border: "1px solid rgba(220,53,69,0.3)",
+              color: "#f87171",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", flexShrink: 0,
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(220,53,69,0.22)"; e.currentTarget.style.borderColor = "rgba(220,53,69,0.5)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(220,53,69,0.12)"; e.currentTarget.style.borderColor = "rgba(220,53,69,0.3)"; }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path fillRule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
+              <path fillRule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+            </svg>
+          </button>
         </div>
       </nav>
 
       {/* ─── MOBILE TOP BAR ─── */}
       <nav
-        className="d-flex d-lg-none align-items-center justify-content-between position-fixed w-100 px-3"
+        className="d-flex d-md-none align-items-center justify-content-between position-fixed w-100 px-3"
         style={{
           top: 0, left: 0, zIndex: 1030,
-          background: "linear-gradient(90deg, #0d6efd 0%, #0b5ed7 100%)",
-          boxShadow: "0 2px 10px rgba(13,110,253,0.3)",
+          background: "rgb(2, 80, 130)",
+          boxShadow: "0 2px 10px rgba(2,80,130,0.35)",
           height: "56px",
         }}
       >
-        <Link className="fw-bold text-white" style={{ fontSize: "1.05rem", textDecoration: "none", letterSpacing: "0.4px" }} to="/">
-          {user.type === "admin" ? "Dashboard" : "Boating Assistance"}
-        </Link>
+        <span
+          className="fw-bold text-white"
+          style={{ fontSize: "1.05rem", textDecoration: "none", letterSpacing: "0.4px", cursor: "pointer" }}
+          onClick={() => navigate(location.pathname + location.search, { state: { refresh: Date.now() } })}
+        >
+          {pageTitle}
+        </span>
 
         <button
           className="d-flex align-items-center justify-content-center"
@@ -355,7 +627,7 @@ function Navbar({ user, onLogout }) {
       {/* ─── MOBILE BOTTOM APP NAV ─── */}
       {user?.type !== "onsite" && (
         <nav
-          className="d-flex d-lg-none position-fixed w-100"
+          className="d-flex d-md-none position-fixed w-100"
           style={{
             bottom: 0, left: 0, zIndex: 1030,
             background: "#fff",
@@ -400,7 +672,7 @@ function Navbar({ user, onLogout }) {
 
       {/* ─── SETTINGS DRAWER BACKDROP ─── */}
       <div
-        className="d-lg-none"
+        className="d-md-none"
         style={{
           position: "fixed", inset: 0, zIndex: 1025,
           background: "rgba(0,0,0,0.45)",
@@ -413,7 +685,7 @@ function Navbar({ user, onLogout }) {
 
       {/* ─── SETTINGS DRAWER ─── */}
       <div
-        className="d-lg-none"
+        className="d-md-none"
         style={{
           position: "fixed", left: 0, right: 0,
           bottom: showSettingsDrawer ? "64px" : "-100%",
@@ -445,14 +717,15 @@ function Navbar({ user, onLogout }) {
           >
             <div style={{
               width: 44, height: 44, borderRadius: "50%",
-              background: user?.profilePhoto ? "transparent" : "linear-gradient(135deg,#0d6efd,#0b5ed7)",
+              background: user?.profilePhoto ? "transparent" : "linear-gradient(135deg,#0a2d4a,#1d6fa4)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              overflow: "hidden", border: "2px solid #e8f0fe", flexShrink: 0,
+              overflow: "hidden", border: "2px solid rgba(201,168,76,0.4)", flexShrink: 0,
+              boxShadow: "0 2px 8px rgba(29,111,164,0.25)",
             }}>
               {user?.profilePhoto ? (
                 <img src={user.profilePhoto} alt="profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
-                <span style={{ color: "#fff", fontWeight: 700, fontSize: "1rem" }}>{getInitials(user?.name)}</span>
+                <span style={{ color: "#e8d5a0", fontWeight: 700, fontSize: "0.82rem" }}>{user?.username?.toUpperCase()}</span>
               )}
             </div>
             <div>
@@ -465,9 +738,9 @@ function Navbar({ user, onLogout }) {
 
           <button
             style={{
-              border: "none", background: "#f0f4ff", borderRadius: "50%",
+              border: "none", background: "#eef4fb", borderRadius: "50%",
               width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#0d6efd", cursor: "pointer", flexShrink: 0,
+              color: "#1d6fa4", cursor: "pointer", flexShrink: 0,
             }}
             onClick={() => setShowSettingsDrawer(false)}
           >
@@ -479,12 +752,13 @@ function Navbar({ user, onLogout }) {
 
         {/* Drawer nav items */}
         <div style={{ padding: "12px 16px" }}>
-          {drawerItems.length > 0 && (
+          {/* ── Other nav items (none currently in the drawer besides masters for admin) ── */}
+          {drawerCoreItems.length > 0 && (
             <>
               <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#aab4cc", textTransform: "uppercase", letterSpacing: "0.8px", padding: "4px 8px 10px" }}>
                 Navigation
               </div>
-              {drawerItems.map((item) => {
+              {drawerCoreItems.map((item) => {
                 const active = isActive(item.path);
                 return (
                   <Link
@@ -505,6 +779,50 @@ function Navbar({ user, onLogout }) {
                     {item.label}
                     {active && (
                       <span style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: "#0d6efd" }} />
+                    )}
+                  </Link>
+                );
+              })}
+              <div style={{ height: 1, background: "#f0f4ff", margin: "12px 0" }} />
+            </>
+          )}
+
+          {/* ── Masters section ── */}
+          {drawerMastersItems.length > 0 && (
+            <>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 7,
+                fontSize: "0.7rem", fontWeight: 700, color: "#7a8a9a",
+                textTransform: "uppercase", letterSpacing: "0.8px",
+                padding: "4px 8px 10px",
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="#7a8a9a" viewBox="0 0 16 16">
+                  <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/>
+                </svg>
+                Masters
+              </div>
+              {drawerMastersItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.to}
+                    onClick={handleNavLinkClick}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 14,
+                      padding: "13px 14px", borderRadius: 12, marginBottom: 4,
+                      textDecoration: "none",
+                      background: active ? "#eff6ff" : "transparent",
+                      color: active ? "#1d6fa4" : "#2d3a4a",
+                      fontWeight: active ? 700 : 500,
+                      fontSize: "0.95rem", transition: "background 0.15s",
+                      borderLeft: active ? "3px solid #1d6fa4" : "3px solid transparent",
+                    }}
+                  >
+                    <span style={{ color: active ? "#1d6fa4" : "#7a8a9a", flexShrink: 0 }}>{item.icon}</span>
+                    {item.label}
+                    {active && (
+                      <span style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: "#1d6fa4" }} />
                     )}
                   </Link>
                 );
@@ -541,337 +859,241 @@ function Navbar({ user, onLogout }) {
 
       {/* ─── PROFILE MODAL ─── */}
       {showProfile && (
-        <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.55)" }} onClick={() => setShowProfile(false)}>
-          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-content shadow-lg" style={{ borderRadius: "16px", overflow: "hidden", border: "none" }}>
-              <div className="modal-header text-white" style={{ background: "linear-gradient(90deg,#0d6efd,#0b5ed7)", border: "none" }}>
-                <h5 className="modal-title">My Profile</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setShowProfile(false)}></button>
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 1050, backgroundColor: "rgba(5,24,41,0.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}
+          onClick={() => setShowProfile(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 360, overflow: "hidden", boxShadow: "0 20px 60px rgba(5,24,41,0.35)" }}
+          >
+            {/* ── Navy gradient header with avatar ── */}
+            <div style={{ background: "linear-gradient(135deg,#051829 0%,#0a2d4a 60%,#0d4a6e 100%)", padding: "28px 24px 20px", position: "relative" }}>
+              {/* Close */}
+              <button
+                onClick={() => setShowProfile(false)}
+                style={{ position: "absolute", top: 14, right: 14, width: 30, height: 30, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.12)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              {/* Avatar */}
+              <div style={{ width: 72, height: 72, borderRadius: "50%", overflow: "hidden", border: "3px solid rgba(201,168,76,0.6)", background: "linear-gradient(135deg,#0a2d4a,#1d6fa4)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+                {user.profilePhoto
+                  ? <img src={user.profilePhoto} alt="profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : <span style={{ color: "#e8d5a0", fontWeight: 800, fontSize: "1.1rem", letterSpacing: "0.05em" }}>{user?.username?.toUpperCase()}</span>
+                }
               </div>
-              <div className="modal-body text-center py-4">
-                <img
-                  src={user.profilePhoto ? user.profilePhoto : `https://ui-avatars.com/api/?name=${user.name}&background=random`}
-                  alt="profile"
-                  className="rounded-circle mb-3 shadow-sm"
-                  width="90" height="90"
-                  style={{ objectFit: "cover", border: "3px solid #e8f0fe" }}
-                />
-                <h5 className="mb-0">{user.name}</h5>
-                <p className="text-muted mb-3" style={{ fontSize: "0.88rem" }}>
-                  {user.type === "backdesk" ? "Agent" : user.type === "onsite" ? "Staff" : user.type.charAt(0).toUpperCase() + user.type.slice(1)}
-                </p>
-                <hr />
-                <div className="text-start px-2" style={{ fontSize: "0.9rem" }}>
-                  <p><strong>Username:</strong> {user.username}</p>
-                  <p><strong>Email:</strong> {user.email}</p>
-                  <p><strong>Contact:</strong> {user.contact}</p>
-                  <p className="mb-0"><strong>Status:</strong> {user.status}</p>
+              {/* Name + company + role */}
+              <div style={{ color: "#fff", fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.2 }}>{user.name}</div>
+              <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#c9a84c", marginTop: 3, letterSpacing: "0.03em" }}>trip2explore</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#e8d5a0", background: "rgba(201,168,76,0.18)", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 99, padding: "2px 10px", textTransform: "capitalize", letterSpacing: "0.04em" }}>
+                  {user.type === "backdesk" ? "Agent" : user.type === "onsite" ? "Staff" : user.type?.charAt(0).toUpperCase() + user.type?.slice(1)}
+                </span>
+                <span style={{ fontSize: "0.68rem", fontWeight: 600, color: user.status === "active" ? "#4ade80" : "#f87171", background: "rgba(255,255,255,0.08)", borderRadius: 99, padding: "2px 10px", textTransform: "capitalize" }}>
+                  ● {user.status}
+                </span>
+              </div>
+            </div>
+
+            {/* ── Info rows ── */}
+            <div style={{ padding: "18px 20px 8px" }}>
+              {[
+                { icon: "👤", label: "Username", value: user.username },
+              ].map(({ icon, label, value }) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 9, background: "#eef4fb", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "0.95rem" }}>{icon}</div>
+                  <div>
+                    <div style={{ fontSize: "0.62rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+                    <div style={{ fontSize: "0.84rem", fontWeight: 600, color: "#0a2d4a", marginTop: 1 }}>{value}</div>
+                  </div>
                 </div>
-              </div>
-              <div className="modal-footer" style={{ border: "none" }}>
-                <button className="btn btn-outline-primary" onClick={() => { setShowProfile(false); setShowEditProfile(true); }}>Edit Profile</button>
-                <button className="btn btn-danger btn-sm ms-auto" onClick={() => { setShowProfile(false); onLogout(); }} title="Logout">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" className="me-1">
-                    <path d="M6 2a1 1 0 0 1 1-1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a1 1 0 0 1-1-1v-1h1v1h3a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7v1H6V2z"/>
-                    <path d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z"/>
-                  </svg>
-                  Logout
-                </button>
-              </div>
+              ))}
+            </div>
+
+            {/* ── Action buttons ── */}
+            <div style={{ padding: "14px 20px 20px" }}>
+              <button
+                onClick={() => { setShowProfile(false); setShowEditProfile(true); }}
+                style={{ width: "100%", padding: "10px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0a2d4a,#1d6fa4)", color: "#fff", fontWeight: 700, fontSize: "0.84rem", cursor: "pointer", boxShadow: "0 4px 14px rgba(29,111,164,0.35)" }}
+              >
+                Edit Profile
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ─── EDIT PROFILE MODAL ─── */}
+      {/* ─── EDIT PROFILE SHEET ─── */}
       {showEditProfile && (
         <div
-          style={{
-            position: "fixed", inset: 0, zIndex: 1055,
-            backgroundColor: "rgba(0,0,0,0.45)",
-            display: "flex", alignItems: "flex-end", justifyContent: "center",
-            padding: 0,
-          }}
+          style={{ position: "fixed", inset: 0, zIndex: 1055, backgroundColor: "rgba(5,24,41,0.72)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
           onClick={() => setShowEditProfile(false)}
         >
-          {/* Sheet — slides up from bottom on mobile, centered on desktop */}
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#fff",
-              width: "100%",
-              maxWidth: 480,
-              borderRadius: "20px 20px 0 0",
-              maxHeight: "92dvh",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              /* center on desktop */
-            }}
             className="edit-profile-sheet"
+            style={{ background: "#fff", width: "100%", maxWidth: 480, borderRadius: "20px 20px 0 0", maxHeight: "92dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}
           >
-            {/* ── Handle bar (mobile feel) ── */}
-            <div style={{ display: "flex", justifyContent: "center", paddingTop: 10, paddingBottom: 2 }}>
-              <div style={{ width: 36, height: 4, borderRadius: 4, background: "#e2e8f0" }} />
-            </div>
-
-            {/* ── Header ── */}
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "10px 20px 12px",
-              borderBottom: "1px solid #f1f5f9",
-            }}>
-              <h6 style={{ margin: 0, fontWeight: 700, fontSize: "1rem", color: "#1e293b" }}>Edit Profile</h6>
-              <button
-                onClick={() => setShowEditProfile(false)}
-                style={{
-                  border: "none", background: "#f1f5f9", borderRadius: "50%",
-                  width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", color: "#64748b", flexShrink: 0,
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                </svg>
+            {/* ── Navy gradient header ── */}
+            <div style={{ background: "linear-gradient(135deg,#051829 0%,#0a2d4a 60%,#0d4a6e 100%)", padding: "20px 20px 24px", position: "relative", flexShrink: 0 }}>
+              {/* drag handle */}
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+                <div style={{ width: 36, height: 4, borderRadius: 4, background: "rgba(255,255,255,0.25)" }} />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ color: "#e8d5a0", fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Account</div>
+                  <h6 style={{ margin: 0, fontWeight: 700, fontSize: "1.05rem", color: "#fff" }}>Edit Profile</h6>
+                </div>
+                {/* Avatar */}
+                <div style={{ position: "relative" }}>
+                  <div style={{ width: 56, height: 56, borderRadius: "50%", overflow: "hidden", border: "2.5px solid rgba(201,168,76,0.6)", background: "linear-gradient(135deg,#0a2d4a,#1d6fa4)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 12px rgba(0,0,0,0.3)" }}>
+                    {editForm.profilePhoto && typeof editForm.profilePhoto !== "string" ? (
+                      <img src={URL.createObjectURL(editForm.profilePhoto)} alt="preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : user?.profilePhoto ? (
+                      <img src={user.profilePhoto} alt="profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <span style={{ fontSize: "0.9rem", fontWeight: 800, color: "#e8d5a0" }}>{user?.username?.toUpperCase()}</span>
+                    )}
+                  </div>
+                  {/* Camera button */}
+                  <label htmlFor="profilePhotoInput" style={{ position: "absolute", bottom: -2, right: -2, width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#0a2d4a,#1d6fa4)", border: "2px solid rgba(201,168,76,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="#e8d5a0" viewBox="0 0 16 16">
+                      <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.828 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/>
+                      <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+                    </svg>
+                    <input id="profilePhotoInput" type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => setEditForm({ ...editForm, profilePhoto: e.target.files[0] })} />
+                  </label>
+                </div>
+              </div>
+              {/* close */}
+              <button onClick={() => setShowEditProfile(false)} style={{ position: "absolute", top: 14, right: 16, width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.12)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 
             {/* ── Scrollable body ── */}
-            <div style={{ overflowY: "auto", flex: 1, padding: "20px 20px 8px" }}>
-
-              {/* Profile Photo */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24 }}>
-                <div style={{ position: "relative", display: "inline-block" }}>
-                  {/* Avatar circle */}
-                  <div style={{
-                    width: 84, height: 84, borderRadius: "50%",
-                    background: "#e8f0fe",
-                    overflow: "hidden",
-                    border: "3px solid #e2e8f0",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    {editForm.profilePhoto && typeof editForm.profilePhoto !== "string" ? (
-                      <img
-                        src={URL.createObjectURL(editForm.profilePhoto)}
-                        alt="preview"
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                    ) : user?.profilePhoto ? (
-                      <img
-                        src={user.profilePhoto}
-                        alt="profile"
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                    ) : (
-                      <span style={{ fontSize: "1.6rem", fontWeight: 700, color: "#3b82f6" }}>
-                        {getInitials(user?.name)}
-                      </span>
-                    )}
-                  </div>
-                  {/* Camera button */}
-                  <label
-                    htmlFor="profilePhotoInput"
-                    style={{
-                      position: "absolute", bottom: 0, right: 0,
-                      width: 28, height: 28, borderRadius: "50%",
-                      background: "#1e293b", border: "2px solid #fff",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#fff" viewBox="0 0 16 16">
-                      <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.828 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/>
-                      <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
-                    </svg>
-                    <input
-                      id="profilePhotoInput"
-                      type="file"
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      onChange={(e) => setEditForm({ ...editForm, profilePhoto: e.target.files[0] })}
-                    />
-                  </label>
-                </div>
-                <p style={{ margin: "8px 0 0", fontSize: "0.75rem", color: "#94a3b8" }}>Tap camera to change photo</p>
-              </div>
+            <div style={{ overflowY: "auto", flex: 1, padding: "18px 20px 8px" }}>
 
               {/* ── Section: Basic Info ── */}
-              <p style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#94a3b8", marginBottom: 10 }}>Basic Info</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#c9a84c", flexShrink: 0 }} />
+                <span style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#94a3b8" }}>Basic Info</span>
+              </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-                <div>
-                  <input
-                    className={`form-control ${errors.name ? "is-invalid" : ""}`}
-                    placeholder="Full name"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    style={{ borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc" }}
-                  />
-                  {errors.name && <div className="invalid-feedback">{errors.name}</div>}
-                </div>
-                <div>
-                  <input
-                    className={`form-control ${errors.email ? "is-invalid" : ""}`}
-                    placeholder="Email address"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    style={{ borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc" }}
-                  />
-                  {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-                </div>
-                <div>
-                  <input
-                    className={`form-control ${errors.contact ? "is-invalid" : ""}`}
-                    placeholder="Mobile number"
-                    value={editForm.contact}
-                    onChange={(e) => setEditForm({ ...editForm, contact: e.target.value })}
-                    style={{ borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc" }}
-                  />
-                  {errors.contact && <div className="invalid-feedback">{errors.contact}</div>}
-                </div>
+                {[
+                  { placeholder: "Full name", key: "name", type: "text" },
+                  { placeholder: "Email address", key: "email", type: "email" },
+                  { placeholder: "Mobile number", key: "contact", type: "tel" },
+                ].map(({ placeholder, key, type }) => (
+                  <div key={key}>
+                    <input
+                      type={type}
+                      placeholder={placeholder}
+                      value={editForm[key]}
+                      onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+                      style={{ width: "100%", padding: "0.62rem 0.9rem", fontSize: "0.88rem", color: "#0a2d4a", background: "#f8fafc", border: `1.5px solid ${errors[key] ? "#dc2626" : "#e2e8f0"}`, borderRadius: 10, outline: "none", boxSizing: "border-box" }}
+                      onFocus={(e) => { if (!errors[key]) e.target.style.borderColor = "#1d6fa4"; e.target.style.boxShadow = "0 0 0 3px rgba(29,111,164,0.1)"; }}
+                      onBlur={(e) => { e.target.style.borderColor = errors[key] ? "#dc2626" : "#e2e8f0"; e.target.style.boxShadow = "none"; }}
+                    />
+                    {errors[key] && <p style={{ fontSize: "0.68rem", color: "#dc2626", margin: "3px 0 0 2px", fontWeight: 500 }}>⚠ {errors[key]}</p>}
+                  </div>
+                ))}
               </div>
 
               {/* ── Section: Change Password ── */}
-              <div style={{ height: 1, background: "#f1f5f9", marginBottom: 16 }} />
-              <p style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#94a3b8", marginBottom: 10 }}>
-                Change Password <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#b0bec5" }}>(optional)</span>
-              </p>
+              <div style={{ height: 1, background: "#e8eef5", marginBottom: 14 }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#c9a84c", flexShrink: 0 }} />
+                <span style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#94a3b8" }}>Change Password</span>
+                <span style={{ fontSize: "0.65rem", color: "#b0bec5" }}>(optional)</span>
+              </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-                <div>
-                  <div style={{ position: "relative" }}>
+                {[
+                  { placeholder: "Current password", key: "currentPassword", show: showCurrentPassword, toggle: () => setShowCurrentPassword(!showCurrentPassword), disabled: false },
+                  { placeholder: "New password",      key: "newPassword",     show: showNewPassword,     toggle: () => setShowNewPassword(!showNewPassword),     disabled: !editForm.currentPassword },
+                ].map(({ placeholder, key, show, toggle, disabled }) => (
+                  <div key={key} style={{ position: "relative" }}>
                     <input
-                      type={showCurrentPassword ? "text" : "password"}
-                      className={`form-control ${errors.currentPassword ? "is-invalid" : ""}`}
-                      placeholder="Current password"
-                      value={editForm.currentPassword}
-                      onChange={(e) => setEditForm({ ...editForm, currentPassword: e.target.value })}
-                      style={{ borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc", paddingRight: 64 }}
+                      type={show ? "text" : "password"}
+                      placeholder={placeholder}
+                      value={editForm[key]}
+                      disabled={disabled}
+                      onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+                      style={{ width: "100%", padding: "0.62rem 3rem 0.62rem 0.9rem", fontSize: "0.88rem", color: "#0a2d4a", background: disabled ? "#f1f5f9" : "#f8fafc", border: `1.5px solid ${errors[key] ? "#dc2626" : "#e2e8f0"}`, borderRadius: 10, outline: "none", boxSizing: "border-box", opacity: disabled ? 0.55 : 1 }}
+                      onFocus={(e) => { if (!disabled && !errors[key]) { e.target.style.borderColor = "#1d6fa4"; e.target.style.boxShadow = "0 0 0 3px rgba(29,111,164,0.1)"; } }}
+                      onBlur={(e) => { e.target.style.borderColor = errors[key] ? "#dc2626" : "#e2e8f0"; e.target.style.boxShadow = "none"; }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      style={{
-                        position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-                        border: "none", background: "none", fontSize: "0.75rem", color: "#64748b",
-                        cursor: "pointer", fontWeight: 600, padding: "2px 6px",
-                      }}
-                    >
-                      {showCurrentPassword ? "Hide" : "Show"}
+                    <button type="button" disabled={disabled} onClick={toggle} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", border: "none", background: "none", fontSize: "0.72rem", color: "#1d6fa4", cursor: disabled ? "default" : "pointer", fontWeight: 700, padding: "2px 6px", opacity: disabled ? 0.4 : 1 }}>
+                      {show ? "Hide" : "Show"}
                     </button>
-                    {errors.currentPassword && <div className="invalid-feedback">{errors.currentPassword}</div>}
+                    {errors[key] && <p style={{ fontSize: "0.68rem", color: "#dc2626", margin: "3px 0 0 2px", fontWeight: 500 }}>⚠ {errors[key]}</p>}
                   </div>
-                </div>
-                <div>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      type={showNewPassword ? "text" : "password"}
-                      className={`form-control ${errors.newPassword ? "is-invalid" : ""}`}
-                      placeholder="New password"
-                      value={editForm.newPassword}
-                      disabled={!editForm.currentPassword}
-                      onChange={(e) => setEditForm({ ...editForm, newPassword: e.target.value })}
-                      style={{ borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: !editForm.currentPassword ? "#f1f5f9" : "#f8fafc", paddingRight: 64 }}
-                    />
-                    <button
-                      type="button"
-                      disabled={!editForm.currentPassword}
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      style={{
-                        position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-                        border: "none", background: "none", fontSize: "0.75rem", color: "#64748b",
-                        cursor: !editForm.currentPassword ? "default" : "pointer", fontWeight: 600, padding: "2px 6px",
-                        opacity: !editForm.currentPassword ? 0.4 : 1,
-                      }}
-                    >
-                      {showNewPassword ? "Hide" : "Show"}
-                    </button>
-                    {errors.newPassword && <div className="invalid-feedback">{errors.newPassword}</div>}
-                  </div>
-                </div>
+                ))}
               </div>
 
               {/* ── Section: Quick Login PIN ── */}
-              <div style={{ height: 1, background: "#f1f5f9", marginBottom: 16 }} />
-              <p style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#94a3b8", marginBottom: 10 }}>
-                Quick Login PIN <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#b0bec5" }}>(optional)</span>
-              </p>
+              <div style={{ height: 1, background: "#e8eef5", marginBottom: 14 }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#c9a84c", flexShrink: 0 }} />
+                <span style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#94a3b8" }}>Quick Login PIN</span>
+                <span style={{ fontSize: "0.65rem", color: "#b0bec5" }}>(optional)</span>
+              </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 8 }}>
                 <div style={{ position: "relative" }}>
                   <input
                     type={showPin ? "text" : "password"}
                     inputMode="numeric"
-                    className="form-control"
                     placeholder="New 4-digit PIN"
                     maxLength={4}
                     value={pinForm.newPin}
                     onChange={(e) => setPinForm((p) => ({ ...p, newPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                    style={{
-                      borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc",
-                      letterSpacing: "0.35em", fontWeight: 700, textAlign: "center", paddingRight: 64,
-                    }}
+                    style={{ width: "100%", padding: "0.62rem 3rem 0.62rem 0.9rem", fontSize: "0.88rem", color: "#0a2d4a", background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, outline: "none", boxSizing: "border-box" }}
+                    onFocus={(e) => { e.target.style.borderColor = "#1d6fa4"; e.target.style.boxShadow = "0 0 0 3px rgba(29,111,164,0.1)"; }}
+                    onBlur={(e) => { e.target.style.borderColor = "#e2e8f0"; e.target.style.boxShadow = "none"; }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPin((v) => !v)}
-                    style={{
-                      position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-                      border: "none", background: "none", fontSize: "0.75rem", color: "#64748b",
-                      cursor: "pointer", fontWeight: 600, padding: "2px 6px",
-                    }}
-                  >
+                  <button type="button" onClick={() => setShowPin((v) => !v)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", border: "none", background: "none", fontSize: "0.72rem", color: "#1d6fa4", cursor: "pointer", fontWeight: 700, padding: "2px 6px" }}>
                     {showPin ? "Hide" : "Show"}
                   </button>
                 </div>
                 <input
                   type={showPin ? "text" : "password"}
                   inputMode="numeric"
-                  className="form-control"
                   placeholder="Confirm PIN"
                   maxLength={4}
                   value={pinForm.confirmPin}
                   onChange={(e) => setPinForm((p) => ({ ...p, confirmPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                  style={{
-                    borderRadius: 10, fontSize: "0.9rem", border: "1.5px solid #e2e8f0", background: "#f8fafc",
-                    letterSpacing: "0.35em", fontWeight: 700, textAlign: "center",
-                  }}
+                  style={{ width: "100%", padding: "0.62rem 0.9rem", fontSize: "0.88rem", color: "#0a2d4a", background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, outline: "none", boxSizing: "border-box" }}
+                  onFocus={(e) => { e.target.style.borderColor = "#1d6fa4"; e.target.style.boxShadow = "0 0 0 3px rgba(29,111,164,0.1)"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "#e2e8f0"; e.target.style.boxShadow = "none"; }}
                 />
                 {pinForm.newPin.length > 0 && pinForm.confirmPin.length > 0 && pinForm.newPin !== pinForm.confirmPin && (
-                  <p style={{ fontSize: "0.75rem", color: "#ef4444", margin: "0 0 0 2px" }}>PINs do not match</p>
+                  <p style={{ fontSize: "0.72rem", color: "#dc2626", margin: "0 0 0 2px", fontWeight: 500 }}>⚠ PINs do not match</p>
                 )}
               </div>
 
             </div>
 
             {/* ── Footer ── */}
-            <div style={{
-              padding: "14px 20px 20px",
-              borderTop: "1px solid #f1f5f9",
-              display: "flex", gap: 10,
-              background: "#fff",
-            }}>
+            <div style={{ padding: "12px 20px 20px", borderTop: "1px solid #e8eef5", display: "flex", gap: 10, background: "#fff", flexShrink: 0 }}>
               <button
                 onClick={() => setShowEditProfile(false)}
-                style={{
-                  flex: 1, borderRadius: 10, fontWeight: 600, fontSize: "0.9rem",
-                  border: "1.5px solid #e2e8f0", background: "#f8fafc",
-                  color: "#475569", padding: "11px 0", cursor: "pointer",
-                }}
+                style={{ flex: 1, borderRadius: 10, fontWeight: 600, fontSize: "0.88rem", border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", padding: "11px 0", cursor: "pointer" }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleCombinedUpdate}
                 disabled={pinLoading}
-                style={{
-                  flex: 2, borderRadius: 10, fontWeight: 600, fontSize: "0.9rem",
-                  border: "none", background: "#1e293b",
-                  color: "#fff", padding: "11px 0", cursor: pinLoading ? "not-allowed" : "pointer",
-                  opacity: pinLoading ? 0.7 : 1,
-                }}
+                style={{ flex: 2, borderRadius: 10, fontWeight: 700, fontSize: "0.88rem", border: "none", background: "linear-gradient(135deg,#0a2d4a,#1d6fa4)", color: "#fff", padding: "11px 0", cursor: pinLoading ? "not-allowed" : "pointer", opacity: pinLoading ? 0.7 : 1, boxShadow: "0 4px 14px rgba(29,111,164,0.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
               >
-                {pinLoading ? "Saving…" : "Save Changes"}
+                {pinLoading ? (
+                  <><span style={{ width: 15, height: 15, border: "2px solid rgba(255,255,255,0.35)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.6s linear infinite" }} /> Saving…</>
+                ) : "Save Changes"}
               </button>
             </div>
 

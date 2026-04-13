@@ -1,0 +1,276 @@
+/* ── Wrapper ── */
+.wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* ── Trigger button ── */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
+}
+.trigger:hover {
+  border-color: #1d6fa4;
+  box-shadow: 0 0 0 3px rgba(29,111,164,0.1);
+}
+.triggerOpen {
+  border-color: #1d6fa4;
+  box-shadow: 0 0 0 3px rgba(29,111,164,0.12);
+}
+.triggerFrom, .triggerTo {
+  font-weight: 700;
+  color: #0a2d4a;
+}
+.triggerSep {
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+/* ── Floating panel ── */
+.panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 999;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(5,24,41,0.18), 0 2px 8px rgba(0,0,0,0.08);
+  padding: 16px;
+  width: 296px;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Inline mode (inside mobile sheet) — no float positioning */
+.wrap:not([class*="wrap"]) > .panel,
+.panel:only-child {
+  position: static;
+  width: 100%;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  animation: none;
+}
+
+/* ── From / To selection strip ── */
+.selRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+.selBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.selBtn:hover {
+  background: #f0f4f8;
+}
+.selBtnActive {
+  border-color: #1d6fa4;
+  background: rgba(29,111,164,0.06);
+}
+.selLabel {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+.selVal {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0a2d4a;
+}
+.selArrow {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+/* ── Month navigation ── */
+.monthNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.navArrow {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1.5px solid #e5e7eb;
+  background: #f8fafc;
+  font-size: 1rem;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.navArrow:hover {
+  background: #e8f0fe;
+  border-color: #1d6fa4;
+  color: #1d6fa4;
+}
+.monthLabel {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0a2d4a;
+}
+
+/* ── Weekday row ── */
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+.weekdays span {
+  text-align: center;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+  padding: 2px 0;
+}
+
+/* ── Day grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.empty {
+  /* placeholder for empty day cells */
+}
+
+/* Base day button */
+.day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.day:hover:not(:disabled) {
+  background: #e8f0fe;
+  color: #1d6fa4;
+}
+
+/* Today ring */
+.dayToday {
+  box-shadow: inset 0 0 0 1.5px #c9a84c;
+  color: #c9a84c;
+  font-weight: 800;
+}
+
+/* In-range highlight */
+.dayInRange {
+  background: rgba(29,111,164,0.1);
+  border-radius: 0;
+  color: #1d6fa4;
+}
+
+/* From date */
+.dayFrom {
+  background: linear-gradient(135deg, #0a2d4a, #1d6fa4);
+  color: #fff !important;
+  border-radius: 6px 0 0 6px;
+  font-weight: 800;
+}
+
+/* To date */
+.dayTo {
+  background: linear-gradient(135deg, #1d6fa4, #0a2d4a);
+  color: #fff !important;
+  border-radius: 0 6px 6px 0;
+  font-weight: 800;
+}
+
+/* Same-day range (from = to) */
+.dayFrom.dayTo {
+  border-radius: 6px;
+  background: linear-gradient(135deg, #0a2d4a, #1d6fa4);
+}
+
+/* Disabled */
+.dayDisabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+/* ── Quick presets ── */
+.presets {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.presets button {
+  flex: 1;
+  min-width: 60px;
+  padding: 5px 0;
+  background: #f8fafc;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #0a2d4a;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.presets button:hover {
+  background: rgba(29,111,164,0.08);
+  border-color: #1d6fa4;
+  color: #1d6fa4;
+}
+
+/* ── Inline mode (inside sheet / no dropdown) ── */
+.inlineWrap {
+  width: 100%;
+}
+.inlineWrap .panel {
+  position: static;
+  width: 100%;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+  padding: 4px 0 8px;
+  animation: none;
+}

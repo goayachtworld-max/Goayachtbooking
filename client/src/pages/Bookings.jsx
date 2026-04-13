@@ -1,14 +1,67 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getBookingsAPI } from "../services/operations/bookingAPI";
 import { getEmployeesForBookingAPI } from "../services/operations/employeeAPI";
 import { createTransactionAndUpdateBooking } from "../services/operations/transactionAPI";
 import { FiSliders } from "react-icons/fi";
-import { Eye, Copy } from "lucide-react";
+import { Eye, Copy, Phone, GlassWater } from "lucide-react";
 import toast from "react-hot-toast";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Bookings.css";
+
+/* ── Cache helpers ── */
+const BK_CACHE_TTL = 90 * 1000; // 90 seconds
+
+// User-specific prefix — prevents cached booking data from leaking across accounts
+const getBkUserPrefix = () => {
+  try { return JSON.parse(localStorage.getItem("user") || "{}")?._id || "anon"; } catch { return "anon"; }
+};
+
+const bkGetCached = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > BK_CACHE_TTL) { localStorage.removeItem(key); return null; }
+    return data;
+  } catch { return null; }
+};
+
+const bkSetCache = (key, data) => {
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+};
+
+const bkCacheKey = (filters) =>
+  `bk_${getBkUserPrefix()}_` + JSON.stringify(Object.fromEntries(Object.entries(filters).sort()));
+
+/* ── Skeleton card ── */
+const BookingSkeletonCard = () => (
+  <div className="col-lg-4 col-md-6 mb-3">
+    <div className="card border-0 shadow-sm h-100 border-start border-4 bk-skel-card">
+      <div className="card-body p-3">
+        <div className="d-flex justify-content-between align-items-start mb-2">
+          <div style={{ flex: 1 }}>
+            <div className="bk-skel-line" style={{ width: "55%", height: 14, marginBottom: 6 }} />
+            <div className="bk-skel-line" style={{ width: "80%", height: 11 }} />
+          </div>
+          <div className="bk-skel-line" style={{ width: 60, height: 22, borderRadius: 999 }} />
+        </div>
+        <hr className="my-2" />
+        <div className="bk-skel-line" style={{ width: "70%", height: 11, marginBottom: 6 }} />
+        <div className="bk-skel-line" style={{ width: "60%", height: 11, marginBottom: 6 }} />
+        <div className="bk-skel-line" style={{ width: "65%", height: 11, marginBottom: 6 }} />
+        <div className="bk-skel-line" style={{ width: "40%", height: 11, marginBottom: 10 }} />
+        <div className="d-flex gap-2 mt-1">
+          <div className="bk-skel-line" style={{ width: 34, height: 34, borderRadius: "50%" }} />
+          <div className="bk-skel-line" style={{ width: 34, height: 34, borderRadius: "50%" }} />
+          <div className="bk-skel-line" style={{ flex: 1, height: 34, borderRadius: 999 }} />
+          <div className="bk-skel-line" style={{ flex: 1, height: 34, borderRadius: 999 }} />
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 // ── Shared IST helper: converts any UTC timestamp string to "YYYY-MM-DD" in IST ──
 // Uses the browser's Intl engine via toLocaleString — avoids the
@@ -66,6 +119,17 @@ function Bookings({ user }) {
   const employeeParam = params.get("employee");
   const parsedEmployeeId = employeeParam?.split("~")[1] || "";
   const [filterEmployee, setFilterEmployee] = useState(parsedEmployeeId);
+  const [dateMode, setDateMode] = useState(params.get("date") ? "date" : "month");
+
+  // Custom calendar picker (desktop filter bar)
+  const calRef = useRef(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  // Custom calendar picker (mobile filter drawer)
+  const calMobileRef = useRef(null);
+  const [showCalendarMobile, setShowCalendarMobile] = useState(false);
+  // Shared calendar view state
+  const [calYear, setCalYear]   = useState(() => filterDate ? parseInt(filterDate.slice(0,4))   : new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(() => filterDate ? parseInt(filterDate.slice(5,7))-1 : new Date().getMonth());
 
   const [expandedAddons, setExpandedAddons] = useState({});
 
@@ -122,6 +186,34 @@ function Bookings({ user }) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Sync calendar view when filterDate changes externally (e.g. cleared)
+  useEffect(() => {
+    if (filterDate) {
+      setCalYear(parseInt(filterDate.slice(0, 4)));
+      setCalMonth(parseInt(filterDate.slice(5, 7)) - 1);
+    }
+  }, [filterDate]);
+
+  // Close calendar on outside click (desktop)
+  useEffect(() => {
+    if (!showCalendar) return;
+    const handler = (e) => {
+      if (calRef.current && !calRef.current.contains(e.target)) setShowCalendar(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showCalendar]);
+
+  // Close calendar on outside click (mobile)
+  useEffect(() => {
+    if (!showCalendarMobile) return;
+    const handler = (e) => {
+      if (calMobileRef.current && !calMobileRef.current.contains(e.target)) setShowCalendarMobile(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showCalendarMobile]);
+
   // ---------------- HELPERS ----------------
   const to12HourFormat = (time24) => {
     if (!time24) return "";
@@ -131,10 +223,49 @@ function Bookings({ user }) {
     return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
   };
 
+  const getDuration = (start, end) => {
+    if (!start || !end) return "";
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    const mins = (eh * 60 + em) - (sh * 60 + sm);
+    if (mins <= 0) return "";
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`;
+  };
+
   const getEmployeeParamValue = () => {
     if (!filterEmployee) return "";
     const emp = employees.find((e) => e._id === filterEmployee);
     return emp ? `${encodeURIComponent(emp.name)}~${emp._id}` : "";
+  };
+
+  // ---------------- CALENDAR HELPERS ----------------
+  const CAL_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const CAL_MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const CAL_DAYS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+  const navigateCalMonth = (dir) => {
+    let m = calMonth + dir, y = calYear;
+    if (m < 0) { m = 11; y--; }
+    if (m > 11) { m = 0; y++; }
+    setCalMonth(m); setCalYear(y);
+  };
+
+  const buildCalCells = () => {
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < firstDay; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  };
+
+  const formatCalLabel = (dateStr) => {
+    if (!dateStr) return "";
+    const [, m, d] = dateStr.split("-");
+    return `${parseInt(d)} ${CAL_MONTHS_SHORT[parseInt(m) - 1]}`;
   };
 
   // A booking is "completed" when its end time has already passed (in IST)
@@ -161,17 +292,30 @@ function Bookings({ user }) {
 
   // ---------------- FETCH BOOKINGS ----------------
   const fetchBookings = async (filters = {}) => {
-    try {
+    const key = bkCacheKey(filters);
+    const cached = bkGetCached(key);
+
+    if (cached) {
+      // Show cached data instantly — no spinner
+      setBookings(cached);
+      setLoading(false);
+    } else {
+      // No cache yet — show skeleton
       setLoading(true);
+    }
+
+    // Always revalidate in background (silently if cache hit)
+    try {
       const token = localStorage.getItem("authToken");
       const res = await getBookingsAPI(token, filters);
-
       // NOTE: we do NOT mutate status to "completed" here — we keep the raw DB status
       // and derive completion purely via isBookingCompleted() in the filter pipeline.
-      // This ensures the dashboard stat counts and Bookings view always agree.
-      setBookings(res?.data?.bookings || []);
+      const data = res?.data?.bookings || [];
+      setBookings(data);
+      bkSetCache(key, data);
     } catch (e) {
       console.error("❌ Error fetching bookings", e);
+      if (!cached) setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -508,93 +652,169 @@ function Bookings({ user }) {
       return a.yachtId?.name?.localeCompare(b.yachtId?.name);
     });
 
+  // ---------------- MONTH NAVIGATOR HELPERS ----------------
+  const navigateMonth = (dir) => {
+    const src = selectedMonth || getMonthIST();
+    const base = new Date(`${src}-01T00:00:00+05:30`);
+    base.setMonth(base.getMonth() + dir);
+    const y = base.getFullYear();
+    const m = String(base.getMonth() + 1).padStart(2, "0");
+    setSelectedMonth(`${y}-${m}`);
+    setFilterDate("");
+  };
+
+  const monthDisplayLabel = () => {
+    const src = selectedMonth || getMonthIST();
+    const d = new Date(`${src}-01T00:00:00+05:30`);
+    return d.toLocaleString("en-GB", { month: "short", year: "2-digit" });
+  };
+
   // ---------------- RENDER ----------------
   return (
     <div className="container mt-1 pb-2">
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="d-flex align-items-center gap-2">
-          <h2 className="mb-0">Bookings</h2>
-          <span className="booking-count-badge">{filteredBookings.length}</span>
+      {/* Mobile header: count badge + quotation button (only on mobile) */}
+      {isMobile && (
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <span className="booking-count-badge">Total Bookings: {filteredBookings.length}</span>
+          {(user?.type === "admin" || user?.type === "backdesk") && (
+            <button className="btn-new-quotation" onClick={handleCreateBooking} title="New Quotation">Q</button>
+          )}
         </div>
-        {(user?.type === "admin" || user?.type === "backdesk") && (
-          <button className="btn btn-success rounded-pill px-3" onClick={handleCreateBooking}>
-            + Quotation
-          </button>
-        )}
-      </div>
+      )}
 
-      {/* Desktop Filters */}
+      {/* Desktop / Tablet Filter Bar (includes count badge + quotation button on the right) */}
       {!isMobile && (
-        <div className="filter-bar d-flex flex-wrap gap-2 mb-3 align-items-center">
-          <div className="filter-input-wrapper">
-            <span className="filter-icon">🔍</span>
-            <input
-              type="text"
-              className="form-control filter-input"
-              placeholder="Name / Ticket / Phone"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ maxWidth: "220px", paddingLeft: "2rem" }}
-            />
+        <div className="bk-filter-bar">
+
+          {/* Month navigator */}
+          <div className="bk-month-nav">
+            <button className="bk-month-arrow" onClick={() => navigateMonth(-1)} title="Previous month">‹</button>
+            <span className="bk-month-label">{monthDisplayLabel()}</span>
+            <button className="bk-month-arrow" onClick={() => navigateMonth(1)} title="Next month">›</button>
           </div>
 
-          <select
-            className={`form-select filter-select ${selectedMonth ? "filter-active" : ""}`}
-            value={selectedMonth || ""}
-            onChange={(e) => { setSelectedMonth(e.target.value); setFilterDate(""); }}
-            style={{ maxWidth: "110px" }}
-          >
-            <option value="">📅 Month</option>
-            {Array.from({ length: 6 }).map((_, i) => {
-              const base = getNowIST();
-              base.setMonth(base.getMonth() + i);
-              const value = base.toISOString().slice(0, 7);
-              const label = base.toLocaleString("en-GB", { month: "short", year: "2-digit" });
-              return <option key={value} value={value}>{label}</option>;
-            })}
-          </select>
+          {/* Custom date picker */}
+          <div ref={calRef} style={{ position: "relative", flexShrink: 0 }}>
+            <button
+              className={`bk-cal-trigger${filterDate ? " active" : ""}`}
+              onClick={() => setShowCalendar((v) => !v)}
+              title="Filter by date"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <span className="bk-cal-label">{filterDate ? formatCalLabel(filterDate) : "Date"}</span>
+              {filterDate && (
+                <span className="bk-cal-clear" onClick={(e) => { e.stopPropagation(); setFilterDate(""); setSelectedMonth(getMonthIST()); setShowCalendar(false); }}>×</span>
+              )}
+            </button>
 
-          <input
-            type="date"
-            className={`form-control filter-select ${filterDate ? "filter-active" : ""}`}
-            value={filterDate}
-            min={getTodayIST()}
-            onChange={(e) => setFilterDate(e.target.value)}
-            style={{ maxWidth: "150px" }}
-            title="Filter by specific date"
-          />
+            {showCalendar && (
+              <div className="bk-cal-panel">
+                {/* Header */}
+                <div className="bk-cal-hdr">
+                  <button className="bk-cal-nav" onClick={() => navigateCalMonth(-1)}>‹</button>
+                  <span className="bk-cal-month-label">{CAL_MONTHS[calMonth]} {calYear}</span>
+                  <button className="bk-cal-nav" onClick={() => navigateCalMonth(1)}>›</button>
+                </div>
+                {/* Day headers */}
+                <div className="bk-cal-weekdays">
+                  {CAL_DAYS.map((d) => <span key={d}>{d}</span>)}
+                </div>
+                {/* Days grid */}
+                <div className="bk-cal-grid">
+                  {buildCalCells().map((day, i) => {
+                    if (!day) return <div key={`e-${i}`} />;
+                    const ds = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                    const isSel = filterDate === ds;
+                    const isTdy = getTodayIST() === ds;
+                    return (
+                      <button
+                        key={ds}
+                        className={`bk-cal-day${isSel ? " sel" : ""}${isTdy && !isSel ? " tdy" : ""}`}
+                        onClick={() => { setFilterDate(ds); setSelectedMonth(""); setShowCalendar(false); }}
+                      >{day}</button>
+                    );
+                  })}
+                </div>
+                {/* Footer */}
+                <div className="bk-cal-footer">
+                  <button onClick={() => { setFilterDate(getTodayIST()); setSelectedMonth(""); setShowCalendar(false); }}>Today</button>
+                  {filterDate && <button onClick={() => { setFilterDate(""); setSelectedMonth(getMonthIST()); setShowCalendar(false); }}>Clear</button>}
+                </div>
+              </div>
+            )}
+          </div>
 
-          <select
-            className={`form-select filter-select ${filterEmployee ? "filter-active" : ""}`}
-            value={filterEmployee}
-            onChange={(e) => setFilterEmployee(e.target.value)}
-            style={{ maxWidth: "150px" }}
-          >
-            <option value="">👤 All Agents</option>
-            {employees.map((emp) => (
-              <option key={emp._id} value={emp._id}>{emp.name}</option>
+          {/* Search */}
+          <div className="bk-search-wrap">
+            <span className="bk-search-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </span>
+            <input
+              className="bk-search-inp"
+              type="text"
+              placeholder="Name / Phone / Ticket"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button className="bk-search-clr" onClick={() => setSearchQuery("")}>×</button>
+            )}
+          </div>
+
+          {/* Status pills */}
+          <div className="bk-status-pills">
+            {[
+              { value: "", label: "All", color: "#64748b", activeBg: "#475569" },
+              { value: "pending", label: "Pending", color: "#d97706", activeBg: "#d97706" },
+              { value: "confirmed", label: "Confirmed", color: "#16a34a", activeBg: "#16a34a" },
+              { value: "completed", label: "Completed", color: "#2563eb", activeBg: "#2563eb" },
+              { value: "cancelled", label: "Cancelled", color: "#dc2626", activeBg: "#dc2626" },
+            ].map(({ value, label, color, activeBg }) => (
+              <button
+                key={value}
+                className={`bk-status-pill${filterStatus === value ? " active" : ""}`}
+                style={{ "--sp-color": color, "--sp-active-bg": activeBg }}
+                onClick={() => setFilterStatus(value)}
+              >
+                {value && <span className="bk-sp-dot" style={{ background: filterStatus === value ? "rgba(255,255,255,0.85)" : color }} />}
+                {label}
+              </button>
             ))}
-          </select>
+          </div>
 
-          <select
-            className={`form-select filter-select ${filterStatus ? "filter-active" : ""}`}
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            style={{ maxWidth: "140px" }}
-          >
-            <option value="">🔖 All Status</option>
-            <option value="pending">🟡 Pending</option>
-            <option value="confirmed">🟢 Confirmed</option>
-            <option value="completed">🔵 Completed</option>
-            <option value="cancelled">🔴 Cancelled</option>
-          </select>
+          {/* Agent dropdown */}
+          {employees.length > 0 && (
+            <select
+              className={`bk-agent-sel${filterEmployee ? " active" : ""}`}
+              value={filterEmployee}
+              onChange={(e) => setFilterEmployee(e.target.value)}
+            >
+              <option value="">All Agents</option>
+              {employees.map((emp) => (
+                <option key={emp._id} value={emp._id}>{emp.name}</option>
+              ))}
+            </select>
+          )}
 
+          {/* Clear */}
           {(searchQuery || filterDate || filterStatus || filterEmployee || selectedMonth) && (
-            <button className="btn btn-clear-filter" onClick={handleClear} title="Clear all filters">
-              ✕ Clear
+            <button className="bk-clear-btn" onClick={handleClear} title="Clear all filters">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Clear
             </button>
           )}
+
+          {/* Spacer + count badge + Quotation button pushed to the right */}
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <span className="booking-count-badge" style={{ whiteSpace: "nowrap" }}>
+              {filteredBookings.length} bookings
+            </span>
+            {(user?.type === "admin" || user?.type === "backdesk") && (
+              <button className="btn-new-quotation" onClick={handleCreateBooking} title="New Quotation">Q</button>
+            )}
+          </div>
         </div>
       )}
 
@@ -645,30 +865,84 @@ function Bookings({ user }) {
               )}
             </div>
 
-            <label className="form-label small text-muted mb-1">Month</label>
-            <select
-              className={`form-select mb-3 ${selectedMonth ? "filter-active" : ""}`}
-              value={selectedMonth}
-              onChange={(e) => { setSelectedMonth(e.target.value); setFilterDate(""); setShowFilters(false); }}
-            >
-              <option value="">All Months</option>
-              {Array.from({ length: 6 }).map((_, i) => {
-                const base = getNowIST();
-                base.setMonth(base.getMonth() + i);
-                const value = base.toISOString().slice(0, 7);
-                const label = base.toLocaleString("en-GB", { month: "long", year: "numeric" });
-                return <option key={value} value={value}>{label}</option>;
-              })}
-            </select>
+            <div className="date-combined-filter mb-3">
+              <div className="date-mode-toggle">
+                <button
+                  className={`date-mode-btn${dateMode === "month" ? " active" : ""}`}
+                  onClick={() => { setDateMode("month"); setFilterDate(""); }}
+                >Month</button>
+                <button
+                  className={`date-mode-btn${dateMode === "date" ? " active" : ""}`}
+                  onClick={() => { setDateMode("date"); setSelectedMonth(""); }}
+                >Specific</button>
+              </div>
+              {dateMode === "month" ? (
+                <select
+                  className={`form-select date-combined-input ${selectedMonth ? "filter-active" : ""}`}
+                  value={selectedMonth}
+                  onChange={(e) => { setSelectedMonth(e.target.value); setShowFilters(false); }}
+                >
+                  <option value="">All months</option>
+                  {Array.from({ length: 6 }).map((_, i) => {
+                    const base = getNowIST();
+                    base.setMonth(base.getMonth() + i);
+                    const value = base.toISOString().slice(0, 7);
+                    const label = base.toLocaleString("en-GB", { month: "long", year: "numeric" });
+                    return <option key={value} value={value}>{label}</option>;
+                  })}
+                </select>
+              ) : (
+                <div ref={calMobileRef} style={{ position: "relative" }}>
+                  <button
+                    className={`bk-cal-trigger w-100${filterDate ? " active" : ""}`}
+                    style={{ justifyContent: "flex-start", width: "100%" }}
+                    onClick={() => setShowCalendarMobile((v) => !v)}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span className="bk-cal-label" style={{ flex: 1, textAlign: "left" }}>
+                      {filterDate ? formatCalLabel(filterDate) : "Pick a date"}
+                    </span>
+                    {filterDate && (
+                      <span className="bk-cal-clear" onClick={(e) => { e.stopPropagation(); setFilterDate(""); setSelectedMonth(getMonthIST()); setShowCalendarMobile(false); }}>×</span>
+                    )}
+                  </button>
 
-            <label className="form-label small text-muted mb-1">Specific Date</label>
-            <input
-              type="date"
-              className={`form-control mb-3 ${filterDate ? "filter-active" : ""}`}
-              value={filterDate}
-              min={getTodayIST()}
-              onChange={(e) => { setFilterDate(e.target.value); setShowFilters(false); }}
-            />
+                  {showCalendarMobile && (
+                    <div className="bk-cal-panel bk-cal-panel--mobile">
+                      <div className="bk-cal-hdr">
+                        <button className="bk-cal-nav" onClick={() => navigateCalMonth(-1)}>‹</button>
+                        <span className="bk-cal-month-label">{CAL_MONTHS[calMonth]} {calYear}</span>
+                        <button className="bk-cal-nav" onClick={() => navigateCalMonth(1)}>›</button>
+                      </div>
+                      <div className="bk-cal-weekdays">
+                        {CAL_DAYS.map((d) => <span key={d}>{d}</span>)}
+                      </div>
+                      <div className="bk-cal-grid">
+                        {buildCalCells().map((day, i) => {
+                          if (!day) return <div key={`em-${i}`} />;
+                          const ds = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                          const isSel = filterDate === ds;
+                          const isTdy = getTodayIST() === ds;
+                          return (
+                            <button
+                              key={ds}
+                              className={`bk-cal-day${isSel ? " sel" : ""}${isTdy && !isSel ? " tdy" : ""}`}
+                              onClick={() => { setFilterDate(ds); setSelectedMonth(""); setShowCalendarMobile(false); setShowFilters(false); }}
+                            >{day}</button>
+                          );
+                        })}
+                      </div>
+                      <div className="bk-cal-footer">
+                        <button onClick={() => { setFilterDate(getTodayIST()); setSelectedMonth(""); setShowCalendarMobile(false); setShowFilters(false); }}>Today</button>
+                        {filterDate && <button onClick={() => { setFilterDate(""); setSelectedMonth(getMonthIST()); setShowCalendarMobile(false); }}>Clear</button>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <label className="form-label small text-muted mb-1">Agent</label>
             <select
@@ -711,9 +985,8 @@ function Bookings({ user }) {
 
       {/* Booking cards */}
       {loading ? (
-        <div className="text-center py-5 text-muted">
-          <div className="spinner-border spinner-border-sm me-2" role="status" />
-          Loading bookings...
+        <div className="row">
+          {Array.from({ length: 6 }).map((_, i) => <BookingSkeletonCard key={i} />)}
         </div>
       ) : (
         <div className="row">
@@ -723,6 +996,104 @@ function Bookings({ user }) {
               const displayStatus = isBookingCompleted(booking) ? "completed" : booking.status;
               const statusColor = statusColorMap[displayStatus] || "info";
 
+              // ── MOBILE CARD (compact) ────────────────────────────
+              if (isMobile) {
+                const statusHex = { info: "#0dcaf0", success: "#198754", danger: "#dc3545", primary: "#0d6efd" }[statusColor] || "#0dcaf0";
+                const { paid: mPaid, included: mIncluded } = parseAddons(booking.extraDetails);
+                const mHasAddons = mPaid.length || mIncluded.length;
+                const mIsOpen = expandedAddons[booking._id];
+                const S = { fontSize: "0.72rem", color: "#64748b" };
+                return (
+                  <div key={booking._id} className="col-12 mb-2">
+                    <div style={{ background: "#fff", borderRadius: 10, borderLeft: `3px solid ${statusHex}`, boxShadow: "0 1px 6px rgba(5,24,41,0.08)", overflow: "hidden" }}>
+
+                      {/* ─ ROW 1: name · pax  |  ticket · status ─ */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px 2px", gap: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1 }}>
+                          <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "#0a2d4a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{booking.customerId?.name}</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: "0.7rem", color: "#475569", fontWeight: 600, flexShrink: 0, marginLeft: 4, lineHeight: 1 }}>
+                            <span style={{ fontSize: "0.78rem", display: "inline-flex", alignItems: "center" }}>👥</span>
+                            <span>{booking.numPeople}</span>
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                          <span style={{ fontSize: "0.65rem", color: "#94a3b8", fontWeight: 600 }}>#{booking._id.slice(-5).toUpperCase()}</span>
+                          <span style={{ fontSize: "0.65rem", fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: `${statusHex}18`, color: statusHex, border: `1px solid ${statusHex}40`, textTransform: "capitalize" }}>{displayStatus}</span>
+                        </div>
+                      </div>
+
+                      {/* ─ PHONE + DETAILS + COPY (merged) ─ */}
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "2px 12px 8px", borderTop: "1px solid #f1f5f9", gap: 8 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+                          <a href={`tel:${booking?.customerId?.contact}`} style={{ fontSize: "0.72rem", color: "#1d6fa4", textDecoration: "none", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                            <Phone size={12} strokeWidth={2.5} /> {booking?.customerId?.contact}
+                          </a>
+                          <span style={S}>{booking.yachtId?.name || "—"}</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={S}>📅 {booking.date?.split("T")[0]}</span>
+                            <span style={{ ...S, color: "#cbd5e1" }}>·</span>
+                            <span style={S}>⏰ {to12HourFormat(booking.startTime)}–{to12HourFormat(booking.endTime)}</span>
+                            {getDuration(booking.startTime, booking.endTime) && (
+                              <span style={{ fontSize: "0.65rem", fontWeight: 600, color: "#fff", background: "#1d6fa4", borderRadius: 99, padding: "1px 7px" }}>
+                                {getDuration(booking.startTime, booking.endTime)}
+                              </span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: booking.pendingAmount > 0 ? "#b45309" : "#15803d" }}>Balance ₹{booking.pendingAmount}</span>
+                        </div>
+                        <button title="Copy summary" onClick={() => {
+                          const sanitizeText = (t = "") => t.replace(/\u2022|\u2023|\u25E6/g,"-").replace(/\u200B|\u200C|\u200D|\uFEFF/g,"").replace(/\r\n/g,"\n").replace(/\n{2,}/g,"\n").trim();
+                          const extraDetails = sanitizeText(booking.extraDetails || "");
+                          const lines = extraDetails.split("\n").map(l=>l.trim()).filter(Boolean);
+                          const INCLUDED_KEYS = ["Soft Drink","Ice Cube","Water Bottles","Bluetooth Speaker","Captain","Snacks"];
+                          const PAID_KEYS = ["Drone - Photography & Videography","DSLR Photography"];
+                          const inclusions = lines.filter(i => INCLUDED_KEYS.some(k=>i.includes(k)));
+                          const paidServices = lines.filter(i => PAID_KEYS.some(k=>i.toLowerCase().includes(k.toLowerCase())));
+                          const parts = [`Ticket Number: ${booking._id.slice(-5).toUpperCase()}`,`Yacht Name: ${booking.yachtId?.name || ""}`,`Booking Name: ${booking.customerId?.name || ""}`,`Phone Number: ${booking.customerId?.contact || ""}`,`Date: ${booking.date?.split("T")[0] || ""}`,`Time: ${to12HourFormat(booking.startTime)} - ${to12HourFormat(booking.endTime)}`,`#Pax: ${booking.numPeople}`,`Balance Amount: ${booking.pendingAmount}`];
+                          if (inclusions.length) parts.push(`\nExtra Inclusions:\n${inclusions.map(i=>`* ${i.replace(/^[-*]\s*/,"").trim()}`).join("\n")}`);
+                          if (paidServices.length) parts.push(`Extra Add On's Services:\n${paidServices.map(i=>`* ${i.replace(/^[-*]\s*/,"").trim()}`).join("\n")}`);
+                          navigator.clipboard.writeText(parts.join("\n"));
+                          toast.success("Booking summary copied!");
+                        }} style={{ width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                          <Copy size={12} />
+                        </button>
+                      </div>
+
+                      {/* ─ ADD-ONS (collapsed inline) ─ */}
+                      {mHasAddons && (
+                        <div style={{ padding: "0 12px 6px", display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                          {mIncluded.length > 0 && (
+                            <button onClick={() => toggleAddons(booking._id)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 3, fontSize: "0.68rem", color: "#1d6fa4", fontWeight: 600 }}>
+                              <GlassWater size={12} strokeWidth={2} />{mIncluded.length} <span style={{ fontSize: "0.6rem", color: "#94a3b8" }}>{mIsOpen ? "▾" : "▸"}</span>
+                            </button>
+                          )}
+                          {mPaid.map(({ key, label }) => <span key={key} className="addon-chip addon-chip--paid" style={{ fontSize: "0.62rem", padding: "1px 6px" }}>{label}</span>)}
+                          {mIncluded.length > 0 && mIsOpen && mIncluded.map(({ key, label }) => <span key={key} className="addon-chip addon-chip--included" style={{ fontSize: "0.62rem", padding: "1px 6px" }}>{label}</span>)}
+                        </div>
+                      )}
+
+                      {/* ─ ROW 3: actions ─ */}
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "5px 12px 8px" }}>
+                        <button title="View" onClick={() => handleViewDetails(booking)} style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#475569", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Eye size={14} /></button>
+                        <button title="WhatsApp" onClick={(e) => handleShareWhatsApp(booking, e)} style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid #25D366", background: "transparent", color: "#25D366", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/></svg>
+                        </button>
+                        {(booking.status === "confirmed" || booking.status === "pending") && !isBookingCompleted(booking) && (
+                          <button onClick={() => generateBoardingPass(booking)} style={{ flex: 1, height: 30, borderRadius: 99, border: `1.5px solid ${booking.status === "confirmed" ? "#198754" : "#ffc107"}`, background: "transparent", color: booking.status === "confirmed" ? "#198754" : "#b45309", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}>Pass</button>
+                        )}
+                        {(user?.type === "admin" || user?.type === "backdesk" || user?.type === "onsite") && !isBookingCompleted(booking) && (
+                          <button onClick={() => navigate("/update-booking", { state: { booking, user } })} style={{ flex: 1, height: 30, borderRadius: 99, border: "1.5px solid #1d6fa4", background: "transparent", color: "#1d6fa4", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}>Update</button>
+                        )}
+                        {(user?.type === "admin" || user?.type === "onsite") && isBookingCompleted(booking) && (booking.status === "pending" || booking.pendingAmount > 0) && (
+                          <button onClick={() => handleCompleteTrip(booking)} style={{ flex: 1, height: 30, borderRadius: 99, border: "1.5px solid #198754", background: "#198754", color: "#fff", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}>Complete Trip</button>
+                        )}
+                      </div>
+
+                    </div>
+                  </div>
+                );
+              }
+              // ── DESKTOP CARD ──────────────────────────────────────
               return (
                 <div key={booking._id} className="col-lg-4 col-md-6 mb-3">
                   <div className={`card border-0 shadow-sm h-100 border-start border-4 border-${statusColor} booking-card`}>

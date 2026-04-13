@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-hot-toast";
@@ -16,6 +16,7 @@ import {
 } from "../services/operations/availabilityAPI";
 import { adjustSlots } from "../utils/slotEngine";
 import { FiSliders } from "react-icons/fi";
+import DateRangePicker from "../components/DateRangePicker";
 
 /* helpers */
 const todayISO = () => new Date().toISOString().split("T")[0];
@@ -44,7 +45,7 @@ const to12HourFormat = (time24) => {
   hour = hour % 24;
   const period = hour >= 12 ? "PM" : "AM";
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `${hour12}:${String(minute).padStart(2, "0")} `;
+  return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
 };
 
 const getDatesBetween = (start, end) => {
@@ -196,6 +197,67 @@ const buildSlotsForYacht = (yachtObj) => {
   }));
 };
 
+// ── LockTimer: defined at module level so it is never remounted on parent re-render ──
+const LockTimer = React.memo(function LockTimer({ deleteAfter }) {
+  const [remaining, setRemaining] = useState(null);
+
+  useEffect(() => {
+    if (!deleteAfter) return;
+    const tick = () => {
+      const diff = new Date(deleteAfter) - Date.now();
+      setRemaining(diff > 0 ? diff : 0);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [deleteAfter]);
+
+  if (remaining === null || !deleteAfter) return null;
+  if (remaining <= 0) return <span style={{ color: "#dc3545", fontSize: "9.5px", fontWeight: 700, letterSpacing: "0.05em", opacity: 0.9 }}>⏰ Expired</span>;
+
+  const totalSec = Math.ceil(remaining / 1000);
+  const mins = Math.floor(totalSec / 60);
+  const secs = totalSec % 60;
+  const color = remaining < 60000 ? "#dc3545" : remaining < 180000 ? "#fd7e14" : "inherit";
+
+  // Renders inline — caller places it in the status slot, no extra line
+  return (
+    <span style={{ color, fontSize: "9.5px", fontWeight: 700, letterSpacing: "0.05em", opacity: 0.9 }}>
+      ⏱ {mins}:{String(secs).padStart(2, "0")}
+    </span>
+  );
+});
+
+// ── SlotReleaseCountdown: inline countdown shown inside the slot card instead of "Locked" label ──
+// Ticks its own state every second — only this tiny element re-renders, not the grid.
+const SlotReleaseCountdown = React.memo(function SlotReleaseCountdown({ initial = 10, onExpire, onCancel }) {
+  const [remaining, setRemaining] = useState(initial);
+
+  useEffect(() => {
+    if (remaining <= 0) { onExpire(); return; }
+    const id = setTimeout(() => setRemaining(r => r - 1), 1000);
+    return () => clearTimeout(id);
+  }, [remaining]);
+
+  return (
+    <span style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "center", flexWrap: "wrap" }}>
+      <span style={{ fontSize: "11px", fontWeight: 700, color: "#e85555" }}>
+        🔓 {remaining}s
+      </span>
+      <button
+        style={{
+          fontSize: "10px", padding: "1px 7px", borderRadius: 99,
+          border: "1px solid #e85555", background: "transparent",
+          color: "#e85555", cursor: "pointer", lineHeight: 1.4,
+        }}
+        onClick={(e) => { e.stopPropagation(); onCancel(); }}
+      >
+        Cancel
+      </button>
+    </span>
+  );
+});
+
 function GridAvailability() {
   const employee = JSON.parse(localStorage.getItem("user") || "{}");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -211,6 +273,20 @@ function GridAvailability() {
   const token = localStorage.getItem("authToken");
   const params = new URLSearchParams(location.search);
 
+  const [favYachtIds, setFavYachtIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("ga_favYachts") || "[]")); }
+    catch { return new Set(); }
+  });
+  const toggleFav = (id, e) => {
+    e.stopPropagation();
+    setFavYachtIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      localStorage.setItem("ga_favYachts", JSON.stringify([...next]));
+      return next;
+    });
+  };
+
   const [yachtId, setYachtId] = useState(params.get("yachtId") || "");
   const [yachtName, setYachtName] = useState("");
   const [fromDate, setFromDate] = useState(
@@ -220,12 +296,19 @@ function GridAvailability() {
 
   const [yachts, setYachts] = useState([]);
   const [yacht, setYacht] = useState(null);
+  // Ref always holds the latest yacht object — avoids stale-closure bugs in useCallback functions
+  const yachtRef = useRef(null);
+  useEffect(() => { yachtRef.current = yacht; }, [yacht]);
   const [dates, setDates] = useState([]);
   const [grid, setGrid] = useState([]); // [{date, slots: [{start,end,type,custName,empName}]}]
   const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [modalType, setModalType] = useState("");
+  const [showLockModal, setShowLockModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showBookedModal, setShowBookedModal] = useState(false);
   const [isLocking, setIsLocking] = useState(false);
   const [isReleasing, setIsReleasing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -269,42 +352,33 @@ function GridAvailability() {
 
   // Mobile yacht bottom sheet
   const [showYachtSheet, setShowYachtSheet] = useState(false);
+  const [sheetMode, setSheetMode] = useState("yacht"); // "yacht" | "date"
   const [mobileYachtSearch, setMobileYachtSearch] = useState("");
 
   // ── Double-click support ──
-  const clickTimerRef = useRef(null);
-  const DBLCLICK_DELAY = 250; // ms
+  const longPressTimer  = useRef(null);
+  const pressingTimer   = useRef(null);
+  const longPressFired  = useRef(false);
+  const [pressingKey, setPressingKey] = useState(null); // "date-start" of slot being held
+  const [pendingReleases, setPendingReleases] = useState({}); // { [key]: slot } — only changes twice per release
 
-  // ── Lock countdown timer component ──
-  const LockTimer = ({ deleteAfter }) => {
-    const [remaining, setRemaining] = useState(null);
+  const handleSlotReleaseExpire = useCallback(async (key, slot) => {
+    setPendingReleases(prev => { const n = { ...prev }; delete n[key]; return n; });
+    updateGridSlot(slot.date, slot.start, slot.end, { type: "free", empName: "" });
+    try {
+      await releaseSlot(yachtId, slot.date, slot.start, slot.end, token);
+      await reloadSingleDay(slot.date);
+      toast.success("🔓 Slot released!");
+    } catch {
+      toast.error("Failed to release");
+      await reloadSingleDay(slot.date);
+    }
+  }, [yachtId, token]);
 
-    useEffect(() => {
-      if (!deleteAfter) return;
-      const tick = () => {
-        const diff = new Date(deleteAfter) - Date.now();
-        setRemaining(diff > 0 ? diff : 0);
-      };
-      tick();
-      const id = setInterval(tick, 1000);
-      return () => clearInterval(id);
-    }, [deleteAfter]);
-
-    if (remaining === null || !deleteAfter) return null;
-    if (remaining <= 0) return <span style={{ color: "#dc3545", fontSize: "10px", fontWeight: 600 }}>⏰ Expired</span>;
-
-    const totalSec = Math.ceil(remaining / 1000);
-    const mins = Math.floor(totalSec / 60);
-    const secs = totalSec % 60;
-    const color = remaining < 60000 ? "#dc3545" : remaining < 180000 ? "#fd7e14" : "#6c757d";
-
-    return (
-      <span style={{ color, fontSize: "10px", fontWeight: 600, display: "block", lineHeight: 1.2 }}>
-        ⏱ {mins}:{String(secs).padStart(2, "0")}
-      </span>
-    );
-  };
-
+  const handleSlotReleaseCancel = useCallback((key) => {
+    setPendingReleases(prev => { const n = { ...prev }; delete n[key]; return n; });
+    toast("Release cancelled ✋", { duration: 1800 });
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -313,8 +387,6 @@ function GridAvailability() {
         const yachtList =
           res?.data?.yachts || res?.yachts || res?.data || [];
         setYachts(Array.isArray(yachtList) ? yachtList : []);
-
-        console.log("Here are yatchs : ", yachtList)
       } catch {
         toast.error("Failed to load yachts");
       }
@@ -323,7 +395,10 @@ function GridAvailability() {
 
   useEffect(() => {
     if (!yachtId && yachts.length > 0) {
-      setYachtId(yachts[0]._id);
+      const sorted = [...yachts].sort((a, b) => a.name.localeCompare(b.name));
+      const favsSorted = sorted.filter((y) => favYachtIds.has(y._id));
+      const pick = favsSorted.length > 0 ? favsSorted[0]._id : sorted[0]._id;
+      setYachtId(pick);
     }
   }, [yachts, yachtId]);
   useEffect(() => {
@@ -427,6 +502,9 @@ function GridAvailability() {
               custName: bookedOverlap.custName || bookedOverlap.customerName || "",
               empName: bookedOverlap.empName || bookedOverlap.employeeName || "",
               appliedBy: bookedOverlap.appliedBy || null,
+              numPeople: bookedOverlap.numPeople || bookedOverlap.pax || null,
+              addons: bookedOverlap.addons || bookedOverlap.addOns || [],
+              ticketId: bookedOverlap.ticketId || bookedOverlap._id || null,
             };
           }
 
@@ -477,6 +555,7 @@ function GridAvailability() {
       toast.error("Failed to load grid");
     } finally {
       setLoading(false);
+      setHasFetched(true);
     }
   };
 
@@ -498,7 +577,8 @@ function GridAvailability() {
   };
 
   // 🔹 reload only ONE day (not full calendar)
-  const reloadSingleDay = async (date) => {
+  // useCallback so that handleSlotReleaseExpire (and others) always call the latest version
+  const reloadSingleDay = useCallback(async (date) => {
     const res = await getDayAvailability(yachtId, date, token);
     const day = res?.data || res;
 
@@ -514,7 +594,9 @@ function GridAvailability() {
         end: s.end,
       }));
     } else {
-      baseSlots = buildSlotsForYacht(yacht);
+      // Use yachtRef.current to always read the latest yacht — avoids stale-closure bug
+      // where yacht was null when handleSlotReleaseExpire's useCallback deps last fired
+      baseSlots = buildSlotsForYacht(yachtRef.current);
     }
 
     const booked = day.bookedSlots || [];
@@ -533,13 +615,13 @@ function GridAvailability() {
         return {
           ...slot,
           date,
-          type:
-            bookedOverlap.status === "pending"
-              ? "pending"
-              : "booked",
-          custName: bookedOverlap.custName || "",
-          empName: bookedOverlap.empName || "",
+          type: bookedOverlap.status === "pending" ? "pending" : "booked",
+          custName: bookedOverlap.custName || bookedOverlap.customerName || "",
+          empName: bookedOverlap.empName || bookedOverlap.employeeName || "",
           appliedBy: bookedOverlap.appliedBy || null,
+          numPeople: bookedOverlap.numPeople || bookedOverlap.pax || null,
+          addons: bookedOverlap.addons || bookedOverlap.addOns || [],
+          ticketId: bookedOverlap.ticketId || bookedOverlap._id || null,
         };
       }
 
@@ -570,7 +652,7 @@ function GridAvailability() {
         row.date === date ? { ...row, slots: enriched } : row
       )
     );
-  };
+  }, [yachtId, token]); // yachtRef is a ref so it's stable — no need to list
 
   useEffect(() => {
     if (yachtId && fromDate && toDate) {
@@ -587,6 +669,21 @@ function GridAvailability() {
     const slotEnd = hhmmToMinutes(slot.end);
     return slotEnd <= currentMinutes;
   };
+
+  // Auto-release a locked slot whose deleteAfter timer has already elapsed.
+  // Called on click instead of opening the confirm popup.
+  const autoReleaseExpiredSlot = useCallback(async (slot) => {
+    updateGridSlot(slot.date, slot.start, slot.end, { type: "free", empName: "", deleteAfter: null });
+    toast.loading("Releasing expired slot…", { id: "exp-rel" });
+    try {
+      await releaseSlot(yachtId, slot.date, slot.start, slot.end, token);
+      await reloadSingleDay(slot.date);
+      toast.success("🔓 Expired slot released", { id: "exp-rel" });
+    } catch {
+      toast.error("Failed to release", { id: "exp-rel" });
+      await reloadSingleDay(slot.date);
+    }
+  }, [yachtId, token, reloadSingleDay]);
 
   const handleSlotClick = (slot, type) => {
     setSelectedSlot(slot);
@@ -606,15 +703,13 @@ function GridAvailability() {
     setSelectedIndex(index);
 
     setTimeout(() => {
-      const modalId =
-        type === "booked" || type === "pending"
-          ? "bookedModal"
-          : type === "locked"
-            ? "confirmModal"
-            : "lockModal";
-
-      const el = document.getElementById(modalId);
-      if (el) new window.bootstrap.Modal(el).show();
+      if (type === "free") {
+        setShowLockModal(true);
+      } else if (type === "locked") {
+        setShowConfirmModal(true);
+      } else {
+        setShowBookedModal(true);
+      }
     }, 50);
   };
 
@@ -657,20 +752,51 @@ function GridAvailability() {
     }
   };
 
-  // Unified click dispatcher — distinguishes single vs double click
+  // ── Long-press: fires at exactly 1 s; holding longer does nothing extra ──
+  const startLongPress = (slot) => {
+    const canLock    = slot.type === "free";
+    const canRelease = slot.type === "locked" && (isAdminOrOnsite || isOwner(slot));
+    if (!canLock && !canRelease) return;
+    const key = `${slot.date}-${slot.start}`;
+    longPressFired.current = false;
+    // Show pulsing animation after 200 ms (quick taps never see it)
+    pressingTimer.current = setTimeout(() => setPressingKey(key), 200);
+    // Action fires at exactly 1 s — holding longer doesn't repeat
+    longPressTimer.current = setTimeout(async () => {
+      longPressFired.current = true;
+      setPressingKey(null);
+      if (canLock) {
+        updateGridSlot(slot.date, slot.start, slot.end, { type: "locked" });
+        try {
+          await lockSlot(yachtId, slot.date, slot.start, slot.end, token);
+          await reloadSingleDay(slot.date);
+          toast.success("🔒 Slot locked!");
+        } catch {
+          toast.error("Failed to lock");
+          await reloadSingleDay(slot.date);
+        }
+      } else {
+        // Show inline countdown inside the slot card — replaces "Locked" label
+        setPendingReleases(prev => ({ ...prev, [key]: slot }));
+      }
+    }, 1000);
+  };
+
+  // Clears timers — does NOT fire any action (action fires inside the timer itself)
+  const cancelLongPress = () => {
+    if (pressingTimer.current) { clearTimeout(pressingTimer.current); pressingTimer.current = null; }
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+    setPressingKey(null);
+  };
+
+  const abortLongPress = cancelLongPress;
+
   const handleSlotInteraction = (slot, type) => {
-    if (clickTimerRef.current) {
-      // Second click within delay → double-click
-      clearTimeout(clickTimerRef.current);
-      clickTimerRef.current = null;
-      handleSlotDoubleClick(slot);
-    } else {
-      // First click — wait to see if second comes
-      clickTimerRef.current = setTimeout(() => {
-        clickTimerRef.current = null;
-        handleSlotClick(slot, type); // single click → open modal
-      }, DBLCLICK_DELAY);
+    if (longPressFired.current) {
+      longPressFired.current = false;
+      return; // long-press already handled this touch — skip click
     }
+    handleSlotClick(slot, type);
   };
   const handleSaveAndLock = async (e) => {
     e.preventDefault();
@@ -710,16 +836,17 @@ function GridAvailability() {
         );
       }
 
-      await lockSlot(yachtId, selectedDate, start, end, token);
+      // permanent = true → no auto-expiry timer; backend receives permanent:true, deleteAfter:null
+      await lockSlot(yachtId, selectedDate, start, end, token, true);
 
       // 🔄 revalidate ONLY this day
       await reloadSingleDay(selectedDate);
 
-      toast.success("Slot locked successfully");
+      // Override any backend-set deleteAfter so no auto-release timer shows for popup locks
+      updateGridSlot(selectedDate, start, end, { deleteAfter: null });
 
-      window.bootstrap.Modal.getInstance(
-        document.getElementById("lockModal")
-      )?.hide();
+      toast.success("Slot locked successfully");
+      setShowLockModal(false);
     } catch (err) {
       toast.error("Failed to lock slot");
       await reloadSingleDay(selectedDate); // rollback
@@ -754,9 +881,7 @@ function GridAvailability() {
 
       toast.success("Slot released successfully");
 
-      window.bootstrap.Modal.getInstance(
-        document.getElementById("confirmModal")
-      )?.hide();
+      setShowConfirmModal(false);
     } catch {
       toast.error("Failed to release slot");
       await reloadSingleDay(selectedSlot.date);
@@ -770,9 +895,7 @@ function GridAvailability() {
     if (!selectedSlot || isConfirming) return;
 
     setIsConfirming(true);
-    window.bootstrap.Modal.getInstance(
-      document.getElementById("confirmModal")
-    )?.hide();
+    setShowConfirmModal(false);
 
     navigate("/create-booking", {
       state: {
@@ -787,6 +910,33 @@ function GridAvailability() {
     setIsConfirming(false);
   };
 
+
+  // Groups a day's slots into display rows:
+  //  • Slots starting 15:00–20:00 → one "fast selling" row (can be 2 or 3 wide)
+  //  • All other slots → pairs of 2
+  const buildSlotRows = (slots) => {
+    const FAST_START = 15 * 60; // 3 pm
+    const FAST_END   = 20 * 60; // 8 pm
+    const fast    = slots.filter(s => { const m = hhmmToMinutes(s.start); return m >= FAST_START && m < FAST_END; });
+    const regular = slots.filter(s => { const m = hhmmToMinutes(s.start); return m < FAST_START || m >= FAST_END; });
+
+    const rows = [];
+
+    // regular: groups of 3 in timeline order
+    for (let i = 0; i < regular.length; i += 3) {
+      rows.push({ kind: "pair", slots: regular.slice(i, i + 3), startMin: hhmmToMinutes(regular[i].start) });
+    }
+
+    // fast-selling: entire group on one row
+    if (fast.length > 0) {
+      const fastSorted = [...fast].sort((a,b) => hhmmToMinutes(a.start) - hhmmToMinutes(b.start));
+      rows.push({ kind: "fast", slots: fastSorted, startMin: hhmmToMinutes(fastSorted[0].start) });
+    }
+
+    // sort rows by the first slot's start time
+    rows.sort((a, b) => a.startMin - b.startMin);
+    return rows;
+  };
 
   const renderTimelineRow = (row) => {
 
@@ -824,13 +974,17 @@ function GridAvailability() {
             !isOwner(slot);
 
 
+          const desktopSlotKey = `${row.date}-${slot.start}`;
+          const isDesktopPressing = pressingKey === desktopSlotKey;
+          const isDesktopPendingRelease = !!pendingReleases[desktopSlotKey];
           return (
             <div
               key={idx}
               className={[
                 styles.slot,
-                styles[slot.type],   // free | booked | locked | pending
-                past ? styles.past : ""
+                styles[slot.type],
+                past ? styles.past : "",
+                isDesktopPressing ? styles.pressing : "",
               ].join(" ")}
               style={{
                 position: "absolute",
@@ -838,14 +992,22 @@ function GridAvailability() {
                 width: `${width}%`,
                 height: `100%`,
                 cursor: past || unauthorized ? "not-allowed" : "pointer",
+                userSelect: "none",
               }}
+              onPointerDown={(e) => { if (past || unauthorized || isDesktopPendingRelease) return; e.currentTarget.setPointerCapture(e.pointerId); startLongPress({ ...slot, date: row.date }); }}
+              onPointerUp={cancelLongPress}
+              onPointerCancel={cancelLongPress}
+              onPointerLeave={abortLongPress}
               onClick={() => {
-                if (past || unauthorized) return; // 🚫 BLOCK ACCESS
+                if (past || unauthorized || isDesktopPendingRelease) return;
+                if (slot.type === "locked" && slot.deleteAfter && new Date(slot.deleteAfter) <= Date.now()) {
+                  autoReleaseExpiredSlot({ ...slot, date: row.date });
+                  return;
+                }
                 const typeToOpen =
                   slot.type === "pending" ? "booked" : slot.type;
                 handleSlotInteraction(slot, typeToOpen);
               }}
-
               title={
                 `${to12HourFormat(slot.start)} - ${to12HourFormat(slot.end)}` +
                 ((isAdminOrOnsite || slot.empName === employee.name)
@@ -857,8 +1019,29 @@ function GridAvailability() {
                   : "")
               }
             >
-              <span style={{ display: "block" }}>{to12HourFormat(slot.start)}–{to12HourFormat(slot.end)}</span>
-              {slot.type === "locked" && <LockTimer deleteAfter={slot.deleteAfter} />}
+              {isDesktopPendingRelease ? (
+                <SlotReleaseCountdown
+                  key={desktopSlotKey}
+                  initial={10}
+                  onExpire={() => handleSlotReleaseExpire(desktopSlotKey, pendingReleases[desktopSlotKey])}
+                  onCancel={() => handleSlotReleaseCancel(desktopSlotKey)}
+                />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 1, whiteSpace: "normal", lineHeight: 1.25, maxWidth: "100%", overflow: "hidden" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                    {to12HourFormat(slot.start)}–{to12HourFormat(slot.end)}
+                  </span>
+                  {(slot.type === "locked" || slot.type === "booked" || slot.type === "pending") &&
+                    (isAdminOrOnsite || isOwner(slot)) && slot.empName && (
+                    <span style={{ fontSize: "8px", opacity: 0.82, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "clip", maxWidth: "100%" }}>
+                      {slot.empName}
+                    </span>
+                  )}
+                  {slot.type === "locked" && slot.deleteAfter && (
+                    <LockTimer deleteAfter={slot.deleteAfter} />
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
@@ -927,14 +1110,12 @@ function GridAvailability() {
                   </div>
                 </div>
 
-                <div style={{ flex: "0 0 160px" }}>
-                  <label className="form-label small text-muted mb-1">📅 From</label>
-                  <input type="date" className="form-control" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-                </div>
-
-                <div style={{ flex: "0 0 160px" }}>
-                  <label className="form-label small text-muted mb-1">📅 To</label>
-                  <input type="date" className="form-control" value={toDate} min={fromDate} onChange={(e) => setToDate(e.target.value)} />
+                <div style={{ flexShrink: 0 }}>
+                  <DateRangePicker
+                    fromDate={fromDate}
+                    toDate={toDate}
+                    onChange={(f, t) => { setFromDate(f); setToDate(t); }}
+                  />
                 </div>
               </div>
               </div>
@@ -948,20 +1129,20 @@ function GridAvailability() {
           <>
           <div className={styles.stickyHeader}>
             <div className={styles.mobileTopBar}>
-              {/* Yacht chip — clickable, opens combined filter sheet */}
+              {/* Yacht chip — opens yacht-only sheet */}
               <button
                 className={styles.mobileYachtChip}
-                onClick={() => { setMobileYachtSearch(""); setShowYachtSheet(true); }}
+                onClick={() => { setMobileYachtSearch(""); setSheetMode("yacht"); setShowYachtSheet(true); }}
               >
                 <span>⛵</span>
                 <span className={styles.mobileYachtChipName}>{yachtName || "Select Yacht"}</span>
                 <span className={styles.mobileYachtChipChevron}>▾</span>
               </button>
 
-              {/* Filter button — also opens combined sheet */}
+              {/* Filter button — opens date-only sheet */}
               <button
                 className={`${styles.mobileFilterBtn} ${(fromDate !== todayISO() || toDate !== plusDaysISO(6)) ? styles.mobileFilterBtnActive : ""}`}
-                onClick={() => { setMobileYachtSearch(""); setShowYachtSheet(true); }}
+                onClick={() => { setSheetMode("date"); setShowYachtSheet(true); }}
               >
                 <FiSliders size={15} />
                 <span>
@@ -976,145 +1157,263 @@ function GridAvailability() {
                 <div className={styles.yachtSheet} onClick={(e) => e.stopPropagation()}>
                   <div className={styles.sheetHandle} />
                   <div className={styles.sheetHeader}>
-                    <span className={styles.sheetTitle}>Filters</span>
+                    <span className={styles.sheetTitle}>
+                      {sheetMode === "yacht" ? "⛵ Select Yacht" : "📅 Select Dates"}
+                    </span>
                     <button className={styles.sheetClose} onClick={() => setShowYachtSheet(false)}>✕</button>
                   </div>
 
-                  {/* Date row — compact, inside sheet */}
-                  <div className={styles.sheetDateRow}>
-                    <div className={styles.sheetDateField}>
-                      <label className={styles.dateSheetLabel}>From</label>
-                      <input type="date" className={styles.dateSheetInput} value={fromDate} onChange={(e) => { setFromDate(e.target.value); setShowYachtSheet(false); }} />
-                    </div>
-                    <span className={styles.sheetDateArrow}>→</span>
-                    <div className={styles.sheetDateField}>
-                      <label className={styles.dateSheetLabel}>To</label>
-                      <input type="date" className={styles.dateSheetInput} value={toDate} min={fromDate} onChange={(e) => { setToDate(e.target.value); setShowYachtSheet(false); }} />
-                    </div>
-                  </div>
+                  {sheetMode === "yacht" ? (
+                    /* ── Yacht mode ── */
+                    <>
+                      <div className={styles.sheetSearchWrap}>
+                        <span className={styles.sheetSearchIcon}>🔍</span>
+                        <input
+                          type="text"
+                          autoFocus
+                          className={styles.sheetSearchInput}
+                          placeholder="Search yacht..."
+                          value={mobileYachtSearch}
+                          onChange={(e) => setMobileYachtSearch(e.target.value)}
+                        />
+                        {mobileYachtSearch && (
+                          <button className={styles.sheetSearchClear} onClick={() => setMobileYachtSearch("")}>✕</button>
+                        )}
+                      </div>
 
-                  {/* Divider + Yacht label */}
-                  <div className={styles.sheetSectionLabel}>Yacht</div>
-
-                  {/* Search */}
-                  <div className={styles.sheetSearchWrap}>
-                    <span className={styles.sheetSearchIcon}>🔍</span>
-                    <input
-                      type="text"
-                      className={styles.sheetSearchInput}
-                      placeholder="Search yacht..."
-                      value={mobileYachtSearch}
-                      onChange={(e) => setMobileYachtSearch(e.target.value)}
-                    />
-                    {mobileYachtSearch && (
-                      <button className={styles.sheetSearchClear} onClick={() => setMobileYachtSearch("")}>✕</button>
-                    )}
-                  </div>
-
-                  {/* Yacht list */}
-                  <ul className={styles.sheetList}>
-                    {yachts.filter((y) => y.name.toLowerCase().includes(mobileYachtSearch.toLowerCase())).map((y) => (
-                      <li
-                        key={y._id}
-                        className={`${styles.sheetItem} ${y._id === yachtId ? styles.sheetItemActive : ""}`}
-                        onClick={() => { setYachtId(y._id); setYachtName(y.name); setShowYachtSheet(false); }}
-                      >
-                        <span className={styles.sheetItemName}>{y.name}</span>
-                        {y._id === yachtId && <span className={styles.sheetItemCheck}>✓</span>}
-                      </li>
-                    ))}
-                    {yachts.filter((y) => y.name.toLowerCase().includes(mobileYachtSearch.toLowerCase())).length === 0 && (
-                      <li className={styles.sheetEmpty}>No yacht found</li>
-                    )}
-                  </ul>
-
-                  {/* Apply */}
-                  <div className={styles.sheetFooter}>
-                    <button className="btn btn-primary w-100 rounded-pill" onClick={() => setShowYachtSheet(false)}>
-                      Apply
-                    </button>
-                  </div>
+                      <ul className={`${styles.sheetList} ${styles.sheetScrollBody}`}>
+                        {(() => {
+                          const filtered = yachts.filter((y) => y.name.toLowerCase().includes(mobileYachtSearch.toLowerCase()));
+                          const sorted = [...filtered].sort((a, b) => {
+                            const aFav = favYachtIds.has(a._id);
+                            const bFav = favYachtIds.has(b._id);
+                            if (aFav && !bFav) return -1;
+                            if (!aFav && bFav) return 1;
+                            return a.name.localeCompare(b.name);
+                          });
+                          if (sorted.length === 0) return <li className={styles.sheetEmpty}>No yacht found</li>;
+                          return sorted.map((y) => (
+                            <li
+                              key={y._id}
+                              className={`${styles.sheetItem} ${y._id === yachtId ? styles.sheetItemActive : ""}`}
+                              onClick={() => { setYachtId(y._id); setYachtName(y.name); setMobileYachtSearch(""); setShowYachtSheet(false); }}
+                              style={{ display: "flex", alignItems: "center", gap: 6 }}
+                            >
+                              <button
+                                onClick={(e) => toggleFav(y._id, e)}
+                                style={{
+                                  background: "none", border: "none", padding: 0,
+                                  fontSize: 16, cursor: "pointer", flexShrink: 0,
+                                  color: favYachtIds.has(y._id) ? "#f59e0b" : "#cbd5e1",
+                                  lineHeight: 1,
+                                }}
+                              >{favYachtIds.has(y._id) ? "★" : "☆"}</button>
+                              <span className={styles.sheetItemName} style={{ flex: 1 }}>{y.name}</span>
+                              {y._id === yachtId && <span className={styles.sheetItemCheck}>✓</span>}
+                            </li>
+                          ));
+                        })()}
+                      </ul>
+                    </>
+                  ) : (
+                    /* ── Date mode ── */
+                    <>
+                      <div className={styles.sheetScrollBody}>
+                        <DateRangePicker
+                          fromDate={fromDate}
+                          toDate={toDate}
+                          inline={true}
+                          onChange={(f, t) => { setFromDate(f); setToDate(t); }}
+                        />
+                      </div>
+                      <div className={styles.sheetFooter}>
+                        <button className="btn btn-primary w-100 rounded-pill" onClick={() => setShowYachtSheet(false)}>
+                          Apply
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
+            {/* Prices + legend pinned inside the sticky header on mobile */}
+            <div className={`d-flex justify-content-between align-items-center flex-wrap gap-2 ${styles.mobileInfoBar}`}>
+              {yacht && (
+                <div className="d-flex gap-2 align-items-center">
+                  <span className={`badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold ${styles.mobileInfoBadge}`} style={{ fontSize: "11px" }}>
+                    B2b: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
+                  </span>
+                  <span className={`badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-semibold ${styles.mobileInfoBadge}`} style={{ fontSize: "11px" }}>
+                    Selling: ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              )}
+              <div className={styles.legend}>
+                <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendFree}`}></span> Free</span>
+                <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendPending}`}></span> Pending</span>
+                <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendLocked}`}></span> Locked</span>
+                <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendBooked}`}></span> Booked</span>
+              </div>
+            </div>
           </div>
           </>
         )}
-        <div className={`mb-2 d-flex justify-content-between align-items-center flex-wrap gap-2 ${isMobile ? styles.mobileInfoBar : ""}`}>
-          {yacht && (
-            <div className="d-flex gap-2 align-items-center">
-              <span className={`badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold ${isMobile ? styles.mobileInfoBadge : ""}`} style={{ fontSize: isMobile ? "11px" : "13px" }}>
-                B2B: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
-              </span>
-              <span className={`badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-semibold ${isMobile ? styles.mobileInfoBadge : ""}`} style={{ fontSize: isMobile ? "11px" : "13px" }}>
-                ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
-              </span>
+
+        {/* Desktop: info bar + legend outside the sticky header */}
+        {!isMobile && (
+          <div className="mb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            {yacht && (
+              <div className="d-flex gap-2 align-items-center">
+                <span className="badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: "13px" }}>
+                  B2b: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
+                </span>
+                <span className="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: "13px" }}>
+                  Selling: ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
+                </span>
+              </div>
+            )}
+            <div className={styles.legend}>
+              <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendFree}`}></span> Free</span>
+              <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendPending}`}></span> Pending</span>
+              <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendLocked}`}></span> Locked</span>
+              <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendBooked}`}></span> Booked</span>
             </div>
-          )}
-          <div className={styles.legend}>
-            <span className={styles.legendItem}>
-              <span className={`${styles.legendDot} ${styles.legendFree}`}></span> Free
-            </span>
-            <span className={styles.legendItem}>
-              <span className={`${styles.legendDot} ${styles.legendPending}`}></span> Pending
-            </span>
-            <span className={styles.legendItem}>
-              <span className={`${styles.legendDot} ${styles.legendLocked}`}></span> Locked
-            </span>
-            <span className={styles.legendItem}>
-              <span className={`${styles.legendDot} ${styles.legendBooked}`}></span> Booked
-            </span>
           </div>
-        </div>
+        )}
 
         {loading ? (
-          <div className="text-center py-5 text-muted">
-            <div className="spinner-border spinner-border-sm me-2" role="status" />
-            Loading availability...
-          </div>
+          isMobile ? (
+            <div className={styles.skeletonGrid}>
+              {[0,1,2,3].map(i => (
+                <div key={i} className={styles.skeletonCard}>
+                  <div className={styles.skeletonHeader} />
+                  <div className={styles.skeletonBody}>
+                    <div className={styles.skeletonSlot} />
+                    <div className={styles.skeletonSlot} />
+                    <div className={styles.skeletonSlot} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-5 text-muted">
+              <div className="spinner-border spinner-border-sm me-2" role="status" />
+              Loading availability...
+            </div>
+          )
         ) : grid.length > 0 ? (
           <>
 
           {/* Mobile card view */}
           {isMobile ? (
             <div className={styles.mobileGrid}>
-              {grid.map((row, i) => (
-                <div key={i} className={styles.mobileDay}>
-                  <div className={row.date === todayISO() ? styles.mobileDayHeaderToday : styles.mobileDayHeader}>
-                    {new Date(row.date).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}
-                    {row.date === todayISO() && <span className="ms-2" style={{ fontSize: "11px", fontWeight: 500 }}>Today</span>}
+              {grid.map((row, i) => {
+                const isToday = row.date === todayISO();
+                const freeCnt    = row.slots.filter(s => s.type === "free").length;
+                const bookedCnt  = row.slots.filter(s => s.type === "booked").length;
+                const lockedCnt  = row.slots.filter(s => s.type === "locked").length;
+                const pendingCnt = row.slots.filter(s => s.type === "pending").length;
+                return (
+                  <div key={i} className={styles.mobileDay}>
+                    {/* ── Day header ── */}
+                    <div className={isToday ? styles.mobileDayHeaderToday : styles.mobileDayHeader}>
+                      {isToday ? (
+                        <span className={styles.mobileDayHeaderTodayLabel}>
+                          {new Date(row.date).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}
+                          <span className={styles.todayBadge}>Today</span>
+                        </span>
+                      ) : (
+                        <span className={styles.mobileDayHeaderLabel}>
+                          {new Date(row.date).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}
+                        </span>
+                      )}
+                      <div className={styles.dayCountBadges}>
+                        {freeCnt > 0    && <span className={`${styles.dayCountPill} ${styles.dayCountFree}`}>{freeCnt} free</span>}
+                        {pendingCnt > 0 && <span className={`${styles.dayCountPill} ${styles.dayCountPending}`}>{pendingCnt} pend</span>}
+                        {lockedCnt > 0  && <span className={`${styles.dayCountPill} ${styles.dayCountLocked}`}>{lockedCnt} lock</span>}
+                        {bookedCnt > 0  && <span className={`${styles.dayCountPill} ${styles.dayCountBooked}`}>{bookedCnt} bkd</span>}
+                      </div>
+                    </div>
+
+                    {/* ── Slot rows ── */}
+                    <div className={styles.mobileSlotList}>
+                      {buildSlotRows(row.slots).map((group, gIdx) => {
+                        const isFast = group.kind === "fast";
+                        return (
+                          <div key={gIdx}>
+                            {isFast && (
+                              <div className={styles.fastSellingStrip}>
+                                🔥 <span>Fast Selling</span>
+                              </div>
+                            )}
+                            <div
+                              className={isFast ? styles.slotFastRow : styles.slotPairRow}
+                            >
+                              {group.slots.map((slot, idx) => {
+                                const past = isPastSlot(slot, row.date);
+                                const unauthorized =
+                                  !isAdminOrOnsite &&
+                                  (slot.type === "locked" || slot.type === "booked" || slot.type === "pending") &&
+                                  !isOwner(slot);
+
+                                const statusLabel = { free: "Tap to lock", locked: "Locked", booked: "Booked", pending: "Pending" }[slot.type] || slot.type;
+                                const nameLine = (slot.type === "booked" || slot.type === "pending")
+                                  ? (slot.custName || slot.empName || "")
+                                  : slot.type === "locked" ? (slot.empName || "") : "";
+
+                                const slotKey = `${slot.date}-${slot.start}`;
+                                const isPressing = pressingKey === slotKey;
+                                const isPendingRelease = !!pendingReleases[slotKey];
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={[styles.slotCard, styles[slot.type], past ? styles.past : "", isPressing ? styles.pressing : ""].join(" ")}
+                                    style={{ cursor: past || unauthorized ? "not-allowed" : "pointer", userSelect: "none" }}
+                                    onPointerDown={(e) => { if (past || unauthorized || isPendingRelease) return; e.currentTarget.setPointerCapture(e.pointerId); startLongPress(slot); }}
+                                    onPointerUp={cancelLongPress}
+                                    onPointerCancel={cancelLongPress}
+                                    onPointerLeave={abortLongPress}
+                                    onClick={() => {
+                                      if (past || unauthorized || isPendingRelease) return;
+                                      if (slot.type === "locked" && slot.deleteAfter && new Date(slot.deleteAfter) <= Date.now()) {
+                                        autoReleaseExpiredSlot(slot);
+                                        return;
+                                      }
+                                      const typeToOpen = slot.type === "pending" ? "booked" : slot.type;
+                                      handleSlotInteraction(slot, typeToOpen);
+                                    }}
+                                  >
+                                    <span className={styles.slotCardTime}>
+                                      {to12HourFormat(slot.start)} – {to12HourFormat(slot.end)}
+                                    </span>
+                                    {isPendingRelease ? (
+                                      <SlotReleaseCountdown
+                                        key={slotKey}
+                                        initial={10}
+                                        onExpire={() => handleSlotReleaseExpire(slotKey, pendingReleases[slotKey])}
+                                        onCancel={() => handleSlotReleaseCancel(slotKey)}
+                                      />
+                                    ) : (
+                                      <>
+                                        <span className={styles.slotCardStatus}>
+                                          {slot.type === "locked" && slot.deleteAfter
+                                            ? <LockTimer deleteAfter={slot.deleteAfter} />
+                                            : statusLabel}
+                                        </span>
+                                        {nameLine ? <span className={styles.slotCardName}>{nameLine}</span> : null}
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className={styles.mobileSlots}>
-                    {row.slots.map((slot, idx) => {
-                      const past = isPastSlot(slot, row.date);
-                      const unauthorized =
-                        !isAdminOrOnsite &&
-                        (slot.type === "locked" || slot.type === "booked" || slot.type === "pending") &&
-                        !isOwner(slot);
-                      return (
-                        <div
-                          key={idx}
-                          className={[
-                            styles.mobileSlot,
-                            styles[slot.type],
-                            past ? styles.past : ""
-                          ].join(" ")}
-                          style={{ cursor: past || unauthorized ? "not-allowed" : "pointer" }}
-                          onClick={() => {
-                            if (past || unauthorized) return;
-                            const typeToOpen = slot.type === "pending" ? "booked" : slot.type;
-                            handleSlotInteraction(slot, typeToOpen);
-                          }}
-                          title={`${to12HourFormat(slot.start)} - ${to12HourFormat(slot.end)}`}
-                        >
-                          <span style={{ display: "block" }}>{to12HourFormat(slot.start)}–{to12HourFormat(slot.end)}</span>
-                          {slot.type === "locked" && <LockTimer deleteAfter={slot.deleteAfter} />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
           <div className={styles.wrapper}>
@@ -1145,194 +1444,521 @@ function GridAvailability() {
           </div>
           )}
           </>
-        ) : (
+        ) : hasFetched ? (
           <div className="text-center py-5 text-muted">
             <div style={{ fontSize: "2rem" }}>📅</div>
             <p className="mt-2 mb-0 fw-semibold">No availability found</p>
             <small>Try selecting a different yacht or date range</small>
           </div>
-        )}
+        ) : null}
 
-        <div className="modal fade" id="lockModal" tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content rounded-4">
+        {/* ── LOCK SLOT MODAL (pure React, no Bootstrap JS) ── */}
+        {showLockModal && (
+          <div
+            onClick={() => setShowLockModal(false)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 9999,
+              background: "rgba(5,24,41,0.55)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "20px",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 20px 60px rgba(5,24,41,0.28)", background: "#fff", width: "100%", maxWidth: 400 }}
+            >
               <form onSubmit={handleSaveAndLock}>
-                {/* HEADER */}
-                <div className="modal-header bg-warning ">
-                  <h5 className="modal-title">Lock Time Slot</h5>
+
+                {/* ── HEADER ── */}
+                <div style={{
+                  background: "linear-gradient(135deg, #051829 0%, #0a2d4a 60%, #0d4a6e 100%)",
+                  padding: "22px 24px 18px",
+                  position: "relative",
+                }}>
                   <button
                     type="button"
-                    className="btn-close"
-                    data-bs-dismiss="modal"
-                  ></button>
+                    onClick={() => setShowLockModal(false)}
+                    style={{
+                      position: "absolute", top: 14, right: 16,
+                      background: "rgba(255,255,255,0.12)", border: "none",
+                      borderRadius: "50%", width: 30, height: 30,
+                      color: "#fff", fontSize: 14, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                  >✕</button>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 12,
+                      background: "rgba(201,168,76,0.18)",
+                      border: "1.5px solid rgba(201,168,76,0.4)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 20, flexShrink: 0,
+                    }}>🔒</div>
+                    <div>
+                      <div style={{ color: "#c9a84c", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 2 }}>
+                        Availability
+                      </div>
+                      <div style={{ color: "#fff", fontSize: 17, fontWeight: 700, lineHeight: 1.2 }}>
+                        Lock Time Slot
+                      </div>
+                    </div>
+                  </div>
+
+                  {yacht?.name && (
+                    <div style={{
+                      marginTop: 14,
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      background: "rgba(201,168,76,0.15)",
+                      border: "1px solid rgba(201,168,76,0.3)",
+                      borderRadius: 20, padding: "4px 12px",
+                    }}>
+                      <span style={{ fontSize: 13 }}>⚓</span>
+                      <span style={{ color: "#e8d5a0", fontSize: 12.5, fontWeight: 600 }}>{yacht.name}</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* BODY */}
-                <div className="modal-body">
+                {/* ── BODY ── */}
+                <div style={{ padding: "20px 24px 8px" }}>
                   {selectedSlot && (
                     <>
-                      {/* Slot summary pill */}
-                      <div className="text-center mb-3">
-                        <span className="badge bg-warning bg-opacity-15 text-dark px-3 py-2 rounded-pill fw-semibold" style={{ fontSize: "14px" }}>
-                          🕐 {to12HourFormat(selectedSlot.start)} — {to12HourFormat(selectedSlot.end)}
-                        </span>
-                        <div className="text-muted small mt-1">
-                          {selectedDate && new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
+                      <div style={{
+                        background: "linear-gradient(135deg, #f0f7ff, #e8f4fd)",
+                        border: "1.5px solid #bfdbfe",
+                        borderRadius: 14, padding: "16px 20px",
+                        marginBottom: 16, textAlign: "center",
+                      }}>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: "#051829", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                          {to12HourFormat(selectedSlot.start)}
+                          <span style={{ fontSize: 16, fontWeight: 500, color: "#64748b", margin: "0 8px" }}>→</span>
+                          {to12HourFormat(selectedSlot.end)}
+                        </div>
+                        <div style={{ marginTop: 6, fontSize: 12.5, fontWeight: 600, color: "#475569" }}>
+                          {selectedDate && new Date(selectedDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
                         </div>
                       </div>
 
-                      {/* Editable time fields */}
-                      {user?.type == "admin" && (
-                        <div className="text-start">
-                          <label className="form-label small text-muted">Start time</label>
-                          <input
-                            type="time"
-                            className="form-control mb-2"
-                            value={editStart || ""}
-                            disabled={!canEditSlot}
-                            onChange={(e) => setEditStart(e.target.value)}
-                          />
+                      {(() => {
+                        const baseStartMin = hhmmToMinutes(selectedSlot.start);
+                        const baseEndMin   = hhmmToMinutes(selectedSlot.end);
 
-                          <label className="form-label small text-muted">End time</label>
-                          <input
-                            type="time"
-                            className="form-control"
-                            value={editEnd || ""}
-                            disabled={!canEditSlot}
-                            onChange={(e) => setEditEnd(e.target.value)}
-                          />
+                        // Cap end time at the next booked/locked/pending slot
+                        const maxEndMin = daySlots.reduce((cap, s) => {
+                          if (s.start === selectedSlot.start) return cap;
+                          const sm = hhmmToMinutes(s.start);
+                          if (sm > baseStartMin && (s.type === "booked" || s.type === "locked" || s.type === "pending")) {
+                            return Math.min(cap, sm);
+                          }
+                          return cap;
+                        }, 23 * 60 + 59);
 
-                          {!canEditSlot && (
-                            <div className="form-text text-muted mt-2">
-                              ⚠️ This slot cannot be edited
+                        const currentStartMin = hhmmToMinutes(editStart || selectedSlot.start);
+
+                        const startOptions = [-30, 0, 30].map(d => ({
+                          value: minutesToHHMM(baseStartMin + d),
+                          minutes: baseStartMin + d,
+                          disabled: (baseStartMin + d) < 0,
+                        }));
+
+                        const endDeltas = [-60, -30, 0, 30, 60, 90, 120, 150, 180];
+                        const endOptions = endDeltas.map(d => ({
+                          value: minutesToHHMM(baseEndMin + d),
+                          minutes: baseEndMin + d,
+                          disabled: (baseEndMin + d) > maxEndMin || (baseEndMin + d) <= currentStartMin,
+                        }));
+
+                        const selectStyle = {
+                          width: "100%", padding: "10px 12px",
+                          borderRadius: 10, border: "1.5px solid #e2e8f0",
+                          fontSize: 14, fontWeight: 600, color: "#051829",
+                          background: "#f8fafc", cursor: "pointer",
+                          appearance: "auto",
+                        };
+
+                        return (
+                          <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+                            {/* ── Start Time ── */}
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
+                                Start Time
+                              </label>
+                              <select
+                                style={selectStyle}
+                                value={editStart || selectedSlot.start}
+                                onChange={(e) => {
+                                  const newStart = e.target.value;
+                                  setEditStart(newStart);
+                                  const newStartMin = hhmmToMinutes(newStart);
+                                  const curEnd = hhmmToMinutes(editEnd || selectedSlot.end);
+                                  if (curEnd <= newStartMin) {
+                                    setEditEnd(minutesToHHMM(Math.min(newStartMin + 60, maxEndMin)));
+                                  }
+                                }}
+                              >
+                                {startOptions.map(opt => (
+                                  <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+                                    {to12HourFormat(opt.value)}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
-                          )}
-                        </div>)}
 
+                            {/* ── End Time ── */}
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
+                                End Time
+                              </label>
+                              <select
+                                style={selectStyle}
+                                value={editEnd || selectedSlot.end}
+                                onChange={(e) => setEditEnd(e.target.value)}
+                              >
+                                {endOptions.map(opt => (
+                                  <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+                                    {to12HourFormat(opt.value)}{opt.disabled && opt.minutes > maxEndMin ? " (booked)" : ""}
+                                  </option>
+                                ))}
+                              </select>
+                              {maxEndMin < 23 * 60 + 59 && (
+                                <div style={{ marginTop: 5, fontSize: 11, color: "#b45309", fontWeight: 600 }}>
+                                  ⚠️ Capped at {to12HourFormat(minutesToHHMM(maxEndMin))} — next slot is booked
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+
+                      <div style={{
+                        display: "flex", alignItems: "flex-start", gap: 8,
+                        background: "#f8fafc", border: "1px solid #e2e8f0",
+                        borderRadius: 10, padding: "10px 12px",
+                      }}>
+                        <span style={{ fontSize: 14, marginTop: 1 }}>ℹ️</span>
+                        <span style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
+                          Locking reserves this slot temporarily. It will auto-release if a booking is not confirmed in time.
+                        </span>
+                      </div>
                     </>
                   )}
                 </div>
 
-                {/* FOOTER */}
-                <div className="modal-footer">
+                {/* ── FOOTER ── */}
+                <div style={{ padding: "16px 24px 20px", display: "flex", gap: 10 }}>
                   <button
                     type="button"
-                    className="btn btn-outline-secondary"
-                    data-bs-dismiss="modal"
+                    onClick={() => setShowLockModal(false)}
+                    style={{
+                      flex: 1, padding: "11px 0", borderRadius: 12,
+                      border: "1.5px solid #e2e8f0", background: "#fff",
+                      color: "#475569", fontSize: 14, fontWeight: 600, cursor: "pointer",
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-warning"
                     disabled={isLocking}
+                    style={{
+                      flex: 2, padding: "11px 0", borderRadius: 12,
+                      background: isLocking
+                        ? "#94a3b8"
+                        : "linear-gradient(135deg, #c9a84c, #e0b850)",
+                      border: "none", color: "#051829",
+                      fontSize: 14, fontWeight: 700, cursor: isLocking ? "not-allowed" : "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                      boxShadow: isLocking ? "none" : "0 4px 14px rgba(201,168,76,0.35)",
+                      transition: "all 0.2s",
+                    }}
                   >
-                    {isLocking ? "Locking..." : "Save & Lock"}
+                    {isLocking ? (
+                      <>
+                        <span style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid #fff6", borderTopColor: "#051829", display: "inline-block", animation: "spin 0.7s linear infinite" }} />
+                        Locking…
+                      </>
+                    ) : (
+                      <>🔒 Lock Slot</>
+                    )}
                   </button>
                 </div>
+
               </form>
             </div>
           </div>
-        </div>
+        )}
 
 
-        <div className="modal fade" id="confirmModal" tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content rounded-4">
+        {showConfirmModal && (
+          <div
+            style={{
+              position: "fixed", inset: 0, zIndex: 1055,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(5,24,41,0.72)", backdropFilter: "blur(4px)",
+              padding: "16px",
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowConfirmModal(false); }}
+          >
+            <div
+              style={{
+                background: "#fff", borderRadius: 20, width: "100%", maxWidth: 420,
+                boxShadow: "0 24px 64px rgba(5,24,41,0.35)",
+                overflow: "hidden",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <form onSubmit={handleConfirmBooking}>
-                <div className="modal-header bg-primary">
-                  <h5 className="modal-title">Confirm Booking</h5>
+                {/* Header */}
+                <div style={{
+                  background: "linear-gradient(135deg, #051829, #0a2d4a)",
+                  padding: "20px 24px 16px",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>📋</span>
+                    <div>
+                      <div style={{ color: "#c9a84c", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                        Locked Slot
+                      </div>
+                      <div style={{ color: "#fff", fontSize: 17, fontWeight: 700, lineHeight: 1.2 }}>
+                        Confirm Booking
+                      </div>
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    className="btn-close"
-                    data-bs-dismiss="modal"
-                  ></button>
+                    onClick={() => setShowConfirmModal(false)}
+                    style={{
+                      background: "rgba(255,255,255,0.1)", border: "none",
+                      borderRadius: "50%", width: 32, height: 32,
+                      color: "#fff", fontSize: 18, cursor: "pointer", lineHeight: 1,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                  >×</button>
                 </div>
-                <div className="modal-body">
+
+                {/* Body */}
+                <div style={{ padding: "20px 24px" }}>
                   {selectedSlot && (
-                    <div className="text-center">
-                      <span className="badge bg-warning bg-opacity-15 text-dark px-3 py-2 rounded-pill fw-semibold" style={{ fontSize: "14px" }}>
-                        🕐 {to12HourFormat(selectedSlot.start)} — {to12HourFormat(selectedSlot.end)}
-                      </span>
-                      <div className="text-muted small mt-1 mb-3">
-                        {selectedDate && new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
-                      </div>
-                      <div className="text-muted small mb-2">
-                        🔒 Locked by: <span className="fw-semibold text-dark">{selectedSlot.empName || "—"}</span>
-                      </div>
-                      {selectedSlot.deleteAfter && (
-                        <div className="mt-1">
-                          <span className="text-muted small">Auto-releases in: </span>
-                          <LockTimer deleteAfter={selectedSlot.deleteAfter} />
+                    <>
+                      {/* Time pill */}
+                      <div style={{ textAlign: "center", marginBottom: 16 }}>
+                        <span style={{
+                          display: "inline-block",
+                          background: "rgba(201,168,76,0.12)", border: "1.5px solid #c9a84c",
+                          borderRadius: 20, padding: "8px 20px",
+                          color: "#051829", fontWeight: 700, fontSize: 15,
+                        }}>
+                          🕐 {to12HourFormat(selectedSlot.start)} — {to12HourFormat(selectedSlot.end)}
+                        </span>
+                        <div style={{ color: "#64748b", fontSize: 12, marginTop: 6 }}>
+                          {selectedDate && new Date(selectedDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" })}
                         </div>
-                      )}
-                    </div>
+                      </div>
+
+                      {/* Info rows */}
+                      <div style={{
+                        background: "#f8fafc", border: "1px solid #e2e8f0",
+                        borderRadius: 12, padding: "12px 16px",
+                        display: "flex", flexDirection: "column", gap: 10, marginBottom: 14,
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                          <span style={{ color: "#64748b" }}>🔒 Locked by</span>
+                          <span style={{ fontWeight: 600, color: "#051829" }}>{selectedSlot.empName || "—"}</span>
+                        </div>
+                        {selectedSlot.deleteAfter && (
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                            <span style={{ color: "#64748b" }}>⏳ Auto-releases in</span>
+                            <span style={{ fontWeight: 600, color: "#e74c3c" }}>
+                              <LockTimer deleteAfter={selectedSlot.deleteAfter} />
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Note */}
+                      <div style={{
+                        display: "flex", alignItems: "flex-start", gap: 8,
+                        background: "#fffbeb", border: "1px solid #fde68a",
+                        borderRadius: 10, padding: "10px 12px",
+                      }}>
+                        <span style={{ fontSize: 14, marginTop: 1 }}>ℹ️</span>
+                        <span style={{ fontSize: 12, color: "#92400e", lineHeight: 1.5 }}>
+                          Confirming will take you to the booking form with this slot pre-filled.
+                        </span>
+                      </div>
+                    </>
                   )}
                 </div>
-                <div className="modal-footer">
+
+                {/* Footer */}
+                <div style={{ padding: "0 24px 20px", display: "flex", gap: 10 }}>
                   <button
                     type="button"
-                    className="btn btn-outline-danger"
                     onClick={handleReleaseLock}
                     disabled={isReleasing}
+                    style={{
+                      flex: 1, padding: "11px 0", borderRadius: 12,
+                      border: "1.5px solid #ef4444",
+                      background: isReleasing ? "#fee2e2" : "#fff",
+                      color: "#ef4444", fontSize: 13, fontWeight: 600,
+                      cursor: isReleasing ? "not-allowed" : "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    }}
                   >
-                    {isReleasing ? "Releasing..." : "Release Lock"}
+                    {isReleasing ? (
+                      <>
+                        <span style={{ width: 13, height: 13, borderRadius: "50%", border: "2px solid #ef444466", borderTopColor: "#ef4444", display: "inline-block", animation: "spin 0.7s linear infinite" }} />
+                        Releasing…
+                      </>
+                    ) : "🔓 Release"}
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary"
                     disabled={isConfirming}
+                    style={{
+                      flex: 2, padding: "11px 0", borderRadius: 12,
+                      background: isConfirming
+                        ? "#94a3b8"
+                        : "linear-gradient(135deg, #c9a84c, #e0b850)",
+                      border: "none", color: "#051829",
+                      fontSize: 14, fontWeight: 700, cursor: isConfirming ? "not-allowed" : "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                      boxShadow: isConfirming ? "none" : "0 4px 14px rgba(201,168,76,0.35)",
+                    }}
                   >
-                    Confirm Booking
+                    {isConfirming ? (
+                      <>
+                        <span style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid #fff6", borderTopColor: "#051829", display: "inline-block", animation: "spin 0.7s linear infinite" }} />
+                        Opening…
+                      </>
+                    ) : "📋 Confirm Booking"}
                   </button>
                 </div>
               </form>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="modal fade" id="bookedModal" tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content rounded-4">
-              <div className="modal-header bg-danger">
-                <h5 className="modal-title">Booked Slot Details</h5>
+        {showBookedModal && selectedSlot && (
+          <div
+            onClick={() => setShowBookedModal(false)}
+            style={{
+              position: "fixed", inset: 0, background: "rgba(5,24,41,0.55)",
+              zIndex: 1060, display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "0 16px",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "#fff", borderRadius: 20, width: "100%", maxWidth: 380,
+                overflow: "hidden", boxShadow: "0 20px 60px rgba(5,24,41,0.25)",
+              }}
+            >
+              {/* Header */}
+              <div style={{
+                background: "linear-gradient(135deg,#051829 0%,#0a2d4a 100%)",
+                padding: "18px 20px 16px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <div>
+                  <div style={{ color: "#c9a84c", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+                    {selectedSlot.type === "pending" ? "Pending Booking" : "Confirmed Booking"}
+                  </div>
+                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 17, letterSpacing: 0.2 }}>
+                    {to12HourFormat(selectedSlot.start)} — {to12HourFormat(selectedSlot.end)}
+                  </div>
+                  <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 3 }}>
+                    {selectedSlot.date
+                      ? new Date(selectedSlot.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+                      : ""}
+                  </div>
+                </div>
                 <button
-                  type="button"
-                  className="btn-close"
-                  data-bs-dismiss="modal"
-                ></button>
+                  onClick={() => setShowBookedModal(false)}
+                  style={{
+                    background: "rgba(255,255,255,0.10)", border: "none", borderRadius: "50%",
+                    width: 34, height: 34, cursor: "pointer", display: "flex",
+                    alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18, flexShrink: 0,
+                  }}
+                >✕</button>
               </div>
-              <div className="modal-body">
-                {selectedSlot && (
-                  <div className="text-center">
-                    <span className="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill fw-semibold" style={{ fontSize: "14px" }}>
-                      🕐 {to12HourFormat(selectedSlot.start)} — {to12HourFormat(selectedSlot.end)}
-                    </span>
-                    <div className="text-muted small mt-1 mb-3">
-                      {selectedDate && new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
-                    </div>
-                    <div className="text-muted small mb-1">
-                      👤 Agent: <span className="fw-semibold text-dark">{selectedSlot.empName || "—"}</span>
-                    </div>
-                    <div className="text-muted small">
-                      🧑‍✈️ Guest: <span className="fw-semibold text-dark">{selectedSlot.custName || "—"}</span>
+
+              {/* Body */}
+              <div style={{ padding: "20px 20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Booking name */}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <span style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>🧑‍✈️</span>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 2 }}>Booking Name</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: "#0a2d4a" }}>{selectedSlot.custName || "—"}</div>
+                  </div>
+                </div>
+
+                {/* Pax */}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <span style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>👥</span>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 2 }}>Guests (Pax)</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: "#0a2d4a" }}>
+                      {selectedSlot.numPeople ? `${selectedSlot.numPeople} pax` : "—"}
                     </div>
                   </div>
-                )}
-              </div>
-              <div className="modal-footer">
+                </div>
+
+                {/* Agent */}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <span style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>👤</span>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 2 }}>Agent</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: "#0a2d4a" }}>{selectedSlot.empName || "—"}</div>
+                  </div>
+                </div>
+
+                {/* Addons */}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <span style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>✨</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Add-ons</div>
+                    {Array.isArray(selectedSlot.addons) && selectedSlot.addons.length > 0 ? (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {selectedSlot.addons.map((a, i) => (
+                          <span key={i} style={{
+                            background: "#f0f7ff", color: "#1d6fa4", fontSize: 12,
+                            fontWeight: 600, borderRadius: 20, padding: "3px 10px",
+                            border: "1px solid #bee3f8",
+                          }}>
+                            {typeof a === "object" ? (a.name || a.label || JSON.stringify(a)) : a}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: 14, color: "#94a3b8" }}>None</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ borderTop: "1px solid #e8edf3", marginTop: 2 }} />
+
+                {/* Close button */}
                 <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  data-bs-dismiss="modal"
-                >
-                  Close
-                </button>
+                  onClick={() => setShowBookedModal(false)}
+                  style={{
+                    background: "#051829", color: "#fff", border: "none",
+                    borderRadius: 12, padding: "12px", fontWeight: 700,
+                    fontSize: 14, cursor: "pointer", width: "100%",
+                    letterSpacing: 0.3,
+                  }}
+                >Close</button>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
+
     </div>
   );
 }

@@ -75,7 +75,9 @@ function CustomerDetails() {
           <div className="cm-card" style={{ padding:32, textAlign:"center" }}>
             <div style={{ fontSize:40, marginBottom:12 }}>📋</div>
             <div style={{ fontSize:18, fontWeight:800, color:"#0f172a", marginBottom:8 }}>No booking data</div>
-            <button className="cm-btn cm-btn-primary" onClick={() => navigate(-1)}>← Go Back</button>
+            <button className="btn-back-icon" onClick={() => navigate(-1)} title="Go back">
+              <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -104,11 +106,13 @@ function CustomerDetails() {
 
         {/* Header */}
         <div className="cm-header">
+          <button className="btn-back-icon" onClick={() => navigate(-1)} title="Go back">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
           <div>
             <div className="cm-subtitle">Booking · #{ticketId}</div>
             <div className="cm-title">Booking Details</div>
           </div>
-          <button className="cm-btn cm-btn-outline" onClick={() => navigate(-1)}>← Back</button>
         </div>
 
         {/* Status badge */}
@@ -206,7 +210,9 @@ function CustomerDetails() {
 
         {/* Actions */}
         <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-          <button className="cm-btn cm-btn-outline" style={{ flex:1, minWidth:120 }} onClick={() => navigate(-1)}>← Back</button>
+          <button className="btn-back-icon" onClick={() => navigate(-1)} title="Go back">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
           {booking.status === "confirmed" && (
             <PDFDownloadLink
               document={<BoardingPassPDF booking={booking} />}

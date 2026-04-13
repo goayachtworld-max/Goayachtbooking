@@ -13,9 +13,29 @@
 /* ── Page header ── */
 .emp-page-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
+  gap: 10px;
   margin-bottom: 1.5rem;
+}
+
+.emp-search-input {
+  flex: 1;
+  height: 42px;
+  padding: 0 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  color: #1e293b;
+  background: #f8fafc;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.emp-search-input::placeholder { color: #94a3b8; }
+.emp-search-input:focus {
+  border-color: #1d6fa4;
+  box-shadow: 0 0 0 3px rgba(29,111,164,0.12);
+  background: #fff;
 }
 
 .emp-page-title {
@@ -30,24 +50,41 @@
   color: #1d6fa4;
 }
 
-/* ── Add button ── */
+/* ── Add button (inline in page header) ── */
 .emp-btn-add {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 8px 18px;
-  border-radius: 8px;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 50%;
   border: none;
   background: #1d6fa4;
   color: #fff;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  box-shadow: 0 4px 14px rgba(29,111,164,0.45);
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
   text-decoration: none;
 }
-.emp-btn-add:hover  { background: #155f8a; color: #fff; }
-.emp-btn-add:active { transform: scale(0.98); }
+.emp-btn-add:hover  {
+  background: #155f8a;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(29,111,164,0.55);
+  transform: scale(1.08);
+}
+.emp-btn-add:active { transform: scale(0.95); }
+
+@media (max-width: 991.98px) {
+  .emp-btn-add {
+    top: auto;
+    bottom: 80px; /* above the 64px bottom nav + 16px gap */
+  }
+}
 
 /* ── Tabs ── */
 .emp-tabs {
@@ -518,15 +555,18 @@
 }
 
 .emp-btn-success-sm {
-  padding: 5px 12px;
-  border-radius: 6px;
+  padding: 5px 14px;
+  border-radius: 8px;
   border: none;
-  background: #16a34a;
+  background: linear-gradient(135deg, #0a2d4a, #1d6fa4);
   color: #fff;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: opacity 0.15s;
+  box-shadow: 0 2px 8px rgba(29,111,164,0.3);
 }
+.emp-btn-success-sm:hover { opacity: 0.88; }
 
 /* ── Loading spinner ── */
 .emp-spinner-wrap {

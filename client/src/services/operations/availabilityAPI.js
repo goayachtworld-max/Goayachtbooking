@@ -30,11 +30,9 @@ export const getDayAvailability = async (yachtId, date, token) => {
     if (!token) throw new Error("Authorization token is missing");
 
     const url = `${availability.GET_DAY_AVAILABILITY(yachtId, date)}`;
-    console.log( "Before url - " , url)
     const response = await apiConnector("GET", url, null, {
       Authorization: `Bearer ${token}`,
     });
-    console.log("Get Day Avail - ", response.data);
     return response?.data;
   } catch (error) {
     console.error("Error fetching day availability:", error);
@@ -45,11 +43,15 @@ export const getDayAvailability = async (yachtId, date, token) => {
 // -------------------------
 // Lock a slot
 // -------------------------
-export const lockSlot = async (yachtId, date, startTime, endTime, token) => {
+export const lockSlot = async (yachtId, date, startTime, endTime, token, permanent = false) => {
   try {
     if (!token) throw new Error("Authorization token is missing");
 
     const body = { yachtId, date, startTime, endTime };
+    if (permanent) {
+      body.permanent = true;
+      body.deleteAfter = null;
+    }
 
     const response = await apiConnector("POST", availability.LOCK_SLOT, body, {
       Authorization: `Bearer ${token}`,

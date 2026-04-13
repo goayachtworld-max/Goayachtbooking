@@ -30,6 +30,7 @@ import NotificationBell from "./pages/NotificationBell";
 import EditBookingDetails from "./components/EditBookingDetails";
 import CustomerManagement from "./pages/CustomerManagement";
 import RegisterCompany from "./pages/RegisterCompany";
+import NotificationsPage from "./pages/NotificationsPage";
 
 
 function App() {
@@ -41,6 +42,12 @@ function App() {
   const logoutUser = () => {
     socket.disconnect();
     setUser(null);
+    // Purge all user-scoped page caches to prevent data leaking to next login
+    try {
+      Object.keys(localStorage)
+        .filter(k => k.startsWith("av_") || k.startsWith("bk_") || k.startsWith("db_stats_"))
+        .forEach(k => localStorage.removeItem(k));
+    } catch {}
     localStorage.removeItem("user");
     localStorage.removeItem("authToken");
     navigate("/");
@@ -90,6 +97,16 @@ function App() {
       socket.connect();
     }
   }, [user]);
+
+  useEffect(() => {
+    const preventScrollChange = (e) => {
+      if (document.activeElement?.type === "number") {
+        document.activeElement.blur();
+      }
+    };
+    document.addEventListener("wheel", preventScrollChange, { passive: true });
+    return () => document.removeEventListener("wheel", preventScrollChange);
+  }, []);
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -349,6 +366,15 @@ function App() {
               {["admin", "backdesk", "onsite"].includes(role) ? <EditBookingDetails /> : <NotFound />}
             </ProtectedRoute>
           } />
+
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute user={user}>
+                <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound user={user} />} />

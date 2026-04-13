@@ -1,0 +1,340 @@
+/* ============================================================
+   NotificationsPage.css
+   ============================================================ */
+
+.npage-root {
+  min-height: 100%;
+  background: #f1f5f9;
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+}
+
+/* ── Sticky top bar ── */
+.npage-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e3e8ef;
+  box-shadow: 0 1px 8px rgba(15,39,68,.08);
+}
+
+.npage-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Unread toggle pill */
+.npage-unread-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  white-space: nowrap;
+}
+.npage-unread-toggle:hover {
+  background: #e8f0fc;
+  border-color: #1d6fa4;
+  color: #1d6fa4;
+}
+.npage-unread-toggle.active {
+  background: #1d6fa4;
+  border-color: #1d6fa4;
+  color: #fff;
+}
+.npage-toggle-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.25);
+  color: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  padding: 0 4px;
+}
+.npage-unread-toggle:not(.active) .npage-toggle-count {
+  background: #1d6fa41a;
+  color: #1d6fa4;
+}
+
+/* Mark all read button */
+.npage-markall {
+  background: none;
+  border: 1.5px solid #c9a84c;
+  color: #c9a84c;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.npage-markall:hover {
+  background: #c9a84c;
+  color: #fff;
+}
+
+/* ── Loading / empty ── */
+.npage-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.npage-empty-icon { opacity: 0.55; }
+
+.npage-empty-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2332;
+  margin: 0;
+}
+
+.npage-empty-sub {
+  font-size: 0.82rem;
+  color: #a0aab4;
+}
+
+.npage-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e3e8ef;
+  border-top-color: #1d6fa4;
+  border-radius: 50%;
+  animation: npage-spin 0.7s linear infinite;
+}
+@keyframes npage-spin { to { transform: rotate(360deg); } }
+
+/* ── Date group ── */
+.npage-list { padding: 8px 0 32px; }
+
+.npage-group { margin-bottom: 2px; }
+
+.npage-date-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #64748b;
+  background: #f1f5f9;
+}
+
+.npage-date-label-icon {
+  display: flex;
+  align-items: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+/* ── Notification card ── */
+.npage-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 16px 13px 20px;
+  background: #fff;
+  border-bottom: 1px solid #f0f3f7;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.12s;
+}
+.npage-item:hover { background: #f8fafd; }
+.npage-item--unread { background: #f4f8ff; }
+.npage-item--unread:hover { background: #edf4ff; }
+
+/* accent bar on left edge */
+.npage-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent, #1d6fa4);
+  border-radius: 0 2px 2px 0;
+}
+
+/* icon circle */
+.npage-type-icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.npage-type-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* content area */
+.npage-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* title + chip row */
+.npage-item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.npage-item-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f2744;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.npage-type-chip {
+  flex-shrink: 0;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* message body */
+.npage-item-msg {
+  font-size: 0.8rem;
+  color: #4a5568;
+  line-height: 1.5;
+  margin: 0 0 8px;
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* detail card (yacht + slot) */
+.npage-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: #f4f7fb;
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.npage-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.npage-detail-row--inline {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.npage-detail-inline-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.npage-detail-icon {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.npage-detail-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.npage-detail-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1a2e45;
+  letter-spacing: 0.01em;
+}
+
+/* date + time meta row */
+.npage-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.npage-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.npage-meta-icon {
+  display: flex;
+  align-items: center;
+  width: 13px;
+  height: 13px;
+  opacity: 0.8;
+}
+.npage-meta-icon svg { width: 13px; height: 13px; }
+
+.npage-meta-sep {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+/* unread dot */
+.npage-unread-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1d6fa4;
+  margin-top: 7px;
+}

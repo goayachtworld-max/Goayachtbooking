@@ -189,7 +189,14 @@ const AllEmployees = () => {
     }
   };
 
-  const activeEmployees = employees.filter((e) => e.status === "active");
+  const [search, setSearch] = useState("");
+
+  const activeEmployees = employees
+    .filter((e) => e.status === "active")
+    .filter((e) => !search.trim() || e.name?.toLowerCase().includes(search.toLowerCase()) || e.email?.toLowerCase().includes(search.toLowerCase()));
+
+  const filteredNotInCompany = notInCompanyEmployees
+    .filter((e) => !search.trim() || e.name?.toLowerCase().includes(search.toLowerCase()) || e.email?.toLowerCase().includes(search.toLowerCase()));
 
   // ── loading ────────────────────────────────────────────────────────
   if (loading) return (
@@ -222,11 +229,22 @@ const AllEmployees = () => {
   return (
     <div className="emp-page">
 
-      {/* header */}
-      <div className="emp-page-header">
-        <h1 className="emp-page-title">User <span>Master</span></h1>
-        <button className="emp-btn-add" onClick={() => navigate("/create-employee")}>
-          + Add Employee
+      {/* page header — back | search | add */}
+      <div className="emp-page-header" style={{ justifyContent: "space-between", marginBottom: "1rem" }}>
+        <button className="btn-back-icon" onClick={() => navigate(-1)} aria-label="Go back">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <input
+          className="emp-search-input"
+          type="text"
+          placeholder="Search employee…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button className="emp-btn-add" onClick={() => navigate("/create-employee")} title="Add Employee">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 3V15M3 9H15" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+          </svg>
         </button>
       </div>
 
@@ -260,8 +278,6 @@ const AllEmployees = () => {
                       <th className="emp-hide-xs">#</th>
                       <th>Name</th>
                       <th className="emp-hide-sm">Role</th>
-                      <th className="emp-hide-sm">Username</th>
-                      <th className="emp-hide-sm">Contact</th>
                       <th className="emp-hide-xs">Last Login</th>
                       <th>Actions</th>
                     </tr>
@@ -281,8 +297,7 @@ const AllEmployees = () => {
                                 }
                               </div>
                               <div>
-                                <div className="emp-name">{emp.name}</div>
-                                <div className="emp-email-sub">{emp.email}</div>
+                                <div className="emp-name">{emp.name} <span style={{ color: "#94a3b8", fontWeight: 400 }}>({emp.username})</span></div>
                               </div>
                             </div>
                           </td>
@@ -291,8 +306,6 @@ const AllEmployees = () => {
                               {getRoleName(emp.type)}
                             </span>
                           </td>
-                          <td className="emp-hide-sm" style={{ color: "#7a8799", fontSize: 12 }}>{emp.username || "—"}</td>
-                          <td className="emp-hide-sm" style={{ fontSize: 12 }}>{emp.contact || "—"}</td>
                           <td className="emp-hide-xs">
                             <span className={`emp-badge ${login.cls}`} title={login.tooltip} style={{ cursor: "default" }}>
                               {login.text}
@@ -365,12 +378,6 @@ const AllEmployees = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="emp-mobile-card-divider" />
-                    <div className="emp-mobile-card-info">
-                      <div><strong>Username:</strong> {emp.username || "—"}</div>
-                      <div><strong>Contact:</strong>  {emp.contact  || "—"}</div>
-                      <div><strong>Email:</strong>    {emp.email}</div>
-                    </div>
                   </div>
                 );
               })}
@@ -390,7 +397,7 @@ const AllEmployees = () => {
       {activeTab === "not-in-company" && (
         loadingNotInCompany ? (
           <div className="emp-spinner-wrap"><div className="emp-spinner" /><span>Loading…</span></div>
-        ) : notInCompanyEmployees.length > 0 ? (
+        ) : filteredNotInCompany.length > 0 ? (
           <>
             {/* Desktop */}
             <div className="emp-table-card d-none d-md-block">
@@ -401,12 +408,11 @@ const AllEmployees = () => {
                       <th>#</th>
                       <th>Name</th>
                       <th>Role</th>
-                      <th>Email</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {notInCompanyEmployees.map((emp, i) => (
+                    {filteredNotInCompany.map((emp, i) => (
                       <tr key={emp._id}>
                         <td style={{ color: "#7a8799", fontSize: 12 }}>{i + 1}</td>
                         <td>
@@ -416,7 +422,6 @@ const AllEmployees = () => {
                           </div>
                         </td>
                         <td><span className={`emp-role-badge ${getRoleClass(emp.type)}`}>{getRoleName(emp.type)}</span></td>
-                        <td style={{ color: "#7a8799", fontSize: 12 }}>{emp.email}</td>
                         <td>
                           <button className="emp-btn-success-sm" onClick={() => handleAddToCompany(emp._id)}>
                             Add to Company
@@ -431,7 +436,7 @@ const AllEmployees = () => {
 
             {/* Mobile */}
             <div className="d-md-none">
-              {notInCompanyEmployees.map((emp) => (
+              {filteredNotInCompany.map((emp) => (
                 <div key={emp._id} className="emp-mobile-card">
                   <div className="emp-mobile-card-header">
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -445,10 +450,6 @@ const AllEmployees = () => {
                     </div>
                     <button className="emp-btn-success-sm" onClick={() => handleAddToCompany(emp._id)}>Add</button>
                   </div>
-                  <div className="emp-mobile-card-divider" />
-                  <div className="emp-mobile-card-info">
-                    <div><strong>Email:</strong> {emp.email}</div>
-                  </div>
                 </div>
               ))}
             </div>
@@ -456,7 +457,12 @@ const AllEmployees = () => {
         ) : (
           <div className="emp-table-card">
             <div className="emp-empty">
-              <div className="emp-empty-icon">✅</div>
+              <div className="emp-empty-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1d6fa4" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <polyline points="16 11 18 13 22 9"/>
+                </svg>
+              </div>
               <p>No deactivated employees.</p>
             </div>
           </div>

@@ -5,7 +5,107 @@ import { getAvailabilitySummary } from "../services/operations/availabilityAPI";
 import { useNavigate, useLocation } from "react-router-dom";
 import { generateTextImage } from "../utils/generateTextImage";
 import "./Availability.css";
-import { FiSliders, FiX } from "react-icons/fi";
+import { FiSliders, FiX, FiCalendar } from "react-icons/fi";
+
+const CAPACITY_OPTS = [
+  { value: "", label: "Any" },
+  { value: "small", label: "1–5" },
+  { value: "medium", label: "6–10" },
+  { value: "large", label: "11–20" },
+  { value: "xlarge", label: "21+" },
+];
+
+const BUDGET_OPTS = [
+  { value: "", label: "Any" },
+  { value: "low", label: "< ₹5k" },
+  { value: "mid", label: "₹5k–10k" },
+  { value: "high", label: "₹10k–20k" },
+  { value: "premium", label: "₹20k+" },
+];
+
+/* ── Cache helpers ── */
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+
+// Returns user-specific prefix so cached data never leaks across accounts
+const getAvUserPrefix = () => {
+  try { return JSON.parse(localStorage.getItem("user") || "{}")?._id || "anon"; } catch { return "anon"; }
+};
+
+const getCached = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem(key); return null; }
+    return data;
+  } catch { return null; }
+};
+
+const setCache = (key, data) => {
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+};
+
+const cacheKey = (startDate, endDate) => `av_${getAvUserPrefix()}_${startDate}_${endDate}`;
+
+/* ── Format availability response ── */
+const formatResponse = (res) => {
+  if (!res?.success || !res?.yachts) return null;
+  return res.yachts.map((y) => ({
+    yachtId: y.yachtId || y._id,
+    name: y.name || y.yachtName,
+    company: y.company,
+    capacity: y.capacity,
+    status: y.status,
+    sellingPrice: y.sellingPrice || y.maxSellingPrice || 0,
+    runningCost: y.runningCost,
+    yachtPhotos:
+      y.yachtPhotos?.length > 0
+        ? y.yachtPhotos
+        : y.photos?.length > 0
+          ? y.photos
+          : [],
+    days: (y.availability || []).map((a) => ({
+      day: new Date(a.date).toLocaleDateString("en-US", { weekday: "short" }),
+      date: new Date(a.date).toISOString().split("T")[0],
+      status:
+        a.status === "busy" ? "Busy" : a.status === "locked" ? "Locked" : "Free",
+      bookedSlots: a.bookingsCount ? Array(a.bookingsCount).fill({}) : [],
+    })),
+  }));
+};
+
+/* ── Skeleton card components ── */
+const MobileSkeletonCard = () => (
+  <div className="av-card av-skel-card">
+    <div className="av-skel-thumb" />
+    <div className="av-card-body">
+      <div className="av-skel-line av-skel-name" />
+      <div className="av-skel-line av-skel-meta" />
+      <div className="av-skel-days">
+        <div className="av-skel-day" />
+        <div className="av-skel-day" />
+        <div className="av-skel-day" />
+      </div>
+    </div>
+  </div>
+);
+
+const DesktopSkeletonCard = () => (
+  <div className="col-md-6 col-lg-4">
+    <div className="card h-100 av-skel-card" style={{ borderRadius: 20, overflow: "hidden" }}>
+      <div className="av-skel-img" />
+      <div className="card-body p-3">
+        <div className="av-skel-line av-skel-name" />
+        <div className="av-skel-line av-skel-meta" />
+        <div className="av-skel-days mt-3">
+          <div className="av-skel-day" />
+          <div className="av-skel-day" />
+          <div className="av-skel-day" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 function Availability() {
   const navigate = useNavigate();
@@ -13,18 +113,19 @@ function Availability() {
 
   const [availability, setAvailability] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // true only when NO cached data
 
   const location = useLocation();
   const params = new URLSearchParams(location.search);
 
   const [filterCapacity, setFilterCapacity] = useState(params.get("capacity") || "");
   const [filterBudget, setFilterBudget] = useState(params.get("budget") || "");
-  const [filterDate] = useState(new Date().toISOString().split("T")[0]);
+  const [filterDate, setFilterDate] = useState(
+    params.get("date") || new Date().toISOString().split("T")[0]
+  );
   const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Breakpoint: mobile < 700px, desktop >= 700px
   const [isMobile, setIsMobile] = useState(window.innerWidth < 700);
 
   useEffect(() => {
@@ -42,63 +143,52 @@ function Availability() {
     if (filterCapacity) p.set("capacity", filterCapacity);
     if (filterBudget) p.set("budget", filterBudget);
     if (searchQuery) p.set("search", searchQuery);
+    if (filterDate) p.set("date", filterDate);
     navigate({ search: p.toString() }, { replace: true });
-  }, [filterCapacity, filterBudget, searchQuery, navigate]);
+  }, [filterCapacity, filterBudget, searchQuery, filterDate, navigate]);
 
   const fetchAvailability = useCallback(
     async (customDate) => {
       if (!token) return;
-      try {
+
+      const start = customDate ? new Date(customDate) : new Date();
+      const end = new Date(start);
+      end.setDate(start.getDate() + 3);
+      const startDate = start.toISOString().split("T")[0];
+      const endDate = end.toISOString().split("T")[0];
+
+      const weekLabel = `${start.toLocaleString("en-US", {
+        month: "short", day: "numeric",
+      })} – ${end.toLocaleString("en-US", {
+        month: "short", day: "numeric", year: "numeric",
+      })}`;
+      setSelectedWeek(weekLabel);
+
+      const key = cacheKey(startDate, endDate);
+      const cached = getCached(key);
+
+      if (cached) {
+        // Show cached data instantly — no spinner
+        setAvailability(cached);
+        setLoading(false);
+      } else {
+        // No cache — show skeleton
         setLoading(true);
-        const start = customDate ? new Date(customDate) : new Date();
-        const end = new Date(start);
-        end.setDate(start.getDate() + 3);
+      }
 
-        const startDate = start.toISOString().split("T")[0];
-        const endDate = end.toISOString().split("T")[0];
-
-        const weekLabel = `${start.toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-        })} – ${end.toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}`;
-        setSelectedWeek(weekLabel);
-
+      // Always revalidate in background (silently if cache hit)
+      try {
         const res = await getAvailabilitySummary(startDate, endDate, token);
-        console.log("res : ", res);
-        if (res?.success && res?.yachts) {
-          const formatted = res.yachts.map((y) => ({
-            yachtId: y.yachtId || y._id,
-            name: y.name || y.yachtName,
-            company: y.company,
-            capacity: y.capacity,
-            status: y.status,
-            sellingPrice: y.sellingPrice || y.maxSellingPrice || 0,
-            runningCost: y.runningCost,
-            yachtPhotos:
-              y.yachtPhotos?.length > 0
-                ? y.yachtPhotos
-                : y.photos?.length > 0
-                  ? y.photos
-                  : [],
-            days: (y.availability || []).map((a) => ({
-              day: new Date(a.date).toLocaleDateString("en-US", { weekday: "short" }),
-              date: new Date(a.date).toISOString().split("T")[0],
-              status:
-                a.status === "busy" ? "Busy" : a.status === "locked" ? "Locked" : "Free",
-              bookedSlots: a.bookingsCount ? Array(a.bookingsCount).fill({}) : [],
-            })),
-          }));
+        const formatted = formatResponse(res);
+        if (formatted) {
           setAvailability(formatted);
-        } else {
+          setCache(key, formatted);
+        } else if (!cached) {
           setAvailability([]);
         }
       } catch (err) {
         console.error("Failed to fetch availability:", err);
-        setAvailability([]);
+        if (!cached) setAvailability([]);
       } finally {
         setLoading(false);
       }
@@ -117,6 +207,8 @@ function Availability() {
   };
 
   const hasActiveFilters = filterCapacity || filterBudget || searchQuery;
+  const capacityLabel = CAPACITY_OPTS.find((o) => o.value === filterCapacity)?.label;
+  const budgetLabel = BUDGET_OPTS.find((o) => o.value === filterBudget)?.label;
 
   const rankedAvailability = availability
     .map((yacht) => {
@@ -191,68 +283,82 @@ function Availability() {
   };
 
   /* ─────────────────────────────────────
-     DESKTOP UI  (>= 700px) — original
+     DESKTOP UI  (>= 700px)
   ───────────────────────────────────── */
   const renderDesktop = () => (
     <div className="container mt-2 mb-4">
-      <h3 className="text-center mb-2 availability-title">Yacht Availability</h3>
+      <div className="filter-box">
+        <div className="filter-section">
+          <label className="filter-label">
+            <FiCalendar size={13} style={{ marginRight: 4 }} />
+            Start Date
+          </label>
+          <input
+            type="date"
+            className="av-desktop-date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+          />
+        </div>
 
-      {/* Desktop Filter Bar */}
-      <div className="d-flex flex-wrap justify-content-between align-items-end mb-4 py-2 px-1 rounded-4 filter-box">
-        <div className="d-flex flex-wrap gap-1">
-          <div>
-            <label className="form-label mb-1 fw-semibold">Capacity</label>
-            <select
-              className="form-select shadow-sm capacity-select"
-              value={filterCapacity}
-              onChange={(e) => setFilterCapacity(e.target.value)}
-            >
-              <option value="">All</option>
-              <option value="small">1–5</option>
-              <option value="medium">6–10</option>
-              <option value="large">11–20</option>
-              <option value="xlarge">21+</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="form-label mb-1 fw-semibold">Budget</label>
-            <select
-              className="form-select shadow-sm budget-select"
-              value={filterBudget}
-              onChange={(e) => setFilterBudget(e.target.value)}
-            >
-              <option value="">All</option>
-              <option value="low">Under ₹5,000</option>
-              <option value="mid">₹5,000 – ₹10,000</option>
-              <option value="high">₹10,000 – ₹20,000</option>
-              <option value="premium">Above ₹20,000</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="form-label mb-1 fw-semibold">Search</label>
-            <input
-              type="text"
-              className="form-control shadow-sm"
-              placeholder="Search Yacht / Company"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+        <div className="filter-section">
+          <label className="filter-label">Guests</label>
+          <div className="av-chip-group">
+            {CAPACITY_OPTS.map((o) => (
+              <button
+                key={o.value}
+                className={`av-chip${filterCapacity === o.value ? " av-chip--active" : ""}`}
+                onClick={() => setFilterCapacity(o.value)}
+              >
+                {o.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        <button className="btn btn-secondary px-3 py-2 clear-btn" onClick={handleClear}>
-          Clear
-        </button>
+        <div className="filter-section">
+          <label className="filter-label">Price Range</label>
+          <div className="av-chip-group">
+            {BUDGET_OPTS.map((o) => (
+              <button
+                key={o.value}
+                className={`av-chip${filterBudget === o.value ? " av-chip--active" : ""}`}
+                onClick={() => setFilterBudget(o.value)}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="filter-section filter-section--search">
+          <label className="filter-label">Search</label>
+          <div className="av-search-wrap">
+            <input
+              type="text"
+              className="av-desktop-search"
+              placeholder="Yacht or company…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button className="av-search-clear" onClick={() => setSearchQuery("")}>
+                <FiX size={13} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {hasActiveFilters && (
+          <button className="btn-av-clear" onClick={handleClear}>
+            <FiX size={14} /> Clear
+          </button>
+        )}
       </div>
 
-      {/* Desktop Card Grid */}
       <div className="row g-4">
         {loading ? (
-          <div className="text-center mt-5">
-            <div className="spinner-border text-primary" role="status" />
-          </div>
+          Array.from({ length: 6 }).map((_, i) => <DesktopSkeletonCard key={i} />)
         ) : filteredAvailability.length === 0 ? (
           <div className="text-center text-muted mt-5">No yachts found</div>
         ) : (
@@ -335,25 +441,28 @@ function Availability() {
   );
 
   /* ─────────────────────────────────────
-     MOBILE UI  (< 700px) — new compact
+     MOBILE UI  (< 700px)
   ───────────────────────────────────── */
   const renderMobile = () => (
     <div className="av-container">
-      {/* Header */}
-      <div className="av-header">
-        <h2 className="av-title">Yacht Availability</h2>
-        {selectedWeek && <span className="av-week">{selectedWeek}</span>}
-      </div>
-
-      {/* Search + Filter toggle */}
       <div className="av-searchbar">
-        <input
-          type="text"
-          className="av-search-input"
-          placeholder="Search yacht or company…"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+        <button className="btn-back-icon" onClick={() => navigate(-1)} aria-label="Go back">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <div className="av-search-wrap">
+          <input
+            type="text"
+            className="av-search-input"
+            placeholder="Search yacht or company…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button className="av-search-clear" onClick={() => setSearchQuery("")}>
+              <FiX size={14} />
+            </button>
+          )}
+        </div>
         <button
           className={`av-filter-btn ${hasActiveFilters ? "av-filter-btn--active" : ""}`}
           onClick={() => setShowFilters(true)}
@@ -364,18 +473,17 @@ function Availability() {
         </button>
       </div>
 
-      {/* Active filter pills */}
       {hasActiveFilters && (
         <div className="av-active-filters">
           {filterCapacity && (
             <span className="av-pill">
-              {filterCapacity}
+              👥 {capacityLabel}
               <button onClick={() => setFilterCapacity("")}><FiX size={11} /></button>
             </span>
           )}
           {filterBudget && (
             <span className="av-pill">
-              {filterBudget}
+              {budgetLabel}
               <button onClick={() => setFilterBudget("")}><FiX size={11} /></button>
             </span>
           )}
@@ -388,13 +496,9 @@ function Availability() {
         </div>
       )}
 
-      {/* Compact card list */}
       <div className="av-list">
         {loading ? (
-          <div className="av-state">
-            <div className="spinner-border spinner-border-sm text-secondary" role="status" />
-            <span>Loading…</span>
-          </div>
+          Array.from({ length: 5 }).map((_, i) => <MobileSkeletonCard key={i} />)
         ) : filteredAvailability.length === 0 ? (
           <div className="av-state">No yachts found.</div>
         ) : (
@@ -442,10 +546,10 @@ function Availability() {
         )}
       </div>
 
-      {/* Bottom sheet filter drawer */}
       {showFilters && (
         <div className="av-drawer-backdrop" onClick={() => setShowFilters(false)}>
           <div className="av-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="av-drawer-drag" />
             <div className="av-drawer-header">
               <span>Filters</span>
               <button className="av-drawer-close" onClick={() => setShowFilters(false)}>
@@ -453,34 +557,42 @@ function Availability() {
               </button>
             </div>
 
-            <label className="av-drawer-label">Capacity</label>
-            <select
-              className="av-drawer-select"
-              value={filterCapacity}
-              onChange={(e) => setFilterCapacity(e.target.value)}
-            >
-              <option value="">All</option>
-              <option value="small">1–5</option>
-              <option value="medium">6–10</option>
-              <option value="large">11–20</option>
-              <option value="xlarge">21+</option>
-            </select>
+            <label className="av-drawer-label">Start Date</label>
+            <input
+              type="date"
+              className="av-drawer-date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+            />
 
-            <label className="av-drawer-label">Budget</label>
-            <select
-              className="av-drawer-select"
-              value={filterBudget}
-              onChange={(e) => setFilterBudget(e.target.value)}
-            >
-              <option value="">All</option>
-              <option value="low">Under ₹5,000</option>
-              <option value="mid">₹5,000 – ₹10,000</option>
-              <option value="high">₹10,000 – ₹20,000</option>
-              <option value="premium">Above ₹20,000</option>
-            </select>
+            <label className="av-drawer-label">Guests</label>
+            <div className="av-chip-group">
+              {CAPACITY_OPTS.map((o) => (
+                <button
+                  key={o.value}
+                  className={`av-chip${filterCapacity === o.value ? " av-chip--active" : ""}`}
+                  onClick={() => setFilterCapacity(o.value)}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+
+            <label className="av-drawer-label">Price Range</label>
+            <div className="av-chip-group">
+              {BUDGET_OPTS.map((o) => (
+                <button
+                  key={o.value}
+                  className={`av-chip${filterBudget === o.value ? " av-chip--active" : ""}`}
+                  onClick={() => setFilterBudget(o.value)}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
 
             <div className="av-drawer-actions">
-              <button className="av-drawer-clear" onClick={handleClear}>Clear all</button>
+              <button className="av-drawer-clear" onClick={handleClear}>Clear filters</button>
               <button className="av-drawer-apply" onClick={() => setShowFilters(false)}>Apply</button>
             </div>
           </div>
