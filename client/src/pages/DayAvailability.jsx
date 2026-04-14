@@ -153,11 +153,30 @@ function DayAvailability() {
   };
 
   // Start time options: [current - 30, current, current + 30] — compact like calendar lock
-  const generateStartOpts = (currentStart) => {
+  // From-time slabs: -1hr, -30, current, +30, +1hr, +1.5hr
+  // Blocked below by the latest booked/locked slot end before this index
+  const generateStartOpts = (currentStart, tl, idx, yachtObj) => {
     const cur = hhmmToMinutes(currentStart);
-    return [-30, 0, 30]
+
+    // Lower bound: don't overlap any preceding booked/locked slot
+    let minStart = yachtObj?.sailStartTime ? hhmmToMinutes(yachtObj.sailStartTime) : 0;
+    if (tl) {
+      for (let i = 0; i < idx; i++) {
+        const s = tl[i];
+        if (s.type === "booked" || s.type === "locked" || s.type === "pending") {
+          const endMin = hhmmToMinutes(s.end);
+          if (endMin > minStart) minStart = endMin;
+        }
+      }
+    }
+
+    // Upper bound: must leave at least 30 min before yacht ends
+    const yachtEndMin = yachtObj?.sailEndTime ? hhmmToMinutes(yachtObj.sailEndTime) : 23 * 60 + 30;
+    const maxStart = yachtEndMin - 30;
+
+    return [-60, -30, 0, 30, 60, 90]
       .map((d) => cur + d)
-      .filter((m) => m >= 0 && m < 24 * 60)
+      .filter((m) => m >= minStart && m <= maxStart && m >= 0 && m < 24 * 60)
       .map((m) => minutesToHHMM(m));
   };
 
@@ -588,11 +607,28 @@ function DayAvailability() {
   const handleInlineEditSave = async () => {
     if (inlineEditIdx === null) return;
     setIsSavingInline(true);
-    const payloadSlots = timeline.map((s, i) =>
-      i === inlineEditIdx
-        ? { start: inlineEditSlot.start, end: inlineEditSlot.end }
-        : { start: s.start, end: s.end }
+
+    const newEndMin = hhmmToMinutes(inlineEditSlot.end);
+    const yachtEndMin = yacht?.sailEndTime ? hhmmToMinutes(yacht.sailEndTime) : 24 * 60;
+
+    // Find the first FREE slot strictly after inlineEditIdx
+    const nextFreeIdx = timeline.findIndex(
+      (s, i) => i > inlineEditIdx && s.type === "free"
     );
+
+    const payloadSlots = timeline.map((s, i) => {
+      if (i === inlineEditIdx) return { start: inlineEditSlot.start, end: inlineEditSlot.end };
+      if (i === nextFreeIdx) {
+        // Auto-adjust: start at edited slot's new end, duration = yacht slot duration, capped at yacht end
+        const slotDur = getDurationMins(yacht) || 120;
+        const adjStart = newEndMin;
+        const adjEnd = Math.min(adjStart + slotDur, yachtEndMin);
+        if (adjEnd <= adjStart) return null; // no room — drop this slot
+        return { start: minutesToHHMM(adjStart), end: minutesToHHMM(adjEnd) };
+      }
+      return { start: s.start, end: s.end };
+    }).filter(Boolean);
+
     try {
       const res = await updateDaySlots(yachtId, currentDay.date, payloadSlots, token);
       if (res?.success) {
@@ -1057,7 +1093,7 @@ function DayAvailability() {
 
                     // ── Inline edit mode for this slot ──
                     if (inlineEditIdx === idx) {
-                      const startOpts = generateStartOpts(timeline[idx].start);
+                      const startOpts = generateStartOpts(timeline[idx].start, timeline, idx, yacht);
                       const endOpts = generateEndOptsLimited(inlineEditSlot.start, yacht, inlineEditSlot.end);
                       return (
                         <div key={idx} style={{
@@ -1145,12 +1181,9 @@ function DayAvailability() {
                             : "")
                         }
                       >
-                        {/* Left spacer — mirrors icon group width so time stays centred */}
-                        {showActions && <span style={{ width: 73, flexShrink: 0 }} />}
-
                         {/* Time label — always centred */}
                         <span
-                          style={{ flex: 1, textAlign: "center" }}
+                          style={{ flex: 1, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}
                           onClick={() => {
                             if (disabled || unauthorized) return;
                             handleSlotClick(slot);
@@ -1367,7 +1400,7 @@ function DayAvailability() {
             position: "fixed", inset: 0, zIndex: 9999,
             background: "rgba(5,24,41,0.62)", backdropFilter: "blur(4px)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "16px",
+            padding: "16px 16px 80px 16px",
           }}
         >
           <div
@@ -1482,7 +1515,7 @@ function DayAvailability() {
                   const rowBorder = isBooked ? "#fecdd3" : isLocked ? "#fde68a"
                     : inEditMode ? "#93c5fd" : "#bbf7d0";
 
-                  const startOpts = generateStartOpts(slot.start);
+                  const startOpts = generateStartOpts(slot.start, editedDaySlots, origIdx, yacht);
                   const endOpts = generateEndOpts(slot.start, yacht);
 
                   return (

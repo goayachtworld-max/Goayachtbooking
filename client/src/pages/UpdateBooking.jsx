@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import BookingDatePicker from "../components/BookingDatePicker";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -70,6 +71,21 @@ function UpdateBooking() {
   const [showExtraNotes, setShowExtraNotes] = useState(false);
   const [editLoading, setEditLoading]       = useState(false);
 
+  const [customTimeEnabled, setCustomTimeEnabled] = useState(false);
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd]     = useState("");
+  const originalSlotRef = useRef({ start: "", end: "" });
+
+  const toMin = (t = "00:00") => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+
+  const isCustomTimeColliding = (start, end, bookings) => {
+    if (!bookings) return false;
+    return bookings.some((b) => {
+      if (b.startTime === booking.startTime && b.endTime === booking.endTime) return false;
+      return toMin(start) < toMin(b.endTime) && toMin(end) > toMin(b.startTime);
+    });
+  };
+
   const extraOptions = {
     inclusions:   ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain & Crew", "Snacks"],
     paidServices: ["DSLR Photography", "Drone - Photography & Videography"],
@@ -83,9 +99,14 @@ function UpdateBooking() {
     return customerData.name !== (c.name || "") || customerData.contact !== (c.contact || "") ||
       customerData.alternateContact !== (c.alternateContact || "") || customerData.email !== (c.email || "");
   };
-  const isBookingChanged = () =>
-    bookingData.yachtId !== booking.yachtId._id || bookingData.date !== booking.date.split("T")[0] ||
-    bookingData.startTime !== booking.startTime  || bookingData.endTime !== booking.endTime;
+  const isBookingChanged = () => {
+    const finalStart = customTimeEnabled ? customStart : bookingData.startTime;
+    const finalEnd   = customTimeEnabled ? customEnd   : bookingData.endTime;
+    return bookingData.yachtId !== booking.yachtId._id ||
+           bookingData.date !== booking.date.split("T")[0] ||
+           finalStart !== booking.startTime ||
+           finalEnd   !== booking.endTime;
+  };
   const isExtrasChanged = () => {
     const orig = parseExtrasFromNotes(booking?.extraDetails || "");
     const origNotes = extractNotesOnly(booking?.extraDetails || "");
@@ -97,8 +118,11 @@ function UpdateBooking() {
   const isEditSubmitDisabled = () => {
     if (!customerData.name || !customerData.contact) return true;
     if (isAdmin) {
-      if (!bookingData.yachtId || !bookingData.date || !bookingData.startTime || !bookingData.endTime)
-        return true;
+      if (!bookingData.yachtId || !bookingData.date) return true;
+      const finalStart = customTimeEnabled ? customStart : bookingData.startTime;
+      const finalEnd   = customTimeEnabled ? customEnd   : bookingData.endTime;
+      if (!finalStart || !finalEnd) return true;
+      if (customTimeEnabled && toMin(finalStart) >= toMin(finalEnd)) return true;
     }
     if (!isCustomerChanged() && !isBookingChanged() && !isExtrasChanged()) return true;
     return false;
@@ -216,8 +240,15 @@ function UpdateBooking() {
         }, token);
       if (isExtrasChanged())
         await updateBookingExtrasAPI(booking._id, { extraDetails }, token);
-      if (isAdmin && isBookingChanged())
-        await rescheduleBookingAPI(booking._id, { yachtId: bookingData.yachtId, date: bookingData.date, startTime: bookingData.startTime, endTime: bookingData.endTime, extraDetails }, token);
+      if (isAdmin && isBookingChanged()) {
+        const finalStart = customTimeEnabled ? customStart : bookingData.startTime;
+        const finalEnd   = customTimeEnabled ? customEnd   : bookingData.endTime;
+        if (customTimeEnabled && isCustomTimeColliding(finalStart, finalEnd, yachts.find(y => y._id === bookingData.yachtId)?.bookings)) {
+          toast.error("Custom time overlaps an existing booking — choose a different time.");
+          setEditLoading(false); return;
+        }
+        await rescheduleBookingAPI(booking._id, { yachtId: bookingData.yachtId, date: bookingData.date, startTime: finalStart, endTime: finalEnd, extraDetails }, token);
+      }
       toast.success("Booking updated successfully");
       navigate("/bookings");
     } catch (err) {
@@ -610,18 +641,35 @@ function UpdateBooking() {
                 <div className={styles.formRow}>
                   <div className={styles.fieldGroup}>
                     <label className={styles.label}>Date</label>
-                    <input type="date" className={styles.input} name="date" value={bookingData.date}
-                      min={new Date().toISOString().split("T")[0]}
-                      onChange={isAdmin ? (e) => setBookingData(p => ({ ...p, date: e.target.value })) : undefined}
-                      disabled={!isAdmin} />
+                    {isAdmin ? (
+                      <BookingDatePicker
+                        value={bookingData.date}
+                        minDate={new Date().toISOString().split("T")[0]}
+                        onChange={(ds) => {
+                          setBookingData(p => ({ ...p, date: ds, startTime: "", endTime: "" }));
+                          setCustomTimeEnabled(false);
+                        }}
+                        placeholder="Pick a date"
+                      />
+                    ) : (
+                      <input className={styles.input}
+                        value={bookingData.date ? new Date(bookingData.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : ""}
+                        disabled />
+                    )}
                   </div>
                   <div className={styles.fieldGroup}>
-                    <label className={styles.label}>Time Slot</label>
+                    <label className={styles.label}>
+                      Time Slot
+                      {customTimeEnabled && <span style={{ fontSize: 10, color: "#94a3b8", marginLeft: 6, fontWeight: 400 }}>overridden by custom</span>}
+                    </label>
                     {isAdmin ? (
                       <select className={styles.select} value={bookingData.startTime}
+                        disabled={customTimeEnabled}
+                        style={{ opacity: customTimeEnabled ? 0.4 : 1, cursor: customTimeEnabled ? "not-allowed" : "pointer" }}
                         onChange={(e) => {
                           const slot = startTimeOptions.find((s) => s.start === e.target.value);
                           setBookingData((p) => ({ ...p, startTime: slot?.start || "", endTime: slot?.end || "" }));
+                          originalSlotRef.current = { start: slot?.start || "", end: slot?.end || "" };
                         }}>
                         <option value="">-- Select Slot --</option>
                         {startTimeOptions.map((s) => (
@@ -635,6 +683,89 @@ function UpdateBooking() {
                     )}
                   </div>
                 </div>
+
+                {/* ── Admin custom time override ── */}
+                {isAdmin && bookingData.startTime && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", margin: 0 }}>
+                        Custom Time
+                        <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 11, marginLeft: 6 }}>opt. — override selected slot</span>
+                      </label>
+                      <button
+                        type="button"
+                        style={{
+                          fontSize: 11, padding: "2px 10px", borderRadius: 6,
+                          border: customTimeEnabled ? "1.5px solid #dc2626" : "1.5px solid #1d6fa4",
+                          background: customTimeEnabled ? "#fef2f2" : "#eef4fb",
+                          color: customTimeEnabled ? "#dc2626" : "#1d6fa4",
+                          cursor: "pointer", fontWeight: 600,
+                        }}
+                        onClick={() => {
+                          if (customTimeEnabled) {
+                            const { start, end } = originalSlotRef.current;
+                            setCustomStart(start); setCustomEnd(end);
+                            setBookingData(p => ({ ...p, startTime: start, endTime: end }));
+                          } else {
+                            originalSlotRef.current = { start: bookingData.startTime, end: bookingData.endTime };
+                            setCustomStart(bookingData.startTime);
+                            setCustomEnd(bookingData.endTime);
+                          }
+                          setCustomTimeEnabled(p => !p);
+                        }}
+                      >
+                        {customTimeEnabled ? "✕ Cancel" : "✎ Edit"}
+                      </button>
+                    </div>
+                    {customTimeEnabled && (() => {
+                      const isInvalidTime = customStart && customEnd && toMin(customStart) >= toMin(customEnd);
+                      const selectedYacht = yachts.find(y => y._id === bookingData.yachtId);
+                      const hasCollision  = !isInvalidTime && isCustomTimeColliding(customStart, customEnd, selectedYacht?.bookings);
+                      const hasError = isInvalidTime || hasCollision;
+                      // ── Time slabs (relative to original slot) ─────────────────
+                      const minToHHMM = (m) => { const h=Math.floor(m/60),mm=m%60; return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`; };
+                      const baseStartMin = toMin(originalSlotRef.current.start || bookingData.startTime);
+                      const baseEndMin   = toMin(originalSlotRef.current.end   || bookingData.endTime);
+                      const yachtSailStart = selectedYacht?.sailStartTime ? toMin(selectedYacht.sailStartTime) : 0;
+                      const yachtSailEnd   = selectedYacht?.sailEndTime   ? toMin(selectedYacht.sailEndTime)   : 23*60+59;
+                      const minStartMin = (selectedYacht?.bookings||[]).reduce((a,b)=>{ const em=toMin(b.endTime); return em<=baseStartMin?Math.max(a,em):a; }, yachtSailStart);
+                      const maxEndMin   = (selectedYacht?.bookings||[]).reduce((a,b)=>{ const sm=toMin(b.startTime); return sm>baseStartMin?Math.min(a,sm):a; }, yachtSailEnd);
+                      const curStartMin = toMin(customStart);
+                      const startOpts   = [-60,-30,0,30,60,90].map(d=>({ v:minToHHMM(baseStartMin+d), m:baseStartMin+d }));
+                      const endOpts     = [-60,-30,0,30,60,90,120,150,180].map(d=>({ v:minToHHMM(baseEndMin+d), m:baseEndMin+d }));
+                      const slabSel = { width:"100%", padding:"10px 12px", borderRadius:10, border: hasError?"1.5px solid #dc2626":"1.5px solid #e2e8f0", fontSize:14, fontWeight:600, color:"#051829", background: hasError?"#fef2f2":"#f8fafc", cursor:"pointer", appearance:"auto" };
+                      return (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          <div>
+                            <label style={{ fontSize: 11, color: hasError ? "#dc2626" : "#64748b", display: "block", marginBottom: 6, fontWeight: hasError ? 700 : 400 }}>Start Time</label>
+                            <select style={slabSel} value={customStart} onChange={(e) => setCustomStart(e.target.value)}>
+                              {startOpts.map(o => <option key={o.v} value={o.v} disabled={o.m < minStartMin || o.m < 0}>{to12Hour(o.v)}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 11, color: hasError ? "#dc2626" : "#64748b", display: "block", marginBottom: 6, fontWeight: hasError ? 700 : 400 }}>End Time</label>
+                            <select style={slabSel} value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}>
+                              {endOpts.map(o => <option key={o.v} value={o.v} disabled={o.m > maxEndMin || o.m <= curStartMin}>{to12Hour(o.v)}</option>)}
+                            </select>
+                          </div>
+                          {isInvalidTime ? (
+                            <div style={{ gridColumn: "span 2", fontSize: 11, color: "#dc2626", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, padding: "5px 8px", fontWeight: 600 }}>
+                              ⛔ End time must be after start time.
+                            </div>
+                          ) : hasCollision ? (
+                            <div style={{ gridColumn: "span 2", fontSize: 11, color: "#dc2626", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, padding: "5px 8px", fontWeight: 600 }}>
+                              ⛔ This time overlaps an existing booking — choose a different time.
+                            </div>
+                          ) : (
+                            <div style={{ gridColumn: "span 2", fontSize: 11, color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, padding: "5px 8px" }}>
+                              ⚠ Booking will be rescheduled to the custom time.
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
 
                 {/* Extras */}
                 <div className={styles.extrasHeader}>

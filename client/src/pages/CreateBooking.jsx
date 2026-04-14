@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import BookingDatePicker from "../components/BookingDatePicker";
 import { createBookingAPI } from "../services/operations/bookingAPI";
 import {
   createCustomerAPI,
@@ -871,9 +872,15 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
                   <div className="cb-f">
                     <label className="cb-lbl">Date</label>
-                    <input className="cb-inp" type="date" name="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      value={formData.date} onChange={handleChange} required />
+                    <BookingDatePicker
+                      value={formData.date}
+                      minDate={new Date().toISOString().split("T")[0]}
+                      onChange={(ds) => {
+                        setFormData(p => ({ ...p, date: ds, startTime: "", endTime: "" }));
+                        setCustomTimeEnabled(false);
+                      }}
+                      placeholder="Pick a date"
+                    />
                   </div>
 
                   <div className="cb-f">
@@ -970,47 +977,45 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                           const errorBg     = hasError ? "#fef2f2" : undefined;
                           const labelColor  = hasError ? "#dc2626" : "#64748b";
                           const labelWeight = hasError ? 700 : 400;
+                          // ── Time slabs (relative to selected slot) ──────────────
+                          const minToHHMM = (m) => { const h=Math.floor(m/60),mm=m%60; return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`; };
+                          const baseStartMin = hhmmToMinutes(formData.startTime);
+                          const baseEndMin   = hhmmToMinutes(formData.endTime);
+                          const yachtSailStart = selectedYacht?.sailStartTime ? hhmmToMinutes(selectedYacht.sailStartTime) : 0;
+                          const yachtSailEnd   = selectedYacht?.sailEndTime   ? hhmmToMinutes(selectedYacht.sailEndTime)   : 23*60+59;
+                          const minStartMin = (selectedYacht?.bookings||[]).reduce((a,b)=>{ const em=hhmmToMinutes(b.endTime); return em<=baseStartMin?Math.max(a,em):a; }, yachtSailStart);
+                          const maxEndMin   = (selectedYacht?.bookings||[]).reduce((a,b)=>{ const sm=hhmmToMinutes(b.startTime); return sm>baseStartMin?Math.min(a,sm):a; }, yachtSailEnd);
+                          const curStartMin = hhmmToMinutes(customStart);
+                          const startOpts   = [-60,-30,0,30,60,90].map(d=>({ v:minToHHMM(baseStartMin+d), m:baseStartMin+d }));
+                          const endOpts     = [-60,-30,0,30,60,90,120,150,180].map(d=>({ v:minToHHMM(baseEndMin+d), m:baseEndMin+d }));
+                          const slabSel = { width:"100%", padding:"10px 12px", borderRadius:10, border: hasError?"1.5px solid #dc2626":"1.5px solid #e2e8f0", fontSize:14, fontWeight:600, color:"#051829", background: hasError?"#fef2f2":"#f8fafc", cursor:"pointer", appearance:"auto" };
                           return (
                             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                               <div>
-                                <label style={{ fontSize:11, color: labelColor, display:"block", marginBottom:3, fontWeight: labelWeight }}>Start Time</label>
-                                <input
-                                  className="cb-inp"
-                                  type="time"
-                                  value={customStart}
-                                  style={{ border: errorBorder, background: errorBg }}
-                                  onChange={(e) => {
-                                    const newStart = e.target.value;
-                                    setCustomStart(newStart);
-                                    if (newStart && customEnd && hhmmToMinutes(newStart) < hhmmToMinutes(customEnd)) {
-                                      const totalHrs = (hhmmToMinutes(customEnd) - hhmmToMinutes(newStart)) / 60;
-                                      const yacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
-                                      const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
-                                      setSailingHours(sailing);
-                                      setAnchoringHours(anchoring);
-                                    }
-                                  }}
-                                />
+                                <label style={{ fontSize:11, color: labelColor, display:"block", marginBottom:6, fontWeight: labelWeight }}>Start Time</label>
+                                <select style={slabSel} value={customStart} onChange={(e) => {
+                                  const v = e.target.value; setCustomStart(v);
+                                  if (v && customEnd && hhmmToMinutes(v) < hhmmToMinutes(customEnd)) {
+                                    const hrs = (hhmmToMinutes(customEnd) - hhmmToMinutes(v)) / 60;
+                                    const { sailing, anchoring } = splitHoursForSlot(hrs, selectedYacht);
+                                    setSailingHours(sailing); setAnchoringHours(anchoring);
+                                  }
+                                }}>
+                                  {startOpts.map(o => <option key={o.v} value={o.v} disabled={o.m < minStartMin || o.m < 0}>{to12Hour(o.v)}</option>)}
+                                </select>
                               </div>
                               <div>
-                                <label style={{ fontSize:11, color: labelColor, display:"block", marginBottom:3, fontWeight: labelWeight }}>End Time</label>
-                                <input
-                                  className="cb-inp"
-                                  type="time"
-                                  value={customEnd}
-                                  style={{ border: errorBorder, background: errorBg }}
-                                  onChange={(e) => {
-                                    const newEnd = e.target.value;
-                                    setCustomEnd(newEnd);
-                                    if (customStart && newEnd && hhmmToMinutes(customStart) < hhmmToMinutes(newEnd)) {
-                                      const totalHrs = (hhmmToMinutes(newEnd) - hhmmToMinutes(customStart)) / 60;
-                                      const yacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
-                                      const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
-                                      setSailingHours(sailing);
-                                      setAnchoringHours(anchoring);
-                                    }
-                                  }}
-                                />
+                                <label style={{ fontSize:11, color: labelColor, display:"block", marginBottom:6, fontWeight: labelWeight }}>End Time</label>
+                                <select style={slabSel} value={customEnd} onChange={(e) => {
+                                  const v = e.target.value; setCustomEnd(v);
+                                  if (customStart && v && hhmmToMinutes(customStart) < hhmmToMinutes(v)) {
+                                    const hrs = (hhmmToMinutes(v) - hhmmToMinutes(customStart)) / 60;
+                                    const { sailing, anchoring } = splitHoursForSlot(hrs, selectedYacht);
+                                    setSailingHours(sailing); setAnchoringHours(anchoring);
+                                  }
+                                }}>
+                                  {endOpts.map(o => <option key={o.v} value={o.v} disabled={o.m > maxEndMin || o.m <= curStartMin}>{to12Hour(o.v)}</option>)}
+                                </select>
                               </div>
                               {isInvalidTime ? (
                                 <div style={{ gridColumn:"span 2", fontSize:11, color:"#dc2626", background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:6, padding:"5px 8px", fontWeight:600 }}>

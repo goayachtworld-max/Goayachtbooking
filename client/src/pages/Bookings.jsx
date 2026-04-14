@@ -133,6 +133,12 @@ function Bookings({ user }) {
 
   const [expandedAddons, setExpandedAddons] = useState({});
 
+  // ── Feedback sent tracking (keyed by booking._id, persisted in localStorage) ──
+  const [feedbackSentIds, setFeedbackSentIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("ga_feedbackSent") || "[]")); }
+    catch { return new Set(); }
+  });
+
   // ---------------- ADDON PARSER ----------------
   const ADDON_CONFIG = [
     { key: "drone", label: "Drone", match: "Drone", paid: true },
@@ -563,6 +569,32 @@ function Bookings({ user }) {
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to complete trip");
     }
+  };
+
+  const handleFeedback = (booking) => {
+    const name    = booking.company?.name || "Goa Yacht World";
+    const contact = booking.customerId?.contact || "";
+    const message =
+`Hello Sir / Madam,
+Hope you had a great experience with ${name}. Please do share your reviews along with some Photos to help us grow our business online. Your genuine review will help us to grow and serve better.
+
+https://g.page/r/CVph5Ry_zbBlEBE/review
+
+Thank you,
+Goa Yacht World
+☎️ +91-84462 75985 / 84462 05985
+www.goayachtworld.com`;
+
+    const wa = `https://wa.me/91${contact}?text=${encodeURIComponent(message)}`;
+    window.open(wa, "_blank");
+
+    // Mark as sent
+    setFeedbackSentIds((prev) => {
+      const next = new Set(prev);
+      next.add(booking._id);
+      try { localStorage.setItem("ga_feedbackSent", JSON.stringify([...next])); } catch {}
+      return next;
+    });
   };
 
   // ---------------- FILTER PIPELINE ----------------
@@ -1085,7 +1117,37 @@ function Bookings({ user }) {
                           <button onClick={() => navigate("/update-booking", { state: { booking, user } })} style={{ flex: 1, height: 30, borderRadius: 99, border: "1.5px solid #1d6fa4", background: "transparent", color: "#1d6fa4", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}>Update</button>
                         )}
                         {(user?.type === "admin" || user?.type === "onsite") && isBookingCompleted(booking) && (booking.status === "pending" || booking.pendingAmount > 0) && (
-                          <button onClick={() => handleCompleteTrip(booking)} style={{ flex: 1, height: 30, borderRadius: 99, border: "1.5px solid #198754", background: "#198754", color: "#fff", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}>Complete Trip</button>
+                          <div style={{ flex: 1, display: "flex", gap: 6 }}>
+                            <button
+                              onClick={() => handleCompleteTrip(booking)}
+                              style={{ flex: 1, height: 30, borderRadius: 99, border: "1.5px solid #198754", background: "#198754", color: "#fff", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}
+                            >Complete Trip</button>
+                            <button
+                              onClick={() => handleFeedback(booking)}
+                              disabled={feedbackSentIds.has(booking._id)}
+                              title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send feedback via WhatsApp"}
+                              style={{
+                                flex: 1, height: 30, borderRadius: 99, fontWeight: 600, fontSize: "0.72rem", cursor: feedbackSentIds.has(booking._id) ? "default" : "pointer",
+                                border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
+                                background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
+                                color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
+                              }}
+                            >{feedbackSentIds.has(booking._id) ? "Requested" : "Feedback"}</button>
+                          </div>
+                        )}
+                        {isBookingCompleted(booking) && booking.status !== "pending" && !(booking.pendingAmount > 0) && (
+                          <button
+                            onClick={() => handleFeedback(booking)}
+                            disabled={feedbackSentIds.has(booking._id)}
+                            title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send feedback via WhatsApp"}
+                            style={{
+                              flex: 1, height: 30, borderRadius: 99, fontWeight: 600, fontSize: "0.72rem",
+                              cursor: feedbackSentIds.has(booking._id) ? "default" : "pointer",
+                              border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
+                              background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
+                              color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
+                            }}
+                          >{feedbackSentIds.has(booking._id) ? "Requested" : "Feedback"}</button>
                         )}
                       </div>
 
@@ -1267,16 +1329,52 @@ function Bookings({ user }) {
                             </button>
                           )}
 
-                        {/* COMPLETE TRIP — for past bookings still pending or with balance */}
+                        {/* COMPLETE TRIP + FEEDBACK — for past bookings still pending or with balance */}
                         {(user?.type === "admin" || user?.type === "onsite") &&
                           isBookingCompleted(booking) &&
                           (booking.status === "pending" || booking.pendingAmount > 0) && (
+                            <>
+                              <button
+                                className="btn btn-sm btn-success flex-grow-1 rounded-pill"
+                                title="Mark trip as complete and settle balance"
+                                onClick={() => handleCompleteTrip(booking)}
+                              >
+                                Complete Trip
+                              </button>
+                              <button
+                                className="btn btn-sm flex-grow-1 rounded-pill"
+                                disabled={feedbackSentIds.has(booking._id)}
+                                onClick={() => handleFeedback(booking)}
+                                title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send feedback via WhatsApp"}
+                                style={{
+                                  border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
+                                  background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
+                                  color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {feedbackSentIds.has(booking._id) ? "Requested" : "Feedback"}
+                              </button>
+                            </>
+                          )}
+
+                        {/* FEEDBACK ONLY — for already-confirmed completed trips */}
+                        {isBookingCompleted(booking) &&
+                          booking.status !== "pending" &&
+                          !(booking.pendingAmount > 0) && (
                             <button
-                              className="btn btn-sm btn-success flex-grow-1 rounded-pill"
-                              title="Mark trip as complete and settle balance"
-                              onClick={() => handleCompleteTrip(booking)}
+                              className="btn btn-sm flex-grow-1 rounded-pill"
+                              title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send feedback via WhatsApp"}
+                              disabled={feedbackSentIds.has(booking._id)}
+                              onClick={() => handleFeedback(booking)}
+                              style={{
+                                border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
+                                background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
+                                color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
+                                fontWeight: 600,
+                              }}
                             >
-                              Complete Trip
+                              {feedbackSentIds.has(booking._id) ? "Requested" : "Feedback"}
                             </button>
                           )}
                       </div>

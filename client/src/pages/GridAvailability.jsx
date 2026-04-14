@@ -1555,10 +1555,25 @@ function GridAvailability() {
 
                         const currentStartMin = hhmmToMinutes(editStart || selectedSlot.start);
 
-                        const startOptions = [-30, 0, 30].map(d => ({
+                        // Lower bound for start: don't overlap any preceding booked/locked slot
+                        const yachtSailStart = yacht?.sailStartTime ? hhmmToMinutes(yacht.sailStartTime) : 0;
+                        const yachtSailEnd   = yacht?.sailEndTime   ? hhmmToMinutes(yacht.sailEndTime)   : 23 * 60 + 59;
+                        const minStartMin = daySlots.reduce((acc, s) => {
+                          if (s.start === selectedSlot.start) return acc;
+                          const em = hhmmToMinutes(s.end);
+                          if (em <= baseStartMin && (s.type === "booked" || s.type === "locked" || s.type === "pending")) {
+                            return Math.max(acc, em);
+                          }
+                          return acc;
+                        }, yachtSailStart);
+
+                        // Slabs: -1hr, -30, current, +30, +1hr, +1.5hr
+                        const startOptions = [-60, -30, 0, 30, 60, 90].map(d => ({
                           value: minutesToHHMM(baseStartMin + d),
                           minutes: baseStartMin + d,
-                          disabled: (baseStartMin + d) < 0,
+                          disabled: (baseStartMin + d) < minStartMin
+                                 || (baseStartMin + d) > yachtSailEnd - 30
+                                 || (baseStartMin + d) < 0,
                         }));
 
                         const endDeltas = [-60, -30, 0, 30, 60, 90, 120, 150, 180];
