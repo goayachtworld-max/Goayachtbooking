@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Carousel } from "react-bootstrap";
 import { getAvailabilitySummary } from "../services/operations/availabilityAPI";
+import { apiConnector } from "../services/apiConnector";
+import { yaut } from "../services/apis";
 import { useNavigate, useLocation } from "react-router-dom";
 import { generateTextImage } from "../utils/generateTextImage";
 import "./Availability.css";
@@ -45,10 +47,10 @@ const setCache = (key, data) => {
   try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
 };
 
-const cacheKey = (startDate, endDate) => `av_${getAvUserPrefix()}_${startDate}_${endDate}`;
+const cacheKey = (startDate, endDate) => `av2_${getAvUserPrefix()}_${startDate}_${endDate}`;
 
 /* ── Format availability response ── */
-const formatResponse = (res) => {
+const formatResponse = (res, cspMap = {}) => {
   if (!res?.success || !res?.yachts) return null;
   return res.yachts.map((y) => ({
     yachtId: y.yachtId || y._id,
@@ -56,7 +58,8 @@ const formatResponse = (res) => {
     company: y.company,
     capacity: y.capacity,
     status: y.status,
-    sellingPrice: y.sellingPrice || y.maxSellingPrice || 0,
+    sellingPrice: y.sellingPrice || 0,
+    maxSellingPrice: cspMap[y.yachtId || y._id] || y.maxSellingPrice || 0,
     runningCost: y.runningCost,
     yachtPhotos:
       y.yachtPhotos?.length > 0
@@ -178,8 +181,16 @@ function Availability() {
 
       // Always revalidate in background (silently if cache hit)
       try {
-        const res = await getAvailabilitySummary(startDate, endDate, token);
-        const formatted = formatResponse(res);
+        const [res, detailsRes] = await Promise.all([
+          getAvailabilitySummary(startDate, endDate, token),
+          apiConnector("GET", yaut.GET_ALL_YACHTS_DETAILS_API, null, { Authorization: `Bearer ${token}` }).catch(() => null),
+        ]);
+        // Build cspMap: yachtId → maxSellingPrice from yacht master
+        const cspMap = {};
+        (detailsRes?.data?.yachts || []).forEach((y) => {
+          if (y._id && y.maxSellingPrice) cspMap[y._id] = y.maxSellingPrice;
+        });
+        const formatted = formatResponse(res, cspMap);
         if (formatted) {
           setAvailability(formatted);
           setCache(key, formatted);
@@ -397,11 +408,14 @@ function Availability() {
                   )}
 
                   <div className="card-body p-3">
-                    <h5 className="mb-1 yacht-name">{yacht.name}</h5>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
+                      <h5 className="mb-0 yacht-name">{yacht.name}</h5>
+                      <span className="text-muted small fw-semibold">👥 {yacht.capacity}</span>
+                    </div>
                     <p className="text-muted small mb-2">
-                      👥: <strong>{yacht.capacity}</strong> |
-                      B2B: <strong>₹{yacht.runningCost}</strong> |
-                      Price: <strong>₹{yacht.sellingPrice}</strong>
+                      B2b: <strong>₹{yacht.runningCost}</strong>
+                      {yacht.sellingPrice > 0 && <> | Sp: <strong>₹{yacht.sellingPrice}</strong></>}
+                      {yacht.maxSellingPrice > 0 && <> | Csp: <strong style={{ color: "#c2410c" }}>₹{yacht.maxSellingPrice}</strong></>}
                     </p>
 
                     <div className="d-flex justify-content-between mt-3">
@@ -518,11 +532,14 @@ function Availability() {
                 />
                 <div className="av-card-body">
                   <div className="av-card-top" onClick={() => handleCardClick(yacht)}>
-                    <span className="av-yacht-name">{yacht.name}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span className="av-yacht-name">{yacht.name}</span>
+                      <span style={{ fontSize: 12, color: "#475569", fontWeight: 600, whiteSpace: "nowrap" }}>👥 {yacht.capacity}</span>
+                    </div>
                     <div className="av-meta">
-                      <span>👥 {yacht.capacity}</span>
-                      <span>B2B ₹{yacht.runningCost}</span>
-                      <span>₹{yacht.sellingPrice}</span>
+                      <span><span style={{ opacity: 0.65 }}>B2b</span> ₹{yacht.runningCost}</span>
+                      {yacht.sellingPrice > 0 && <span><span style={{ opacity: 0.65 }}>Sp</span> ₹{yacht.sellingPrice}</span>}
+                      {yacht.maxSellingPrice > 0 && <span style={{ color: "#c2410c" }}><span style={{ opacity: 0.75 }}>Csp</span> ₹{yacht.maxSellingPrice}</span>}
                     </div>
                   </div>
                   <div className="av-days">

@@ -1,4 +1,4 @@
-// // src/utils/slotEngine.js
+// src/utils/slotEngine.js
 
 export const IMMUTABLE_TYPES = ["booked", "pending", "locked"];
 
@@ -20,16 +20,8 @@ export function adjustSlots({
   newEnd,
   durationMinutes,
 }) {
-  console.log("adjust slots --------------------------------------")
   const editedStart = toMin(newStart);
   const editedEnd = toMin(newEnd);
-  console.log({
-  allSlots,
-  targetIndex,
-  newStart,
-  newEnd,
-  durationMinutes,
-})
 
   if (editedEnd <= editedStart) {
     throw new Error("End time must be after start time");
@@ -66,16 +58,44 @@ export function adjustSlots({
   target.startMin = editedStart;
   target.endMin = editedEnd;
 
-  // ✅ Remove ALL overlapping FREE slots (except target)
-  normalized = normalized.filter(
-    (s) =>
-      s === target ||
-      IMMUTABLE_TYPES.includes(s.type) ||
-      !overlaps(
-        { start: editedStart, end: editedEnd },
-        { start: s.startMin, end: s.endMin }
-      )
-  );
+  // ✅ Truncate overlapping FREE slots (instead of removing them wholesale)
+  //    A free slot that partially overlaps gets its overlapping portion clipped.
+  //    Only the target slot itself is left as-is.
+  const trimmed = [];
+  for (const s of normalized) {
+    if (s === target) {
+      trimmed.push(s);
+      continue;
+    }
+    if (IMMUTABLE_TYPES.includes(s.type)) {
+      trimmed.push(s);
+      continue;
+    }
+    if (!overlaps({ start: editedStart, end: editedEnd }, { start: s.startMin, end: s.endMin })) {
+      trimmed.push(s);
+      continue;
+    }
+
+    // Free slot overlaps the target — keep the non-overlapping portions.
+    // Clip 1 minute inside the target boundary so the backend's inclusive
+    // overlap check on lockSlot never accidentally matches the trimmed slot.
+    // Piece that sits BEFORE the target
+    if (s.startMin < editedStart) {
+      const clippedEnd = editedStart - 1; // 1-min gap prevents inclusive boundary match
+      if (clippedEnd > s.startMin) {
+        trimmed.push({ ...s, startMin: s.startMin, endMin: clippedEnd });
+      }
+    }
+    // Piece that sits AFTER the target
+    if (s.endMin > editedEnd) {
+      const clippedStart = editedEnd + 1; // 1-min gap on the trailing side
+      if (clippedStart < s.endMin) {
+        trimmed.push({ ...s, startMin: clippedStart, endMin: s.endMin });
+      }
+    }
+    // If the free slot is fully contained within the target → discard (covered by the locked slot)
+  }
+  normalized = trimmed;
 
   // Sort
   normalized.sort((a, b) => a.startMin - b.startMin);

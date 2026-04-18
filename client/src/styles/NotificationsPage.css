@@ -91,6 +91,28 @@
   color: #fff;
 }
 
+/* Clear button */
+.npage-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  white-space: nowrap;
+}
+.npage-clear-btn:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #ef4444;
+}
+
 /* ── Loading / empty ── */
 .npage-empty {
   display: flex;

@@ -816,25 +816,22 @@ function GridAvailability() {
     });
 
     try {
-      const isEdited =
-        start !== selectedSlot.start || end !== selectedSlot.end;
+      // Always run adjustSlots so any overlapping free slots get trimmed
+      // (not just when the user explicitly changes the start/end times)
+      const updatedSlots = adjustSlots({
+        allSlots: daySlots,
+        targetIndex: selectedIndex,
+        newStart: start,
+        newEnd: end,
+        durationMinutes: hhmmToMinutes(yacht.duration),
+      });
 
-      if (isEdited) {
-        const updatedSlots = adjustSlots({
-          allSlots: daySlots,
-          targetIndex: selectedIndex,
-          newStart: start,
-          newEnd: end,
-          durationMinutes: hhmmToMinutes(yacht.duration),
-        });
-
-        await updateDaySlots(
-          yachtId,
-          selectedDate,
-          updatedSlots.map(({ start, end }) => ({ start, end })),
-          token
-        );
-      }
+      await updateDaySlots(
+        yachtId,
+        selectedDate,
+        updatedSlots.map(({ start, end }) => ({ start, end })),
+        token
+      );
 
       // permanent = true → no auto-expiry timer; backend receives permanent:true, deleteAfter:null
       await lockSlot(yachtId, selectedDate, start, end, token, true);
@@ -1239,13 +1236,18 @@ function GridAvailability() {
             {/* Prices + legend pinned inside the sticky header on mobile */}
             <div className={`d-flex justify-content-between align-items-center flex-wrap gap-2 ${styles.mobileInfoBar}`}>
               {yacht && (
-                <div className="d-flex gap-2 align-items-center">
+                <div className="d-flex gap-2 align-items-center flex-wrap">
                   <span className={`badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold ${styles.mobileInfoBadge}`} style={{ fontSize: "11px" }}>
                     B2b: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
                   </span>
                   <span className={`badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-semibold ${styles.mobileInfoBadge}`} style={{ fontSize: "11px" }}>
                     Selling: ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
                   </span>
+                  {yacht.maxSellingPrice > 0 && (
+                    <span className={`badge px-2 py-1 rounded-pill fw-semibold ${styles.mobileInfoBadge}`} style={{ fontSize: "11px", background: "#fff7ed", color: "#c2410c" }}>
+                      Customer: ₹{Number(yacht.maxSellingPrice).toLocaleString("en-IN")}
+                    </span>
+                  )}
                 </div>
               )}
               <div className={styles.legend}>
@@ -1263,13 +1265,18 @@ function GridAvailability() {
         {!isMobile && (
           <div className="mb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
             {yacht && (
-              <div className="d-flex gap-2 align-items-center">
+              <div className="d-flex gap-2 align-items-center flex-wrap">
                 <span className="badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: "13px" }}>
                   B2b: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
                 </span>
                 <span className="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: "13px" }}>
                   Selling: ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
                 </span>
+                {yacht.maxSellingPrice > 0 && (
+                  <span className="badge px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: "13px", background: "#fff7ed", color: "#c2410c" }}>
+                    Customer: ₹{Number(yacht.maxSellingPrice).toLocaleString("en-IN")}
+                  </span>
+                )}
               </div>
             )}
             <div className={styles.legend}>
@@ -1543,27 +1550,25 @@ function GridAvailability() {
                         const baseStartMin = hhmmToMinutes(selectedSlot.start);
                         const baseEndMin   = hhmmToMinutes(selectedSlot.end);
 
-                        // Cap end time at the next booked/locked/pending slot
+                        // Cap end time at the next slot of ANY type (free slots included)
+                        // Prevents extending into the next slot and triggering backend overlap lock
                         const maxEndMin = daySlots.reduce((cap, s) => {
                           if (s.start === selectedSlot.start) return cap;
                           const sm = hhmmToMinutes(s.start);
-                          if (sm > baseStartMin && (s.type === "booked" || s.type === "locked" || s.type === "pending")) {
-                            return Math.min(cap, sm);
-                          }
+                          if (sm > baseStartMin) return Math.min(cap, sm);
                           return cap;
                         }, 23 * 60 + 59);
 
                         const currentStartMin = hhmmToMinutes(editStart || selectedSlot.start);
 
-                        // Lower bound for start: don't overlap any preceding booked/locked slot
+                        // Lower bound for start: don't overlap ANY preceding slot (free or not)
+                        // Prevents moving start into a preceding slot which causes double-lock
                         const yachtSailStart = yacht?.sailStartTime ? hhmmToMinutes(yacht.sailStartTime) : 0;
                         const yachtSailEnd   = yacht?.sailEndTime   ? hhmmToMinutes(yacht.sailEndTime)   : 23 * 60 + 59;
                         const minStartMin = daySlots.reduce((acc, s) => {
                           if (s.start === selectedSlot.start) return acc;
                           const em = hhmmToMinutes(s.end);
-                          if (em <= baseStartMin && (s.type === "booked" || s.type === "locked" || s.type === "pending")) {
-                            return Math.max(acc, em);
-                          }
+                          if (em <= baseStartMin) return Math.max(acc, em);
                           return acc;
                         }, yachtSailStart);
 

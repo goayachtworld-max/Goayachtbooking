@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getBookingsAPI } from "../services/operations/bookingAPI";
+import { socket } from "../socket";
 import { getEmployeesForBookingAPI } from "../services/operations/employeeAPI";
 import { createTransactionAndUpdateBooking } from "../services/operations/transactionAPI";
 import { FiSliders } from "react-icons/fi";
-import { Eye, Copy, Phone, GlassWater } from "lucide-react";
+import { Eye, Copy, Phone, GlassWater, Bell, Pencil, Star } from "lucide-react";
 import toast from "react-hot-toast";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -402,6 +403,48 @@ function Bookings({ user }) {
     }
   }, [location.state?.refresh]);
 
+  // ---------------- REAL-TIME UPDATES ----------------
+  // Bust cache and re-fetch when a booking event arrives via socket
+  const bustAndRefetch = useCallback(() => {
+    try {
+      Object.keys(localStorage).filter(k => k.startsWith("bk_")).forEach(k => localStorage.removeItem(k));
+    } catch {}
+    const filters = {};
+    if (filterDate) filters.date = filterDate;
+    if (filterStatus && filterStatus !== "completed") filters.status = filterStatus;
+    if (filterEmployee) filters.employeeId = filterEmployee;
+    if (selectedMonth && !filterDate) filters.month = selectedMonth;
+    fetchBookings(filters);
+  }, [filterDate, filterStatus, filterEmployee, selectedMonth]);
+
+  useEffect(() => {
+    const onBookingEvent = () => bustAndRefetch();
+    socket.on("booking:new",       onBookingEvent);
+    socket.on("booking:updated",   onBookingEvent);
+    socket.on("booking:cancelled", onBookingEvent);
+    socket.on("booking:confirmed", onBookingEvent);
+    return () => {
+      socket.off("booking:new",       onBookingEvent);
+      socket.off("booking:updated",   onBookingEvent);
+      socket.off("booking:cancelled", onBookingEvent);
+      socket.off("booking:confirmed", onBookingEvent);
+    };
+  }, [bustAndRefetch]);
+
+  // Refresh when the user returns to this tab (stale after 60s)
+  useEffect(() => {
+    let lastVisible = Date.now();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        if (Date.now() - lastVisible > 60_000) bustAndRefetch();
+      } else {
+        lastVisible = Date.now();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [bustAndRefetch]);
+
   // ---------------- ACTIONS ----------------
   const handleClear = () => {
     setSearchQuery("");
@@ -562,7 +605,7 @@ function Bookings({ user }) {
       setBookings((prev) =>
         prev.map((b) =>
           b._id === booking._id
-            ? { ...b, status: "confirmed", pendingAmount: 0 }
+            ? { ...b, status: "confirmed" }
             : b
         )
       );
@@ -595,6 +638,36 @@ www.goayachtworld.com`;
       try { localStorage.setItem("ga_feedbackSent", JSON.stringify([...next])); } catch {}
       return next;
     });
+  };
+
+  const handleReminder = (booking) => {
+    const customerName  = booking.customerId?.name || "Guest";
+    const date          = booking.date ? new Date(booking.date).toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short", year: "numeric" }) : "—";
+    const time          = `${to12HourFormat(booking.startTime)} – ${to12HourFormat(booking.endTime)}`;
+    const pax           = booking.numPeople || 0;
+    const balance       = booking.pendingAmount > 0 ? `₹${booking.pendingAmount}` : "NIL";
+    const boardingPoint = booking.yachtId?.boardingLocation || "our boarding point";
+    const adminPhone    = "+91-84462 75985 / 84462 05985";
+    const adminEmail    = "info@goayachtworld.com";
+
+    const message =
+`Hello ${customerName},
+
+This is to remind you about your upcoming trip.
+
+Date: ${date}, Time: ${time} with Pax count ${pax} | Pending Balance: ${balance}
+
+Please reach before 10 minutes for the booked time slot at the Boarding point: ${boardingPoint}
+
+Any query please contact us at: ${adminPhone} or email us at: ${adminEmail}
+
+Wish you a safe and comfortable trip.
+Thank you 🛥️
+Goa Yacht World`;
+
+    const contact = booking.customerId?.contact?.replace(/\D/g, "") || "";
+    const phone   = contact.length === 10 ? "91" + contact : contact;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   // ---------------- FILTER PIPELINE ----------------
@@ -1071,7 +1144,9 @@ www.goayachtworld.com`;
                               </span>
                             )}
                           </div>
-                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: booking.pendingAmount > 0 ? "#b45309" : "#15803d" }}>Balance ₹{booking.pendingAmount}</span>
+                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: isBookingCompleted(booking) ? "#15803d" : (booking.pendingAmount > 0 ? "#b45309" : "#15803d") }}>
+                            {isBookingCompleted(booking) ? `Total ₹${booking.quotedAmount}` : `Balance ₹${booking.pendingAmount}`}
+                          </span>
                         </div>
                         <button title="Copy summary" onClick={() => {
                           const sanitizeText = (t = "") => t.replace(/\u2022|\u2023|\u25E6/g,"-").replace(/\u200B|\u200C|\u200D|\uFEFF/g,"").replace(/\r\n/g,"\n").replace(/\n{2,}/g,"\n").trim();
@@ -1105,49 +1180,55 @@ www.goayachtworld.com`;
                       )}
 
                       {/* ─ ROW 3: actions ─ */}
-                      <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "5px 12px 8px" }}>
-                        <button title="View" onClick={() => handleViewDetails(booking)} style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#475569", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Eye size={14} /></button>
-                        <button title="WhatsApp" onClick={(e) => handleShareWhatsApp(booking, e)} style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid #25D366", background: "transparent", color: "#25D366", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/></svg>
+                      <div style={{ display: "flex", justifyContent: "flex-start", gap: 12, alignItems: "center", padding: "6px 12px 10px" }}>
+                        <button title="View" onClick={() => handleViewDetails(booking)} style={{ width: 36, height: 36, borderRadius: "50%", border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#475569", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Eye size={15} /></button>
+                        <button title="WhatsApp" onClick={(e) => handleShareWhatsApp(booking, e)} style={{ width: 36, height: 36, borderRadius: "50%", border: "1.5px solid #25D366", background: "transparent", color: "#25D366", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/></svg>
                         </button>
-                        {(booking.status === "confirmed" || booking.status === "pending") && !isBookingCompleted(booking) && (
-                          <button onClick={() => generateBoardingPass(booking)} style={{ flex: 1, height: 30, borderRadius: 99, border: `1.5px solid ${booking.status === "confirmed" ? "#198754" : "#ffc107"}`, background: "transparent", color: booking.status === "confirmed" ? "#198754" : "#b45309", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}>Pass</button>
-                        )}
                         {(user?.type === "admin" || user?.type === "backdesk" || user?.type === "onsite") && !isBookingCompleted(booking) && (
-                          <button onClick={() => navigate("/update-booking", { state: { booking, user } })} style={{ flex: 1, height: 30, borderRadius: 99, border: "1.5px solid #1d6fa4", background: "transparent", color: "#1d6fa4", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}>Update</button>
+                          <button title="Update Booking" onClick={() => navigate("/update-booking", { state: { booking, user } })} style={{ width: 36, height: 36, borderRadius: "50%", border: "1.5px solid #1d6fa4", background: "transparent", color: "#1d6fa4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Pencil size={15} /></button>
+                        )}
+                        {(booking.status === "confirmed" || booking.status === "pending") && !isBookingCompleted(booking) && (
+                          <button title={booking.status === "confirmed" ? "Copy Boarding Pass" : "Copy Tentative Pass"} onClick={() => generateBoardingPass(booking)} style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${booking.status === "confirmed" ? "#198754" : "#ffc107"}`, background: "transparent", color: booking.status === "confirmed" ? "#198754" : "#b45309", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Copy size={15} /></button>
+                        )}
+                        {booking.status === "confirmed" && !isBookingCompleted(booking) && (
+                          <button title="Send Reminder via WhatsApp" onClick={() => handleReminder(booking)} style={{ width: 36, height: 36, borderRadius: "50%", border: "1.5px solid #c2410c", background: "transparent", color: "#c2410c", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Bell size={15} /></button>
                         )}
                         {(user?.type === "admin" || user?.type === "onsite") && isBookingCompleted(booking) && (booking.status === "pending" || booking.pendingAmount > 0) && (
-                          <div style={{ flex: 1, display: "flex", gap: 6 }}>
+                          <>
                             <button
                               onClick={() => handleCompleteTrip(booking)}
-                              style={{ flex: 1, height: 30, borderRadius: 99, border: "1.5px solid #198754", background: "#198754", color: "#fff", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}
+                              style={{ height: 36, paddingInline: 14, borderRadius: 99, border: "1.5px solid #198754", background: "#198754", color: "#fff", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer", flexShrink: 0 }}
                             >Complete Trip</button>
                             <button
                               onClick={() => handleFeedback(booking)}
                               disabled={feedbackSentIds.has(booking._id)}
-                              title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send feedback via WhatsApp"}
+                              title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send Feedback via WhatsApp"}
                               style={{
-                                flex: 1, height: 30, borderRadius: 99, fontWeight: 600, fontSize: "0.72rem", cursor: feedbackSentIds.has(booking._id) ? "default" : "pointer",
+                                width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                                cursor: feedbackSentIds.has(booking._id) ? "default" : "pointer",
                                 border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
                                 background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
                                 color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
+                                display: "flex", alignItems: "center", justifyContent: "center",
                               }}
-                            >{feedbackSentIds.has(booking._id) ? "Requested" : "Feedback"}</button>
-                          </div>
+                            ><Star size={15} /></button>
+                          </>
                         )}
                         {isBookingCompleted(booking) && booking.status !== "pending" && !(booking.pendingAmount > 0) && (
                           <button
                             onClick={() => handleFeedback(booking)}
                             disabled={feedbackSentIds.has(booking._id)}
-                            title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send feedback via WhatsApp"}
+                            title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send Feedback via WhatsApp"}
                             style={{
-                              flex: 1, height: 30, borderRadius: 99, fontWeight: 600, fontSize: "0.72rem",
+                              width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
                               cursor: feedbackSentIds.has(booking._id) ? "default" : "pointer",
                               border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
                               background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
                               color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
+                              display: "flex", alignItems: "center", justifyContent: "center",
                             }}
-                          >{feedbackSentIds.has(booking._id) ? "Requested" : "Feedback"}</button>
+                          ><Star size={15} /></button>
                         )}
                       </div>
 
@@ -1228,7 +1309,9 @@ www.goayachtworld.com`;
                           {to12HourFormat(booking.startTime)} – {to12HourFormat(booking.endTime)}
                         </div>
                         <div className="fw-semibold text-dark">🧑‍💼 Pax: {booking.numPeople}</div>
-                        <div className="fw-semibold text-dark">💰 Balance: {booking.pendingAmount}</div>
+                        <div className="fw-semibold text-dark">
+                          {isBookingCompleted(booking) ? `💰 Total: ₹${booking.quotedAmount}` : `💰 Balance: ₹${booking.pendingAmount}`}
+                        </div>
                       </div>
 
                       {/* ADD-ONS */}
@@ -1304,30 +1387,34 @@ www.goayachtworld.com`;
                           </svg>
                         </button>
 
-                        {/* BOARDING PASS — only for non-completed bookings */}
-                        {(booking.status === "confirmed" || booking.status === "pending") &&
-                          !isBookingCompleted(booking) && (
-                            <button
-                              className={`btn btn-sm flex-grow-1 rounded-pill ${booking.status === "confirmed" ? "btn-outline-success" : "btn-outline-warning"
-                                }`}
-                              title={booking.status === "pending" ? "Copy Tentative Pass" : "Copy Boarding Pass"}
-                              onClick={() => generateBoardingPass(booking)}
-                            >
-                              Pass
-                            </button>
-                          )}
-
-                        {/* UPDATE — only for non-completed bookings */}
+                        {/* UPDATE icon — before Pass, only for non-completed bookings */}
                         {(user?.type === "admin" || user?.type === "backdesk" || user?.type === "onsite") &&
                           !isBookingCompleted(booking) && (
                             <button
-                              className="btn btn-sm btn-outline-primary flex-grow-1 rounded-pill"
                               title="Update Booking"
                               onClick={() => navigate("/update-booking", { state: { booking, user } })}
-                            >
-                              Update
-                            </button>
+                              style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid #1d6fa4", background: "transparent", color: "#1d6fa4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                            ><Pencil size={14} /></button>
                           )}
+
+                        {/* BOARDING PASS copy icon — only for non-completed bookings */}
+                        {(booking.status === "confirmed" || booking.status === "pending") &&
+                          !isBookingCompleted(booking) && (
+                            <button
+                              title={booking.status === "pending" ? "Copy Tentative Pass" : "Copy Boarding Pass"}
+                              onClick={() => generateBoardingPass(booking)}
+                              style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${booking.status === "confirmed" ? "#198754" : "#ffc107"}`, background: "transparent", color: booking.status === "confirmed" ? "#198754" : "#b45309", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                            ><Copy size={14} /></button>
+                          )}
+
+                        {/* REMINDER bell — only for confirmed non-completed */}
+                        {booking.status === "confirmed" && !isBookingCompleted(booking) && (
+                          <button
+                            title="Send Reminder via WhatsApp"
+                            onClick={() => handleReminder(booking)}
+                            style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid #c2410c", background: "transparent", color: "#c2410c", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                          ><Bell size={14} /></button>
+                        )}
 
                         {/* COMPLETE TRIP + FEEDBACK — for past bookings still pending or with balance */}
                         {(user?.type === "admin" || user?.type === "onsite") &&
@@ -1363,19 +1450,18 @@ www.goayachtworld.com`;
                           booking.status !== "pending" &&
                           !(booking.pendingAmount > 0) && (
                             <button
-                              className="btn btn-sm flex-grow-1 rounded-pill"
-                              title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send feedback via WhatsApp"}
+                              title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send Feedback via WhatsApp"}
                               disabled={feedbackSentIds.has(booking._id)}
                               onClick={() => handleFeedback(booking)}
                               style={{
+                                width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                                cursor: feedbackSentIds.has(booking._id) ? "default" : "pointer",
                                 border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
                                 background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
                                 color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
-                                fontWeight: 600,
+                                display: "flex", alignItems: "center", justifyContent: "center",
                               }}
-                            >
-                              {feedbackSentIds.has(booking._id) ? "Requested" : "Feedback"}
-                            </button>
+                            ><Star size={14} /></button>
                           )}
                       </div>
                     </div>

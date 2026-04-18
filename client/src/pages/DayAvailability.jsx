@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -102,14 +102,7 @@ function DayAvailability() {
   }, [requireDateSelection, incomingDay]);
 
   if (!yachtId) {
-    return (
-      <div className="container mt-5 text-center">
-        <p>⚠️ No yacht selected. Go back to the availability page.</p>
-        <button className="btn-back-icon" onClick={() => navigate(-1)} title="Go back">
-          <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </button>
-      </div>
-    );
+    return <Navigate to="/availability" replace />;
   }
 
   // ---------- Helpers ----------
@@ -1018,29 +1011,56 @@ function DayAvailability() {
 
         <div className="availability-right">
           <div className="card shadow-sm border-0 rounded-4 p-3">
-            <div className="d-flex align-items-center justify-content-between mb-2">
-              {/* <h5 className="fw-semibold mb-0 text-secondary">
-                Slots
-              </h5> */}
-
-              <div className="fw-bold mb-0 text-primary" >
-                B2B:<strong> {yacht?.runningCost}</strong> | Price:<strong> {yacht?.sellingPrice}</strong>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+              <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
+                {yacht?.runningCost > 0 && (
+                  <span className="badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: 11 }}>
+                    B2b: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
+                  </span>
+                )}
+                {yacht?.sellingPrice > 0 && (
+                  <span className="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: 11 }}>
+                    Selling: ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
+                  </span>
+                )}
+                {yacht?.maxSellingPrice > 0 && (
+                  <span className="badge px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: 11, background: "#fff7ed", color: "#c2410c" }}>
+                    Customer: ₹{Number(yacht.maxSellingPrice).toLocaleString("en-IN")}
+                  </span>
+                )}
               </div>
-              {isAdmin && (
-                <button
-                  onClick={() => openEditDaySlotsModal({ globalEdit: true })}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 5,
-                    padding: "5px 14px", borderRadius: 8,
-                    border: "1.5px solid #c9a84c",
-                    background: "rgba(201,168,76,0.08)",
-                    color: "#7a5c1e", fontSize: 12.5, fontWeight: 700,
-                    cursor: "pointer", letterSpacing: "0.02em",
-                  }}
-                >
-                  ✏️ Edit All
-                </button>
-              )}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", fontSize: 10.5, fontWeight: 600, color: "#475569" }}>
+                  {[
+                    { label: "Free",    color: "#22c55e" },
+                    { label: "Locked",  color: "#f59e0b" },
+                    { label: "Pending", color: "#3b82f6" },
+                    { label: "Booked",  color: "#ef4444" },
+                  ].map(({ label, color }, i, arr) => (
+                    <span key={label} style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                      {label}
+                      {i < arr.length - 1 && <span style={{ color: "#cbd5e1", marginLeft: 3 }}>|</span>}
+                    </span>
+                  ))}
+                </div>
+                {isAdmin && (
+                  <button
+                    onClick={() => openEditDaySlotsModal({ globalEdit: true })}
+                    title="Edit All Slots"
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      padding: "4px 12px", borderRadius: 8, flexShrink: 0,
+                      border: "1.5px solid #c9a84c",
+                      background: "rgba(201,168,76,0.08)",
+                      color: "#7a5c1e", fontSize: 12, fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ✏️ Edit All
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Separator between header bar and slot list */}
@@ -1228,14 +1248,6 @@ function DayAvailability() {
                   })}
                 </div>
 
-                {timeline.length > 0 && (
-                  <div className="mt-4 text-center">
-                    <span className="badge bg-success me-2">Free</span>
-                    <span className="badge bg-warning text-dark me-2">Locked</span>
-                    <span className="badge bg-info text-dark me-2">Pending</span>
-                    <span className="badge bg-danger me-2">Booked</span>
-                  </div>
-                )}
               </>
             )}
           </div>

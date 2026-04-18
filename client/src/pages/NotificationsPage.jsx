@@ -73,12 +73,27 @@ const slotSVG = (
     </svg>
 );
 
+const agentSVG = (
+    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="5.5" r="2.8" stroke="currentColor" strokeWidth="1.3"/>
+        <path d="M2.5 13.5c0-2.485 2.462-4.5 5.5-4.5s5.5 2.015 5.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+);
+
+const linkSVG = (
+    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 8l4-4m0 0H7m3 0v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        <rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="1.2"/>
+    </svg>
+);
+
 function parseMessageDetails(message) {
     if (!message) return null;
     const lines = message.split(/\n|,/).map((l) => l.trim()).filter(Boolean);
     let yacht = null;
     let date = null;
     let time = null;
+    let agent = null;
 
     lines.forEach((line) => {
         // yacht line
@@ -86,6 +101,11 @@ function parseMessageDetails(message) {
         if (!yacht && /yacht[:\s]+(.+)/i.test(line)) {
             const m = line.match(/yacht[:\s]+(.+)/i);
             if (m) yacht = m[1].trim();
+        }
+        // agent / locked-by line: "Locked by: John", "Agent: John", "Employee: John", "By: John"
+        if (!agent) {
+            const am = line.match(/(?:locked\s+by|agent|employee|by)[:\s]+(.+)/i);
+            if (am) agent = am[1].trim();
         }
         // date+time line e.g. "2026-04-05 16:00 – 18:00"
         if (!date && /\d{4}-\d{2}-\d{2}/.test(line)) {
@@ -102,7 +122,7 @@ function parseMessageDetails(message) {
     });
 
     if (!yacht && !date && !time) return null;
-    return { yacht, date, time };
+    return { yacht, date, time, agent };
 }
 
 /* ── helpers ─────────────────────────────────────────────────── */
@@ -166,6 +186,7 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showUnreadOnly, setShowUnreadOnly] = useState(false);
+    const [clearedIds, setClearedIds] = useState(new Set());
     const navigate = useNavigate();
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -219,8 +240,30 @@ export default function NotificationsPage() {
         } catch (err) { console.error(err); }
     };
 
+    const clearAll = async () => {
+        // Mark all as read silently, then hide all from view
+        try {
+            const token = localStorage.getItem("authToken");
+            await markAllNotificationsReadAPI(token);
+        } catch (_) {}
+        setClearedIds(new Set(notifications.map((n) => n._id)));
+    };
+
     const handleClick = async (n) => {
         await markAsRead(n);
+
+        if (n.type === "slot_locked") {
+            // Navigate to the GridAvailability calendar, filtered to this yacht + date
+            const details = parseMessageDetails(n.message);
+            const date = details?.date;
+            const yachtId = n.yachtId || n.metadata?.yachtId || null;
+            const params = new URLSearchParams();
+            if (yachtId) params.set("yachtId", yachtId);
+            if (date) { params.set("fromDate", date); params.set("toDate", date); }
+            navigate(`/grid-availability?${params.toString()}`);
+            return;
+        }
+
         if (n.bookingId) {
             navigate("/bookings", {
                 state: {
@@ -236,9 +279,17 @@ export default function NotificationsPage() {
         }
     };
 
-    const displayedNotifications = showUnreadOnly
-        ? notifications.filter((n) => !n.readBy?.some((id) => id.toString() === userId))
-        : notifications;
+    // Sort: unread first, then newest first within each group
+    const sortedNotifications = [...notifications].sort((a, b) => {
+        const aRead = a.readBy?.some((id) => id.toString() === userId) ? 1 : 0;
+        const bRead = b.readBy?.some((id) => id.toString() === userId) ? 1 : 0;
+        if (aRead !== bRead) return aRead - bRead;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    const displayedNotifications = sortedNotifications
+        .filter((n) => !clearedIds.has(n._id))
+        .filter((n) => !showUnreadOnly || !n.readBy?.some((id) => id.toString() === userId));
 
     const grouped = groupByDate(displayedNotifications);
     const dateKeys = Object.keys(grouped);
@@ -261,6 +312,18 @@ export default function NotificationsPage() {
                         </svg>
                         Unread{unreadCount > 0 && <span className="npage-toggle-count">{unreadCount}</span>}
                     </button>
+                    {displayedNotifications.length > 0 && (
+                        <button
+                            className="npage-clear-btn"
+                            onClick={clearAll}
+                            title="Clear all notifications"
+                        >
+                            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="12" height="12">
+                                <path d="M3 4h10M6 4V3h4v1M5 4v8a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            Clear
+                        </button>
+                    )}
                 </div>
                 {unreadCount > 0 && (
                     <button className="npage-markall" onClick={markAllRead}>
@@ -329,12 +392,19 @@ export default function NotificationsPage() {
                                             {(() => {
                                                 const details = parseMessageDetails(n.message);
                                                 if (!details) return null;
+                                                const agentName = details.agent || n.empName || n.lockedBy || null;
                                                 return (
                                                     <div className="npage-detail-card" style={{ borderColor: info.color + "40" }}>
                                                         {details.yacht && (
                                                             <div className="npage-detail-row">
                                                                 <span className="npage-detail-icon" style={{ color: info.color }}>{yachtSVG}</span>
                                                                 <span className="npage-detail-text">{details.yacht}</span>
+                                                            </div>
+                                                        )}
+                                                        {agentName && (
+                                                            <div className="npage-detail-row">
+                                                                <span className="npage-detail-icon" style={{ color: info.color }}>{agentSVG}</span>
+                                                                <span className="npage-detail-text" style={{ fontStyle: "italic" }}>Locked by {agentName}</span>
                                                             </div>
                                                         )}
                                                         {(details.date || details.time) && (
@@ -351,6 +421,12 @@ export default function NotificationsPage() {
                                                                         <span className="npage-detail-text">{details.time}</span>
                                                                     </span>
                                                                 )}
+                                                            </div>
+                                                        )}
+                                                        {n.type === "slot_locked" && (
+                                                            <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
+                                                                <span style={{ color: info.color, width: 13, height: 13, display: "inline-flex", flexShrink: 0 }}>{linkSVG}</span>
+                                                                <span style={{ fontSize: 11, color: info.color, fontWeight: 600, letterSpacing: "0.02em" }}>View in Calendar</span>
                                                             </div>
                                                         )}
                                                     </div>
