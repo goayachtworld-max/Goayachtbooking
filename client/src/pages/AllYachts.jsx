@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   deleteYacht,
@@ -352,7 +353,7 @@ const AllYachts = () => {
       )}
 
       {/* ── VIEW PAGE ── */}
-      {showViewModal && selectedYacht && (
+      {showViewModal && selectedYacht && createPortal(
         <div className={s.viewPage}>
           {/* Header */}
           <div className={s.editPageHeader}>
@@ -457,10 +458,10 @@ const AllYachts = () => {
             </button>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* ── EDIT PAGE ── */}
-      {showEditModal && selectedYacht && (
+      {showEditModal && selectedYacht && createPortal(
         <div className={s.editPage}>
           <div className={s.editPageHeader}>
             <button className="btn-back-icon" onClick={closeAllModals} aria-label="Go back">
@@ -683,10 +684,10 @@ const AllYachts = () => {
             </button>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* ── DELETE MODAL ── */}
-      {showDeleteModal && selectedYacht && (
+      {showDeleteModal && selectedYacht && createPortal(
         <>
           <div className={s.backdrop} onClick={closeAllModals} />
           <div className={s.modal}>
@@ -703,7 +704,7 @@ const AllYachts = () => {
             </div>
           </div>
         </>
-      )}
+      , document.body)}
     </div>
   );
 };

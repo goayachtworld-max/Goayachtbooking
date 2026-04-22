@@ -140,6 +140,31 @@ function Bookings({ user }) {
     catch { return new Set(); }
   });
 
+  /* ── Reminder 30-min cooldown (keyed by booking._id → timestamp) ── */
+  const REMINDER_KEY         = "bk_reminder_ts";
+  const REMINDER_COOLDOWN_MS = 30 * 60 * 1000;
+  const [reminderTs, setReminderTs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(REMINDER_KEY) || "{}"); }
+    catch { return {}; }
+  });
+  // Re-read every 30 s so buttons auto-enable after cooldown expires
+  useEffect(() => {
+    const id = setInterval(() => {
+      try { setReminderTs(JSON.parse(localStorage.getItem(REMINDER_KEY) || "{}")); }
+      catch {}
+    }, 30000);
+    return () => clearInterval(id);
+  }, []);
+  const isReminderCooling = (id) => {
+    const ts = reminderTs[id];
+    return !!ts && Date.now() - ts < REMINDER_COOLDOWN_MS;
+  };
+  const reminderMinLeft = (id) => {
+    const ts = reminderTs[id];
+    if (!ts) return 0;
+    return Math.max(1, Math.ceil((REMINDER_COOLDOWN_MS - (Date.now() - ts)) / 60000));
+  };
+
   // ---------------- ADDON PARSER ----------------
   const ADDON_CONFIG = [
     { key: "drone", label: "Drone", match: "Drone", paid: true },
@@ -667,6 +692,12 @@ Goa Yacht World`;
 
     const contact = booking.customerId?.contact?.replace(/\D/g, "") || "";
     const phone   = contact.length === 10 ? "91" + contact : contact;
+
+    // Stamp cooldown timestamp
+    const next = { ...reminderTs, [booking._id]: Date.now() };
+    setReminderTs(next);
+    localStorage.setItem(REMINDER_KEY, JSON.stringify(next));
+
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
@@ -1180,7 +1211,7 @@ Goa Yacht World`;
                       )}
 
                       {/* ─ ROW 3: actions ─ */}
-                      <div style={{ display: "flex", justifyContent: "flex-start", gap: 12, alignItems: "center", padding: "6px 12px 10px" }}>
+                      <div style={{ display: "flex", justifyContent: "flex-start", gap: 18, alignItems: "center", padding: "6px 12px 10px" }}>
                         <button title="View" onClick={() => handleViewDetails(booking)} style={{ width: 36, height: 36, borderRadius: "50%", border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#475569", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Eye size={15} /></button>
                         <button title="WhatsApp" onClick={(e) => handleShareWhatsApp(booking, e)} style={{ width: 36, height: 36, borderRadius: "50%", border: "1.5px solid #25D366", background: "transparent", color: "#25D366", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/></svg>
@@ -1191,9 +1222,17 @@ Goa Yacht World`;
                         {(booking.status === "confirmed" || booking.status === "pending") && !isBookingCompleted(booking) && (
                           <button title={booking.status === "confirmed" ? "Copy Boarding Pass" : "Copy Tentative Pass"} onClick={() => generateBoardingPass(booking)} style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${booking.status === "confirmed" ? "#198754" : "#ffc107"}`, background: "transparent", color: booking.status === "confirmed" ? "#198754" : "#b45309", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Copy size={15} /></button>
                         )}
-                        {booking.status === "confirmed" && !isBookingCompleted(booking) && (
-                          <button title="Send Reminder via WhatsApp" onClick={() => handleReminder(booking)} style={{ width: 36, height: 36, borderRadius: "50%", border: "1.5px solid #c2410c", background: "transparent", color: "#c2410c", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Bell size={15} /></button>
-                        )}
+                        {booking.status === "confirmed" && !isBookingCompleted(booking) && (() => {
+                          const cooling = isReminderCooling(booking._id);
+                          const minLeft = cooling ? reminderMinLeft(booking._id) : 0;
+                          return (
+                            <button
+                              title={cooling ? `Reminder sent — re-enable in ${minLeft} min` : "Send Reminder via WhatsApp"}
+                              onClick={() => !cooling && handleReminder(booking)}
+                              style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${cooling ? "#cbd5e1" : "#c2410c"}`, background: "transparent", color: cooling ? "#94a3b8" : "#c2410c", cursor: cooling ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: cooling ? 0.55 : 1 }}
+                            ><Bell size={15} /></button>
+                          );
+                        })()}
                         {(user?.type === "admin" || user?.type === "onsite") && isBookingCompleted(booking) && (booking.status === "pending" || booking.pendingAmount > 0) && (
                           <>
                             <button
@@ -1201,32 +1240,34 @@ Goa Yacht World`;
                               style={{ height: 36, paddingInline: 14, borderRadius: 99, border: "1.5px solid #198754", background: "#198754", color: "#fff", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer", flexShrink: 0 }}
                             >Complete Trip</button>
                             <button
-                              onClick={() => handleFeedback(booking)}
+                              onClick={() => !feedbackSentIds.has(booking._id) && handleFeedback(booking)}
                               disabled={feedbackSentIds.has(booking._id)}
-                              title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send Feedback via WhatsApp"}
+                              title={feedbackSentIds.has(booking._id) ? "Feedback Sent" : "Request Feedback via WhatsApp"}
                               style={{
                                 width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
                                 cursor: feedbackSentIds.has(booking._id) ? "default" : "pointer",
-                                border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
-                                background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
-                                color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
+                                border: feedbackSentIds.has(booking._id) ? "1.5px solid #bbf7d0" : "1.5px solid #cbd5e1",
+                                background: feedbackSentIds.has(booking._id) ? "#f0fdf4" : "transparent",
+                                color: feedbackSentIds.has(booking._id) ? "#15803d" : "#94a3b8",
                                 display: "flex", alignItems: "center", justifyContent: "center",
+                                opacity: feedbackSentIds.has(booking._id) ? 0.75 : 1,
                               }}
                             ><Star size={15} /></button>
                           </>
                         )}
                         {isBookingCompleted(booking) && booking.status !== "pending" && !(booking.pendingAmount > 0) && (
                           <button
-                            onClick={() => handleFeedback(booking)}
+                            onClick={() => !feedbackSentIds.has(booking._id) && handleFeedback(booking)}
                             disabled={feedbackSentIds.has(booking._id)}
-                            title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send Feedback via WhatsApp"}
+                            title={feedbackSentIds.has(booking._id) ? "Feedback Sent" : "Request Feedback via WhatsApp"}
                             style={{
                               width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
                               cursor: feedbackSentIds.has(booking._id) ? "default" : "pointer",
-                              border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
-                              background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
-                              color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
+                              border: feedbackSentIds.has(booking._id) ? "1.5px solid #bbf7d0" : "1.5px solid #cbd5e1",
+                              background: feedbackSentIds.has(booking._id) ? "#f0fdf4" : "transparent",
+                              color: feedbackSentIds.has(booking._id) ? "#15803d" : "#94a3b8",
                               display: "flex", alignItems: "center", justifyContent: "center",
+                              opacity: feedbackSentIds.has(booking._id) ? 0.75 : 1,
                             }}
                           ><Star size={15} /></button>
                         )}
@@ -1364,7 +1405,7 @@ Goa Yacht World`;
                         );
                       })()}
 
-                      <div className="d-flex gap-2 mt-1 align-items-center">
+                      <div className="d-flex gap-3 mt-1 align-items-center">
                         {/* VIEW */}
                         <button
                           className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
@@ -1408,13 +1449,17 @@ Goa Yacht World`;
                           )}
 
                         {/* REMINDER bell — only for confirmed non-completed */}
-                        {booking.status === "confirmed" && !isBookingCompleted(booking) && (
-                          <button
-                            title="Send Reminder via WhatsApp"
-                            onClick={() => handleReminder(booking)}
-                            style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid #c2410c", background: "transparent", color: "#c2410c", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-                          ><Bell size={14} /></button>
-                        )}
+                        {booking.status === "confirmed" && !isBookingCompleted(booking) && (() => {
+                          const cooling = isReminderCooling(booking._id);
+                          const minLeft = cooling ? reminderMinLeft(booking._id) : 0;
+                          return (
+                            <button
+                              title={cooling ? `Reminder sent — re-enable in ${minLeft} min` : "Send Reminder via WhatsApp"}
+                              onClick={() => !cooling && handleReminder(booking)}
+                              style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${cooling ? "#cbd5e1" : "#c2410c"}`, background: "transparent", color: cooling ? "#94a3b8" : "#c2410c", cursor: cooling ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: cooling ? 0.55 : 1 }}
+                            ><Bell size={14} /></button>
+                          );
+                        })()}
 
                         {/* COMPLETE TRIP + FEEDBACK — for past bookings still pending or with balance */}
                         {(user?.type === "admin" || user?.type === "onsite") &&
@@ -1429,19 +1474,19 @@ Goa Yacht World`;
                                 Complete Trip
                               </button>
                               <button
-                                className="btn btn-sm flex-grow-1 rounded-pill"
+                                title={feedbackSentIds.has(booking._id) ? "Feedback Sent" : "Request Feedback via WhatsApp"}
                                 disabled={feedbackSentIds.has(booking._id)}
-                                onClick={() => handleFeedback(booking)}
-                                title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send feedback via WhatsApp"}
+                                onClick={() => !feedbackSentIds.has(booking._id) && handleFeedback(booking)}
                                 style={{
-                                  border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
-                                  background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
-                                  color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
-                                  fontWeight: 600,
+                                  width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                                  cursor: feedbackSentIds.has(booking._id) ? "default" : "pointer",
+                                  border: feedbackSentIds.has(booking._id) ? "1.5px solid #bbf7d0" : "1.5px solid #cbd5e1",
+                                  background: feedbackSentIds.has(booking._id) ? "#f0fdf4" : "transparent",
+                                  color: feedbackSentIds.has(booking._id) ? "#15803d" : "#94a3b8",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  opacity: feedbackSentIds.has(booking._id) ? 0.75 : 1,
                                 }}
-                              >
-                                {feedbackSentIds.has(booking._id) ? "Requested" : "Feedback"}
-                              </button>
+                              ><Star size={14} /></button>
                             </>
                           )}
 
@@ -1450,16 +1495,17 @@ Goa Yacht World`;
                           booking.status !== "pending" &&
                           !(booking.pendingAmount > 0) && (
                             <button
-                              title={feedbackSentIds.has(booking._id) ? "Feedback Requested" : "Send Feedback via WhatsApp"}
+                              title={feedbackSentIds.has(booking._id) ? "Feedback Sent" : "Request Feedback via WhatsApp"}
                               disabled={feedbackSentIds.has(booking._id)}
-                              onClick={() => handleFeedback(booking)}
+                              onClick={() => !feedbackSentIds.has(booking._id) && handleFeedback(booking)}
                               style={{
                                 width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
                                 cursor: feedbackSentIds.has(booking._id) ? "default" : "pointer",
-                                border: feedbackSentIds.has(booking._id) ? "1.5px solid #e2e8f0" : "1.5px solid #cbd5e1",
-                                background: feedbackSentIds.has(booking._id) ? "#f8fafc" : "transparent",
-                                color: feedbackSentIds.has(booking._id) ? "#c8d3df" : "#94a3b8",
+                                border: feedbackSentIds.has(booking._id) ? "1.5px solid #bbf7d0" : "1.5px solid #cbd5e1",
+                                background: feedbackSentIds.has(booking._id) ? "#f0fdf4" : "transparent",
+                                color: feedbackSentIds.has(booking._id) ? "#15803d" : "#94a3b8",
                                 display: "flex", alignItems: "center", justifyContent: "center",
+                                opacity: feedbackSentIds.has(booking._id) ? 0.75 : 1,
                               }}
                             ><Star size={14} /></button>
                           )}

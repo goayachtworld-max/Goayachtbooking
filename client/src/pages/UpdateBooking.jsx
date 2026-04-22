@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import { createTransactionAndUpdateBooking, updateTransactionAPI } from "../services/operations/transactionAPI";
-import { updateBookingAmountsAPI, rescheduleBookingAPI, updateBookingExtrasAPI } from "../services/operations/bookingAPI";
+import { updateBookingAmountsAPI, rescheduleBookingAPI, updateBookingExtrasAPI, updateBookingAPI } from "../services/operations/bookingAPI";
 import { updateCustomerAPI } from "../services/operations/customerAPI";
 import { getAllYachtsAPI } from "../services/operations/yautAPI";
 
@@ -70,6 +70,7 @@ function UpdateBooking() {
   const [manualNotes, setManualNotes]       = useState(extractNotesOnly(booking?.extraDetails));
   const [showExtraNotes, setShowExtraNotes] = useState(false);
   const [editLoading, setEditLoading]       = useState(false);
+  const [numPeople, setNumPeople]           = useState(String(booking?.numPeople || ""));
 
   const [customTimeEnabled, setCustomTimeEnabled] = useState(false);
   const [customStart, setCustomStart] = useState("");
@@ -115,6 +116,9 @@ function UpdateBooking() {
     return !selectedExtras.every((e) => orig.includes(e));
   };
 
+  const isPaxChanged = () =>
+    numPeople !== "" && Number(numPeople) !== Number(booking?.numPeople);
+
   const isEditSubmitDisabled = () => {
     if (!customerData.name || !customerData.contact) return true;
     if (isAdmin) {
@@ -124,7 +128,7 @@ function UpdateBooking() {
       if (!finalStart || !finalEnd) return true;
       if (customTimeEnabled && toMin(finalStart) >= toMin(finalEnd)) return true;
     }
-    if (!isCustomerChanged() && !isBookingChanged() && !isExtrasChanged()) return true;
+    if (!isCustomerChanged() && !isBookingChanged() && !isExtrasChanged() && !isPaxChanged()) return true;
     return false;
   };
 
@@ -248,6 +252,10 @@ function UpdateBooking() {
           setEditLoading(false); return;
         }
         await rescheduleBookingAPI(booking._id, { yachtId: bookingData.yachtId, date: bookingData.date, startTime: finalStart, endTime: finalEnd, extraDetails }, token);
+      }
+      if (isPaxChanged()) {
+        await updateBookingAPI(booking._id, { numPeople: Number(numPeople) }, token);
+        setLiveBooking((prev) => ({ ...prev, numPeople: Number(numPeople) }));
       }
       toast.success("Booking updated successfully");
       navigate("/bookings");
@@ -403,6 +411,9 @@ function UpdateBooking() {
       return;
     }
 
+    // Track the resolved status so the form reset uses the server-confirmed value
+    let resolvedStatus = formData.status;
+
     try {
       const token = localStorage.getItem("authToken");
 
@@ -418,6 +429,7 @@ function UpdateBooking() {
         // Reflect updated booking returned by server
         if (payRes?.data?.booking) {
           setLiveBooking(payRes.data.booking);
+          resolvedStatus = payRes.data.booking.status || resolvedStatus;
           // Sync txnEdits with any new transactions
           setTxnEdits((prev) => {
             const next = { ...prev };
@@ -437,16 +449,18 @@ function UpdateBooking() {
         if (Number(amountsData.tokenAmount) !== Number(initialAmountsData.tokenAmount))
           payload.tokenAmount = Number(amountsData.tokenAmount);
         await updateBookingAmountsAPI(booking._id, payload, token);
-        // Patch quoted/token locally
-        setLiveBooking((prev) => ({
-          ...prev,
-          quotedAmount: amountsData.quotedAmount !== "" ? Number(amountsData.quotedAmount) : prev.quotedAmount,
-          tokenAmount:  amountsData.tokenAmount  !== "" ? Number(amountsData.tokenAmount)  : prev.tokenAmount,
-        }));
+        // Patch quoted/token/pending locally
+        setLiveBooking((prev) => {
+          const newQuoted  = amountsData.quotedAmount !== "" ? Number(amountsData.quotedAmount) : prev.quotedAmount;
+          const newToken   = amountsData.tokenAmount  !== "" ? Number(amountsData.tokenAmount)  : prev.tokenAmount;
+          const newPending = Math.max(0, newQuoted - totalPaid);
+          return { ...prev, quotedAmount: newQuoted, tokenAmount: newToken, pendingAmount: newPending };
+        });
       }
 
-      // Reset form fields
-      setFormData({ status: booking.status, amount: "", type: "advance", proofFile: null });
+      // Reset form fields — use resolvedStatus (server-confirmed) so the dropdown
+      // reflects the new status immediately without a browser refresh
+      setFormData({ status: resolvedStatus, amount: "", type: "advance", proofFile: null });
       setStatusChanged(false);
       toast.success("Updated successfully");
     } catch (err) {
@@ -681,6 +695,24 @@ function UpdateBooking() {
                     ) : (
                       <input className={styles.input} value={`${to12Hour(bookingData.startTime)} – ${to12Hour(bookingData.endTime)}`} disabled />
                     )}
+                  </div>
+                </div>
+
+                {/* ── Pax count ── */}
+                <div className={styles.formRow}>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Pax (Guests)</label>
+                    <input
+                      className={styles.input}
+                      type="number"
+                      min="1"
+                      value={numPeople}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "" || Number(v) >= 1) setNumPeople(v);
+                      }}
+                      placeholder={String(booking?.numPeople || "")}
+                    />
                   </div>
                 </div>
 

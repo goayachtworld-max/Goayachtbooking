@@ -47,7 +47,7 @@ const CSS = `
   .cy-input::placeholder { color:#94a3b8; }
   .cy-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px 16px; }
   @media(max-width:800px) { .cy-grid { grid-template-columns:repeat(2,1fr); } .cy-span3 { grid-column:span 2 !important; } }
-  @media(max-width:540px) { .cy-grid { grid-template-columns:1fr; } .cy-span2,.cy-span3 { grid-column:span 1 !important; } .cy-wrap { padding-top:70px; } }
+  @media(max-width:540px) { .cy-grid { grid-template-columns:1fr; } .cy-span2,.cy-span3 { grid-column:span 1 !important; } .cy-wrap { padding-top:70px; padding-bottom:84px; } }
   .cy-span2 { grid-column:span 2; }
   .cy-span3 { grid-column:span 3; }
   .cy-drop-zone {

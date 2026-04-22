@@ -925,6 +925,7 @@
   background: #fff;
   border-top: 1px solid var(--border);
   padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
   display: flex;
   justify-content: center;
   flex-shrink: 0;

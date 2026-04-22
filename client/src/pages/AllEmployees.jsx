@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   getAllEmployeesAPI,
@@ -470,7 +471,7 @@ const AllEmployees = () => {
       )}
 
       {/* ════════════ EDIT MODAL ════════════ */}
-      {showEditModal && (
+      {showEditModal && createPortal(
         <>
           <div className="emp-modal-backdrop" onClick={() => setShowEditModal(false)} />
           <div className="emp-modal">
@@ -580,7 +581,7 @@ const AllEmployees = () => {
             </div>
           </div>
         </>
-      )}
+      , document.body)}
 
     </div>
   );

@@ -31,6 +31,7 @@ const AllEmployees      = lazy(() => import("./pages/AllEmployees"));
 const EditBookingDetails= lazy(() => import("./components/EditBookingDetails"));
 const RegisterCompany   = lazy(() => import("./pages/RegisterCompany"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const Reports           = lazy(() => import("./pages/Reports"));
 
 const PageLoader = () => (
   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
@@ -252,6 +253,12 @@ function App() {
             <Route path="/edit-booking" element={
               <ProtectedRoute user={user}>
                 {["admin", "backdesk", "onsite"].includes(role) ? <EditBookingDetails /> : <NotFound />}
+              </ProtectedRoute>
+            } />
+
+            <Route path="/reports" element={
+              <ProtectedRoute user={user}>
+                {["admin", "backdesk"].includes(role) ? <Reports user={user} /> : <NotFound />}
               </ProtectedRoute>
             } />
 
