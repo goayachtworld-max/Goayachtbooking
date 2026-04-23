@@ -610,3 +610,70 @@ export const updateBookingAmounts = async (req, res, next) => {
     next(err);
   }
 };
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /bookings/past  — past bookings for the Reports page
+//   Query params:
+//     startDate  YYYY-MM-DD  (default: 30 days ago)
+//     endDate    YYYY-MM-DD  (default: yesterday)
+//     status     pending | confirmed | cancelled
+//     yachtId    ObjectId
+// ─────────────────────────────────────────────────────────────────────────────
+export const getPastBookings = async (req, res) => {
+  try {
+    const { startDate, endDate, status, yachtId } = req.query;
+    const { company, id: loggedInEmployeeId, type } = req.user;
+
+    // Build date range — default last 30 days, no upper cap (future dates allowed)
+    const defaultStart = new Date();
+    defaultStart.setDate(defaultStart.getDate() - 30);
+    defaultStart.setHours(0, 0, 0, 0);
+
+    const from = startDate ? new Date(startDate) : defaultStart;
+
+    const dateFilter = { $gte: from };
+    if (endDate) {
+      const to = new Date(endDate);
+      to.setDate(to.getDate() + 1); // inclusive
+      dateFilter.$lt = to;
+    }
+
+    const filter = {
+      company,
+      date: dateFilter,
+    };
+
+    if (status) filter.status = status;
+    if (yachtId) filter.yachtId = yachtId;
+
+    // Backdesk only sees their own bookings
+    if (type === "backdesk") {
+      filter.employeeId = loggedInEmployeeId;
+    }
+
+    const bookings = await BookingModel.find(filter)
+      .populate("yachtId", "name boardingLocation runningCost")
+      .populate("customerId", "name contact email alternateContact")
+      .populate("employeeId", "name type")
+      .populate("company", "name disclaimer")
+      .populate("transactionIds")
+      .sort({ date: -1, startTime: -1 }); // newest first for reports
+
+    // Derive tripStatus at response time (same logic as getBookings)
+    const nowMs = Date.now();
+    const result = bookings.map((b) => {
+      const bookingEnd = new Date(`${b.date.toISOString().split("T")[0]}T${b.endTime}+05:30`);
+      let tripStatus;
+      if (b.status === "cancelled")                            tripStatus = "cancelled";
+      else if (b.status === "confirmed" && bookingEnd < nowMs) tripStatus = "success";
+      else if (b.status === "confirmed")                       tripStatus = "initiated";
+      else                                                     tripStatus = "pending";
+
+      return { ...b.toObject(), tripStatus };
+    });
+
+    res.json({ success: true, bookings: result, total: result.length });
+  } catch (error) {
+    console.error("❌ Error fetching past bookings:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

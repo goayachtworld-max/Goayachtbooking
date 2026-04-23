@@ -97,3 +97,14 @@ export const createPublicBookingAPI = async (data) => {
     throw error;
   }
 };
+export const getPastBookingsAPI = async (token, filters = {}) => {
+  const params = new URLSearchParams(filters).toString();
+  const url = params
+    ? `${booking.GET_PAST_BOOKINGS_API}?${params}`
+    : booking.GET_PAST_BOOKINGS_API;
+
+  const response = await apiConnector("GET", url, null, {
+    Authorization: `Bearer ${token}`,
+  });
+  return response;
+};

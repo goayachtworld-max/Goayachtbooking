@@ -8,6 +8,7 @@ import {
   updateBookingExtraDetails,
   getPublicBookingByTicket,
   updateBookingAmounts,
+  getPastBookings,
 } from "../controllers/booking.controller.js";
 import { bookingSchema } from "../validators/booking.validator.js";
 import { validate } from "../middleware/validate.js";
@@ -19,6 +20,7 @@ const router = express.Router();
 router.post("/", authMiddleware, validate(bookingSchema), createBooking);
 router.get("/", authMiddleware, getBookings);
 router.get("/public/:id", getPublicBookingByTicket);        // ⚠️ must be before /:id
+router.get("/past", authMiddleware, getPastBookings);           // Reports page — past bookings
 router.get("/:id", authMiddleware, getBookingById);
 
 router.put("/:id", authMiddleware, updateBooking);                                      // Update status + payment

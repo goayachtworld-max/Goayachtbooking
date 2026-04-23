@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { getBookingsAPI } from "../services/operations/bookingAPI";
+import { getPastBookingsAPI } from "../services/operations/bookingAPI";
+import { createTransactionAndUpdateBooking } from "../services/operations/transactionAPI";
 import { yaut } from "../services/apis";
 import { apiConnector } from "../services/apiConnector";
 import toast from "react-hot-toast";
+import { FiSliders } from "react-icons/fi";
 import "./Bookings.css";
 
 /* ── helpers ── */
@@ -325,6 +327,16 @@ export default function Reports({ user }) {
   const [filterYacht, setFilterYacht] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
+  /* ── Mobile drawer ── */
+  const [isMobile, setIsMobile]       = useState(window.innerWidth < 768);
+  const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   /* ── Data ── */
   const [bookings, setBookings] = useState([]);
   const [yachts, setYachts]     = useState([]);
@@ -333,12 +345,15 @@ export default function Reports({ user }) {
   /* ── Settlement (keyed by booking._id, persisted to localStorage) ── */
   const [settlement, setSettlement] = useState(loadSettled);
 
+  /* ── Mark Complete ── */
+  const [completing, setCompleting] = useState(null);
+
   /* ── Fetch yachts for typeahead ── */
   useEffect(() => {
     if (!token) return;
-    apiConnector("GET", yaut.GET_ALL_YACHTS_API, null, { Authorization: `Bearer ${token}` })
+    apiConnector("GET", yaut.GET_ALL_YACHTS_DETAILS_API, null, { Authorization: `Bearer ${token}` })
       .then(res => {
-        const list = res?.data?.data || res?.data || [];
+        const list = res?.data?.yachts || res?.data?.data || [];
         setYachts(Array.isArray(list) ? list : []);
       })
       .catch(() => {});
@@ -353,8 +368,8 @@ export default function Reports({ user }) {
       if (fromDate) filters.startDate = fromDate;
       if (toDate)   filters.endDate   = toDate;
       if (filterStatus && filterStatus !== "completed") filters.status = filterStatus;
-      const res = await getBookingsAPI(token, filters);
-      const raw = res?.data?.data || res?.data || [];
+      const res = await getPastBookingsAPI(token, filters);
+      const raw = res?.data?.bookings || [];
       setBookings(Array.isArray(raw) ? raw : []);
     } catch {
       toast.error("Failed to load bookings");
@@ -387,11 +402,10 @@ export default function Reports({ user }) {
     filtered.forEach(bk => {
       b2b     += Number(bk.yachtId?.runningCost || 0);
       selling += Number(bk.quotedAmount || 0);
-      const s = settlement[bk._id] || {};
-      if (s.settled && s.balance) settled += Number(s.balance);
+      settled += Number(bk.quotedAmount || 0) - Number(bk.pendingAmount || 0);
     });
     return { b2b, selling, settled };
-  }, [filtered, settlement]);
+  }, [filtered]);
 
   /* ── Settlement handlers ── */
   const toggleSettled = (id) => {
@@ -399,6 +413,32 @@ export default function Reports({ user }) {
   };
   const setBalance = (id, val) => {
     setSettlement(prev => { const next = { ...prev, [id]: { ...prev[id], balance: val } }; saveSettled(next); return next; });
+  };
+
+  /* ── Mark trip complete via API ── */
+  const handleMarkComplete = async (bk) => {
+    if (completing) return;
+    setCompleting(bk._id);
+    try {
+      const s = settlement[bk._id] || {};
+      // Use entered balance amount if provided, otherwise settle full pending amount
+      const amountToSettle = s.balance ? Number(s.balance) : Number(bk.pendingAmount || 0);
+      const data = new FormData();
+      data.append("bookingId", bk._id);
+      data.append("type", "settlement");
+      data.append("status", "confirmed");
+      data.append("amount", amountToSettle);
+      await createTransactionAndUpdateBooking(data, token);
+      const newPending = Number(bk.pendingAmount || 0) - amountToSettle;
+      toast.success(newPending > 0 ? `✅ ₹${amountToSettle.toLocaleString("en-IN")} settled` : "Booking marked complete ✅");
+      setBookings(prev => prev.map(b => b._id === bk._id ? { ...b, pendingAmount: newPending <= 0 ? 0 : newPending, status: newPending <= 0 ? "confirmed" : b.status } : b));
+      // Clear the entered balance after settlement
+      setSettlement(prev => { const next = { ...prev, [bk._id]: { ...prev[bk._id], balance: "" } }; saveSettled(next); return next; });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to mark complete");
+    } finally {
+      setCompleting(null);
+    }
   };
 
   /* ── CSV export ── */
@@ -461,13 +501,13 @@ export default function Reports({ user }) {
   };
 
   return (
-    <div style={{ padding: "20px 16px 40px", maxWidth: 1280, margin: "0 auto" }}>
+    <div style={{ padding: isMobile ? "12px 10px 84px" : "20px 16px 40px", maxWidth: 1280, margin: "0 auto" }}>
 
       {/* ── Header ── */}
-      <div style={{ marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+      <div style={{ marginBottom: isMobile ? 12 : 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <div>
-          <h5 style={{ margin: 0, fontWeight: 800, color: "#051829", fontSize: "1.1rem", letterSpacing: "0.01em" }}>Booking Reports</h5>
-          <p style={{ margin: 0, color: "#64748b", fontSize: "0.8rem", marginTop: 2 }}>Filter and review bookings with settlement tracking</p>
+          <h5 style={{ margin: 0, fontWeight: 800, color: "#051829", fontSize: isMobile ? "1rem" : "1.1rem", letterSpacing: "0.01em" }}>Booking Reports</h5>
+          {!isMobile && <p style={{ margin: 0, color: "#64748b", fontSize: "0.8rem", marginTop: 2 }}>Filter and review bookings with settlement tracking</p>}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           {filtered.length > 0 && (
@@ -493,69 +533,146 @@ export default function Reports({ user }) {
         </div>
       </div>
 
-      {/* ── Filter Card ── */}
-      <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 1px 12px rgba(5,24,41,0.08)", border: "1px solid #e8edf2", padding: "16px 20px", marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-          <svg width="15" height="15" fill="#0a2d4a" viewBox="0 0 16 16"><path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/></svg>
-          <span style={{ fontWeight: 700, color: "#051829", fontSize: "0.85rem" }}>Filters</span>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: "14px 16px", alignItems: "end" }}>
-          <DatePickerField
-            label="From Date"
-            value={fromDate}
-            onChange={setFromDate}
-            maxDate={toDate || getTodayIST()}
-            shortcuts={[
-              { label: "Month",  value: getStartOfMonth() },
-              { label: "7 Days", value: getPast7Days() },
-              { label: "Today",  value: getTodayIST() },
-            ]}
-          />
-          <DatePickerField
-            label="To Date"
-            value={toDate}
-            onChange={setToDate}
-            minDate={fromDate}
-            maxDate={getTodayIST()}
-          />
-          <YachtTypeahead
-            value={filterYacht}
-            onChange={setFilterYacht}
-            yachtNames={yachtNames}
-          />
-
-          {/* Status filter */}
-          <div>
-            <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>Status</label>
-            <select
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: "0.83rem", color: "#1e293b", background: "#f8fafc", outline: "none", cursor: "pointer", height: 36 }}
-            >
-              <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-
-          {/* Reset */}
-          <div>
-            <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "transparent", display: "block", marginBottom: 4 }}>‎</label>
-            <button
-              onClick={() => { setFromDate(getPast7Days()); setToDate(getTodayIST()); setFilterYacht(""); setFilterStatus(""); }}
-              style={{ width: "100%", height: 36, borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: "0.83rem", color: "#64748b", background: "#f1f5f9", cursor: "pointer", fontWeight: 600 }}
-            >
-              Reset
-            </button>
+      {/* ── Mobile: filter icon + active tag chips ── */}
+      {isMobile && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <button
+            className={`mobile-filter-btn${(filterYacht || filterStatus) ? " has-active" : ""}`}
+            onClick={() => setShowFilters(true)}
+            title="Open filters"
+          >
+            <FiSliders size={18} />
+            {[filterYacht, filterStatus].filter(Boolean).length > 0 && (
+              <span className="filter-badge">{[filterYacht, filterStatus].filter(Boolean).length}</span>
+            )}
+          </button>
+          <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
+            {fromDate && <span style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8", fontWeight: 600 }}>{formatCalLabel(fromDate)} → {toDate ? formatCalLabel(toDate) : "…"}</span>}
+            {filterYacht && <span style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", fontWeight: 600 }}>{filterYacht}</span>}
+            {filterStatus && <span style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#fef3c7", border: "1px solid #fde68a", color: "#92400e", fontWeight: 600, textTransform: "capitalize" }}>{filterStatus}</span>}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ── Mobile filter drawer ── */}
+      {isMobile && showFilters && (
+        <div className="mobile-filter-backdrop" style={{ zIndex: 1060 }} onClick={() => setShowFilters(false)}>
+          <div className="mobile-filter-drawer" style={{ zIndex: 1061, maxHeight: "80dvh", display: "flex", flexDirection: "column", paddingBottom: 0 }} onClick={e => e.stopPropagation()}>
+            <div className="drawer-handle" />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <span style={{ fontWeight: 700, color: "#051829", fontSize: "0.9rem" }}>Filters</span>
+              <button
+                onClick={() => { setFromDate(getPast7Days()); setToDate(getTodayIST()); setFilterYacht(""); setFilterStatus(""); }}
+                style={{ background: "none", border: "none", color: "#dc2626", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer", padding: 0 }}
+              >Reset all</button>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1, paddingBottom: 4 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <DatePickerField
+                label="From Date"
+                value={fromDate}
+                onChange={v => { setFromDate(v); if (v) setShowFilters(false); }}
+                maxDate={toDate || getTodayIST()}
+                shortcuts={[
+                  { label: "Month",  value: getStartOfMonth() },
+                  { label: "7 Days", value: getPast7Days() },
+                  { label: "Today",  value: getTodayIST() },
+                ]}
+              />
+              <DatePickerField
+                label="To Date"
+                value={toDate}
+                onChange={v => { setToDate(v); if (v) setShowFilters(false); }}
+                minDate={fromDate}
+                maxDate={getTodayIST()}
+              />
+              <YachtTypeahead value={filterYacht} onChange={v => { setFilterYacht(v); if (v) setShowFilters(false); }} yachtNames={yachtNames} />
+              <div>
+                <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>Status</label>
+                <div className="status-pill-group">
+                  {[
+                    { value: "", label: "All", color: "#6c757d" },
+                    { value: "pending", label: "Pending", color: "#d97706" },
+                    { value: "confirmed", label: "Confirmed", color: "#16a34a" },
+                    { value: "completed", label: "Completed", color: "#2563eb" },
+                  ].map(({ value, label, color }) => (
+                    <button
+                      key={value}
+                      className={`status-pill${filterStatus === value ? " active" : ""}`}
+                      style={{ "--pill-color": color }}
+                      onClick={() => { setFilterStatus(value); setShowFilters(false); }}
+                    >{label}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            </div>
+            <div style={{ padding: "12px 0 max(20px, env(safe-area-inset-bottom))", flexShrink: 0 }}>
+              <button
+                onClick={() => setShowFilters(false)}
+                style={{ width: "100%", padding: "11px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#051829,#0a2d4a)", color: "#c9a84c", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer" }}
+              >
+                Show {filtered.length} Booking{filtered.length !== 1 ? "s" : ""}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Desktop Filter Card ── */}
+      {!isMobile && (
+        <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 1px 12px rgba(5,24,41,0.08)", border: "1px solid #e8edf2", padding: "16px 20px", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <svg width="15" height="15" fill="#0a2d4a" viewBox="0 0 16 16"><path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/></svg>
+            <span style={{ fontWeight: 700, color: "#051829", fontSize: "0.85rem" }}>Filters</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: "14px 16px", alignItems: "end" }}>
+            <DatePickerField
+              label="From Date"
+              value={fromDate}
+              onChange={setFromDate}
+              maxDate={toDate || getTodayIST()}
+              shortcuts={[
+                { label: "Month",  value: getStartOfMonth() },
+                { label: "7 Days", value: getPast7Days() },
+                { label: "Today",  value: getTodayIST() },
+              ]}
+            />
+            <DatePickerField
+              label="To Date"
+              value={toDate}
+              onChange={setToDate}
+              minDate={fromDate}
+              maxDate={getTodayIST()}
+            />
+            <YachtTypeahead value={filterYacht} onChange={setFilterYacht} yachtNames={yachtNames} />
+            <div>
+              <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>Status</label>
+              <select
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: "0.83rem", color: "#1e293b", background: "#f8fafc", outline: "none", cursor: "pointer", height: 36 }}
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "transparent", display: "block", marginBottom: 4 }}>‎</label>
+              <button
+                onClick={() => { setFromDate(getPast7Days()); setToDate(getTodayIST()); setFilterYacht(""); setFilterStatus(""); }}
+                style={{ width: "100%", height: 36, borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: "0.83rem", color: "#64748b", background: "#f1f5f9", cursor: "pointer", fontWeight: 600 }}
+              >Reset</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Summary pills ── */}
       {!loading && (
-        <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           <div style={{ padding: "6px 14px", borderRadius: 999, background: "#f1f5f9", border: "1px solid #e2e8f0", fontSize: "0.8rem", color: "#334155", fontWeight: 600 }}>
             {filtered.length} booking{filtered.length !== 1 ? "s" : ""}
           </div>
@@ -593,7 +710,7 @@ export default function Reports({ user }) {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.83rem" }}>
                 <thead>
                   <tr style={{ background: "linear-gradient(90deg,#051829,#0a2d4a)", color: "#c9a84c" }}>
-                    {["Date","Customer","Phone","Pax","Yacht","Time","B2b Price","Amt Settled","Selling Amt","Status","Settled","Balance"].map(h => (
+                    {["Date","Customer","Phone","Pax","Yacht","Time","B2b Price","Amt Received","Balance Due","Selling Amt","Status","Settle Amt","Action"].map(h => (
                       <th key={h} style={{ padding: "11px 14px", fontWeight: 700, fontSize: "0.77rem", textAlign: "left", whiteSpace: "nowrap", letterSpacing: "0.03em", textTransform: "uppercase" }}>{h}</th>
                     ))}
                   </tr>
@@ -611,23 +728,41 @@ export default function Reports({ user }) {
                         <td style={{ padding: "10px 14px", color: "#1e293b", fontWeight: 600, whiteSpace: "nowrap" }}>{bk.yachtId?.name || "—"}</td>
                         <td style={{ padding: "10px 14px", color: "#475569", whiteSpace: "nowrap" }}>{to12h(bk.startTime)} – {to12h(bk.endTime)}</td>
                         <td style={{ padding: "10px 14px", color: "#9a3412", fontWeight: 600, whiteSpace: "nowrap" }}>{fmtINR(bk.yachtId?.runningCost)}</td>
-                        <td style={{ padding: "10px 14px", fontWeight: 700, whiteSpace: "nowrap", color: (s.settled && s.balance) ? "#7c3aed" : "#cbd5e1" }}>
-                          {(s.settled && s.balance) ? fmtINR(s.balance) : "—"}
+                        <td style={{ padding: "10px 14px", fontWeight: 700, whiteSpace: "nowrap", color: (Number(bk.quotedAmount||0) - Number(bk.pendingAmount||0)) > 0 ? "#7c3aed" : "#cbd5e1" }}>
+                          {fmtINR(Number(bk.quotedAmount||0) - Number(bk.pendingAmount||0))}
+                        </td>
+                        <td style={{ padding: "10px 14px", fontWeight: 700, whiteSpace: "nowrap", color: bk.pendingAmount > 0 ? "#b45309" : "#22c55e" }}>
+                          {bk.pendingAmount > 0 ? fmtINR(bk.pendingAmount) : <span style={{fontSize:"0.75rem"}}>NIL</span>}
                         </td>
                         <td style={{ padding: "10px 14px", color: "#15803d", fontWeight: 700, whiteSpace: "nowrap" }}>{fmtINR(bk.quotedAmount)}</td>
                         <td style={{ padding: "10px 14px" }}><StatusBadge booking={bk} /></td>
-                        <td style={{ padding: "10px 14px", textAlign: "center" }}>
-                          <input type="checkbox" checked={!!s.settled} onChange={() => toggleSettled(bk._id)} style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#059669" }} />
+                        <td style={{ padding: "8px 14px" }}>
+                          {bk.pendingAmount > 0 && bk.status !== "cancelled" ? (
+                            <input
+                              type="number"
+                              placeholder={`Max ₹${Number(bk.pendingAmount).toLocaleString("en-IN")}`}
+                              value={s.balance || ""}
+                              onChange={e => setBalance(bk._id, e.target.value)}
+                              style={{ width: 130, padding: "5px 8px", borderRadius: 6, border: "1.5px solid #6ee7b7", fontSize: "0.8rem", color: "#1e293b", background: "#f0fdf4", outline: "none" }}
+                            />
+                          ) : (
+                            <span style={{ fontSize: "0.75rem", color: "#cbd5e1" }}>—</span>
+                          )}
                         </td>
                         <td style={{ padding: "8px 14px" }}>
-                          <input
-                            type="number"
-                            disabled={!s.settled}
-                            placeholder="Enter amt"
-                            value={s.balance || ""}
-                            onChange={e => setBalance(bk._id, e.target.value)}
-                            style={{ width: 110, padding: "5px 8px", borderRadius: 6, border: `1.5px solid ${s.settled ? "#6ee7b7" : "#e2e8f0"}`, fontSize: "0.8rem", color: "#1e293b", background: s.settled ? "#f0fdf4" : "#f8fafc", outline: "none", cursor: s.settled ? "text" : "not-allowed", opacity: s.settled ? 1 : 0.5 }}
-                          />
+                          {bk.pendingAmount > 0 && bk.status !== "cancelled" ? (
+                            <button
+                              disabled={completing === bk._id}
+                              onClick={() => handleMarkComplete(bk)}
+                              style={{ padding: "5px 12px", borderRadius: 7, border: "1.5px solid #15803d", background: completing === bk._id ? "#f0fdf4" : "#fff", color: "#15803d", fontWeight: 700, fontSize: "0.75rem", cursor: completing === bk._id ? "not-allowed" : "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5, opacity: completing === bk._id ? 0.7 : 1 }}
+                            >
+                              {completing === bk._id ? "Saving…" : "✓ Mark Complete"}
+                            </button>
+                          ) : bk.pendingAmount <= 0 ? (
+                            <span style={{ fontSize: "0.75rem", color: "#22c55e", fontWeight: 700 }}>✓ Done</span>
+                          ) : (
+                            <span style={{ fontSize: "0.75rem", color: "#cbd5e1" }}>—</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -638,37 +773,60 @@ export default function Reports({ user }) {
           </div>
 
           {/* ── Mobile Cards ── */}
-          <div className="d-md-none" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="d-md-none" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {filtered.map((bk) => {
               const s        = settlement[bk._id] || {};
               const rowGreen = s.settled;
+              const hasPending = bk.pendingAmount > 0 && bk.status !== "cancelled";
+              const amtReceived = Number(bk.quotedAmount||0) - Number(bk.pendingAmount||0);
               return (
-                <div key={bk._id} style={{ background: rowGreen ? "rgba(16,185,129,0.08)" : "#fff", border: `1.5px solid ${rowGreen ? "rgba(16,185,129,0.4)" : "#e8edf2"}`, borderRadius: 14, padding: "14px 16px", boxShadow: "0 1px 8px rgba(5,24,41,0.06)", transition: "all 0.25s" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                    <div>
-                      <div style={{ fontWeight: 700, color: "#0a2d4a", fontSize: "0.95rem" }}>{bk.customerId?.name || "—"}</div>
-                      <div style={{ fontSize: "0.78rem", color: "#64748b", marginTop: 1 }}>{bk.customerId?.contact || ""}</div>
+                <div key={bk._id} style={{ background: rowGreen ? "rgba(16,185,129,0.06)" : "#fff", borderLeft: `3px solid ${rowGreen ? "#10b981" : bk.pendingAmount > 0 ? "#f59e0b" : "#22c55e"}`, borderRadius: 10, padding: "10px 12px", boxShadow: "0 1px 6px rgba(5,24,41,0.07)", border: `1px solid ${rowGreen ? "rgba(16,185,129,0.3)" : "#e8edf2"}`, transition: "all 0.2s" }}>
+
+                  {/* Row 1: Name + Status */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, color: "#0a2d4a", fontSize: "0.88rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bk.customerId?.name || "—"}</div>
+                      <div style={{ fontSize: "0.72rem", color: "#64748b" }}>{bk.customerId?.contact || ""} {bk.numPeople ? `· ${bk.numPeople} pax` : ""}</div>
                     </div>
                     <StatusBadge booking={bk} />
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px", marginBottom: 10 }}>
-                    <CardDetail label="Date"    value={fmtDate(bk.date)} />
-                    <CardDetail label="Pax"     value={bk.numPeople || "—"} />
-                    <CardDetail label="Yacht"   value={bk.yachtId?.name || "—"} />
-                    <CardDetail label="Time"    value={`${to12h(bk.startTime)} – ${to12h(bk.endTime)}`} />
-                    <CardDetail label="B2b"         value={fmtINR(bk.yachtId?.runningCost)} color="#9a3412" bold />
-                    <CardDetail label="Amt Settled" value={(s.settled && s.balance) ? fmtINR(s.balance) : "—"} color={(s.settled && s.balance) ? "#7c3aed" : "#cbd5e1"} bold />
-                    <CardDetail label="Selling"     value={fmtINR(bk.quotedAmount)}         color="#15803d" bold />
+
+                  {/* Row 2: Yacht + Date + Time */}
+                  <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "0.75rem", color: "#0a2d4a", fontWeight: 600 }}>{bk.yachtId?.name || "—"}</span>
+                    <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>·</span>
+                    <span style={{ fontSize: "0.72rem", color: "#64748b" }}>{fmtDate(bk.date)}</span>
+                    <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>·</span>
+                    <span style={{ fontSize: "0.72rem", color: "#64748b" }}>{to12h(bk.startTime)}–{to12h(bk.endTime)}</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 8, borderTop: "1px solid #f1f5f9" }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
-                      <input type="checkbox" checked={!!s.settled} onChange={() => toggleSettled(bk._id)} style={{ width: 16, height: 16, accentColor: "#059669" }} />
-                      <span style={{ fontSize: "0.8rem", fontWeight: 600, color: s.settled ? "#059669" : "#64748b" }}>{s.settled ? "B2b Settled ✓" : "Mark Settled"}</span>
-                    </label>
-                    {s.settled && (
-                      <input type="number" placeholder="Balance amt" value={s.balance || ""} onChange={e => setBalance(bk._id, e.target.value)} style={{ flex: 1, padding: "5px 8px", borderRadius: 6, border: "1.5px solid #6ee7b7", fontSize: "0.8rem", background: "#f0fdf4", outline: "none", color: "#1e293b" }} />
-                    )}
+
+                  {/* Row 3: Financial — 2×2 grid, values never get cut off */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 8px", marginBottom: hasPending ? 8 : 0 }}>
+                    <MiniStat label="B2b Cost"    value={fmtINR(bk.yachtId?.runningCost)} color="#9a3412" />
+                    <MiniStat label="Amt Received" value={fmtINR(amtReceived)} color={amtReceived > 0 ? "#7c3aed" : "#94a3b8"} />
+                    <MiniStat label="Balance Due"  value={bk.pendingAmount > 0 ? fmtINR(bk.pendingAmount) : "NIL"} color={bk.pendingAmount > 0 ? "#b45309" : "#22c55e"} />
+                    <MiniStat label="Selling Amt"  value={fmtINR(bk.quotedAmount)} color="#15803d" />
                   </div>
+
+                  {/* Row 4: Settle + Mark Complete (only when pending) */}
+                  {hasPending && (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", paddingTop: 8, borderTop: "1px solid #f1f5f9" }}>
+                      <input
+                        type="number"
+                        placeholder={`Amt (max ₹${Number(bk.pendingAmount).toLocaleString("en-IN")})`}
+                        value={s.balance || ""}
+                        onChange={e => setBalance(bk._id, e.target.value)}
+                        style={{ flex: 1, padding: "5px 8px", borderRadius: 6, border: "1.5px solid #6ee7b7", fontSize: "0.78rem", background: "#f0fdf4", outline: "none", color: "#1e293b", minWidth: 0 }}
+                      />
+                      <button
+                        disabled={completing === bk._id}
+                        onClick={() => handleMarkComplete(bk)}
+                        style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 7, border: "1.5px solid #15803d", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "0.75rem", cursor: completing === bk._id ? "not-allowed" : "pointer", opacity: completing === bk._id ? 0.7 : 1, whiteSpace: "nowrap" }}
+                      >
+                        {completing === bk._id ? "Saving…" : "✓ Done"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -686,6 +844,15 @@ function CardDetail({ label, value, color, bold }) {
     <div>
       <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</div>
       <div style={{ fontSize: "0.82rem", color: color || "#1e293b", fontWeight: bold ? 700 : 500, marginTop: 1 }}>{value}</div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, color }) {
+  return (
+    <div style={{ background: "#f8fafc", borderRadius: 7, padding: "5px 8px" }}>
+      <div style={{ fontSize: "0.62rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", lineHeight: 1.2, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: "0.82rem", color: color || "#1e293b", fontWeight: 700, lineHeight: 1.2 }}>{value}</div>
     </div>
   );
 }
