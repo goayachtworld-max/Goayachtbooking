@@ -47,6 +47,7 @@ function CreateBooking() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [runningCost, setRunningCost] = useState(0);
+  const [runningCostMargin, setRunningCostMargin] = useState(0);
 
   const [customerSuggestions, setCustomerSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -65,6 +66,7 @@ function CreateBooking() {
   const [sailingHours, setSailingHours] = useState("");
   const [anchoringHours, setAnchoringHours] = useState("");
   const [calculatedAmount, setCalculatedAmount] = useState(null);
+  const [calculatedSettleAmount, setCalculatedSettleAmount] = useState(null);
 
   const extraOptions = {
     inclusions: [
@@ -78,6 +80,7 @@ function CreateBooking() {
     paidServices: [
       "DSLR Photography",
       "Drone - Photography & Videography",
+      "Ballon-flowers Decoration",
     ],
   };
 
@@ -172,8 +175,11 @@ function CreateBooking() {
     const sHrs = parseFloat(sailingHours) || 0;
     const aHrs = parseFloat(anchoringHours) || 0;
     if (sHrs === 0 && aHrs === 0) { setCalculatedAmount(null); return; }
-    const calc = (sHrs * (yacht.sailingCost || 0)) + (aHrs * (yacht.anchorageCost || 0));
+    const calc = (sHrs * ((yacht.sailingCost || 0) + (yacht.sailingMargin || 0) )) + (aHrs * ((yacht.anchorageCost || 0) + (yacht.anchorageMargin || 0) ));
     setCalculatedAmount(calc);
+    const calcSettle = (sHrs * (yacht.sailingCost || 0)) + (aHrs * (yacht.anchorageCost || 0));
+    setCalculatedSettleAmount(calcSettle);
+
     // Pre-fill total amount only if it hasn't been manually touched
     setFormData((p) => ({ ...p, totalAmount: String(Math.round(calc)) }));
   }, [sailingHours, anchoringHours, formData.yachtId, yachts]);
@@ -349,6 +355,7 @@ function CreateBooking() {
       setSailingHours("");
       setAnchoringHours("");
       setCalculatedAmount(null);
+      setCalculatedSettleAmount(null);
       setFormData((p) => ({
         ...p,
         [name]: value,
@@ -380,6 +387,7 @@ function CreateBooking() {
     setCustomStart(slotStart);
     setCustomEnd(slotEnd);
     setCalculatedAmount(null);
+    setCalculatedSettleAmount(null);
 
     // Prefill sailing/anchoring using yacht's default ratio (falls back to 50/50)
     if (slot) {
@@ -1049,7 +1057,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                         <div className="cb-f">
                           <label className="cb-lbl">
                             Sailing Hrs
-                            {yacht?.sailingCost > 0 && <span style={{ color: "#64748b", fontWeight: 400, fontSize: 11, marginLeft: 5 }}>₹{Number(yacht.sailingCost).toLocaleString("en-IN")}/hr</span>}
+                            {(yacht?.sailingCost + yacht?.sailingMargin) > 0 && <span style={{ color: "#64748b", fontWeight: 400, fontSize: 11, marginLeft: 5 }}>₹{(Number(yacht.sailingCost) + (Number(yacht.sailingMargin))).toLocaleString("en-IN")}/hr</span>}
                           </label>
                           <input
                             className="cb-inp"
@@ -1073,7 +1081,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                         <div className="cb-f">
                           <label className="cb-lbl">
                             Anchoring Hrs
-                            {yacht?.anchorageCost > 0 && <span style={{ color: "#64748b", fontWeight: 400, fontSize: 11, marginLeft: 5 }}>₹{Number(yacht.anchorageCost).toLocaleString("en-IN")}/hr</span>}
+                            {(yacht?.anchorageCost + yacht?.anchorageMargin) > 0 && <span style={{ color: "#64748b", fontWeight: 400, fontSize: 11, marginLeft: 5 }}>₹{(Number(yacht.anchorageCost) + Number(yacht.anchorageMargin)).toLocaleString("en-IN")}/hr</span>}
                           </label>
                           <input
                             className="cb-inp"
@@ -1143,12 +1151,12 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                   <div className="cb-f">
                     <label className="cb-lbl">
                       Total Amount
-                      {runningCost > 0 && <span style={{ color: "#64748b", fontWeight: 500, marginLeft: 6, fontSize: 12, textTransform: "none" }}>min ₹{Number(runningCost).toLocaleString("en-IN")}</span>}
+                      {runningCost > 0 && <span style={{ color: "#64748b", fontWeight: 500, marginLeft: 6, fontSize: 12, textTransform: "none" }}>min ₹{Number(calculatedSettleAmount).toLocaleString("en-IN")}</span>}
                     </label>
                     <input className={`cb-inp ${isAmountInvalid ? "err" : ""}`} type="number"
                       name="totalAmount" value={formData.totalAmount} onChange={handleChange}
                       required placeholder="₹ 0" />
-                    {isAmountInvalid && <div className="cb-err-msg">⚠ Below running cost ₹{Number(runningCost).toLocaleString("en-IN")}</div>}
+                    {isAmountInvalid && <div className="cb-err-msg">⚠ Below running cost ₹{Number(calculatedSettleAmount).toLocaleString("en-IN")}</div>}
                   </div>
 
                   {isQuotation ? (

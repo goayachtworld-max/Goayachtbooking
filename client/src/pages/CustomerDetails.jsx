@@ -93,7 +93,7 @@ function CustomerDetails() {
   const extras     = booking.extraDetails ? sanitize(booking.extraDetails) : "";
   const lines      = extras.split("\n").map((l)=>l.trim()).filter(Boolean);
   const inclusions = lines.filter((l) => ["Soft Drink","Ice Cube","Water Bottles","Bluetooth Speaker","Captain","Snacks"].some((k)=>l.includes(k)));
-  const paid       = lines.filter((l) => ["Drone","DSLR"].some((k)=>l.includes(k)));
+  const paid       = lines.filter((l) => ["Drone","DSLR","Ballon"].some((k)=>l.includes(k)));
   const notes      = extras.includes("Notes:") ? extras.split("Notes:").slice(1).join("Notes:").trim() : "";
 
   const ticketId   = booking._id ? booking._id.slice(-6).toUpperCase() : "------";

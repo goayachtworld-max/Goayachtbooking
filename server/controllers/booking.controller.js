@@ -471,14 +471,14 @@ export const updateBookingYachtInfo = async (req, res, next) => {
 export const updateBookingExtraDetails = async (req, res, next) => {
   try {
     const { bookingId } = req.params;
-    const { extraDetails } = req.body;
+    const { extraDetails, numPeople } = req.body;
 
     console.log("Extra update is called");
 
-    if (extraDetails === undefined) {
+    if (extraDetails === undefined && numPeople === undefined) {
       return res
         .status(400)
-        .json({ success: false, message: "Extra details required" });
+        .json({ success: false, message: "Extra details or PAX required" });
     }
 
     // 1️⃣ Fetch booking
@@ -489,7 +489,8 @@ export const updateBookingExtraDetails = async (req, res, next) => {
         .json({ success: false, message: "Booking not found" });
     }
 
-    booking.extraDetails = extraDetails;
+    if (extraDetails !== undefined) booking.extraDetails = extraDetails;
+    if (numPeople !== undefined) booking.numPeople = Number(numPeople);
     await booking.save();
 
     res.status(200).json({

@@ -87,6 +87,7 @@ function EditBookingDetails() {
         paidServices: [
             "DSLR Photography",
             "Drone - Photography & Videography",
+            "Ballon-Flower Decoration",
         ],
     };
 

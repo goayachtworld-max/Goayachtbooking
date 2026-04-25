@@ -116,6 +116,27 @@ function Field({ label, required, error, hint, children }) {
   );
 }
 
+// Read-only display box — used for auto-calculated fields
+function CalcDisplay({ value, highlight, empty = "—" }) {
+  const hasValue = value !== null && value !== undefined && value !== 0 && value !== "";
+  return (
+    <div style={{
+      height: 42, borderRadius: 10, padding: "0 14px",
+      background: hasValue
+        ? highlight
+          ? "linear-gradient(90deg,rgba(99,102,241,0.1),rgba(99,102,241,0.04))"
+          : "linear-gradient(90deg,rgba(16,185,129,0.08),rgba(16,185,129,0.04))"
+        : "#f8fafc",
+      border: `1.5px solid ${hasValue ? (highlight ? "rgba(99,102,241,0.4)" : "rgba(16,185,129,0.35)") : "#e2e8f0"}`,
+      display: "flex", alignItems: "center", gap: 6,
+      fontSize: "0.95rem", fontWeight: 700,
+      color: hasValue ? (highlight ? "#4f46e5" : "#059669") : "#94a3b8",
+    }}>
+      {hasValue ? `₹ ${Number(value).toLocaleString("en-IN")}` : empty}
+    </div>
+  );
+}
+
 function CreateYacht() {
   const navigate = useNavigate();
 
@@ -124,10 +145,11 @@ function CreateYacht() {
     capacity: "",
     sailingCost: "",
     anchorageCost: "",
+    sailingMargin: "",
+    anchorageMargin: "",
     defaultSailingHours: "",
     defaultAnchoringHours: "",
     maxSellingPrice: "",
-    sellingPrice: "",
     sailStartTime: "06:00",
     sailEndTime: "20:00",
     duration: "120",
@@ -150,21 +172,49 @@ function CreateYacht() {
     return Number(yacht.duration || 0) / 60;
   })();
 
+  // ── Derived values ──────────────────────────────────────────────
+  const sHrs = Number(yacht.defaultSailingHours || 0);
+  const aHrs = Number(yacht.defaultAnchoringHours || 0);
+
+  // Running cost: raw cost × hours (no margin)
+  const runningCost =
+    (Number(yacht.sailingCost || 0) * sHrs) +
+    (Number(yacht.anchorageCost || 0) * aHrs);
+
+  // Selling price: (cost + margin) × hours — fully auto-calculated
+  const sellingPrice =
+    ((Number(yacht.sailingCost || 0) + Number(yacht.sailingMargin || 0)) * sHrs) +
+    ((Number(yacht.anchorageCost || 0) + Number(yacht.anchorageMargin || 0)) * aHrs);
+
+  const sv = parseFloat(yacht.defaultSailingHours);
+  const av = parseFloat(yacht.defaultAnchoringHours);
+  const totalHrs = (sv || 0) + (av || 0);
+  const sPct = totalHrs > 0 ? Math.round((sv || 0) / totalHrs * 100) : 0;
+  const aPct = 100 - sPct;
+  const isHoursOver = slotDurationHours > 0 && totalHrs > slotDurationHours + 0.001;
+  const hoursMatchSlot = slotDurationHours > 0 && Math.abs(totalHrs - slotDurationHours) <= 0.001;
+
+  // ── Validation ──────────────────────────────────────────────────
   useEffect(() => {
     const errors = {};
-    const sHrs = Number(yacht.defaultSailingHours || 0);
-    const aHrs = Number(yacht.defaultAnchoringHours || 0);
     const totalDefaultHrs = sHrs + aHrs;
     if (slotDurationHours > 0 && totalDefaultHrs > slotDurationHours + 0.001)
       errors.defaultHours = `Default sailing + anchoring (${totalDefaultHrs} hrs) exceeds slot duration (${slotDurationHours} hrs)`;
-    const running = (Number(yacht.sailingCost || 0) * sHrs) + (Number(yacht.anchorageCost || 0) * aHrs);
+
     const maxSell = Number(yacht.maxSellingPrice || 0);
-    const sell = Number(yacht.sellingPrice || 0);
-    if (running && maxSell && maxSell <= running) errors.maxSellingPrice = "Max selling price must be > running cost";
-    if (running && sell && sell < running) errors.sellingPrice = "Selling price must be ≥ running cost";
-    if (maxSell && sell && sell > maxSell) errors.sellingPrice = "Selling price must be ≤ max selling price";
+    if (runningCost && maxSell && maxSell <= runningCost)
+      errors.maxSellingPrice = "Max selling price must be > running cost";
+    if (sellingPrice && maxSell && sellingPrice > maxSell)
+      errors.sellingPrice = "Selling price (auto) exceeds max selling price";
+
     setFieldErrors(errors);
-  }, [yacht.sailingCost, yacht.anchorageCost, yacht.defaultSailingHours, yacht.defaultAnchoringHours, yacht.maxSellingPrice, yacht.sellingPrice, yacht.duration, yacht.customDuration]);
+  }, [
+    yacht.sailingCost, yacht.anchorageCost,
+    yacht.sailingMargin, yacht.anchorageMargin,
+    yacht.defaultSailingHours, yacht.defaultAnchoringHours,
+    yacht.maxSellingPrice,
+    yacht.duration, yacht.customDuration,
+  ]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -212,10 +262,11 @@ function CreateYacht() {
       formData.append("capacity", yacht.capacity);
       formData.append("sailingCost", yacht.sailingCost);
       formData.append("anchorageCost", yacht.anchorageCost);
-      const runningCostCalc = (Number(yacht.sailingCost) * Number(yacht.defaultSailingHours || 0)) + (Number(yacht.anchorageCost) * Number(yacht.defaultAnchoringHours || 0));
-      formData.append("runningCost", runningCostCalc);
+      formData.append("sailingMargin", yacht.sailingMargin || 0);
+      formData.append("anchorageMargin", yacht.anchorageMargin || 0);
+      formData.append("runningCost", runningCost);
+      formData.append("sellingPrice", sellingPrice);
       formData.append("maxSellingPrice", yacht.maxSellingPrice);
-      formData.append("sellingPrice", yacht.sellingPrice);
       formData.append("sailStartTime", yacht.sailStartTime);
       formData.append("sailEndTime", yacht.sailEndTime);
       formData.append("duration", durationHHMM);
@@ -234,15 +285,6 @@ function CreateYacht() {
       setLoading(false);
     }
   };
-
-  const runningCost = (Number(yacht.sailingCost || 0) * Number(yacht.defaultSailingHours || 0)) + (Number(yacht.anchorageCost || 0) * Number(yacht.defaultAnchoringHours || 0));
-  const sv = parseFloat(yacht.defaultSailingHours);
-  const av = parseFloat(yacht.defaultAnchoringHours);
-  const totalHrs = (sv || 0) + (av || 0);
-  const sPct = totalHrs > 0 ? Math.round((sv || 0) / totalHrs * 100) : 0;
-  const aPct = 100 - sPct;
-  const isHoursOver = slotDurationHours > 0 && totalHrs > slotDurationHours + 0.001;
-  const hoursMatchSlot = slotDurationHours > 0 && Math.abs(totalHrs - slotDurationHours) <= 0.001;
 
   return (
     <div className="cy-wrap">
@@ -355,6 +397,8 @@ function CreateYacht() {
           {/* ── Pricing ── */}
           <SectionCard dot="#10b981" title="Pricing">
             <div className="cy-grid">
+
+              {/* ── Row 1: Base costs ── */}
               <Field label="Sailing Cost / hr" required>
                 <input className="cy-input" type="number" name="sailingCost" placeholder="₹ per hour" value={yacht.sailingCost} onChange={handleChange} required />
               </Field>
@@ -364,25 +408,56 @@ function CreateYacht() {
 
               {/* Running cost display */}
               <Field label="Running Cost" hint="(auto-calculated)">
-                <div style={{
-                  height: 42, borderRadius: 10, padding: "0 14px",
-                  background: runningCost ? "linear-gradient(90deg,rgba(16,185,129,0.08),rgba(16,185,129,0.04))" : "#f8fafc",
-                  border: `1.5px solid ${runningCost ? "rgba(16,185,129,0.35)" : "#e2e8f0"}`,
-                  display: "flex", alignItems: "center", gap: 6,
-                  fontSize: "0.95rem", fontWeight: 700,
-                  color: runningCost ? "#059669" : "#94a3b8",
-                }}>
-                  {runningCost ? `₹ ${runningCost.toLocaleString("en-IN")}` : "—"}
-                </div>
+                <CalcDisplay value={runningCost} />
               </Field>
 
+              {/* ── Row 2: Margins ── */}
+              <Field label="Sailing Margin / hr" hint="(added to sailing cost)">
+                <input className="cy-input" type="number" name="sailingMargin" placeholder="₹ margin per hour" value={yacht.sailingMargin} onChange={handleChange} />
+              </Field>
+              <Field label="Anchorage Margin / hr" hint="(added to anchorage cost)">
+                <input className="cy-input" type="number" name="anchorageMargin" placeholder="₹ margin per hour" value={yacht.anchorageMargin} onChange={handleChange} />
+              </Field>
+
+              {/* Selling price — auto-calculated from margins */}
+              <Field label="Selling Price" hint="(auto-calculated)" error={fieldErrors.sellingPrice}>
+                <CalcDisplay value={sellingPrice} highlight />
+              </Field>
+
+              {/* ── Row 3: Default hours ── */}
               <Field label="Default Sailing Hrs" hint="per slot" error={fieldErrors.defaultHours && " "}>
                 <input className={`cy-input${fieldErrors.defaultHours ? " err" : ""}`} type="number" step="0.5" min="0" name="defaultSailingHours" placeholder="e.g. 1" value={yacht.defaultSailingHours} onChange={handleChange} />
               </Field>
               <Field label="Default Anchoring Hrs" hint="per slot" error={fieldErrors.defaultHours && " "}>
                 <input className={`cy-input${fieldErrors.defaultHours ? " err" : ""}`} type="number" step="0.5" min="0" name="defaultAnchoringHours" placeholder="e.g. 1" value={yacht.defaultAnchoringHours} onChange={handleChange} />
               </Field>
-
+<Field label="Max Selling Price" required error={fieldErrors.maxSellingPrice}>
+                <input className={`cy-input${fieldErrors.maxSellingPrice ? " err" : ""}`} type="number" name="maxSellingPrice" placeholder="₹" value={yacht.maxSellingPrice} onChange={handleChange} required />
+              </Field>
+              {/* Margin breakdown hint */}
+              {(Number(yacht.sailingMargin) > 0 || Number(yacht.anchorageMargin) > 0) && sHrs + aHrs > 0 && (
+                <div className="cy-span3" style={{
+                  background: "linear-gradient(90deg,rgba(99,102,241,0.06),rgba(99,102,241,0.02))",
+                  border: "1px solid rgba(99,102,241,0.25)",
+                  borderRadius: 10, padding: "10px 14px",
+                  fontSize: "0.8rem", color: "#4338ca",
+                }}>
+                  <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 4 }}>
+                    <span>
+                      ⛵ Sailing: ₹{Number(yacht.sailingCost || 0).toLocaleString("en-IN")} + ₹{Number(yacht.sailingMargin || 0).toLocaleString("en-IN")} margin
+                      = <b>₹{(Number(yacht.sailingCost || 0) + Number(yacht.sailingMargin || 0)).toLocaleString("en-IN")}/hr</b>
+                    </span>
+                    <span>
+                      ⚓ Anchorage: ₹{Number(yacht.anchorageCost || 0).toLocaleString("en-IN")} + ₹{Number(yacht.anchorageMargin || 0).toLocaleString("en-IN")} margin
+                      = <b>₹{(Number(yacht.anchorageCost || 0) + Number(yacht.anchorageMargin || 0)).toLocaleString("en-IN")}/hr</b>
+                    </span>
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: "0.75rem", color: "#4f46e5" }}>
+                    Selling Price = ₹{sellingPrice.toLocaleString("en-IN")}
+                  </div>
+                </div>
+              )}
+              
               {/* Hours split widget */}
               {(sv || av) ? (
                 <div className="cy-span3" style={{
@@ -417,12 +492,7 @@ function CreateYacht() {
                 }}>⛔ {fieldErrors.defaultHours}</div>
               )}
 
-              <Field label="Selling Price" required error={fieldErrors.sellingPrice}>
-                <input className={`cy-input${fieldErrors.sellingPrice ? " err" : ""}`} type="number" name="sellingPrice" placeholder="₹" value={yacht.sellingPrice} onChange={handleChange} required />
-              </Field>
-              <Field label="Max Selling Price" required error={fieldErrors.maxSellingPrice}>
-                <input className={`cy-input${fieldErrors.maxSellingPrice ? " err" : ""}`} type="number" name="maxSellingPrice" placeholder="₹" value={yacht.maxSellingPrice} onChange={handleChange} required />
-              </Field>
+              
             </div>
           </SectionCard>
 

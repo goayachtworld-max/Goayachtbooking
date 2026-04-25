@@ -12,6 +12,8 @@ const yachtSchema = new mongoose.Schema(
     runningCost: { type: Number, required: true },
     anchorageCost: { type: Number, required: true },      // cost per hour at anchor
     sailingCost: { type: Number, required: true },         // cost per hour while sailing
+    sailingMargin: { type: Number, default: 0 },           // margin per hour added on top of sailingCost
+    anchorageMargin: { type: Number, default: 0 },         // margin per hour added on top of anchorageCost
     defaultSailingHours: { type: Number, default: null },   // default sailing hrs for one standard slot (e.g. 1 for a 2hr slot)
     defaultAnchoringHours: { type: Number, default: null }, // default anchoring hrs for one standard slot (e.g. 1 for a 2hr slot)
     maxSellingPrice: { type: Number, required: true },

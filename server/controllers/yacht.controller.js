@@ -73,6 +73,9 @@ export const getAllYachts = async (req, res, next) => {
       runningCost: yacht.runningCost,
       sailingCost: yacht.sailingCost,
       anchorageCost: yacht.anchorageCost,
+      sailingMargin: yacht.sailingMargin,
+      maxSellingPrice:yacht.maxSellingPrice,
+      anchorageMargin: yacht.anchorageMargin,
       defaultSailingHours: yacht.defaultSailingHours,
       defaultAnchoringHours: yacht.defaultAnchoringHours,
       capacity: yacht.capacity,
@@ -210,21 +213,21 @@ export const getPublicYachts = async (req, res, next) => {
         // NOTE: slots intentionally kept — needed for date-specific slot overrides
       }
     )
-    .populate({ path: "slots", select: "date slots" })  // Slot model: { date, slots:[{start,end}] }
-    .lean();
+      .populate({ path: "slots", select: "date slots" })  // Slot model: { date, slots:[{start,end}] }
+      .lean();
 
     const yachtIds = yachts.map(y => y._id);
 
     // Fetch confirmed/pending bookings for the requested date (to show taken slots)
     let bookingsMap = {};
     if (dateParam) {
-      const startOfDay = new Date(dateParam); startOfDay.setHours(0,0,0,0);
-      const endOfDay   = new Date(dateParam); endOfDay.setHours(23,59,59,999);
+      const startOfDay = new Date(dateParam); startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(dateParam); endOfDay.setHours(23, 59, 59, 999);
 
       const bookings = await BookingModel.find({
         yachtId: { $in: yachtIds },
-        date:    { $gte: startOfDay, $lte: endOfDay },
-        status:  { $in: ["pending", "initiated", "confirmed"] },
+        date: { $gte: startOfDay, $lte: endOfDay },
+        status: { $in: ["pending", "initiated", "confirmed"] },
       }).select("yachtId startTime endTime date").lean();
 
       bookings.forEach(b => {
@@ -236,7 +239,7 @@ export const getPublicYachts = async (req, res, next) => {
 
     const shaped = yachts.map(({ yachtPhotos, ...rest }) => ({
       ...rest,
-      photos:   yachtPhotos || [],
+      photos: yachtPhotos || [],
       // bookings for the requested date (empty array if no date param or no bookings)
       bookings: bookingsMap[rest._id?.toString()] || [],
     }));

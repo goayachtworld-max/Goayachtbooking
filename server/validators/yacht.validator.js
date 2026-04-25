@@ -14,6 +14,14 @@ export const yachtSchema = z.object({
     (val) => (val !== undefined ? Number(val) : undefined),
     z.number().min(0)
   ),
+  sailingMargin: z.preprocess(
+    (val) => (val !== undefined && val !== "" ? Number(val) : 0),
+    z.number().min(0).default(0)
+  ),
+  anchorageMargin: z.preprocess(
+    (val) => (val !== undefined && val !== "" ? Number(val) : 0),
+    z.number().min(0).default(0)
+  ),
   runningCost: z.preprocess(
     (val) => (val !== undefined ? Number(val) : undefined),
     z.number().min(0)

@@ -172,7 +172,7 @@ function TicketSearch() {
       : [];
     const paidServices = booking.extraDetails
       ? booking.extraDetails.split("\n").filter((i) =>
-        ["Drone", "DSLR"].some((k) => i.includes(k))
+        ["Drone", "DSLR","Ballon"].some((k) => i.includes(k))
       ).map((i) => i.replace("- ", "").trim())
       : [];
     const notes = booking.extraDetails

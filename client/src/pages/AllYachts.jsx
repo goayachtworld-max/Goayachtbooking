@@ -59,6 +59,16 @@ function minutesToHHMM(minutes) {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
+// Derive selling price from cost + margin fields
+function calcSellingPrice(yacht) {
+  const sHrs = Number(yacht.defaultSailingHours || 0);
+  const aHrs = Number(yacht.defaultAnchoringHours || 0);
+  return (
+    (Number(yacht.sailingCost || 0) + Number(yacht.sailingMargin || 0)) * sHrs +
+    (Number(yacht.anchorageCost || 0) + Number(yacht.anchorageMargin || 0)) * aHrs
+  );
+}
+
 // ── sub-components ─────────────────────────────────────────────────
 function Carousel({ images }) {
   const [idx, setIdx] = useState(0);
@@ -77,6 +87,24 @@ function Carousel({ images }) {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Read-only display box for auto-calculated fields
+function CalcDisplay({ value, highlight }) {
+  const hasValue = value !== null && value !== undefined && value !== 0;
+  return (
+    <div className={s.costDisplay} style={{
+      background: hasValue
+        ? highlight
+          ? "linear-gradient(90deg,rgba(99,102,241,0.1),rgba(99,102,241,0.04))"
+          : undefined
+        : undefined,
+      borderColor: hasValue && highlight ? "rgba(99,102,241,0.4)" : undefined,
+      color: hasValue && highlight ? "#4f46e5" : undefined,
+    }}>
+      {hasValue ? <><span>₹</span>{Number(value).toLocaleString()}</> : "—"}
     </div>
   );
 }
@@ -118,7 +146,7 @@ const AllYachts = () => {
     })();
   }, []);
 
-  // price validation
+  // price validation (edit modal)
   useEffect(() => {
     if (!selectedYacht) return;
     const errors = {};
@@ -126,19 +154,24 @@ const AllYachts = () => {
     const aHrs = Number(selectedYacht.defaultAnchoringHours || 0);
     const slotDurHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
 
-    // Default hrs must not exceed slot duration
     if (slotDurHrs > 0 && (sHrs + aHrs) > slotDurHrs + 0.001) {
       errors.defaultHours = `Default sailing + anchoring (${sHrs + aHrs} hrs) exceeds slot duration (${slotDurHrs} hrs)`;
     }
 
     const running = (Number(selectedYacht.sailingCost || 0) * sHrs) + (Number(selectedYacht.anchorageCost || 0) * aHrs);
+    const selling = calcSellingPrice(selectedYacht);
     const maxSell = Number(selectedYacht.maxSellingPrice || 0);
-    const sell = Number(selectedYacht.sellingPrice || 0);
+
     if (running && maxSell && maxSell <= running) errors.maxSellingPrice = "Max selling price must be > running cost";
-    if (running && sell && sell < running) errors.sellingPrice = "Selling price must be ≥ running cost";
-    if (maxSell && sell && sell > maxSell) errors.sellingPrice = "Selling price must be ≤ max selling price";
+    if (selling && maxSell && selling > maxSell) errors.sellingPrice = "Selling price (auto) exceeds max selling price";
+
     setEditFieldErrors(errors);
-  }, [selectedYacht?.sailingCost, selectedYacht?.anchorageCost, selectedYacht?.defaultSailingHours, selectedYacht?.defaultAnchoringHours, selectedYacht?.duration, selectedYacht?.maxSellingPrice, selectedYacht?.sellingPrice]);
+  }, [
+    selectedYacht?.sailingCost, selectedYacht?.anchorageCost,
+    selectedYacht?.sailingMargin, selectedYacht?.anchorageMargin,
+    selectedYacht?.defaultSailingHours, selectedYacht?.defaultAnchoringHours,
+    selectedYacht?.duration, selectedYacht?.maxSellingPrice,
+  ]);
 
   // preload special slots
   useEffect(() => {
@@ -189,7 +222,7 @@ const AllYachts = () => {
 
   const handleEditSave = async () => {
     if (!selectedYacht) return;
-    if (!selectedYacht.name || !selectedYacht.sellingPrice || !selectedYacht.maxSellingPrice) {
+    if (!selectedYacht.name || !selectedYacht.maxSellingPrice) {
       toast.error("Please fill all required fields."); return;
     }
     if (Object.keys(editFieldErrors).length > 0) {
@@ -201,17 +234,25 @@ const AllYachts = () => {
       const specialSlotTimes = [selectedYacht.specialSlot1, selectedYacht.specialSlot2].filter(Boolean);
       const durationHHMM = minutesToHHMM(Number(selectedYacht.duration) || 0);
 
+      const sHrs = Number(selectedYacht.defaultSailingHours || 0);
+      const aHrs = Number(selectedYacht.defaultAnchoringHours || 0);
+      const runningCostCalc =
+        (Number(selectedYacht.sailingCost) * sHrs) +
+        (Number(selectedYacht.anchorageCost) * aHrs);
+      const sellingPriceCalc = calcSellingPrice(selectedYacht);
+
       const formData = new FormData();
       formData.append("name", selectedYacht.name);
       formData.append("capacity", selectedYacht.capacity);
       formData.append("sailingCost", selectedYacht.sailingCost);
       formData.append("anchorageCost", selectedYacht.anchorageCost);
-      const runningCostCalc = (Number(selectedYacht.sailingCost) * Number(selectedYacht.defaultSailingHours || 0)) + (Number(selectedYacht.anchorageCost) * Number(selectedYacht.defaultAnchoringHours || 0));
+      formData.append("sailingMargin", selectedYacht.sailingMargin || 0);
+      formData.append("anchorageMargin", selectedYacht.anchorageMargin || 0);
       formData.append("runningCost", runningCostCalc);
+      formData.append("sellingPrice", sellingPriceCalc);
+      formData.append("maxSellingPrice", selectedYacht.maxSellingPrice);
       if (selectedYacht.defaultSailingHours != null) formData.append("defaultSailingHours", selectedYacht.defaultSailingHours);
       if (selectedYacht.defaultAnchoringHours != null) formData.append("defaultAnchoringHours", selectedYacht.defaultAnchoringHours);
-      formData.append("sellingPrice", selectedYacht.sellingPrice);
-      formData.append("maxSellingPrice", selectedYacht.maxSellingPrice);
       formData.append("sailStartTime", selectedYacht.sailStartTime);
       formData.append("sailEndTime", selectedYacht.sailEndTime);
       formData.append("duration", durationHHMM);
@@ -274,7 +315,7 @@ const AllYachts = () => {
       <div className={s.fixedTopBar}>
         <div className={s.fixedTopBarInner}>
           <button className="btn-back-icon" onClick={() => navigate(-1)} aria-label="Go back">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
           <input
             className={s.searchInput}
@@ -285,7 +326,7 @@ const AllYachts = () => {
           />
           <button className={s.fabAdd} onClick={() => navigate("/create-yacht")} title="Create Yacht">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 3V15M3 9H15" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+              <path d="M9 3V15M3 9H15" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
             </svg>
           </button>
         </div>
@@ -358,7 +399,7 @@ const AllYachts = () => {
           {/* Header */}
           <div className={s.editPageHeader}>
             <button className="btn-back-icon" onClick={closeAllModals} aria-label="Go back">
-              <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <h2 className={s.editPageTitle} style={{ flex: 1, textAlign: "center" }}>{selectedYacht.name}</h2>
             <span className={`${s.viewStatus} ${selectedYacht.status === "active" ? s.viewStatusActive : s.viewStatusInactive}`}>
@@ -382,7 +423,7 @@ const AllYachts = () => {
               {/* Overview */}
               <div className={s.viewCard}>
                 <div className={s.viewCardHead}>
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M2.5 14c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.5" /><path d="M2.5 14c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                   Overview
                 </div>
                 <div className={s.viewRows}>
@@ -394,7 +435,7 @@ const AllYachts = () => {
               {/* Schedule */}
               <div className={s.viewCard}>
                 <div className={s.viewCardHead}>
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5" /><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                   Schedule
                 </div>
                 <div className={s.viewRows}>
@@ -406,18 +447,40 @@ const AllYachts = () => {
               {/* Pricing */}
               <div className={`${s.viewCard} ${s.viewCardWide}`}>
                 <div className={s.viewCardHead}>
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><path d="M1.5 6.5h13" stroke="currentColor" strokeWidth="1.5"/><path d="M5 10h2m3 0h1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><path d="M1.5 6.5h13" stroke="currentColor" strokeWidth="1.5" /><path d="M5 10h2m3 0h1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                   Pricing
                 </div>
                 <div className={s.viewRows}>
                   <div className={s.viewRow}>
                     <span className={s.viewRowLabel}>Sailing Cost</span>
-                    <span className={s.viewRowValue}>₹{Number(selectedYacht.sailingCost || 0).toLocaleString()}/hr{selectedYacht.defaultSailingHours ? <span className={s.viewRowMuted}> × {selectedYacht.defaultSailingHours} hr</span> : ""}</span>
+                    <span className={s.viewRowValue}>
+                      ₹{Number(selectedYacht.sailingCost || 0).toLocaleString()}/hr
+                      {selectedYacht.defaultSailingHours ? <span className={s.viewRowMuted}> × {selectedYacht.defaultSailingHours} hr</span> : ""}
+                    </span>
                   </div>
+                  {Number(selectedYacht.sailingMargin) > 0 && (
+                    <div className={s.viewRow}>
+                      <span className={s.viewRowLabel}>Sailing Margin</span>
+                      <span className={s.viewRowValue} style={{ color: "#4f46e5" }}>
+                        + ₹{Number(selectedYacht.sailingMargin).toLocaleString()}/hr
+                      </span>
+                    </div>
+                  )}
                   <div className={s.viewRow}>
                     <span className={s.viewRowLabel}>Anchoring Cost</span>
-                    <span className={s.viewRowValue}>₹{Number(selectedYacht.anchorageCost || 0).toLocaleString()}/hr{selectedYacht.defaultAnchoringHours ? <span className={s.viewRowMuted}> × {selectedYacht.defaultAnchoringHours} hr</span> : ""}</span>
+                    <span className={s.viewRowValue}>
+                      ₹{Number(selectedYacht.anchorageCost || 0).toLocaleString()}/hr
+                      {selectedYacht.defaultAnchoringHours ? <span className={s.viewRowMuted}> × {selectedYacht.defaultAnchoringHours} hr</span> : ""}
+                    </span>
                   </div>
+                  {Number(selectedYacht.anchorageMargin) > 0 && (
+                    <div className={s.viewRow}>
+                      <span className={s.viewRowLabel}>Anchorage Margin</span>
+                      <span className={s.viewRowValue} style={{ color: "#4f46e5" }}>
+                        + ₹{Number(selectedYacht.anchorageMargin).toLocaleString()}/hr
+                      </span>
+                    </div>
+                  )}
                   <div className={s.viewRow}><span className={s.viewRowLabel}>Running Cost</span><span className={s.viewRowValue}>₹{Number(selectedYacht.runningCost || 0).toLocaleString()}</span></div>
                   <div className={`${s.viewRow} ${s.viewRowHighlight}`}><span className={s.viewRowLabel}>Selling Price</span><span className={s.viewRowValue}>₹{Number(selectedYacht.sellingPrice || 0).toLocaleString()}</span></div>
                   <div className={s.viewRow}><span className={s.viewRowLabel}>Max Selling</span><span className={s.viewRowValue}>₹{Number(selectedYacht.maxSellingPrice || 0).toLocaleString()}</span></div>
@@ -427,7 +490,7 @@ const AllYachts = () => {
               {/* Special Slots */}
               <div className={s.viewCard}>
                 <div className={s.viewCardHead}>
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><path d="M5 1v3m6-3v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M1.5 7.5h13" stroke="currentColor" strokeWidth="1.5"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><path d="M5 1v3m6-3v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><path d="M1.5 7.5h13" stroke="currentColor" strokeWidth="1.5" /></svg>
                   Special Slots
                 </div>
                 <div className={s.viewRows}>
@@ -453,222 +516,294 @@ const AllYachts = () => {
               className={s.btnSave}
               onClick={() => { setShowViewModal(false); setShowEditModal(true); }}
             >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 11.5V14h2.5L11.5 7 9 4.5 2 11.5ZM13.7 4.8c.3-.3.3-.8 0-1.1l-1.4-1.4c-.3-.3-.8-.3-1.1 0L10 3.5 12.5 6l1.2-1.2Z" fill="currentColor"/></svg>
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 11.5V14h2.5L11.5 7 9 4.5 2 11.5ZM13.7 4.8c.3-.3.3-.8 0-1.1l-1.4-1.4c-.3-.3-.8-.3-1.1 0L10 3.5 12.5 6l1.2-1.2Z" fill="currentColor" /></svg>
               Edit Yacht
             </button>
           </div>
         </div>
-      , document.body)}
+        , document.body)}
 
       {/* ── EDIT PAGE ── */}
       {showEditModal && selectedYacht && createPortal(
         <div className={s.editPage}>
           <div className={s.editPageHeader}>
             <button className="btn-back-icon" onClick={closeAllModals} aria-label="Go back">
-              <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <h2 className={s.editPageTitle}>Edit Yacht</h2>
             <div style={{ width: 38 }} />
           </div>
           <div className={s.editPageBody}>
 
-                {/* ── Basic Information ── */}
-                <div className={s.formSectionTitle}>Basic Information</div>
-                <div className={s.formGrid}>
-                  <div className={s.field}>
-                    <label className={s.label}>Yacht Name <span className={s.required}>*</span></label>
-                    <input className={s.input} value={selectedYacht.name || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, name: e.target.value }))} />
-                  </div>
-                  <div className={s.field}>
-                    <label className={s.label}>Capacity <span className={s.required}>*</span></label>
-                    <input className={s.input} type="number" value={selectedYacht.capacity || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, capacity: Number(e.target.value) }))} />
-                  </div>
-                  <div className={s.field}>
-                    <label className={s.label}>Status</label>
-                    <select className={s.select} value={selectedYacht.status || "active"} onChange={(e) => setSelectedYacht((p) => ({ ...p, status: e.target.value }))}>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
-                  <div className={`${s.field} ${s.colSpan3}`}>
-                    <label className={s.label}>Boarding Location</label>
-                    <input className={s.input} type="text" placeholder="e.g. West Goa Marina" value={selectedYacht.boardingLocation || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, boardingLocation: e.target.value }))} />
-                  </div>
-                </div>
+            {/* ── Basic Information ── */}
+            <div className={s.formSectionTitle}>Basic Information</div>
+            <div className={s.formGrid}>
+              <div className={s.field}>
+                <label className={s.label}>Yacht Name <span className={s.required}>*</span></label>
+                <input className={s.input} value={selectedYacht.name || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, name: e.target.value }))} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Capacity <span className={s.required}>*</span></label>
+                <input className={s.input} type="number" value={selectedYacht.capacity || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, capacity: Number(e.target.value) }))} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Status</label>
+                <select className={s.select} value={selectedYacht.status || "active"} onChange={(e) => setSelectedYacht((p) => ({ ...p, status: e.target.value }))}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <div className={`${s.field} ${s.colSpan3}`}>
+                <label className={s.label}>Boarding Location</label>
+                <input className={s.input} type="text" placeholder="e.g. West Goa Marina" value={selectedYacht.boardingLocation || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, boardingLocation: e.target.value }))} />
+              </div>
+            </div>
 
-                {/* ── Schedule & Slots ── */}
-                <div className={s.formSectionTitle} style={{ marginTop: "1.25rem" }}>Schedule & Slots</div>
-                <div className={s.formGrid}>
-                  <div className={s.field}>
-                    <label className={s.label}>Start Time</label>
-                    <input className={s.input} type="time" value={selectedYacht.sailStartTime || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sailStartTime: e.target.value }))} />
-                  </div>
-                  <div className={s.field}>
-                    <label className={s.label}>End Time</label>
-                    <input className={s.input} type="time" value={selectedYacht.sailEndTime || ""} min={selectedYacht.sailStartTime} onChange={(e) => {
-                      if (e.target.value < selectedYacht.sailStartTime) { toast.error("End time cannot be before start time"); return; }
-                      setSelectedYacht((p) => ({ ...p, sailEndTime: e.target.value }));
-                    }} />
-                  </div>
-                  <div className={s.field}>
-                    <label className={s.label}>Slot Duration (mins)</label>
-                    <input className={s.input} type="number" value={toMinutes(selectedYacht.duration)}
-                      onChange={(e) => {
-                        const newMins = Number(e.target.value);
-                        const newHrs = newMins / 60;
-                        setSelectedYacht((p) => {
-                          const prevSail = parseFloat(p.defaultSailingHours);
-                          const prevAnch = parseFloat(p.defaultAnchoringHours);
-                          const prevTotal = (isNaN(prevSail) ? 0 : prevSail) + (isNaN(prevAnch) ? 0 : prevAnch);
-                          // Re-apply the same ratio to the new duration
-                          if (newHrs > 0 && prevTotal > 0) {
-                            const sailRatio = (isNaN(prevSail) ? 0 : prevSail) / prevTotal;
-                            const newSail = parseFloat((newHrs * sailRatio).toFixed(2));
-                            const newAnch = parseFloat((newHrs - newSail).toFixed(2));
-                            const fmt = (v) => v % 1 === 0 ? String(v) : String(v);
-                            return { ...p, duration: newMins, defaultSailingHours: fmt(newSail), defaultAnchoringHours: fmt(newAnch) };
-                          }
-                          return { ...p, duration: newMins };
-                        });
-                      }} />
-                  </div>
-                  <div className={s.field}>
-                    <label className={s.label}>Special Slot 1</label>
-                    <select className={s.select} value={selectedYacht.specialSlot1 || "none"} onChange={(e) => {
-                      const val = e.target.value;
-                      setSelectedYacht((p) => ({ ...p, specialSlot1: val === "none" ? null : val, specialSlot2: null }));
-                    }}>
-                      <option value="none">None</option>
-                      {SLOT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </div>
-                  <div className={s.field}>
-                    <label className={s.label}>Special Slot 2</label>
-                    <select className={s.select} value={selectedYacht.specialSlot2 || "none"} disabled={!selectedYacht.specialSlot1 || selectedYacht.specialSlot1 === "none"} onChange={(e) => {
-                      const val = e.target.value;
-                      setSelectedYacht((p) => ({ ...p, specialSlot2: val === "none" ? null : val }));
-                    }}>
-                      <option value="none">None</option>
-                      {SLOT_OPTIONS.map((o) => <option key={o.value} value={o.value} disabled={selectedYacht.specialSlot1 === o.value}>{o.label}</option>)}
-                    </select>
-                  </div>
-                </div>
+            {/* ── Schedule & Slots ── */}
+            <div className={s.formSectionTitle} style={{ marginTop: "1.25rem" }}>Schedule & Slots</div>
+            <div className={s.formGrid}>
+              <div className={s.field}>
+                <label className={s.label}>Start Time</label>
+                <input className={s.input} type="time" value={selectedYacht.sailStartTime || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sailStartTime: e.target.value }))} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>End Time</label>
+                <input className={s.input} type="time" value={selectedYacht.sailEndTime || ""} min={selectedYacht.sailStartTime} onChange={(e) => {
+                  if (e.target.value < selectedYacht.sailStartTime) { toast.error("End time cannot be before start time"); return; }
+                  setSelectedYacht((p) => ({ ...p, sailEndTime: e.target.value }));
+                }} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Slot Duration (mins)</label>
+                <input className={s.input} type="number" value={toMinutes(selectedYacht.duration)}
+                  onChange={(e) => {
+                    const newMins = Number(e.target.value);
+                    const newHrs = newMins / 60;
+                    setSelectedYacht((p) => {
+                      const prevSail = parseFloat(p.defaultSailingHours);
+                      const prevAnch = parseFloat(p.defaultAnchoringHours);
+                      const prevTotal = (isNaN(prevSail) ? 0 : prevSail) + (isNaN(prevAnch) ? 0 : prevAnch);
+                      if (newHrs > 0 && prevTotal > 0) {
+                        const sailRatio = (isNaN(prevSail) ? 0 : prevSail) / prevTotal;
+                        const newSail = parseFloat((newHrs * sailRatio).toFixed(2));
+                        const newAnch = parseFloat((newHrs - newSail).toFixed(2));
+                        const fmt = (v) => v % 1 === 0 ? String(v) : String(v);
+                        return { ...p, duration: newMins, defaultSailingHours: fmt(newSail), defaultAnchoringHours: fmt(newAnch) };
+                      }
+                      return { ...p, duration: newMins };
+                    });
+                  }} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Special Slot 1</label>
+                <select className={s.select} value={selectedYacht.specialSlot1 || "none"} onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedYacht((p) => ({ ...p, specialSlot1: val === "none" ? null : val, specialSlot2: null }));
+                }}>
+                  <option value="none">None</option>
+                  {SLOT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Special Slot 2</label>
+                <select className={s.select} value={selectedYacht.specialSlot2 || "none"} disabled={!selectedYacht.specialSlot1 || selectedYacht.specialSlot1 === "none"} onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedYacht((p) => ({ ...p, specialSlot2: val === "none" ? null : val }));
+                }}>
+                  <option value="none">None</option>
+                  {SLOT_OPTIONS.map((o) => <option key={o.value} value={o.value} disabled={selectedYacht.specialSlot1 === o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            </div>
 
-                {/* ── Pricing ── */}
-                <div className={s.formSectionTitle} style={{ marginTop: "1.25rem" }}>Pricing</div>
-                <div className={s.formGrid}>
+            {/* ── Pricing ── */}
+            <div className={s.formSectionTitle} style={{ marginTop: "1.25rem" }}>Pricing</div>
+            <div className={s.formGrid}>
+
+              {/* Row 1: Base costs */}
+              <div className={s.field}>
+                <label className={s.label}>Sailing Cost / hr</label>
+                <input className={s.input} type="number" value={selectedYacht.sailingCost || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sailingCost: e.target.value }))} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Anchorage Cost / hr</label>
+                <input className={s.input} type="number" value={selectedYacht.anchorageCost || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, anchorageCost: e.target.value }))} />
+              </div>
+
+              {/* Running cost — live */}
+              {(() => {
+                const sHrs = Number(selectedYacht.defaultSailingHours || 0);
+                const aHrs = Number(selectedYacht.defaultAnchoringHours || 0);
+                const rc = (Number(selectedYacht.sailingCost || 0) * sHrs) + (Number(selectedYacht.anchorageCost || 0) * aHrs);
+                if (!rc) return null;
+                return (
                   <div className={s.field}>
-                    <label className={s.label}>Sailing Cost / hr</label>
-                    <input className={s.input} type="number" value={selectedYacht.sailingCost || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sailingCost: e.target.value }))} />
+                    <label className={s.label}>Running Cost</label>
+                    <div className={s.costDisplay}><span>₹</span>{rc.toLocaleString()}</div>
                   </div>
-                  <div className={s.field}>
-                    <label className={s.label}>Anchorage Cost / hr</label>
-                    <input className={s.input} type="number" value={selectedYacht.anchorageCost || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, anchorageCost: e.target.value }))} />
-                  </div>
-                  {/* Running Cost — live */}
-                  {(() => {
-                    const sHrs = Number(selectedYacht.defaultSailingHours || 0);
-                    const aHrs = Number(selectedYacht.defaultAnchoringHours || 0);
-                    const rc = (Number(selectedYacht.sailingCost || 0) * sHrs) + (Number(selectedYacht.anchorageCost || 0) * aHrs);
-                    if (!rc) return null;
-                    return (
-                      <div className={s.field}>
-                        <label className={s.label}>Running Cost</label>
-                        <div className={s.costDisplay}><span>₹</span>{rc.toLocaleString()}</div>
-                      </div>
-                    );
-                  })()}
+                );
+              })()}
+
+              {/* Row 2: Margins */}
+              <div className={s.field}>
+                <label className={s.label}>
+                  Sailing Margin / hr
+                  <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>added to sailing cost</span>
+                </label>
+                <input
+                  className={s.input}
+                  type="number"
+                  min="0"
+                  placeholder="₹ margin per hour"
+                  value={selectedYacht.sailingMargin ?? ""}
+                  onChange={(e) => setSelectedYacht((p) => ({ ...p, sailingMargin: e.target.value }))}
+                />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>
+                  Anchorage Margin / hr
+                  <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>added to anchorage cost</span>
+                </label>
+                <input
+                  className={s.input}
+                  type="number"
+                  min="0"
+                  placeholder="₹ margin per hour"
+                  value={selectedYacht.anchorageMargin ?? ""}
+                  onChange={(e) => setSelectedYacht((p) => ({ ...p, anchorageMargin: e.target.value }))}
+                />
+              </div>
+
+              {/* Selling price — auto-calculated */}
+              {(() => {
+                const sp = calcSellingPrice(selectedYacht);
+                return (
                   <div className={s.field}>
                     <label className={s.label}>
-                      Default Sailing Hrs
-                      <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>per slot</span>
+                      Selling Price
+                      <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>auto-calculated</span>
                     </label>
-                    <input className={s.input} type="number" step="0.5" min="0" placeholder="e.g. 1"
-                      value={selectedYacht.defaultSailingHours ?? ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const slotHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
-                        const clamped = slotHrs > 0 ? Math.min(parseFloat(val), slotHrs) : parseFloat(val);
-                        const sail = isNaN(clamped) ? "" : (clamped % 1 === 0 ? String(clamped) : clamped.toFixed(1));
-                        const remaining = slotHrs > 0 && sail !== "" ? Math.max(0, slotHrs - parseFloat(sail)) : null;
-                        const anch = remaining !== null ? (remaining % 1 === 0 ? String(remaining) : remaining.toFixed(1)) : undefined;
-                        setSelectedYacht((p) => ({ ...p, defaultSailingHours: sail, ...(anch !== undefined && { defaultAnchoringHours: anch }) }));
-                      }} />
+                    <CalcDisplay value={sp} highlight />
+                    {editFieldErrors.sellingPrice && (
+                      <span className={s.fieldError}>{editFieldErrors.sellingPrice}</span>
+                    )}
                   </div>
-                  <div className={s.field}>
-                    <label className={s.label}>
-                      Default Anchoring Hrs
-                      <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>per slot</span>
-                    </label>
-                    <input className={s.input} type="number" step="0.5" min="0" placeholder="e.g. 1"
-                      value={selectedYacht.defaultAnchoringHours ?? ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const slotHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
-                        const clamped = slotHrs > 0 ? Math.min(parseFloat(val), slotHrs) : parseFloat(val);
-                        const anch = isNaN(clamped) ? "" : (clamped % 1 === 0 ? String(clamped) : clamped.toFixed(1));
-                        const remaining = slotHrs > 0 && anch !== "" ? Math.max(0, slotHrs - parseFloat(anch)) : null;
-                        const sail = remaining !== null ? (remaining % 1 === 0 ? String(remaining) : remaining.toFixed(1)) : undefined;
-                        setSelectedYacht((p) => ({ ...p, defaultAnchoringHours: anch, ...(sail !== undefined && { defaultSailingHours: sail }) }));
-                      }} />
-                  </div>
-                  {/* Ratio preview */}
-                  {(() => {
-                    const sv = parseFloat(selectedYacht.defaultSailingHours);
-                    const av = parseFloat(selectedYacht.defaultAnchoringHours);
-                    if (!sv && !av) return null;
-                    const total = (sv || 0) + (av || 0);
-                    const sPct = total > 0 ? Math.round((sv || 0) / total * 100) : 0;
-                    const aPct = 100 - sPct;
-                    const slotDurHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
-                    const isOver = slotDurHrs > 0 && total > slotDurHrs + 0.001;
-                    const matchesSlot = slotDurHrs > 0 && Math.abs(total - slotDurHrs) <= 0.001;
-                    return (
-                      <div className={s.colSpan3} style={{ fontSize: 12, color: isOver ? "#dc2626" : "#0f172a", background: isOver ? "#fef2f2" : "#f0fdf4", border: `1px solid ${isOver ? "#fca5a5" : "#86efac"}`, borderRadius: 8, padding: "8px 12px", display: "flex", gap: 16, flexWrap: "wrap" }}>
-                        <span>⛵ Sailing: <b>{sv || 0} hr{sv !== 1 ? "s" : ""}</b> ({sPct}%)</span>
-                        <span>⚓ Anchoring: <b>{av || 0} hr{av !== 1 ? "s" : ""}</b> ({aPct}%)</span>
-                        {isOver
-                          ? <span style={{ fontWeight: 700 }}>⛔ Total {total} hrs exceeds {slotDurHrs} hr slot</span>
-                          : matchesSlot
-                            ? <span style={{ color: "#15803d" }}>✓ Matches slot duration exactly</span>
-                            : <span style={{ color: "#64748b" }}>→ ratio applied proportionally to any slot length</span>
-                        }
-                      </div>
-                    );
-                  })()}
-                  {editFieldErrors.defaultHours && (
-                    <div className={s.colSpan3} style={{ fontSize: 12, fontWeight: 700, color: "#dc2626", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "7px 12px" }}>
-                      ⛔ {editFieldErrors.defaultHours}
-                    </div>
-                  )}
-                  <div className={s.field}>
-                    <label className={s.label}>Selling Price <span className={s.required}>*</span></label>
-                    <input className={`${s.input}${editFieldErrors.sellingPrice ? " " + s.error : ""}`} type="number" value={selectedYacht.sellingPrice || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, sellingPrice: e.target.value }))} />
-                    {editFieldErrors.sellingPrice && <span className={s.fieldError}>{editFieldErrors.sellingPrice}</span>}
-                  </div>
-                  <div className={s.field}>
-                    <label className={s.label}>Max Selling Price <span className={s.required}>*</span></label>
-                    <input className={`${s.input}${editFieldErrors.maxSellingPrice ? " " + s.error : ""}`} type="number" value={selectedYacht.maxSellingPrice || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, maxSellingPrice: e.target.value }))} />
-                    {editFieldErrors.maxSellingPrice && <span className={s.fieldError}>{editFieldErrors.maxSellingPrice}</span>}
-                  </div>
-                </div>
+                );
+              })()}
 
-                {/* ── Photos ── */}
-                <div className={s.formSectionTitle} style={{ marginTop: "1.25rem" }}>
-                  Yacht Images
-                  <span className={s.inputHint} style={{ marginLeft: 8 }}>(optional · max 1 MB each)</span>
+              {/* Default hours */}
+              <div className={s.field}>
+                <label className={s.label}>
+                  Default Sailing Hrs
+                  <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>per slot</span>
+                </label>
+                <input className={s.input} type="number" step="0.5" min="0" placeholder="e.g. 1"
+                  value={selectedYacht.defaultSailingHours ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const slotHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
+                    const clamped = slotHrs > 0 ? Math.min(parseFloat(val), slotHrs) : parseFloat(val);
+                    const sail = isNaN(clamped) ? "" : (clamped % 1 === 0 ? String(clamped) : clamped.toFixed(1));
+                    const remaining = slotHrs > 0 && sail !== "" ? Math.max(0, slotHrs - parseFloat(sail)) : null;
+                    const anch = remaining !== null ? (remaining % 1 === 0 ? String(remaining) : remaining.toFixed(1)) : undefined;
+                    setSelectedYacht((p) => ({ ...p, defaultSailingHours: sail, ...(anch !== undefined && { defaultAnchoringHours: anch }) }));
+                  }} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>
+                  Default Anchoring Hrs
+                  <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", marginLeft: 6 }}>per slot</span>
+                </label>
+                <input className={s.input} type="number" step="0.5" min="0" placeholder="e.g. 1"
+                  value={selectedYacht.defaultAnchoringHours ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const slotHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
+                    const clamped = slotHrs > 0 ? Math.min(parseFloat(val), slotHrs) : parseFloat(val);
+                    const anch = isNaN(clamped) ? "" : (clamped % 1 === 0 ? String(clamped) : clamped.toFixed(1));
+                    const remaining = slotHrs > 0 && anch !== "" ? Math.max(0, slotHrs - parseFloat(anch)) : null;
+                    const sail = remaining !== null ? (remaining % 1 === 0 ? String(remaining) : remaining.toFixed(1)) : undefined;
+                    setSelectedYacht((p) => ({ ...p, defaultAnchoringHours: anch, ...(sail !== undefined && { defaultSailingHours: sail }) }));
+                  }} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Max Selling Price <span className={s.required}>*</span></label>
+                <input className={`${s.input}${editFieldErrors.maxSellingPrice ? " " + s.error : ""}`} type="number" value={selectedYacht.maxSellingPrice || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, maxSellingPrice: e.target.value }))} />
+                {editFieldErrors.maxSellingPrice && <span className={s.fieldError}>{editFieldErrors.maxSellingPrice}</span>}
+              </div>
+              {/* Margin breakdown hint */}
+              {(Number(selectedYacht.sailingMargin) > 0 || Number(selectedYacht.anchorageMargin) > 0) &&
+                (Number(selectedYacht.defaultSailingHours) > 0 || Number(selectedYacht.defaultAnchoringHours) > 0) && (
+                  <div className={s.colSpan3} style={{
+                    fontSize: 12, color: "#4338ca",
+                    background: "linear-gradient(90deg,rgba(99,102,241,0.07),rgba(99,102,241,0.02))",
+                    border: "1px solid rgba(99,102,241,0.25)",
+                    borderRadius: 8, padding: "8px 12px",
+                    display: "flex", gap: 16, flexWrap: "wrap",
+                  }}>
+                    <span>
+                      ⛵ Sailing: ₹{Number(selectedYacht.sailingCost || 0).toLocaleString()} + ₹{Number(selectedYacht.sailingMargin || 0).toLocaleString()} margin
+                      = <b>₹{(Number(selectedYacht.sailingCost || 0) + Number(selectedYacht.sailingMargin || 0)).toLocaleString()}/hr</b>
+                    </span>
+                    <span>
+                      ⚓ Anchorage: ₹{Number(selectedYacht.anchorageCost || 0).toLocaleString()} + ₹{Number(selectedYacht.anchorageMargin || 0).toLocaleString()} margin
+                      = <b>₹{(Number(selectedYacht.anchorageCost || 0) + Number(selectedYacht.anchorageMargin || 0)).toLocaleString()}/hr</b>
+                    </span>
+                  </div>
+                )}
+
+
+
+              {/* Ratio preview */}
+              {(() => {
+                const sv = parseFloat(selectedYacht.defaultSailingHours);
+                const av = parseFloat(selectedYacht.defaultAnchoringHours);
+                if (!sv && !av) return null;
+                const total = (sv || 0) + (av || 0);
+                const sPct = total > 0 ? Math.round((sv || 0) / total * 100) : 0;
+                const aPct = 100 - sPct;
+                const slotDurHrs = Number(toMinutes(selectedYacht.duration) || 0) / 60;
+                const isOver = slotDurHrs > 0 && total > slotDurHrs + 0.001;
+                const matchesSlot = slotDurHrs > 0 && Math.abs(total - slotDurHrs) <= 0.001;
+                return (
+                  <div className={s.colSpan3} style={{ fontSize: 12, color: isOver ? "#dc2626" : "#0f172a", background: isOver ? "#fef2f2" : "#f0fdf4", border: `1px solid ${isOver ? "#fca5a5" : "#86efac"}`, borderRadius: 8, padding: "8px 12px", display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    <span>⛵ Sailing: <b>{sv || 0} hr{sv !== 1 ? "s" : ""}</b> ({sPct}%)</span>
+                    <span>⚓ Anchoring: <b>{av || 0} hr{av !== 1 ? "s" : ""}</b> ({aPct}%)</span>
+                    {isOver
+                      ? <span style={{ fontWeight: 700 }}>⛔ Total {total} hrs exceeds {slotDurHrs} hr slot</span>
+                      : matchesSlot
+                        ? <span style={{ color: "#15803d" }}>✓ Matches slot duration exactly</span>
+                        : <span style={{ color: "#64748b" }}>→ ratio applied proportionally to any slot length</span>
+                    }
+                  </div>
+                );
+              })()}
+
+              {editFieldErrors.defaultHours && (
+                <div className={s.colSpan3} style={{ fontSize: 12, fontWeight: 700, color: "#dc2626", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "7px 12px" }}>
+                  ⛔ {editFieldErrors.defaultHours}
                 </div>
-                <div className={s.previewGrid}>
-                  {imagePreviews.map((img, idx) => (
-                    <div className={s.previewBox} key={idx}>
-                      <img src={img} alt="preview" />
-                      <button className={s.previewRemove} onClick={() =>
-                        selectedYacht.yachtPhotos?.includes(img) ? removeExistingImage(img) : removeNewImage(idx)
-                      }>✕</button>
-                    </div>
-                  ))}
+              )}
+
+
+            </div>
+
+            {/* ── Photos ── */}
+            <div className={s.formSectionTitle} style={{ marginTop: "1.25rem" }}>
+              Yacht Images
+              <span className={s.inputHint} style={{ marginLeft: 8 }}>(optional · max 1 MB each)</span>
+            </div>
+            <div className={s.previewGrid}>
+              {imagePreviews.map((img, idx) => (
+                <div className={s.previewBox} key={idx}>
+                  <img src={img} alt="preview" />
+                  <button className={s.previewRemove} onClick={() =>
+                    selectedYacht.yachtPhotos?.includes(img) ? removeExistingImage(img) : removeNewImage(idx)
+                  }>✕</button>
                 </div>
-                <input type="file" className={s.fileInput} style={{ marginTop: "0.75rem" }} multiple accept="image/*" onChange={handleNewImages} />
+              ))}
+            </div>
+            <input type="file" className={s.fileInput} style={{ marginTop: "0.75rem" }} multiple accept="image/*" onChange={handleNewImages} />
 
           </div>
           <div className={s.editPageFooter}>
@@ -678,13 +813,13 @@ const AllYachts = () => {
               disabled={Object.keys(editFieldErrors).length > 0 || !!editFieldErrors.defaultHours}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13.5 4.5L6.5 11.5L2.5 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M13.5 4.5L6.5 11.5L2.5 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               Save Changes
             </button>
           </div>
         </div>
-      , document.body)}
+        , document.body)}
 
       {/* ── DELETE MODAL ── */}
       {showDeleteModal && selectedYacht && createPortal(
@@ -704,7 +839,7 @@ const AllYachts = () => {
             </div>
           </div>
         </>
-      , document.body)}
+        , document.body)}
     </div>
   );
 };

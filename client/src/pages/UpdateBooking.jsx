@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import { createTransactionAndUpdateBooking, updateTransactionAPI } from "../services/operations/transactionAPI";
-import { updateBookingAmountsAPI, rescheduleBookingAPI, updateBookingExtrasAPI, updateBookingAPI } from "../services/operations/bookingAPI";
+import { updateBookingAmountsAPI, rescheduleBookingAPI, updateBookingExtrasAPI } from "../services/operations/bookingAPI";
 import { updateCustomerAPI } from "../services/operations/customerAPI";
 import { getAllYachtsAPI } from "../services/operations/yautAPI";
 
@@ -254,7 +254,7 @@ function UpdateBooking() {
         await rescheduleBookingAPI(booking._id, { yachtId: bookingData.yachtId, date: bookingData.date, startTime: finalStart, endTime: finalEnd, extraDetails }, token);
       }
       if (isPaxChanged()) {
-        await updateBookingAPI(booking._id, { numPeople: Number(numPeople) }, token);
+        await updateBookingExtrasAPI(booking._id, { numPeople: Number(numPeople) }, token);
         setLiveBooking((prev) => ({ ...prev, numPeople: Number(numPeople) }));
       }
       toast.success("Booking updated successfully");

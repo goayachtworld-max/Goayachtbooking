@@ -176,6 +176,7 @@ function Bookings({ user }) {
     { key: "crew", label: "Crew", match: "Captain", paid: false },
     { key: "snacks", label: "Snacks", match: "Snacks", paid: false },
     { key: "balloon", label: "Balloon", match: "Balloon", paid: true },
+    { key: "flower", label: "Flower", match: "Flower", paid: true },
     { key: "decoration", label: "Decoration", match: "decoration", paid: true },
     { key: "cake", label: "Cake", match: "cake", paid: true },
   ];
@@ -511,7 +512,7 @@ function Bookings({ user }) {
         .some((k) => i.includes(k))
     );
     const paidServices = lines.filter((i) =>
-      ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
+      ["Drone - Photography & Videography", "DSLR Photography","Ballon-flowers Decoration"].some((k) => i.includes(k))
     );
     const notes = extraDetails.includes("Notes:")
       ? extraDetails.split("Notes:").slice(1).join("Notes:").trim()
@@ -589,7 +590,7 @@ function Bookings({ user }) {
       ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"].some((k) => i.includes(k))
     );
     const paidServices = lines.filter((i) =>
-      ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
+      ["Drone - Photography & Videography", "DSLR Photography","Ballon-flowers Decoration"].some((k) => i.includes(k))
     );
     const notesRaw = extraDetails.includes("Notes:")
       ? extraDetails.split("Notes:").slice(1).join("Notes:").trim()
@@ -1184,7 +1185,7 @@ Goa Yacht World`;
                           const extraDetails = sanitizeText(booking.extraDetails || "");
                           const lines = extraDetails.split("\n").map(l=>l.trim()).filter(Boolean);
                           const INCLUDED_KEYS = ["Soft Drink","Ice Cube","Water Bottles","Bluetooth Speaker","Captain","Snacks"];
-                          const PAID_KEYS = ["Drone - Photography & Videography","DSLR Photography"];
+                          const PAID_KEYS = ["Drone - Photography & Videography","DSLR Photography","Ballon-flowers Decoration"];
                           const inclusions = lines.filter(i => INCLUDED_KEYS.some(k=>i.includes(k)));
                           const paidServices = lines.filter(i => PAID_KEYS.some(k=>i.toLowerCase().includes(k.toLowerCase())));
                           const parts = [`Ticket Number: ${booking._id.slice(-5).toUpperCase()}`,`Yacht Name: ${booking.yachtId?.name || ""}`,`Booking Name: ${booking.customerId?.name || ""}`,`Phone Number: ${booking.customerId?.contact || ""}`,`Date: ${booking.date?.split("T")[0] || ""}`,`Time: ${to12HourFormat(booking.startTime)} - ${to12HourFormat(booking.endTime)}`,`#Pax: ${booking.numPeople}`,`Balance Amount: ${booking.pendingAmount}`];
@@ -1317,7 +1318,7 @@ Goa Yacht World`;
                               const extraDetails = sanitizeText(booking.extraDetails || "");
                               const lines = extraDetails.split("\n").map((l) => l.trim()).filter(Boolean);
                               const INCLUDED_KEYS = ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"];
-                              const PAID_KEYS = ["Drone - Photography & Videography", "DSLR Photography"];
+                              const PAID_KEYS = ["Drone - Photography & Videography", "DSLR Photography","Ballon-flowers Decoration"];
                               const inclusions = lines.filter((i) => INCLUDED_KEYS.some((k) => i.includes(k)));
                               const paidServices = lines.filter((i) => PAID_KEYS.some((k) => i.toLowerCase().includes(k.toLowerCase())));
                               const parts = [

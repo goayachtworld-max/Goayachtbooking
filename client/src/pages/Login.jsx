@@ -312,7 +312,7 @@ function Login({ onLogin }) {
 
   const generateBoardingPassText = (booking) => {
     const inclusions  = booking.extraDetails ? booking.extraDetails.split("\n").filter(i=>["Soft Drink","Ice Cube","Water Bottles","Bluetooth Speaker","Captain","Snacks"].some(k=>i.includes(k))) : [];
-    const paidServices = booking.extraDetails ? booking.extraDetails.split("\n").filter(i=>["Drone - Photography & Videography","DSLR Photography"].some(k=>i.includes(k))) : [];
+    const paidServices = booking.extraDetails ? booking.extraDetails.split("\n").filter(i=>["Drone - Photography & Videography","DSLR Photography","Ballon-flowers Decoration"].some(k=>i.includes(k))) : [];
     const notes = booking.extraDetails ? booking.extraDetails.split("Notes:").slice(1).join("Notes:").trim() : "";
     const tktNum = booking._id.slice(-5).toUpperCase();
     const isPending = booking.status === "pending";
@@ -324,7 +324,7 @@ function Login({ onLogin }) {
 
   const parseBoardingPass = (booking) => {
     const inclusions   = booking.extraDetails ? booking.extraDetails.split("\n").filter(i=>["Soft Drink","Ice Cube","Water Bottles","Bluetooth Speaker","Captain","Snacks"].some(k=>i.includes(k))).map(i=>i.replace("- ","").trim()) : [];
-    const paidServices = booking.extraDetails ? booking.extraDetails.split("\n").filter(i=>["Drone","DSLR"].some(k=>i.includes(k))).map(i=>i.replace("- ","").trim()) : [];
+    const paidServices = booking.extraDetails ? booking.extraDetails.split("\n").filter(i=>["Drone","DSLR","Ballon"].some(k=>i.includes(k))).map(i=>i.replace("- ","").trim()) : [];
     const notes = booking.extraDetails ? booking.extraDetails.split("Notes:").slice(1).join("").trim() : "";
     return {
       ticketId: booking._id.slice(-5).toUpperCase(), status: booking.status,
