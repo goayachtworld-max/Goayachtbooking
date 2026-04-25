@@ -9,6 +9,7 @@ import {
   getPublicBookingByTicket,
   updateBookingAmounts,
   getPastBookings,
+  settleBooking,
 } from "../controllers/booking.controller.js";
 import { bookingSchema } from "../validators/booking.validator.js";
 import { validate } from "../middleware/validate.js";
@@ -27,5 +28,6 @@ router.put("/:id", authMiddleware, updateBooking);                              
 router.put("/reschedule/:bookingId", authMiddleware, updateBookingYachtInfo);           // Update time and yacht
 router.patch("/extra-details/:bookingId", authMiddleware, updateBookingExtraDetails);   // Update extra details
 router.patch("/:bookingId/amounts", authMiddleware, updateBookingAmounts);              // Admin: update quoted/token amounts
+router.patch("/:bookingId/settle", authMiddleware, settleBooking);                       // Reports: settle / un-settle
 
 export default router;

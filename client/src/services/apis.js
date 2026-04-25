@@ -31,7 +31,8 @@ export const booking = {
   GET_PUBLIC_BOOKING_BY_TKT_API: (id) => `${BASE_URL}/bookings/public/${id}`,
   GET_PAST_BOOKINGS_API: `${BASE_URL}/bookings/past`,
   CREATE_PUBLIC_BOOKING_API: `${BASE_URL}/bookings/public`,
-  UPDATE_BOOKING_AMOUNTS_API: (bookingId) => `${BASE_URL}/bookings/${bookingId}/amounts`, // Admin only
+  UPDATE_BOOKING_AMOUNTS_API: (bookingId) => `${BASE_URL}/bookings/${bookingId}/amounts`,
+  SETTLE_BOOKING_API: (bookingId) => `${BASE_URL}/bookings/${bookingId}/settle`, // Admin only
 };
 
 export const transaction = {

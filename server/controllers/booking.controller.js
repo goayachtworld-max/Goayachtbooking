@@ -678,3 +678,31 @@ export const getPastBookings = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// -------------------------
+// Settle / Un-settle a booking (Reports page)
+// PATCH /bookings/:bookingId/settle
+// Body: { settledAmount: number } to settle, or { settledAmount: null } to unsettle
+// -------------------------
+export const settleBooking = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;
+    const { settledAmount } = req.body;
+
+    const booking = await BookingModel.findById(bookingId);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    if (settledAmount === null || settledAmount === undefined) {
+      // Un-settle
+      booking.settledAmount = null;
+    } else {
+      const amt = Number(settledAmount);
+      if (isNaN(amt) || amt < 0) return res.status(400).json({ success: false, message: "Invalid amount" });
+      booking.settledAmount = amt;
+    }
+
+    await booking.save();
+    res.json({ success: true, booking });
+  } catch (err) {
+    next(err);
+  }
+};

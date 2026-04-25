@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { getPastBookingsAPI } from "../services/operations/bookingAPI";
-import { createTransactionAndUpdateBooking } from "../services/operations/transactionAPI";
+import { getPastBookingsAPI, settleBookingAPI } from "../services/operations/bookingAPI";
 import { yaut } from "../services/apis";
 import { apiConnector } from "../services/apiConnector";
 import toast from "react-hot-toast";
@@ -56,11 +55,6 @@ const formatCalLabel = (dateStr) => {
   const [, m, d] = dateStr.split("-");
   return `${parseInt(d)} ${CAL_MONTHS_SHORT[parseInt(m) - 1]}`;
 };
-
-/* ── Settlement localStorage persistence ── */
-const SETTLE_KEY  = "rpt_settlement";
-const loadSettled = () => { try { return JSON.parse(localStorage.getItem(SETTLE_KEY) || "{}"); } catch { return {}; } };
-const saveSettled = (obj) => { try { localStorage.setItem(SETTLE_KEY, JSON.stringify(obj)); } catch {} };
 
 /* ──────────────────────────────────────────────────────────────
    DatePickerField — reuses bk-cal-* CSS from Bookings.css
@@ -493,8 +487,9 @@ export default function Reports({ user }) {
   const [searchQuery, setSearchQuery]   = useState("");
 
   /* ── Sort ── */
-  const [sortKey, setSortKey] = useState("date");   // "date" | "yacht"
+  const [sortKey, setSortKey] = useState("date");   // "date" | "yacht" | "settle"
   const [sortDir, setSortDir] = useState("desc");   // "asc" | "desc"
+  const [sortSettle, setSortSettle] = useState("");  // "" | "unsettled" | "settled"
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -520,11 +515,9 @@ export default function Reports({ user }) {
   const [yachts, setYachts]     = useState([]);
   const [loading, setLoading]   = useState(false);
 
-  /* ── Settlement (keyed by booking._id, persisted to localStorage) ── */
-  const [settlement, setSettlement] = useState(loadSettled);
-
-  /* ── Mark Complete ── */
-  const [completing, setCompleting] = useState(null);
+  /* ── Settlement state (keyed by booking._id) — input value only, actual settled flag comes from DB ── */
+  const [settlementInput, setSettlementInput] = useState({}); // { [id]: string } — what's typed in the input
+  const [settling, setSettling] = useState(null); // booking._id being settled/unsettled right now
 
   /* ── Fetch yachts for typeahead ── */
   useEffect(() => {
@@ -582,6 +575,16 @@ export default function Reports({ user }) {
       return true;
     });
     list.sort((a, b) => {
+      // Settle sort takes priority when selected
+      if (sortSettle === "unsettled") {
+        const aS = a.settledAmount != null ? 1 : 0;
+        const bS = b.settledAmount != null ? 1 : 0;
+        if (aS !== bS) return aS - bS; // unsettled (0) first
+      } else if (sortSettle === "settled") {
+        const aS = a.settledAmount != null ? 0 : 1;
+        const bS = b.settledAmount != null ? 0 : 1;
+        if (aS !== bS) return aS - bS; // settled (0) first
+      }
       let cmp = 0;
       if (sortKey === "date") {
         cmp = new Date(a.date) - new Date(b.date);
@@ -591,7 +594,7 @@ export default function Reports({ user }) {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
-  }, [bookings, filterYacht, filterStatus, sortKey, sortDir, searchQuery]);
+  }, [bookings, filterYacht, filterStatus, sortKey, sortDir, sortSettle, searchQuery]);
 
   /* ── Totals ── */
   const totals = useMemo(() => {
@@ -599,50 +602,49 @@ export default function Reports({ user }) {
     filtered.forEach(bk => {
       b2b     += Number(bk.yachtId?.runningCost || 0);
       selling += Number(bk.quotedAmount || 0);
-      settled += Number(bk.quotedAmount || 0) - Number(bk.pendingAmount || 0);
+      if (bk.settledAmount !== null && bk.settledAmount !== undefined) settled += Number(bk.settledAmount);
     });
     return { b2b, selling, settled };
   }, [filtered]);
 
-  /* ── Settlement handlers ── */
-  const toggleSettled = (id) => {
-    setSettlement(prev => { const next = { ...prev, [id]: { ...prev[id], settled: !prev[id]?.settled } }; saveSettled(next); return next; });
-  };
-  const setBalance = (id, val) => {
-    setSettlement(prev => { const next = { ...prev, [id]: { ...prev[id], balance: val } }; saveSettled(next); return next; });
+  /* ── Settle handler ── */
+  const handleSettle = async (bk) => {
+    if (settling) return;
+    setSettling(bk._id);
+    const raw = settlementInput[bk._id];
+    // Default to sellingAmt (quotedAmount) if nothing typed
+    const amount = raw !== undefined && raw !== "" ? Number(raw) : Number(bk.quotedAmount || 0);
+    try {
+      await settleBookingAPI(bk._id, amount, token);
+      setBookings(prev => prev.map(b => b._id === bk._id ? { ...b, settledAmount: amount } : b));
+      toast.success(`✅ Settled at ${fmtINR(amount)}`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to settle");
+    } finally {
+      setSettling(null);
+    }
   };
 
-  /* ── Mark trip complete via API ── */
-  const handleMarkComplete = async (bk) => {
-    if (completing) return;
-    setCompleting(bk._id);
+  const handleUnsettle = async (bk) => {
+    if (settling) return;
+    setSettling(bk._id);
     try {
-      const s = settlement[bk._id] || {};
-      // Use entered balance amount if provided, otherwise settle full pending amount
-      const amountToSettle = s.balance ? Number(s.balance) : Number(bk.pendingAmount || 0);
-      const data = new FormData();
-      data.append("bookingId", bk._id);
-      data.append("type", "settlement");
-      data.append("status", "confirmed");
-      data.append("amount", amountToSettle);
-      await createTransactionAndUpdateBooking(data, token);
-      const newPending = Number(bk.pendingAmount || 0) - amountToSettle;
-      toast.success(newPending > 0 ? `✅ ₹${amountToSettle.toLocaleString("en-IN")} settled` : "Booking marked complete ✅");
-      setBookings(prev => prev.map(b => b._id === bk._id ? { ...b, pendingAmount: newPending <= 0 ? 0 : newPending, status: newPending <= 0 ? "confirmed" : b.status } : b));
-      // Clear the entered balance after settlement
-      setSettlement(prev => { const next = { ...prev, [bk._id]: { ...prev[bk._id], balance: "" } }; saveSettled(next); return next; });
+      await settleBookingAPI(bk._id, null, token);
+      setBookings(prev => prev.map(b => b._id === bk._id ? { ...b, settledAmount: null } : b));
+      setSettlementInput(prev => ({ ...prev, [bk._id]: "" }));
+      toast.success("Booking un-settled");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to mark complete");
+      toast.error(err?.response?.data?.message || "Failed to un-settle");
     } finally {
-      setCompleting(null);
+      setSettling(null);
     }
   };
 
   /* ── CSV export ── */
   const exportCSV = () => {
-    const headers = ["Date","Customer","Phone","Pax","Yacht","Time","B2b Price","Amt Settled","Selling Amt","Status","Settled"];
+    const headers = ["Date","Customer","Phone","Pax","Yacht","Time","B2b Price","Settled Amt","Selling Amt","Status","Settled"];
     const rows = filtered.map(bk => {
-      const s    = settlement[bk._id] || {};
+      const isSettled = bk.settledAmount !== null && bk.settledAmount !== undefined;
       const stat = isCompleted(bk) ? "Completed" : (bk.status ? bk.status.charAt(0).toUpperCase() + bk.status.slice(1) : "");
       const timeStr = `${to12h(bk.startTime)} - ${to12h(bk.endTime)}`;
       return [
@@ -653,10 +655,10 @@ export default function Reports({ user }) {
         bk.yachtId?.name || "",
         timeStr,
         bk.yachtId?.runningCost || "",
-        (s.settled && s.balance) ? s.balance : "",
+        isSettled ? bk.settledAmount : "",
         bk.quotedAmount || "",
         stat,
-        s.settled ? "Yes" : "No",
+        isSettled ? "Yes" : "No",
       ];
     });
     const csvContent = [headers, ...rows]
@@ -898,6 +900,30 @@ export default function Reports({ user }) {
         </div>
       )}
 
+      {/* ── Settlement sort ── */}
+      {!loading && filtered.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#475569" }}>Sort by settlement:</span>
+          {[
+            { value: "", label: "Default" },
+            { value: "unsettled", label: "Unsettled first" },
+            { value: "settled",   label: "Settled first" },
+          ].map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setSortSettle(opt.value)}
+              style={{
+                padding: "4px 12px", borderRadius: 999, fontSize: "0.75rem", fontWeight: 600, cursor: "pointer",
+                border: sortSettle === opt.value ? "1.5px solid #1d6fa4" : "1.5px solid #e2e8f0",
+                background: sortSettle === opt.value ? "#eff6ff" : "#f8fafc",
+                color: sortSettle === opt.value ? "#1d6fa4" : "#64748b",
+                transition: "all 0.12s",
+              }}
+            >{opt.label}</button>
+          ))}
+        </div>
+      )}
+
       {/* ── Grid / Table ── */}
       {loading ? (
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}>
@@ -912,8 +938,8 @@ export default function Reports({ user }) {
         <>
           {/* ── Desktop Table ── */}
           <div className="d-none d-md-block" style={{ background: "#fff", borderRadius: 14, boxShadow: "0 1px 12px rgba(5,24,41,0.08)", border: "1px solid #e8edf2", overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.83rem" }}>
+            <div style={{ overflowX: "auto", direction: "rtl" }}>
+              <table style={{ direction: "ltr", width: "100%", borderCollapse: "collapse", fontSize: "0.83rem" }}>
                 <thead>
                   <tr style={{ background: "linear-gradient(90deg,#051829,#0a2d4a)", color: "#c9a84c" }}>
                     {[
@@ -956,10 +982,13 @@ export default function Reports({ user }) {
                 </thead>
                 <tbody>
                   {filtered.map((bk, i) => {
-                    const s        = settlement[bk._id] || {};
-                    const rowGreen = s.settled;
+                    const isSettled = bk.settledAmount !== null && bk.settledAmount !== undefined;
+                    const sellingAmt = Number(bk.quotedAmount || 0);
+                    // If user hasn't touched the input yet, seed it to sellingAmt so it's always controlled
+                    const rawInput = settlementInput[bk._id];
+                    const inputVal = rawInput !== undefined ? rawInput : String(sellingAmt);
                     return (
-                      <tr key={bk._id} style={{ background: rowGreen ? "rgba(16,185,129,0.08)" : (i % 2 === 0 ? "#fff" : "#f8fafc"), borderBottom: "1px solid #f1f5f9", transition: "background 0.25s" }}>
+                      <tr key={bk._id} style={{ background: isSettled ? "rgba(5,150,105,0.13)" : (i % 2 === 0 ? "#fff" : "#f8fafc"), borderBottom: "1px solid #f1f5f9", transition: "background 0.25s" }}>
                         <td style={{ padding: "10px 14px", fontWeight: 600, color: "#1e293b", whiteSpace: "nowrap" }}>{fmtDate(bk.date)}</td>
                         <td style={{ padding: "10px 14px", color: "#1e293b", fontWeight: 500, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bk.customerId?.name || "—"}</td>
                         <td style={{ padding: "10px 14px", color: "#475569", whiteSpace: "nowrap" }}>{bk.customerId?.contact || "—"}</td>
@@ -976,29 +1005,44 @@ export default function Reports({ user }) {
                         <td style={{ padding: "10px 14px", color: "#15803d", fontWeight: 700, whiteSpace: "nowrap" }}>{fmtINR(bk.quotedAmount)}</td>
                         <td style={{ padding: "10px 14px" }}><StatusBadge booking={bk} /></td>
                         <td style={{ padding: "8px 14px" }}>
-                          {bk.pendingAmount > 0 && bk.status !== "cancelled" ? (
-                            <input
-                              type="number"
-                              placeholder={`Max ₹${Number(bk.pendingAmount).toLocaleString("en-IN")}`}
-                              value={s.balance || ""}
-                              onChange={e => setBalance(bk._id, e.target.value)}
-                              style={{ width: 130, padding: "5px 8px", borderRadius: 6, border: "1.5px solid #6ee7b7", fontSize: "0.8rem", color: "#1e293b", background: "#f0fdf4", outline: "none" }}
-                            />
+                          {bk.status !== "cancelled" ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                              <input
+                                type="number"
+                                disabled={isSettled}
+                                value={isSettled ? bk.settledAmount : inputVal}
+                                onChange={e => setSettlementInput(prev => ({ ...prev, [bk._id]: e.target.value }))}
+                                style={{ width: 110, padding: "5px 8px", borderRadius: 6, border: `1.5px solid ${isSettled ? "#6ee7b7" : "#cbd5e1"}`, fontSize: "0.8rem", color: "#1e293b", background: isSettled ? "#f0fdf4" : "#f8fafc", outline: "none", opacity: isSettled ? 0.8 : 1 }}
+                              />
+
+                            </div>
                           ) : (
                             <span style={{ fontSize: "0.75rem", color: "#cbd5e1" }}>—</span>
                           )}
                         </td>
                         <td style={{ padding: "8px 14px" }}>
-                          {bk.pendingAmount > 0 && bk.status !== "cancelled" ? (
-                            <button
-                              disabled={completing === bk._id}
-                              onClick={() => handleMarkComplete(bk)}
-                              style={{ padding: "5px 12px", borderRadius: 7, border: "1.5px solid #15803d", background: completing === bk._id ? "#f0fdf4" : "#fff", color: "#15803d", fontWeight: 700, fontSize: "0.75rem", cursor: completing === bk._id ? "not-allowed" : "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5, opacity: completing === bk._id ? 0.7 : 1 }}
-                            >
-                              {completing === bk._id ? "Saving…" : "Mark Complete"}
-                            </button>
-                          ) : bk.pendingAmount <= 0 ? (
-                            <span style={{ fontSize: "0.75rem", color: "#22c55e", fontWeight: 700 }}>Done</span>
+                          {bk.status !== "cancelled" ? (
+                            isSettled ? (
+                              <button
+                                disabled={settling === bk._id}
+                                onClick={() => handleUnsettle(bk)}
+                                style={{ padding: "5px 12px", borderRadius: 7, border: "1.5px solid #dc2626", background: "#fff5f5", color: "#dc2626", fontWeight: 700, fontSize: "0.75rem", cursor: settling === bk._id ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: settling === bk._id ? 0.7 : 1 }}
+                              >
+                                {settling === bk._id ? "…" : "Un-Settle"}
+                              </button>
+                            ) : isCompleted(bk) ? (
+                              <button
+                                disabled={settling === bk._id}
+                                onClick={() => handleSettle(bk)}
+                                style={{ padding: "5px 12px", borderRadius: 7, border: "1.5px solid #15803d", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "0.75rem", cursor: settling === bk._id ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: settling === bk._id ? 0.7 : 1 }}
+                              >
+                                {settling === bk._id ? "…" : "Settle"}
+                              </button>
+                            ) : (
+                              <button disabled title="Only completed bookings can be settled" style={{ padding: "5px 12px", borderRadius: 7, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#94a3b8", fontWeight: 700, fontSize: "0.75rem", cursor: "not-allowed", whiteSpace: "nowrap", opacity: 0.5 }}>
+                                Settle
+                              </button>
+                            )
                           ) : (
                             <span style={{ fontSize: "0.75rem", color: "#cbd5e1" }}>—</span>
                           )}
@@ -1014,12 +1058,14 @@ export default function Reports({ user }) {
           {/* ── Mobile Cards ── */}
           <div className="d-md-none" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {filtered.map((bk) => {
-              const s        = settlement[bk._id] || {};
-              const rowGreen = s.settled;
-              const hasPending = bk.pendingAmount > 0 && bk.status !== "cancelled";
+              const isSettled = bk.settledAmount !== null && bk.settledAmount !== undefined;
+              const sellingAmt = Number(bk.quotedAmount || 0);
+              const rawInputM = settlementInput[bk._id];
+              const inputVal = rawInputM !== undefined ? rawInputM : String(sellingAmt);
               const amtReceived = Number(bk.quotedAmount||0) - Number(bk.pendingAmount||0);
+              const hasPending = bk.status !== "cancelled";
               return (
-                <div key={bk._id} style={{ background: rowGreen ? "rgba(16,185,129,0.06)" : "#fff", borderLeft: `3px solid ${rowGreen ? "#10b981" : bk.pendingAmount > 0 ? "#f59e0b" : "#22c55e"}`, borderRadius: 10, padding: "10px 12px", boxShadow: "0 1px 6px rgba(5,24,41,0.07)", border: `1px solid ${rowGreen ? "rgba(16,185,129,0.3)" : "#e8edf2"}`, transition: "all 0.2s" }}>
+                <div key={bk._id} style={{ background: isSettled ? "rgba(5,150,105,0.10)" : "#fff", borderLeft: `3px solid ${isSettled ? "#10b981" : bk.pendingAmount > 0 ? "#f59e0b" : "#22c55e"}`, borderRadius: 10, padding: "10px 12px", boxShadow: "0 1px 6px rgba(5,24,41,0.07)", border: `1px solid ${isSettled ? "rgba(5,150,105,0.4)" : "#e8edf2"}`, transition: "all 0.2s" }}>
 
                   {/* Row 1: Name + Status */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -1047,23 +1093,42 @@ export default function Reports({ user }) {
                     <MiniStat label="Selling Amt"  value={fmtINR(bk.quotedAmount)} color="#15803d" />
                   </div>
 
-                  {/* Row 4: Settle + Mark Complete (only when pending) */}
+                  {/* Row 4: Settle / Un-Settle */}
                   {hasPending && (
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", paddingTop: 8, borderTop: "1px solid #f1f5f9" }}>
-                      <input
-                        type="number"
-                        placeholder={`Amt (max ₹${Number(bk.pendingAmount).toLocaleString("en-IN")})`}
-                        value={s.balance || ""}
-                        onChange={e => setBalance(bk._id, e.target.value)}
-                        style={{ flex: 1, padding: "5px 8px", borderRadius: 6, border: "1.5px solid #6ee7b7", fontSize: "0.78rem", background: "#f0fdf4", outline: "none", color: "#1e293b", minWidth: 0 }}
-                      />
-                      <button
-                        disabled={completing === bk._id}
-                        onClick={() => handleMarkComplete(bk)}
-                        style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 7, border: "1.5px solid #15803d", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "0.75rem", cursor: completing === bk._id ? "not-allowed" : "pointer", opacity: completing === bk._id ? 0.7 : 1, whiteSpace: "nowrap" }}
-                      >
-                        {completing === bk._id ? "Saving…" : "Done"}
-                      </button>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingTop: 8, borderTop: "1px solid #f1f5f9" }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <input
+                            type="number"
+                            disabled={isSettled}
+                            value={isSettled ? bk.settledAmount : inputVal}
+                            onChange={e => setSettlementInput(prev => ({ ...prev, [bk._id]: e.target.value }))}
+                            style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: `1.5px solid ${isSettled ? "#6ee7b7" : "#cbd5e1"}`, fontSize: "0.78rem", background: isSettled ? "#f0fdf4" : "#f8fafc", outline: "none", color: "#1e293b", opacity: isSettled ? 0.8 : 1 }}
+                          />
+
+                        </div>
+                        {isSettled ? (
+                          <button
+                            disabled={settling === bk._id}
+                            onClick={() => handleUnsettle(bk)}
+                            style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 7, border: "1.5px solid #dc2626", background: "#fff5f5", color: "#dc2626", fontWeight: 700, fontSize: "0.75rem", cursor: settling === bk._id ? "not-allowed" : "pointer", opacity: settling === bk._id ? 0.7 : 1, whiteSpace: "nowrap" }}
+                          >
+                            {settling === bk._id ? "…" : "Un-Settle"}
+                          </button>
+                        ) : isCompleted(bk) ? (
+                          <button
+                            disabled={settling === bk._id}
+                            onClick={() => handleSettle(bk)}
+                            style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 7, border: "1.5px solid #15803d", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "0.75rem", cursor: settling === bk._id ? "not-allowed" : "pointer", opacity: settling === bk._id ? 0.7 : 1, whiteSpace: "nowrap" }}
+                          >
+                            {settling === bk._id ? "…" : "Settle"}
+                          </button>
+                        ) : (
+                          <button disabled title="Only completed bookings can be settled" style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 7, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#94a3b8", fontWeight: 700, fontSize: "0.75rem", cursor: "not-allowed", opacity: 0.5, whiteSpace: "nowrap" }}>
+                            Settle
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

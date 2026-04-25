@@ -102,6 +102,11 @@ const bookingSchema = new mongoose.Schema({
         min: 0,
         default: null   // system-computed price; quotedAmount is what's actually charged
     },
+    settledAmount: {
+        type: Number,
+        min: 0,
+        default: null   // null = not settled; number = amount it was settled at
+    },
     ticketNo: {
         type: String,
         unique: true,

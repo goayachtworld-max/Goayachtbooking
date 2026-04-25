@@ -108,3 +108,11 @@ export const getPastBookingsAPI = async (token, filters = {}) => {
   });
   return response;
 };
+export const settleBookingAPI = async (bookingId, settledAmount, token) => {
+  return apiConnector(
+    "PATCH",
+    booking.SETTLE_BOOKING_API(bookingId),
+    { settledAmount },
+    { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+  );
+};
