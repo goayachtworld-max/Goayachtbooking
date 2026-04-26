@@ -315,10 +315,18 @@ function CreateBooking() {
     setRunningCost(selectedYacht.runningCost || 0);
 
     const slots = buildSlotsForYacht(selectedYacht, formData.date);
-    const slotsWithStatus = slots.map((slot) => ({
-      ...slot,
-      isBooked: isSlotBooked(slot, selectedYacht.bookings),
-    }));
+    const todayStr = new Date().toISOString().split("T")[0];
+    const isToday = formData.date === todayStr;
+    const nowMins = isToday ? new Date().getHours() * 60 + new Date().getMinutes() : 0;
+    const slotsWithStatus = slots.map((slot) => {
+      const [sh, sm] = slot.start.split(":").map(Number);
+      const slotStartMins = sh * 60 + sm;
+      return {
+        ...slot,
+        isBooked: isSlotBooked(slot, selectedYacht.bookings),
+        isPast: isToday && slotStartMins <= nowMins,
+      };
+    });
     setStartTimeOptions(slotsWithStatus);
     setDaySlotList(slots); // keep full list (plain) for slot adjustment
 
@@ -435,6 +443,18 @@ function CreateBooking() {
         alert("Please select a yacht first.");
         setLoading(false);
         return;
+      }
+
+      // Block past date/time bookings
+      if (formData.date && formData.startTime) {
+        const [yr, mo, dy] = formData.date.split("-").map(Number);
+        const [sh, sm] = formData.startTime.split(":").map(Number);
+        const bookingStart = new Date(yr, mo - 1, dy, sh, sm);
+        if (bookingStart < new Date()) {
+          setError("Cannot create a booking for a past date or time.");
+          setLoading(false);
+          return;
+        }
       }
 
       const { data } = await getCustomerByContactAPI(formData.contact, token);
@@ -915,8 +935,8 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                     >
                       <option value="">— Select —</option>
                       {startTimeOptions.map((opt, i) => (
-                        <option key={i} value={opt.start} disabled={opt.isBooked}>
-                          {to12Hour(opt.start)} – {to12Hour(opt.end)}{opt.isBooked ? " (booked)" : ""}
+                        <option key={i} value={opt.start} disabled={opt.isBooked || opt.isPast}>
+                          {to12Hour(opt.start)} – {to12Hour(opt.end)}{opt.isBooked ? " (booked)" : opt.isPast ? " (past)" : ""}
                         </option>
                       ))}
                     </select>

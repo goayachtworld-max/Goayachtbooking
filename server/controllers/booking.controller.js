@@ -85,6 +85,16 @@ export const createBooking = async (req, res, next) => {
     const [endHour, endMinute] = endTime.split(":");
     const tripEnd = new Date(year, month - 1, day, endHour, endMinute);
 
+
+    // Reject bookings for past date/time
+    const [startHour, startMinute] = startTime.split(":");
+    const tripStart = new Date(year, month - 1, day, Number(startHour), Number(startMinute));
+    if (tripStart < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot create a booking for a past date or time.",
+      });
+    }
     console.log("Before avail");
     // 5️⃣ Slot availability (NOW correct employeeId)
     const { available, conflictSlot, reason } = await checkSlotAvailability({
@@ -409,6 +419,16 @@ export const updateBookingYachtInfo = async (req, res, next) => {
     const [endHour, endMinute] = endTime.split(":");
     const tripEnd = new Date(year, month - 1, day, endHour, endMinute);
 
+
+    // Reject reschedule to a past date/time
+    const [startHourU, startMinuteU] = startTime.split(":");
+    const tripStartU = new Date(year, month - 1, day, Number(startHourU), Number(startMinuteU));
+    if (tripStartU < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot reschedule a booking to a past date or time.",
+      });
+    }
     // 5️⃣ Check slot availability (ignore current booking)
     const { available, conflictSlot, reason } = await checkSlotAvailability({
       yachtId,

@@ -247,6 +247,18 @@ function UpdateBooking() {
       if (isAdmin && isBookingChanged()) {
         const finalStart = customTimeEnabled ? customStart : bookingData.startTime;
         const finalEnd   = customTimeEnabled ? customEnd   : bookingData.endTime;
+
+        // Block reschedule to past date/time
+        if (bookingData.date && finalStart) {
+          const [yr, mo, dy] = bookingData.date.split("-").map(Number);
+          const [sh, sm] = finalStart.split(":").map(Number);
+          const rescheduleStart = new Date(yr, mo - 1, dy, sh, sm);
+          if (rescheduleStart < new Date()) {
+            toast.error("Cannot reschedule a booking to a past date or time.");
+            setEditLoading(false); return;
+          }
+        }
+
         if (customTimeEnabled && isCustomTimeColliding(finalStart, finalEnd, yachts.find(y => y._id === bookingData.yachtId)?.bookings)) {
           toast.error("Custom time overlaps an existing booking — choose a different time.");
           setEditLoading(false); return;
