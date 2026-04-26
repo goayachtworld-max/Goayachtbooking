@@ -78,6 +78,8 @@ export const yachtSchema = z.object({
     z.array(z.string())
   ).optional(),
   boardingLocation: z.string().optional(),
+  contactPersonName: z.string().optional(),
+  contactPersonNumber: z.string().optional(),
   defaultSailingHours: z.preprocess(
     (val) => (val !== undefined && val !== "" ? Number(val) : undefined),
     z.number().min(0).optional().nullable()

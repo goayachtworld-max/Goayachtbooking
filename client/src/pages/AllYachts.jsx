@@ -259,6 +259,8 @@ const AllYachts = () => {
       formData.append("status", selectedYacht.status);
       formData.append("specialSlotTimes", JSON.stringify(specialSlotTimes));
       formData.append("boardingLocation", selectedYacht.boardingLocation || "");
+      formData.append("contactPersonName", selectedYacht.contactPersonName || "");
+      formData.append("contactPersonNumber", selectedYacht.contactPersonNumber || "");
       newImages.forEach((file) => formData.append("yachtPhotos", file));
       if (removedImages.length > 0) formData.append("removedPhotos", JSON.stringify(removedImages));
 
@@ -429,6 +431,8 @@ const AllYachts = () => {
                 <div className={s.viewRows}>
                   <div className={s.viewRow}><span className={s.viewRowLabel}>Capacity</span><span className={s.viewRowValue}>{selectedYacht.capacity} guests</span></div>
                   <div className={s.viewRow}><span className={s.viewRowLabel}>Boarding</span><span className={s.viewRowValue}>{selectedYacht.boardingLocation || "—"}</span></div>
+                  <div className={s.viewRow}><span className={s.viewRowLabel}>Contact Person</span><span className={s.viewRowValue}>{selectedYacht.contactPersonName || "—"}</span></div>
+                  <div className={s.viewRow}><span className={s.viewRowLabel}>Contact Number</span><span className={s.viewRowValue}>{selectedYacht.contactPersonNumber || "—"}</span></div>
                 </div>
               </div>
 
@@ -556,6 +560,14 @@ const AllYachts = () => {
               <div className={`${s.field} ${s.colSpan3}`}>
                 <label className={s.label}>Boarding Location</label>
                 <input className={s.input} type="text" placeholder="e.g. West Goa Marina" value={selectedYacht.boardingLocation || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, boardingLocation: e.target.value }))} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Contact Person Name</label>
+                <input className={s.input} type="text" placeholder="e.g. Captain Ravi" value={selectedYacht.contactPersonName || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, contactPersonName: e.target.value }))} />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Contact Number</label>
+                <input className={s.input} type="tel" placeholder="e.g. +91 98765 43210" value={selectedYacht.contactPersonNumber || ""} onChange={(e) => setSelectedYacht((p) => ({ ...p, contactPersonNumber: e.target.value }))} />
               </div>
             </div>
 

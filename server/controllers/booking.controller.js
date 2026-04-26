@@ -250,7 +250,7 @@ export const getBookings = async (req, res) => {
     }
 
     const bookings = await BookingModel.find(filter)
-      .populate("yachtId", "name boardingLocation")
+      .populate("yachtId", "name boardingLocation contactPersonName contactPersonNumber")
       .populate("customerId", "name contact email alternateContact")
       .populate("employeeId", "name type")
       .populate("company", "name disclaimer")
@@ -329,7 +329,7 @@ export const getPublicBookingByTicket = async (req, res) => {
 
     // 1️⃣ Try new system (FAST)
     let booking = await BookingModel.findOne({ ticketNo: ticket })
-      .populate("yachtId", "name boardingLocation")
+      .populate("yachtId", "name boardingLocation contactPersonName contactPersonNumber")
       .populate("company : ", "name disclaimer")
       .populate("customerId", "name contact email alternateContact")
       .populate("employeeId", "name type");
@@ -352,7 +352,7 @@ export const getPublicBookingByTicket = async (req, res) => {
     }
 
     booking = await BookingModel.findById(fallback[0]._id)
-      .populate("yachtId", "name boardingLocation")
+      .populate("yachtId", "name boardingLocation contactPersonName contactPersonNumber")
       .populate("company : ", "name disclaimer")
       .populate("customerId", "name contact email alternateContact")
       .populate("employeeId", "name type");
@@ -652,7 +652,7 @@ export const getPastBookings = async (req, res) => {
     }
 
     const bookings = await BookingModel.find(filter)
-      .populate("yachtId", "name boardingLocation runningCost")
+      .populate("yachtId", "name boardingLocation contactPersonName contactPersonNumber runningCost")
       .populate("customerId", "name contact email alternateContact")
       .populate("employeeId", "name type")
       .populate("company", "name disclaimer")

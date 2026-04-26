@@ -476,6 +476,30 @@ export default function BoardingPassPDF({ booking }) {
             {/* ── PERFORATED TEAR LINE ── */}
             <Perforated />
 
+            {/* ── SECTION: Contact Person (confirmed only) ── */}
+            {!isPending && (booking.yachtId?.contactPersonName || booking.yachtId?.contactPersonNumber) && (
+              <>
+                <Text style={S.sectionTitle}>Yacht Contact</Text>
+                <View style={[S.row, { marginBottom: 12 }]}>
+                  {booking.yachtId?.contactPersonName && (
+                    <InfoField label="CONTACT PERSON" value={booking.yachtId.contactPersonName} />
+                  )}
+                  {booking.yachtId?.contactPersonNumber && (
+                    <View style={S.col}>
+                      <Text style={S.label}>CONTACT NUMBER</Text>
+                      <Link
+                        src={`tel:${booking.yachtId.contactPersonNumber}`}
+                        style={[S.value, { color: NAVY, textDecoration: "none" }]}
+                      >
+                        {booking.yachtId.contactPersonNumber}
+                      </Link>
+                    </View>
+                  )}
+                  <View style={S.col} />
+                </View>
+              </>
+            )}
+
             {/* ── SECTION: Payment ── */}
             {!isPending && (
               <>

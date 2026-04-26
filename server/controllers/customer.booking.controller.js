@@ -20,7 +20,7 @@ export const getMyBookings = async (req, res, next) => {
         .skip(skip)
         .limit(limit)
         // NOTE: the booking model stores the yacht ref as 'yachtId' (not 'yacht')
-        .populate('yachtId', 'name photos sellingPrice boardingLocation')
+        .populate('yachtId', 'name photos sellingPrice boardingLocation contactPersonName contactPersonNumber')
         .select(
           'yachtId date startTime endTime status quotedAmount totalAmount ' +
           'numPeople extraDetails ticketNo source createdAt customerContact'

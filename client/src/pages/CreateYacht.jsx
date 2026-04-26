@@ -157,6 +157,8 @@ function CreateYacht() {
     specialSlot1: null,
     specialSlot2: null,
     boardingLocation: "",
+    contactPersonName: "",
+    contactPersonNumber: "",
     photos: [],
     status: "active",
   });
@@ -273,6 +275,8 @@ function CreateYacht() {
       formData.append("status", yacht.status);
       formData.append("specialSlotTimes", JSON.stringify(specialSlotArr));
       if (yacht.boardingLocation?.trim()) formData.append("boardingLocation", yacht.boardingLocation.trim());
+      if (yacht.contactPersonName?.trim()) formData.append("contactPersonName", yacht.contactPersonName.trim());
+      if (yacht.contactPersonNumber?.trim()) formData.append("contactPersonNumber", yacht.contactPersonNumber.trim());
       if (yacht.defaultSailingHours !== "") formData.append("defaultSailingHours", yacht.defaultSailingHours);
       if (yacht.defaultAnchoringHours !== "") formData.append("defaultAnchoringHours", yacht.defaultAnchoringHours);
       for (const file of (yacht.photos || [])) formData.append("yachtPhotos", file);
@@ -345,6 +349,12 @@ function CreateYacht() {
                   <input className="cy-input" type="text" name="boardingLocation" placeholder="e.g. West Goa Marina" value={yacht.boardingLocation} onChange={handleChange} />
                 </Field>
               </div>
+              <Field label="Contact Person Name" hint="(optional)">
+                <input className="cy-input" type="text" name="contactPersonName" placeholder="e.g. Captain Ravi" value={yacht.contactPersonName} onChange={handleChange} />
+              </Field>
+              <Field label="Contact Number" hint="(optional)">
+                <input className="cy-input" type="tel" name="contactPersonNumber" placeholder="e.g. +91 98765 43210" value={yacht.contactPersonNumber} onChange={handleChange} />
+              </Field>
             </div>
           </SectionCard>
 

@@ -53,6 +53,10 @@ const yachtSchema = new mongoose.Schema(
         ref: "Slot",
       },
     ],
+    // Contact person for this yacht
+    contactPersonName: { type: String },
+    contactPersonNumber: { type: String },
+
     // Extra details
     boardingLocation: { type: String },
     description: { type: String },
