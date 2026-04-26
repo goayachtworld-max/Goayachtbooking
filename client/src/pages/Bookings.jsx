@@ -176,7 +176,6 @@ function Bookings({ user }) {
     { key: "crew", label: "Crew", match: "Captain", paid: false },
     { key: "snacks", label: "Snacks", match: "Snacks", paid: false },
     { key: "balloon", label: "Balloon", match: "Balloon", paid: true },
-    { key: "flower", label: "Flower", match: "Flower", paid: true },
     { key: "decoration", label: "Decoration", match: "decoration", paid: true },
     { key: "cake", label: "Cake", match: "cake", paid: true },
   ];
@@ -512,7 +511,7 @@ function Bookings({ user }) {
         .some((k) => i.includes(k))
     );
     const paidServices = lines.filter((i) =>
-      ["Drone - Photography & Videography", "DSLR Photography","Ballon-flowers Decoration"].some((k) => i.includes(k))
+      ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
     );
     const notes = extraDetails.includes("Notes:")
       ? extraDetails.split("Notes:").slice(1).join("Notes:").trim()
@@ -522,8 +521,11 @@ function Bookings({ user }) {
 
     const hardCodedDisclaimer = `Disclaimer:\n• Reporting time is 30 minutes prior to departure\n• No refund for late arrival or no-show\n• Subject to weather and government regulations\nThank you for booking with ${booking.company?.name}`;
 
-    const boardingPassText =
-      `# Ticket Number: ${booking._id.slice(-5).toUpperCase()}\n\nBooking Status: ${booking.status.toUpperCase()}${isPending
+    const isCancelledBP = booking.status === "cancelled";
+
+    const boardingPassText = isCancelledBP
+      ? `# Ticket Number: Voided\nBooking Status: Cancelled\nGuest Name: ${booking.customerId?.name}\nContact No.: ${booking.customerId?.contact}\nGroup Size: ${booking.numPeople} Pax\nYacht Name: ${booking.yachtId?.name}\n\nTrip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)`
+      : (`# Ticket Number: ${booking._id.slice(-5).toUpperCase()}\n\nBooking Status: ${booking.status.toUpperCase()}${isPending
           ? "\n⚠️ NOTE: This is a TENTATIVE booking. Your slot is NOT yet confirmed. Please confirm by paying Token Amount."
           : ""
         }\n\n👤 Guest Name: ${booking.customerId?.name}\n📞 Contact No.: ${booking.customerId?.contact}\n👥 Group Size: ${booking.numPeople
@@ -541,10 +543,10 @@ function Bookings({ user }) {
           ? `\nExtra Add On's Services:\n${paidServices.map((i) => `• ${i.replace("-", "").trim()}`).join("\n")}`
           : ""
         }\n${notes ? `\nNotes:\n• ${notes.replace(/\n/g, "\n• ")}` : ""}`.trim() +
-      `\n\n${booking?.company?.disclaimer
-        ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]\n\nThank You`
-        : hardCodedDisclaimer
-      }\n`;
+        `\n\n${booking?.company?.disclaimer
+          ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]\n\nThank You`
+          : hardCodedDisclaimer
+        }\n`);
 
     navigator.clipboard.writeText(boardingPassText);
     toast.success("Boarding Pass copied to clipboard");
@@ -590,7 +592,7 @@ function Bookings({ user }) {
       ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"].some((k) => i.includes(k))
     );
     const paidServices = lines.filter((i) =>
-      ["Drone - Photography & Videography", "DSLR Photography","Ballon-flowers Decoration"].some((k) => i.includes(k))
+      ["Drone - Photography & Videography", "DSLR Photography"].some((k) => i.includes(k))
     );
     const notesRaw = extraDetails.includes("Notes:")
       ? extraDetails.split("Notes:").slice(1).join("Notes:").trim()
@@ -601,12 +603,16 @@ function Bookings({ user }) {
       ? `${booking.company.disclaimer}[${ticketNumber}]\n\nThank You`
       : `Terms & Conditions: \n- Please reach 10mins before boarding time at the boarding point.\n- Token amount is not refundable in case of no show or cancellation from guest side. \n- Full refundable if cancelled from yacht owners side due to change in weather conditions or technical issues.\n- You will have to do full payment before boarding to authorised person and can read more about terms & conditions https://goayachtworld.com/condtions .\nFind your ticket details at https://goaboat.com/ with ticket id :[${ticketNumber}]\n\nThank You`;
 
-    const message =
-      `Hi ${customerName}! \n\nThank you for booking with ${companyName} \n\nYour boarding pass for ${yachtName} on ${tripDate} is ready.\n${passLink}\n\n\nBooking summary\nTicket Number: ${ticketNumber}\n\nBooking Status: ${booking.status.toUpperCase()}\n\nGuest Name: ${booking.customerId?.name}\nContact No.: ${booking.customerId?.contact}\nGroup Size: ${booking.numPeople} Pax\nYacht Name: ${yachtName}\n\nTrip Date: ${formatDate(booking.date)} | Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)\n\nBooking Price: Rs.${booking.quotedAmount}/-\n\nToken Paid: Rs.${tokenPaid}/-\nBalance Pending: Rs.${booking.pendingAmount}/- (to be collected before boarding)\n\nBoarding Location\n${boardingLocation}` +
-      (inclusions.length ? `\n\nExtra Inclusions:\n${inclusions.map((i) => `* ${i.replace(/^-/, "").trim()}`).join("\n")}` : "") +
-      (paidServices.length ? `\n\nExtra Add On's Services:\n${paidServices.map((i) => `* ${i.replace(/^-/, "").trim()}`).join("\n")}` : "") +
-      (notesRaw ? `\n\nNotes:\n* ${notesRaw.replace(/\n/g, "\n* ")}` : "") +
-      `\n\n${disclaimer}`;
+    const isCancelled = booking.status === "cancelled";
+    const isPendingWA  = booking.status === "pending";
+
+    const message = isCancelled
+      ? `# Ticket Number: Voided\nBooking Status: Cancelled\nGuest Name: ${booking.customerId?.name}\nContact No.: ${booking.customerId?.contact}\nGroup Size: ${booking.numPeople} Pax\nYacht Name: ${yachtName}\n\nTrip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)`
+      : `Hi ${customerName}! \n\nThank you for booking with ${companyName} \n\nYour boarding pass for ${yachtName} on ${tripDate} is ready.\n${passLink}\n\n\nBooking summary\nTicket Number: ${ticketNumber}\n\nBooking Status: ${booking.status.toUpperCase()}\n\nGuest Name: ${booking.customerId?.name}\nContact No.: ${booking.customerId?.contact}\nGroup Size: ${booking.numPeople} Pax\nYacht Name: ${yachtName}\n\nTrip Date: ${formatDate(booking.date)} | Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)\n\nBooking Price: Rs.${booking.quotedAmount}/-\n\nToken Paid: Rs.${tokenPaid}/-\nBalance Pending: Rs.${booking.pendingAmount}/- (to be collected before boarding)\n\nBoarding Location\n${isPendingWA ? "Location will be shared once booking is confirmed" : boardingLocation}` +
+        (inclusions.length ? `\n\nExtra Inclusions:\n${inclusions.map((i) => `* ${i.replace(/^-/, "").trim()}`).join("\n")}` : "") +
+        (paidServices.length ? `\n\nExtra Add On's Services:\n${paidServices.map((i) => `* ${i.replace(/^-/, "").trim()}`).join("\n")}` : "") +
+        (notesRaw ? `\n\nNotes:\n* ${notesRaw.replace(/\n/g, "\n* ")}` : "") +
+        `\n\n${disclaimer}`;
 
     let phone = booking.customerId?.contact?.replace(/\D/g, "");
     if (phone && !phone.startsWith("91") && phone.length === 10) phone = "91" + phone;
@@ -1185,7 +1191,7 @@ Goa Yacht World`;
                           const extraDetails = sanitizeText(booking.extraDetails || "");
                           const lines = extraDetails.split("\n").map(l=>l.trim()).filter(Boolean);
                           const INCLUDED_KEYS = ["Soft Drink","Ice Cube","Water Bottles","Bluetooth Speaker","Captain","Snacks"];
-                          const PAID_KEYS = ["Drone - Photography & Videography","DSLR Photography","Ballon-flowers Decoration"];
+                          const PAID_KEYS = ["Drone - Photography & Videography","DSLR Photography"];
                           const inclusions = lines.filter(i => INCLUDED_KEYS.some(k=>i.includes(k)));
                           const paidServices = lines.filter(i => PAID_KEYS.some(k=>i.toLowerCase().includes(k.toLowerCase())));
                           const parts = [`Ticket Number: ${booking._id.slice(-5).toUpperCase()}`,`Yacht Name: ${booking.yachtId?.name || ""}`,`Booking Name: ${booking.customerId?.name || ""}`,`Phone Number: ${booking.customerId?.contact || ""}`,`Date: ${booking.date?.split("T")[0] || ""}`,`Time: ${to12HourFormat(booking.startTime)} - ${to12HourFormat(booking.endTime)}`,`#Pax: ${booking.numPeople}`,`Balance Amount: ${booking.pendingAmount}`];
@@ -1318,7 +1324,7 @@ Goa Yacht World`;
                               const extraDetails = sanitizeText(booking.extraDetails || "");
                               const lines = extraDetails.split("\n").map((l) => l.trim()).filter(Boolean);
                               const INCLUDED_KEYS = ["Soft Drink", "Ice Cube", "Water Bottles", "Bluetooth Speaker", "Captain", "Snacks"];
-                              const PAID_KEYS = ["Drone - Photography & Videography", "DSLR Photography","Ballon-flowers Decoration"];
+                              const PAID_KEYS = ["Drone - Photography & Videography", "DSLR Photography"];
                               const inclusions = lines.filter((i) => INCLUDED_KEYS.some((k) => i.includes(k)));
                               const paidServices = lines.filter((i) => PAID_KEYS.some((k) => i.toLowerCase().includes(k.toLowerCase())));
                               const parts = [
