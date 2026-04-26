@@ -2,7 +2,6 @@ import {
   Document, Page, Text, View, StyleSheet, Line, Svg,
 } from "@react-pdf/renderer";
 
-/* ── helpers ── */
 const fmtLong = (d) =>
   new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
