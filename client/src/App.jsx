@@ -12,7 +12,6 @@ import { socket } from "./socket";
 import "./styles/NavbarNotification.css";
 import NotificationBell from "./pages/NotificationBell";
 
-// Lazy-loaded pages (code-split per route)
 const AdminDashboard    = lazy(() => import("./pages/AdminDashboard"));
 const Bookings          = lazy(() => import("./pages/Bookings"));
 const Collections       = lazy(() => import("./pages/Collections"));
