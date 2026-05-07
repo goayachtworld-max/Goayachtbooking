@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { getPublicBookingByIdAPI } from "../services/operations/bookingAPI";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import BoardingPassPDF from "./BoardingPassPDF";
+import ReceiptPDF from "./ReceiptPDF";
 
 const LS_IDENTIFIER = "lastLoginIdentifier";
 const LS_AUTH_MODE  = "lastAuthMode";
@@ -235,25 +236,36 @@ function Login({ onLogin }) {
   const [showModal, setShowModal]             = useState(false);
   const [autoDownload, setAutoDownload]       = useState(false);
   const downloadRef                           = useRef(null);
+  const receiptDownloadRef                    = useRef(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ticketParam = params.get("ticket");
+    const downloadParam = params.get("download"); // "receipt" triggers receipt-only download
     if (!ticketParam) return;
     const cleanTicket = ticketParam.replace("#", "").toUpperCase();
     if (cleanTicket.length !== 5) return;
     (async () => {
       try {
-        setSearching(true); setAutoDownload(true);
+        setSearching(true);
+        setAutoDownload(downloadParam === "receipt" ? "receipt" : "boarding");
         const res = await getPublicBookingByIdAPI(cleanTicket);
-        setBoardingPassBooking(res.data.booking); setShowModal(true);
+        setBoardingPassBooking(res.data.booking);
+        setShowModal(true);
       } catch (err) { toast.error(err?.response?.data?.message || "Booking not found"); }
       finally { setSearching(false); }
     })();
   }, []);
 
   useEffect(() => {
-    if (autoDownload && downloadRef.current) {
+    if (!autoDownload || !boardingPassBooking) return;
+    if (autoDownload === "receipt") {
+      // Receipt-only: just click the receipt link
+      const t = setTimeout(() => { receiptDownloadRef.current?.click(); setAutoDownload(false); }, 800);
+      return () => clearTimeout(t);
+    }
+    if (autoDownload === "boarding") {
+      // Boarding pass only (original behaviour)
       const t = setTimeout(() => { downloadRef.current?.click(); setAutoDownload(false); }, 800);
       return () => clearTimeout(t);
     }
@@ -381,6 +393,11 @@ function Login({ onLogin }) {
                 {boardingPassBooking&&(
                   <PDFDownloadLink document={<BoardingPassPDF booking={boardingPassBooking}/>} fileName={`${pass.yacht}_${pass.guestName}_${pass.date}.pdf`} ref={downloadRef}>
                     {({loading})=><button type="button" className={styles.downloadBtn}>{loading?"Preparing...":"Download PDF"}</button>}
+                  </PDFDownloadLink>
+                )}
+                {boardingPassBooking&&(
+                  <PDFDownloadLink document={<ReceiptPDF booking={boardingPassBooking}/>} fileName={`${pass.yacht}_${pass.guestName}_${pass.date}_Receipt.pdf`} ref={receiptDownloadRef} style={{display:"none"}}>
+                    {()=>"receipt"}
                   </PDFDownloadLink>
                 )}
                 <button className={styles.closeBtn} onClick={() => setShowModal(false)}>Close</button>
