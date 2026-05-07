@@ -195,16 +195,11 @@ function DatePickerField({ label, value, onChange, minDate, maxDate, shortcuts }
 /* ──────────────────────────────────────────────────────────────
    YachtTypeahead — smart search-as-you-type with match highlight
    ────────────────────────────────────────────────────────────── */
-function YachtTypeahead({ value, onChange, yachtNames }) {
-  const [inputVal, setInputVal] = useState(value || "");
-  const [open, setOpen]         = useState(false);
-  const [focused, setFocused]   = useState(false);
-  const wrapRef                 = useRef(null);
+function YachtMultiSelect({ value, onChange, yachtNames }) {
+  const [open, setOpen]     = useState(false);
+  const [query, setQuery]   = useState("");
+  const wrapRef             = useRef(null);
 
-  /* Keep input in sync if cleared from outside */
-  useEffect(() => { setInputVal(value || ""); }, [value]);
-
-  /* Close on outside click */
   useEffect(() => {
     if (!open) return;
     const handler = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
@@ -213,125 +208,108 @@ function YachtTypeahead({ value, onChange, yachtNames }) {
   }, [open]);
 
   const suggestions = useMemo(() => {
-    const q = inputVal.trim().toLowerCase();
-    if (!q) return yachtNames; // show all when focused with empty input
-    return yachtNames.filter(n => n.toLowerCase().includes(q));
-  }, [inputVal, yachtNames]);
+    const q = query.trim().toLowerCase();
+    return q ? yachtNames.filter(n => n.toLowerCase().includes(q)) : yachtNames;
+  }, [query, yachtNames]);
 
-  const select = (name) => {
-    setInputVal(name);
-    onChange(name);
-    setOpen(false);
+  const toggle = (name) => {
+    onChange(value.includes(name) ? value.filter(v => v !== name) : [...value, name]);
   };
 
-  const clear = () => {
-    setInputVal("");
-    onChange("");
-    setOpen(false);
-  };
-
-  /* Highlight matching portion of suggestion */
-  const highlight = (text, query) => {
-    if (!query.trim()) return text;
-    const idx = text.toLowerCase().indexOf(query.toLowerCase());
-    if (idx === -1) return text;
-    return (
-      <>
-        {text.slice(0, idx)}
-        <strong style={{ color: "#1d6fa4", fontWeight: 700 }}>{text.slice(idx, idx + query.length)}</strong>
-        {text.slice(idx + query.length)}
-      </>
-    );
-  };
+  const clearAll = () => { onChange([]); setQuery(""); setOpen(false); };
 
   return (
     <div>
       <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>Yacht</label>
       <div ref={wrapRef} style={{ position: "relative" }}>
-        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-          <svg
-            width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-            style={{ position: "absolute", left: 10, flexShrink: 0, pointerEvents: "none" }}
-          >
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            type="text"
-            value={inputVal}
-            placeholder="Search yacht…"
-            onChange={e => { setInputVal(e.target.value); onChange(""); setOpen(true); }}
-            onFocus={() => { setFocused(true); setOpen(true); }}
-            onBlur={() => setFocused(false)}
-            style={{
-              width: "100%", padding: "8px 32px 8px 30px", borderRadius: 8,
-              border: `1.5px solid ${value ? "#1d6fa4" : focused ? "#1d6fa4" : "#cbd5e1"}`,
-              fontSize: "0.83rem", color: "#1e293b",
-              background: value ? "#eff6ff" : "#f8fafc",
-              outline: "none", fontFamily: "inherit",
-              transition: "border-color 0.15s, background 0.15s",
-            }}
-          />
-          {inputVal && (
-            <button
-              onClick={clear}
-              style={{ position: "absolute", right: 8, background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94a3b8", fontSize: 14, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", transition: "background 0.12s" }}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(220,38,38,0.1)"}
-              onMouseLeave={e => e.currentTarget.style.background = "none"}
-            >×</button>
+        <div
+          onClick={() => setOpen(o => !o)}
+          style={{
+            display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4,
+            minHeight: 36, padding: "4px 32px 4px 10px",
+            border: "1.5px solid #cbd5e1", borderRadius: 8,
+            background: "#f8fafc", cursor: "pointer", position: "relative",
+          }}
+        >
+          {value.length === 0 ? (
+            <span style={{ fontSize: "0.83rem", color: "#94a3b8" }}>All Yachts</span>
+          ) : (
+            value.map(y => (
+              <span
+                key={y}
+                style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#e0f2fe", color: "#0369a1", borderRadius: 999, padding: "2px 8px", fontSize: "0.75rem", fontWeight: 700 }}
+              >
+                {y}
+                <span
+                  onClick={e => { e.stopPropagation(); toggle(y); }}
+                  style={{ cursor: "pointer", fontWeight: 900, lineHeight: 1 }}
+                >×</span>
+              </span>
+            ))
+          )}
+          {value.length > 0 && (
+            <span
+              onClick={e => { e.stopPropagation(); clearAll(); }}
+              style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#94a3b8", fontSize: "1rem", lineHeight: 1 }}
+            >×</span>
           )}
         </div>
 
-        {open && suggestions.length > 0 && (
+        {open && (
           <div style={{
-            position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
-            background: "#fff", border: "1px solid #e2e8f4",
-            borderRadius: 12, boxShadow: "0 8px 30px rgba(5,24,41,0.14)",
-            maxHeight: 220, overflowY: "auto", zIndex: 10000,
-            animation: "bk-cal-drop 0.14s ease-out",
+            position: "absolute", zIndex: 999, top: "calc(100% + 4px)", left: 0, right: 0,
+            background: "#fff", border: "1.5px solid #cbd5e1", borderRadius: 10,
+            boxShadow: "0 8px 24px rgba(15,23,42,0.12)", maxHeight: 220, overflow: "hidden",
+            display: "flex", flexDirection: "column",
           }}>
-            {!inputVal.trim() && (
-              <div style={{ padding: "6px 14px 4px", fontSize: "0.7rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid #f1f5f9" }}>
-                All Yachts
+            <div style={{ padding: "8px 10px", borderBottom: "1px solid #e2e8f0" }}>
+              <input
+                autoFocus
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search yacht…"
+                style={{ width: "100%", border: "none", outline: "none", fontSize: "0.83rem", background: "transparent", color: "#1e293b" }}
+              />
+            </div>
+            <div style={{ overflowY: "auto", flex: 1 }}>
+              {suggestions.length === 0 ? (
+                <div style={{ padding: "10px 14px", fontSize: "0.8rem", color: "#94a3b8" }}>No yachts found</div>
+              ) : suggestions.map(name => {
+                const selected = value.includes(name);
+                return (
+                  <div
+                    key={name}
+                    onClick={() => toggle(name)}
+                    style={{
+                      padding: "8px 14px", cursor: "pointer", fontSize: "0.83rem",
+                      display: "flex", alignItems: "center", gap: 8,
+                      background: selected ? "#eff6ff" : "transparent",
+                      color: selected ? "#1d4ed8" : "#1e293b",
+                      fontWeight: selected ? 700 : 400,
+                    }}
+                  >
+                    <span style={{
+                      width: 16, height: 16, borderRadius: 4, flexShrink: 0,
+                      border: selected ? "none" : "1.5px solid #cbd5e1",
+                      background: selected ? "#3b82f6" : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      {selected && <span style={{ color: "#fff", fontSize: 11, fontWeight: 900 }}>✓</span>}
+                    </span>
+                    {name}
+                  </div>
+                );
+              })}
+            </div>
+            {value.length > 0 && (
+              <div
+                onClick={clearAll}
+                style={{ padding: "8px 14px", borderTop: "1px solid #e2e8f0", cursor: "pointer", fontSize: "0.78rem", color: "#ef4444", fontWeight: 700 }}
+              >
+                Clear all ({value.length})
               </div>
             )}
-            {suggestions.map(name => (
-              <button
-                key={name}
-                onMouseDown={() => select(name)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  width: "100%", textAlign: "left",
-                  padding: "9px 14px", border: "none", background: "none",
-                  fontSize: "0.83rem", color: "#1e293b", cursor: "pointer",
-                  fontFamily: "inherit", fontWeight: name === value ? 600 : 400,
-                  borderBottom: "1px solid #f1f5f9",
-                  transition: "background 0.1s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = "#f0f7fd"}
-                onMouseLeave={e => e.currentTarget.style.background = "none"}
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                </svg>
-                <span>{highlight(name, inputVal)}</span>
-                {name === value && (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1d6fa4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto", flexShrink: 0 }}>
-                    <path d="M20 6 9 17l-5-5"/>
-                  </svg>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {open && suggestions.length === 0 && inputVal.trim() && (
-          <div style={{
-            position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
-            background: "#fff", border: "1px solid #e2e8f4", borderRadius: 12,
-            padding: "12px 14px", fontSize: "0.8rem", color: "#94a3b8",
-            boxShadow: "0 8px 30px rgba(5,24,41,0.14)", zIndex: 10000,
-          }}>
-            No yacht matches "{inputVal}"
           </div>
         )}
       </div>
@@ -482,7 +460,7 @@ export default function Reports({ user }) {
   /* ── Filters ── */
   const [fromDate, setFromDate]         = useState(getPast7Days);
   const [toDate, setToDate]             = useState(getTodayIST);
-  const [filterYacht, setFilterYacht]   = useState("");
+  const [filterYacht, setFilterYacht]   = useState([]);
   const [filterStatus, setFilterStatus] = useState("");
   const [searchQuery, setSearchQuery]   = useState("");
 
@@ -562,7 +540,7 @@ export default function Reports({ user }) {
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const list = bookings.filter((b) => {
-      if (filterYacht && b.yachtId?.name !== filterYacht) return false;
+      if (filterYacht.length > 0 && !filterYacht.includes(b.yachtId?.name)) return false;
       if (filterStatus === "completed" && !isCompleted(b)) return false;
       if (filterStatus === "pending"   && b.status !== "pending") return false;
       if (filterStatus === "confirmed" && b.status !== "confirmed") return false;
@@ -736,18 +714,18 @@ export default function Reports({ user }) {
       {isMobile && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
           <button
-            className={`mobile-filter-btn${(filterYacht || filterStatus) ? " has-active" : ""}`}
+            className={`mobile-filter-btn${(filterYacht.length > 0 || filterStatus) ? " has-active" : ""}`}
             onClick={() => setShowFilters(true)}
             title="Open filters"
           >
             <FiSliders size={18} />
-            {[filterYacht, filterStatus].filter(Boolean).length > 0 && (
-              <span className="filter-badge">{[filterYacht, filterStatus].filter(Boolean).length}</span>
+            {[filterYacht.length > 0, filterStatus].filter(Boolean).length > 0 && (
+              <span className="filter-badge">{[filterYacht.length > 0, filterStatus].filter(Boolean).length}</span>
             )}
           </button>
           <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
             {fromDate && <span style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8", fontWeight: 600 }}>{formatCalLabel(fromDate)} → {toDate ? formatCalLabel(toDate) : "…"}</span>}
-            {filterYacht && <span style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", fontWeight: 600 }}>{filterYacht}</span>}
+            {filterYacht.length > 0 && filterYacht.map(y => <span key={y} style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", fontWeight: 600 }}>{y}</span>)}
             {filterStatus && <span style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#fef3c7", border: "1px solid #fde68a", color: "#92400e", fontWeight: 600, textTransform: "capitalize" }}>{filterStatus}</span>}
           </div>
         </div>
@@ -783,9 +761,8 @@ export default function Reports({ user }) {
                 value={toDate}
                 onChange={v => { setToDate(v); if (v) setShowFilters(false); }}
                 minDate={fromDate}
-                maxDate={getTodayIST()}
               />
-              <YachtTypeahead value={filterYacht} onChange={v => { setFilterYacht(v); if (v) setShowFilters(false); }} yachtNames={yachtNames} />
+              <YachtMultiSelect value={filterYacht} onChange={v => { setFilterYacht(v); }} yachtNames={yachtNames} />
               <div>
                 <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>Status</label>
                 <div className="status-pill-group">
@@ -842,9 +819,8 @@ export default function Reports({ user }) {
               value={toDate}
               onChange={setToDate}
               minDate={fromDate}
-              maxDate={getTodayIST()}
             />
-            <YachtTypeahead value={filterYacht} onChange={setFilterYacht} yachtNames={yachtNames} />
+            <YachtMultiSelect value={filterYacht} onChange={setFilterYacht} yachtNames={yachtNames} />
             <div>
               <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>Status</label>
               <select
