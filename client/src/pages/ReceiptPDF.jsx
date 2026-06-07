@@ -49,11 +49,29 @@ const receiptNo = (booking) => {
 };
 
 const parseExtras = (raw = "") => {
-  const txt = raw.replace(/\u2022|\u2023|\u25E6/g,"-").replace(/\u200B|\u200C|\u200D|\uFEFF/g,"").replace(/\r\n/g,"\n").replace(/\n{2,}/g,"\n").trim();
+  const txt = raw
+    .replace(/\u2022|\u2023|\u25E6/g, "-")
+    .replace(/\u200B|\u200C|\u200D|\uFEFF/g, "")
+    .replace(/\r\n/g, "\n")
+    .trim();
+
   const lines = txt.split("\n").map((l) => l.trim()).filter(Boolean);
-  const inclusions = lines.filter((l) => ["Soft Drink","Ice","Music","Water","Bluetooth","Captain","Snacks"].some((k) => l.includes(k)));
-  const paid = lines.filter((l) => ["Drone","DSLR","Food","DJ","Photography"].some((k) => l.includes(k)));
-  return { inclusions, paid };
+
+  const INCLUSION_KEYS = ["Soft Drink","Ice","Music","Water","Bluetooth","Captain","Snacks"];
+
+  const inclusions = lines.filter((l) =>
+    INCLUSION_KEYS.some((k) => l.includes(k))
+  );
+
+  // Lines starting with "Note:" are separated out
+  const notes = lines.filter((l) => /^Note:/i.test(l));
+
+  // Every line that is not an inclusion and not a note is an add-on
+  const paid = lines.filter((l) =>
+    !INCLUSION_KEYS.some((k) => l.includes(k)) && !/^Note:/i.test(l)
+  );
+
+  return { inclusions, paid, notes };
 };
 
 /* ── Palette ── */
@@ -262,7 +280,7 @@ export default function ReceiptPDF({ booking }) {
   const company  = booking.company    || {};
   const customer = booking.customerId || {};
   const yacht    = booking.yachtId    || {};
-  const { inclusions, paid } = parseExtras(booking.extraDetails || "");
+  const { inclusions, paid, notes } = parseExtras(booking.extraDetails || "");
 
   const tripDate  = fmtShort(booking.date);
   const billDate  = fmtLong(booking.createdAt || new Date());
@@ -343,9 +361,23 @@ export default function ReceiptPDF({ booking }) {
                 {sailH}hr Cruising  +  {anchH}hr Anchorage
               </Text>
               {paid.length > 0 && (
-                <Text style={S.tdBadge}>
-                  Add-ons: {paid.map((p) => p.replace(/^-\s*/, "")).join("  ·  ")}
-                </Text>
+                <View style={{ marginTop: 4 }}>
+                  <Text style={[S.tdBadge, { marginBottom: 2 }]}>Add-ons:</Text>
+                  {paid.map((p, i) => (
+                    <Text key={i} style={[S.tdBadge, { marginTop: 1 }]}>
+                      {p.replace(/^-\s*/, "").trim()}
+                    </Text>
+                  ))}
+                </View>
+              )}
+              {notes.length > 0 && (
+                <View style={{ marginTop: 4 }}>
+                  {notes.map((n, i) => (
+                    <Text key={i} style={[S.tdBadge, { color: "#8C8C8C", fontStyle: "italic", marginTop: 1 }]}>
+                      {n.trim()}
+                    </Text>
+                  ))}
+                </View>
               )}
             </View>
             <Text style={S.tdQty}>1</Text>

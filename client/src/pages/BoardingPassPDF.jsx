@@ -324,19 +324,19 @@ const S = StyleSheet.create({
   },
 
   /* ── RECEIPT LINK STRIP ── */
-  receiptStrip: {
-    backgroundColor: NAVY,
-    borderRadius: 8,
-    padding: "10 16",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 4,
-  },
-  receiptStripLeft: { flexDirection: "column" },
-  receiptStripLabel: { fontSize: 7.5, color: MUTED, letterSpacing: 1, marginBottom: 2 },
-  receiptStripTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", color: WHITE },
+  // receiptStrip: {
+  //   backgroundColor: NAVY,
+  //   borderRadius: 8,
+  //   padding: "10 16",
+  //   flexDirection: "row",
+  //   justifyContent: "space-between",
+  //   alignItems: "center",
+  //   marginTop: 10,
+  //   marginBottom: 4,
+  // },
+  // receiptStripLeft: { flexDirection: "column" },
+  // receiptStripLabel: { fontSize: 7.5, color: MUTED, letterSpacing: 1, marginBottom: 2 },
+  // receiptStripTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", color: WHITE },
   receiptStripBtn: {
     backgroundColor: GOLD,
     borderRadius: 5,
