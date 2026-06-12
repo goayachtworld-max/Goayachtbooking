@@ -1,0 +1,6361 @@
+[
+  {
+    "_id": "69621e24caa532d06cfa0fef",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "New Booking Pending",
+    "message": "A booking created by backdesk is awaiting approval.",
+    "type": "booking_created",
+    "bookingId": "69621e23caa532d06cfa0fea",
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-01-10T09:38:44.056Z",
+    "updatedAt": "2026-01-10T09:47:22.032Z",
+    "__v": 0
+  },
+  {
+    "_id": "69622045caa532d06cfa122e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Your booking has been confirmed by admin.",
+    "type": "booking_status_updated",
+    "bookingId": "69621e23caa532d06cfa0fea",
+    "recipients": [
+      "695e417cfea29ce4103d17e9",
+      "696088facaa532d06cf9fbdb"
+    ],
+    "readBy": [],
+    "createdAt": "2026-01-10T09:47:49.696Z",
+    "updatedAt": "2026-01-10T09:47:49.696Z",
+    "__v": 0
+  },
+  {
+    "_id": "69668119b62f11866f5bd5cc",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "New Booking Pending",
+    "message": "A booking created for Ferretti 550 | 55Ft - 2026-01-26 by Sunil.",
+    "type": "booking_created",
+    "bookingId": "69668119b62f11866f5bd5c7",
+    "recipients": [
+      "69527a4645411bbca4e60db9",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69627d4ccaa532d06cfa1776",
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-01-13T17:30:01.355Z",
+    "updatedAt": "2026-01-13T17:41:40.721Z",
+    "__v": 0
+  },
+  {
+    "_id": "69668193b62f11866f5bd60c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Booking for Ferretti 550 | 55Ft - 2026-01-26 pending by Sunil company -GoaYachtWorld ",
+    "type": "booking_status_updated",
+    "bookingId": "69668119b62f11866f5bd5c7",
+    "recipients": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "readBy": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "createdAt": "2026-01-13T17:32:03.403Z",
+    "updatedAt": "2026-02-07T09:30:23.394Z",
+    "__v": 0
+  },
+  {
+    "_id": "696681c4b62f11866f5bd628",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Booking for Ferretti 550 | 55Ft - 2026-01-26 pending by Sunil company -GoaYachtWorld ",
+    "type": "booking_status_updated",
+    "bookingId": "69668119b62f11866f5bd5c7",
+    "recipients": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "readBy": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "createdAt": "2026-01-13T17:32:52.823Z",
+    "updatedAt": "2026-02-07T09:30:23.394Z",
+    "__v": 0
+  },
+  {
+    "_id": "696681cbb62f11866f5bd63c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Booking for Ferretti 550 | 55Ft - 2026-01-26 confirmed by Sunil company -GoaYachtWorld ",
+    "type": "booking_status_updated",
+    "bookingId": "69668119b62f11866f5bd5c7",
+    "recipients": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "readBy": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "createdAt": "2026-01-13T17:32:59.025Z",
+    "updatedAt": "2026-02-07T09:30:23.394Z",
+    "__v": 0
+  },
+  {
+    "_id": "69690e27b62f11866f5be5b1",
+    "company": "6969006bb62f11866f5be114",
+    "title": "New Booking Pending",
+    "message": "A booking created for MV Hawana Yacht - 2026-01-16 by Sunil.",
+    "type": "booking_created",
+    "bookingId": "69690e27b62f11866f5be5ac",
+    "recipients": [
+      "6968fef7d78421b977c7e371",
+      "6969086eb62f11866f5be208"
+    ],
+    "readBy": [
+      "6968fef7d78421b977c7e371"
+    ],
+    "createdAt": "2026-01-15T15:56:23.227Z",
+    "updatedAt": "2026-01-15T15:56:53.939Z",
+    "__v": 0
+  },
+  {
+    "_id": "69690e65b62f11866f5be5d4",
+    "company": "6969006bb62f11866f5be114",
+    "title": "Booking CONFIRMED",
+    "message": "Booking for MV Hawana Yacht - 2026-01-16 confirmed by Sunil company -Lovely Water ",
+    "type": "booking_status_updated",
+    "bookingId": "69690e27b62f11866f5be5ac",
+    "recipients": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "readBy": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "createdAt": "2026-01-15T15:57:25.748Z",
+    "updatedAt": "2026-01-19T04:45:47.825Z",
+    "__v": 0
+  },
+  {
+    "_id": "696c80b5b62f11866f5c0bf2",
+    "company": "695b5042fea29ce4103d0aeb",
+    "title": "New Booking Pending",
+    "message": "A booking created for Pegasus Yacht  | 22 pax - 2026-01-19 by Alan and Alley.",
+    "type": "booking_created",
+    "bookingId": "696c80b5b62f11866f5c0bed",
+    "recipients": [
+      "695aacb583a3998c78a08e0d"
+    ],
+    "readBy": [
+      "695aacb583a3998c78a08e0d"
+    ],
+    "createdAt": "2026-01-18T06:41:57.177Z",
+    "updatedAt": "2026-01-18T06:43:15.670Z",
+    "__v": 0
+  },
+  {
+    "_id": "696c811bb62f11866f5c0c3f",
+    "company": "695b5042fea29ce4103d0aeb",
+    "title": "Booking PENDING",
+    "message": "Booking for Pegasus Yacht  | 22 pax - 2026-01-19 pending by Alan and Alley company -Goa Yachts Abhi ",
+    "type": "booking_status_updated",
+    "bookingId": "696c80b5b62f11866f5c0bed",
+    "recipients": [
+      "696c7f89b62f11866f5c0a83"
+    ],
+    "readBy": [],
+    "createdAt": "2026-01-18T06:43:39.073Z",
+    "updatedAt": "2026-01-18T06:43:39.073Z",
+    "__v": 0
+  },
+  {
+    "_id": "696c8155b62f11866f5c0c80",
+    "company": "695b5042fea29ce4103d0aeb",
+    "title": "Booking PENDING",
+    "message": "Booking for Pegasus Yacht  | 22 pax - 2026-01-19 pending by Alan and Alley company -Goa Yachts Abhi ",
+    "type": "booking_status_updated",
+    "bookingId": "696c80b5b62f11866f5c0bed",
+    "recipients": [
+      "696c7f89b62f11866f5c0a83"
+    ],
+    "readBy": [],
+    "createdAt": "2026-01-18T06:44:37.798Z",
+    "updatedAt": "2026-01-18T06:44:37.798Z",
+    "__v": 0
+  },
+  {
+    "_id": "696c8165b62f11866f5c0c9e",
+    "company": "695b5042fea29ce4103d0aeb",
+    "title": "Booking CONFIRMED",
+    "message": "Booking for Pegasus Yacht  | 22 pax - 2026-01-19 confirmed by Alan and Alley company -Goa Yachts Abhi ",
+    "type": "booking_status_updated",
+    "bookingId": "696c80b5b62f11866f5c0bed",
+    "recipients": [
+      "696c7f89b62f11866f5c0a83"
+    ],
+    "readBy": [],
+    "createdAt": "2026-01-18T06:44:53.884Z",
+    "updatedAt": "2026-01-18T06:44:53.884Z",
+    "__v": 0
+  },
+  {
+    "_id": "696db6eab62f11866f5c0f19",
+    "company": "6969006bb62f11866f5be114",
+    "title": "New Booking Pending",
+    "message": "A booking created for MV Hawana Yacht - 2026-01-20 by Sunil.",
+    "type": "booking_created",
+    "bookingId": "696db6eab62f11866f5c0f14",
+    "recipients": [
+      "6968fef7d78421b977c7e371",
+      "6969086eb62f11866f5be208"
+    ],
+    "readBy": [
+      "6968fef7d78421b977c7e371"
+    ],
+    "createdAt": "2026-01-19T04:45:30.250Z",
+    "updatedAt": "2026-01-19T04:45:44.753Z",
+    "__v": 0
+  },
+  {
+    "_id": "696db706b62f11866f5c0f74",
+    "company": "6969006bb62f11866f5be114",
+    "title": "Booking CONFIRMED",
+    "message": "Booking for MV Hawana Yacht - 2026-01-20 confirmed by Sunil company -Lovely Water ",
+    "type": "booking_status_updated",
+    "bookingId": "696db6eab62f11866f5c0f14",
+    "recipients": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "readBy": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "createdAt": "2026-01-19T04:45:58.215Z",
+    "updatedAt": "2026-01-20T07:34:16.421Z",
+    "__v": 0
+  },
+  {
+    "_id": "696e34c4b62f11866f5c1651",
+    "company": "6969006bb62f11866f5be114",
+    "title": "New Booking Pending",
+    "message": "A booking created for MV Hawana Yacht - 2026-01-20 by Sunil.",
+    "type": "booking_created",
+    "bookingId": "696e34c4b62f11866f5c164c",
+    "recipients": [
+      "6968fef7d78421b977c7e371",
+      "6969086eb62f11866f5be208"
+    ],
+    "readBy": [
+      "6968fef7d78421b977c7e371"
+    ],
+    "createdAt": "2026-01-19T13:42:28.718Z",
+    "updatedAt": "2026-01-19T13:46:20.673Z",
+    "__v": 0
+  },
+  {
+    "_id": "696e35bcb62f11866f5c173e",
+    "company": "6969006bb62f11866f5be114",
+    "title": "Booking CONFIRMED",
+    "message": "Booking for MV Hawana Yacht - 2026-01-20 confirmed by Sunil company -Lovely Water ",
+    "type": "booking_status_updated",
+    "bookingId": "696e34c4b62f11866f5c164c",
+    "recipients": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "readBy": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "createdAt": "2026-01-19T13:46:36.074Z",
+    "updatedAt": "2026-01-20T07:34:15.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "696e3618b62f11866f5c1783",
+    "company": "6969006bb62f11866f5be114",
+    "title": "Booking CANCELLED",
+    "message": "Booking for MV Hawana Yacht - 2026-01-20 cancelled by Sunil company -Lovely Water ",
+    "type": "booking_status_updated",
+    "bookingId": "696db6eab62f11866f5c0f14",
+    "recipients": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "readBy": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "createdAt": "2026-01-19T13:48:08.314Z",
+    "updatedAt": "2026-01-20T07:34:13.770Z",
+    "__v": 0
+  },
+  {
+    "_id": "696e411cb62f11866f5c1fc1",
+    "company": "6969006bb62f11866f5be114",
+    "title": "New Booking Pending",
+    "message": "A booking created for MV Hawana Yacht - 2026-02-17 by Sunil.",
+    "type": "booking_created",
+    "bookingId": "696e411cb62f11866f5c1fbc",
+    "recipients": [
+      "6968fef7d78421b977c7e371",
+      "6969086eb62f11866f5be208"
+    ],
+    "readBy": [
+      "6968fef7d78421b977c7e371"
+    ],
+    "createdAt": "2026-01-19T14:35:08.266Z",
+    "updatedAt": "2026-01-19T14:35:14.699Z",
+    "__v": 0
+  },
+  {
+    "_id": "696e4130b62f11866f5c1ff8",
+    "company": "6969006bb62f11866f5be114",
+    "title": "Booking CONFIRMED",
+    "message": "Booking for MV Hawana Yacht - 2026-02-17 confirmed by Sunil company -Lovely Water ",
+    "type": "booking_status_updated",
+    "bookingId": "696e411cb62f11866f5c1fbc",
+    "recipients": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "readBy": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "createdAt": "2026-01-19T14:35:28.152Z",
+    "updatedAt": "2026-01-20T07:34:12.070Z",
+    "__v": 0
+  },
+  {
+    "_id": "697b06a6349a9e9cf007f323",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "MV Tara \n2026-02-05 17:30 – 19:30",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "createdAt": "2026-01-29T07:05:10.576Z",
+    "updatedAt": "2026-02-02T11:40:27.936Z",
+    "__v": 0
+  },
+  {
+    "_id": "697b07e3349a9e9cf007f377",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Venus Yacht\n2026-02-05 17:30 – 19:30",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "createdAt": "2026-01-29T07:10:27.057Z",
+    "updatedAt": "2026-02-02T11:40:27.936Z",
+    "__v": 0
+  },
+  {
+    "_id": "697b80ac349a9e9cf007f751",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Pegasus Yacht \n2026-01-30 17:30 – 19:30",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-01-29T15:45:48.054Z",
+    "updatedAt": "2026-01-29T16:59:59.026Z",
+    "__v": 0
+  },
+  {
+    "_id": "697b80eb349a9e9cf007f797",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking Pending",
+    "message": "Pegasus Yacht \n2026-01-30 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "697b80eb349a9e9cf007f793",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-01-29T15:46:51.598Z",
+    "updatedAt": "2026-01-29T15:46:56.311Z",
+    "__v": 0
+  },
+  {
+    "_id": "697b8165349a9e9cf007f7d1",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-01-30 17:30 – 19:30\nCustomer: Chandan Varshney\n— confirmed by Admin",
+    "type": "booking_status_updated",
+    "bookingId": "697b80eb349a9e9cf007f793",
+    "lockedId": null,
+    "recipients": [
+      "697b7b8c349a9e9cf007f690"
+    ],
+    "readBy": [],
+    "createdAt": "2026-01-29T15:48:53.266Z",
+    "updatedAt": "2026-01-29T15:48:53.266Z",
+    "__v": 0
+  },
+  {
+    "_id": "697c71fd349a9e9cf007f8c0",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Venus Yacht\n2026-02-17 17:30 – 19:30",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "createdAt": "2026-01-30T08:55:25.522Z",
+    "updatedAt": "2026-02-02T11:40:27.936Z",
+    "__v": 0
+  },
+  {
+    "_id": "697f0d8807869687a17d0797",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Solaris Yacht\n2026-02-02 17:30 – 19:30",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "createdAt": "2026-02-01T08:23:36.673Z",
+    "updatedAt": "2026-02-02T11:40:27.936Z",
+    "__v": 0
+  },
+  {
+    "_id": "697f10d407869687a17d07e4",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Pegasus Yacht \n2026-02-01 17:30 – 19:30",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "createdAt": "2026-02-01T08:37:40.006Z",
+    "updatedAt": "2026-02-02T11:40:27.936Z",
+    "__v": 0
+  },
+  {
+    "_id": "698089788b43a7f813864bfe",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Amenzonite\n2026-02-04 17:30 – 19:30",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "createdAt": "2026-02-02T11:24:40.099Z",
+    "updatedAt": "2026-02-02T11:40:27.936Z",
+    "__v": 0
+  },
+  {
+    "_id": "6980a00b8b43a7f813864ccb",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Ferretti 550 | 55Ft\n2026-02-02 20:00 – 22:00",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "createdAt": "2026-02-02T13:00:59.830Z",
+    "updatedAt": "2026-02-02T17:16:58.010Z",
+    "__v": 0
+  },
+  {
+    "_id": "6980ccff8b43a7f813864d3c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Sea Eagle Yacht\n2026-02-03 06:00 – 08:00",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "createdAt": "2026-02-02T16:12:47.502Z",
+    "updatedAt": "2026-02-02T17:16:58.010Z",
+    "__v": 0
+  },
+  {
+    "_id": "6980d8ad8b43a7f813864d9c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "MV Tara \n2026-02-04 17:30 – 19:30",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "createdAt": "2026-02-02T17:02:37.816Z",
+    "updatedAt": "2026-02-02T17:16:58.010Z",
+    "__v": 0
+  },
+  {
+    "_id": "6980dcdd8b43a7f813864f86",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "MV Tara \n2026-02-03 06:00 – 08:00",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-02T17:20:29.721Z",
+    "updatedAt": "2026-02-02T17:20:52.650Z",
+    "__v": 0
+  },
+  {
+    "_id": "6980dd818b43a7f81386503a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "MV Tara \n2026-02-03 08:00 – 10:00",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-02T17:23:13.237Z",
+    "updatedAt": "2026-02-03T05:20:27.025Z",
+    "__v": 0
+  },
+  {
+    "_id": "6980dda78b43a7f813865059",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking Pending",
+    "message": "MV Tara \n2026-02-03 08:00 – 10:00",
+    "type": "booking_created",
+    "bookingId": "6980dda78b43a7f813865055",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-02T17:23:51.506Z",
+    "updatedAt": "2026-02-02T17:23:57.330Z",
+    "__v": 0
+  },
+  {
+    "_id": "6980ddb48b43a7f813865088",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Tara \n2026-02-03 08:00 – 10:00\nCustomer: Sunil test 2\n— confirmed by Admin",
+    "type": "booking_status_updated",
+    "bookingId": "6980dda78b43a7f813865055",
+    "lockedId": null,
+    "recipients": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "readBy": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "createdAt": "2026-02-02T17:24:04.815Z",
+    "updatedAt": "2026-02-07T09:30:23.394Z",
+    "__v": 0
+  },
+  {
+    "_id": "6980de268b43a7f8138650d4",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CANCELLED",
+    "message": "MV Tara \n2026-02-03 08:00 – 10:00\nCustomer: Sunil test 2\n— cancelled by Admin",
+    "type": "booking_status_updated",
+    "bookingId": "6980dda78b43a7f813865055",
+    "lockedId": null,
+    "recipients": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "readBy": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "createdAt": "2026-02-02T17:25:58.366Z",
+    "updatedAt": "2026-02-07T09:30:23.394Z",
+    "__v": 0
+  },
+  {
+    "_id": "6980e2fe8b43a7f81386548a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "MV Tara \n2026-02-03 08:00 – 10:00",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-02T17:46:38.668Z",
+    "updatedAt": "2026-02-02T17:46:38.668Z",
+    "__v": 0
+  },
+  {
+    "_id": "6981afeffae82a2d356529e1",
+    "company": "696e4c70ed8d893e01d14ddd",
+    "title": "Slot Locked",
+    "message": "Amenzonite Yacht\n2026-02-04 19:30 – 21:30",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "696e4c0fed8d893e01d14dd8"
+    ],
+    "readBy": [
+      "696e4c0fed8d893e01d14dd8"
+    ],
+    "createdAt": "2026-02-03T08:21:03.201Z",
+    "updatedAt": "2026-02-03T08:21:11.034Z",
+    "__v": 0
+  },
+  {
+    "_id": "6981b040fae82a2d35652a07",
+    "company": "696e4c70ed8d893e01d14ddd",
+    "title": "Booking Pending",
+    "message": "Amenzonite Yacht\n2026-02-04 19:30 – 21:30",
+    "type": "booking_created",
+    "bookingId": "6981b040fae82a2d35652a03",
+    "lockedId": null,
+    "recipients": [
+      "696e4c0fed8d893e01d14dd8"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-03T08:22:24.100Z",
+    "updatedAt": "2026-02-03T08:22:24.100Z",
+    "__v": 0
+  },
+  {
+    "_id": "6981b056fae82a2d35652a3b",
+    "company": "696e4c70ed8d893e01d14ddd",
+    "title": "Booking CONFIRMED",
+    "message": "Amenzonite Yacht\n2026-02-04 19:30 – 21:30",
+    "type": "booking_status_updated",
+    "bookingId": "6981b040fae82a2d35652a03",
+    "lockedId": null,
+    "recipients": [
+      "69690dadb62f11866f5be4f8"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-03T08:22:46.929Z",
+    "updatedAt": "2026-02-03T08:22:46.929Z",
+    "__v": 0
+  },
+  {
+    "_id": "6981b0ddfae82a2d35652ac1",
+    "company": "696e4c70ed8d893e01d14ddd",
+    "title": "Slot Locked",
+    "message": "Amenzonite Yacht\n2026-02-05 19:30 – 21:30",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "696e4c0fed8d893e01d14dd8"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-03T08:25:01.854Z",
+    "updatedAt": "2026-02-03T08:25:01.854Z",
+    "__v": 0
+  },
+  {
+    "_id": "6982dcb2df1e06b2d772df5d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Phoenix Yacht \n2026-02-07 07:00 – 09:00",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-04T05:44:18.888Z",
+    "updatedAt": "2026-02-04T05:44:23.911Z",
+    "__v": 0
+  },
+  {
+    "_id": "6982ddb0df1e06b2d772dfd4",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Phoenix Yacht \n2026-02-07 07:00 – 09:00",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-04T05:48:32.870Z",
+    "updatedAt": "2026-02-04T07:41:20.318Z",
+    "__v": 0
+  },
+  {
+    "_id": "6982ddebdf1e06b2d772e006",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Phoenix Yacht \n2026-02-07 07:00 – 09:00",
+    "type": "booking_created",
+    "bookingId": "6982ddebdf1e06b2d772e002",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-04T05:49:31.159Z",
+    "updatedAt": "2026-02-04T05:50:36.053Z",
+    "__v": 0
+  },
+  {
+    "_id": "6982de31df1e06b2d772e044",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Phoenix Yacht \n2026-02-07 07:00 – 09:00",
+    "type": "booking_status_updated",
+    "bookingId": "6982ddebdf1e06b2d772e002",
+    "lockedId": null,
+    "recipients": [
+      "69667fcbb62f11866f5bd4a2",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69667fcbb62f11866f5bd4a2"
+    ],
+    "createdAt": "2026-02-04T05:50:41.506Z",
+    "updatedAt": "2026-02-04T05:50:48.226Z",
+    "__v": 0
+  },
+  {
+    "_id": "6982defcdf1e06b2d772e108",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-02-04 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "6982defcdf1e06b2d772e104",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-04T05:54:04.480Z",
+    "updatedAt": "2026-02-04T05:54:04.480Z",
+    "__v": 0
+  },
+  {
+    "_id": "6982f7cddf1e06b2d772e197",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz\n2026-02-04 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6982f7cddf1e06b2d772e193",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-04T07:39:57.603Z",
+    "updatedAt": "2026-02-04T07:39:57.603Z",
+    "__v": 0
+  },
+  {
+    "_id": "69836f02df1e06b2d772e29a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Hawana Vikings\n2026-02-07 08:00 – 10:00",
+    "type": "booking_created",
+    "bookingId": "69836f02df1e06b2d772e295",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-04T16:08:34.701Z",
+    "updatedAt": "2026-02-04T16:08:34.701Z",
+    "__v": 0
+  },
+  {
+    "_id": "69842affdc474c5a94e1e871",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-29 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69842affdc474c5a94e1e86d",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-05T05:30:39.781Z",
+    "updatedAt": "2026-02-05T05:30:39.781Z",
+    "__v": 0
+  },
+  {
+    "_id": "6985b8d7dc474c5a94e1eba1",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-02-11 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6985b8d7dc474c5a94e1eb9c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-06T09:48:07.598Z",
+    "updatedAt": "2026-02-06T09:48:07.598Z",
+    "__v": 0
+  },
+  {
+    "_id": "69860008dc474c5a94e1ebde",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-02-20 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69860008dc474c5a94e1ebd9",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-06T14:51:52.493Z",
+    "updatedAt": "2026-02-06T14:51:52.493Z",
+    "__v": 0
+  },
+  {
+    "_id": "6986dd63dc474c5a94e1ed58",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Venus Yacht\n2026-02-07 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6986dd63dc474c5a94e1ed54",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-07T06:36:19.951Z",
+    "updatedAt": "2026-02-07T06:36:19.951Z",
+    "__v": 0
+  },
+  {
+    "_id": "698702cadc474c5a94e1eedd",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Ralston Yacht #1\n2026-02-09 17:30 – 19:30\n- by Sunil",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-07T09:15:54.322Z",
+    "updatedAt": "2026-02-07T09:25:54.371Z",
+    "__v": 0
+  },
+  {
+    "_id": "69870404dc474c5a94e1ef7d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #1 ( White Dolphin )\n2026-02-09 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69870404dc474c5a94e1ef78",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-07T09:21:08.679Z",
+    "updatedAt": "2026-02-07T09:21:08.679Z",
+    "__v": 0
+  },
+  {
+    "_id": "69883d67dc474c5a94e1f0c1",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Lovely Sharon Cruise\n2026-02-08 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69883d67dc474c5a94e1f0bc",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-08T07:38:15.384Z",
+    "updatedAt": "2026-02-08T07:38:15.384Z",
+    "__v": 0
+  },
+  {
+    "_id": "69888ad1dc474c5a94e1f120",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Venus Yacht\n2026-02-10 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69888ad1dc474c5a94e1f11c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-08T13:08:33.933Z",
+    "updatedAt": "2026-02-08T13:08:33.933Z",
+    "__v": 0
+  },
+  {
+    "_id": "6988c9cdb343bac7bde47906",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Venus Yacht\n2026-02-11 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6988c9cdb343bac7bde47902",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-08T17:37:17.887Z",
+    "updatedAt": "2026-02-08T17:37:17.887Z",
+    "__v": 0
+  },
+  {
+    "_id": "6988cca8b343bac7bde47a4f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-02-15 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6988cca8b343bac7bde47a4b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-08T17:49:28.792Z",
+    "updatedAt": "2026-02-08T17:49:28.792Z",
+    "__v": 0
+  },
+  {
+    "_id": "6988cd1fb343bac7bde47acd",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-02-16 14:00 – 16:00",
+    "type": "booking_created",
+    "bookingId": "6988cd1fb343bac7bde47ac9",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-08T17:51:27.837Z",
+    "updatedAt": "2026-02-08T17:51:27.837Z",
+    "__v": 0
+  },
+  {
+    "_id": "6988ce28b343bac7bde47b8a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Bella Ciao | 45Ft\n2026-02-23 17:00 – 19:00\n- by Sunil",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-08T17:55:52.539Z",
+    "updatedAt": "2026-02-08T17:56:00.644Z",
+    "__v": 0
+  },
+  {
+    "_id": "6988ceb1b343bac7bde47bdf",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Bella Ciao | 45Ft\n2026-02-23 17:00 – 19:00",
+    "type": "booking_created",
+    "bookingId": "6988ceb1b343bac7bde47bda",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-08T17:58:09.462Z",
+    "updatedAt": "2026-02-08T17:58:09.462Z",
+    "__v": 0
+  },
+  {
+    "_id": "69897cb20096f4a4b7d136fc",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-02-10 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69897cb20096f4a4b7d136f8",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-09T06:20:34.493Z",
+    "updatedAt": "2026-02-09T06:20:34.493Z",
+    "__v": 0
+  },
+  {
+    "_id": "6989c8020096f4a4b7d137d9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-02-14 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "6989c8020096f4a4b7d137d5",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-09T11:41:54.299Z",
+    "updatedAt": "2026-02-09T11:41:54.299Z",
+    "__v": 0
+  },
+  {
+    "_id": "6989dba60096f4a4b7d1389e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-03-13 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6989dba60096f4a4b7d1389a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-09T13:05:42.855Z",
+    "updatedAt": "2026-02-09T13:05:42.855Z",
+    "__v": 0
+  },
+  {
+    "_id": "6989f4770096f4a4b7d13972",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Amenzonite\n2026-03-14 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6989f4770096f4a4b7d1396e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-09T14:51:35.596Z",
+    "updatedAt": "2026-02-09T14:51:35.596Z",
+    "__v": 0
+  },
+  {
+    "_id": "6989fc030096f4a4b7d139ec",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-03-13 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6989fc030096f4a4b7d139e8",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-09T15:23:47.702Z",
+    "updatedAt": "2026-02-09T15:23:47.702Z",
+    "__v": 0
+  },
+  {
+    "_id": "698af7c90096f4a4b7d13a4c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Venus Yacht\n2026-02-15 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "698af7c90096f4a4b7d13a47",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-10T09:18:01.528Z",
+    "updatedAt": "2026-02-10T09:18:01.528Z",
+    "__v": 0
+  },
+  {
+    "_id": "698b56790096f4a4b7d13ab3",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Venus Yacht\n2026-02-11 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "698b56790096f4a4b7d13aaf",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-10T16:02:01.978Z",
+    "updatedAt": "2026-02-10T16:02:01.978Z",
+    "__v": 0
+  },
+  {
+    "_id": "698c0f040096f4a4b7d13c57",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Tara \n2026-02-11 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "698c0f040096f4a4b7d13c52",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-11T05:09:24.573Z",
+    "updatedAt": "2026-02-11T05:09:24.573Z",
+    "__v": 0
+  },
+  {
+    "_id": "698d5faf0096f4a4b7d13d3a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Tara \n2026-02-14 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "698d5faf0096f4a4b7d13d35",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-12T05:05:51.504Z",
+    "updatedAt": "2026-02-12T05:05:51.504Z",
+    "__v": 0
+  },
+  {
+    "_id": "698d7a3f0096f4a4b7d13dc8",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Prawn yacht\n2026-03-22 10:00 – 12:00",
+    "type": "booking_created",
+    "bookingId": "698d7a3f0096f4a4b7d13dc3",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-12T06:59:11.891Z",
+    "updatedAt": "2026-02-12T06:59:11.891Z",
+    "__v": 0
+  },
+  {
+    "_id": "698ee3670096f4a4b7d13e70",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Hawana Vikings\n2026-02-15 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "698ee3670096f4a4b7d13e6b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-13T08:40:07.920Z",
+    "updatedAt": "2026-02-13T08:40:07.920Z",
+    "__v": 0
+  },
+  {
+    "_id": "698eee490096f4a4b7d13ea0",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-02-14 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "698eee490096f4a4b7d13e9b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-13T09:26:33.460Z",
+    "updatedAt": "2026-02-13T09:26:33.460Z",
+    "__v": 0
+  },
+  {
+    "_id": "698f65270096f4a4b7d13fae",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-03-06 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "698f65270096f4a4b7d13fa9",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-13T17:53:43.964Z",
+    "updatedAt": "2026-02-13T17:53:43.964Z",
+    "__v": 0
+  },
+  {
+    "_id": "69900d160096f4a4b7d140eb",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "MV Tara \n2026-02-15 19:30 – 21:30\n- by Sunil",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-14T05:50:14.729Z",
+    "updatedAt": "2026-02-15T06:30:32.429Z",
+    "__v": 0
+  },
+  {
+    "_id": "69902e0a0096f4a4b7d141e4",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #1 \n2026-02-14 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69902e0a0096f4a4b7d141e0",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-14T08:10:50.310Z",
+    "updatedAt": "2026-02-14T08:10:50.310Z",
+    "__v": 0
+  },
+  {
+    "_id": "699042440096f4a4b7d14295",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-02-14 22:00 – 23:00",
+    "type": "booking_created",
+    "bookingId": "699042440096f4a4b7d14291",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-14T09:37:08.354Z",
+    "updatedAt": "2026-02-14T09:37:08.354Z",
+    "__v": 0
+  },
+  {
+    "_id": "699057fc0096f4a4b7d1430b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-02-14 19:30 – 21:30",
+    "type": "booking_created",
+    "bookingId": "699057fc0096f4a4b7d14307",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-14T11:09:48.702Z",
+    "updatedAt": "2026-02-14T11:09:48.702Z",
+    "__v": 0
+  },
+  {
+    "_id": "699081870096f4a4b7d14374",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Hawana Vikings\n2026-03-20 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "699081870096f4a4b7d14370",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-14T14:07:03.904Z",
+    "updatedAt": "2026-02-14T14:07:03.904Z",
+    "__v": 0
+  },
+  {
+    "_id": "69909be10096f4a4b7d143df",
+    "company": "6969006bb62f11866f5be114",
+    "title": "Booking CONFIRMED",
+    "message": "MV Hawana Yacht\n2026-03-20 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69909be10096f4a4b7d143db",
+    "lockedId": null,
+    "recipients": [
+      "6969086eb62f11866f5be208"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-14T15:59:29.514Z",
+    "updatedAt": "2026-02-14T15:59:29.514Z",
+    "__v": 0
+  },
+  {
+    "_id": "69909c7a0096f4a4b7d14460",
+    "company": "6969006bb62f11866f5be114",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Horse Yacht\n2026-02-23 08:00 – 11:00",
+    "type": "booking_created",
+    "bookingId": "69909c7a0096f4a4b7d1445c",
+    "lockedId": null,
+    "recipients": [
+      "6969086eb62f11866f5be208"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-14T16:02:02.843Z",
+    "updatedAt": "2026-02-14T16:02:02.843Z",
+    "__v": 0
+  },
+  {
+    "_id": "69909c9f0096f4a4b7d144a8",
+    "company": "6969006bb62f11866f5be114",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Horse Yacht\n2026-02-23 03:00 – 06:00",
+    "type": "booking_created",
+    "bookingId": "69909c9f0096f4a4b7d144a4",
+    "lockedId": null,
+    "recipients": [
+      "6969086eb62f11866f5be208"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-14T16:02:39.894Z",
+    "updatedAt": "2026-02-14T16:02:39.894Z",
+    "__v": 0
+  },
+  {
+    "_id": "69918aa20096f4a4b7d14594",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Polaris Luxury Yacht\n2026-02-21 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69918aa20096f4a4b7d1458f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-15T08:58:10.883Z",
+    "updatedAt": "2026-02-15T08:58:10.883Z",
+    "__v": 0
+  },
+  {
+    "_id": "699196350096f4a4b7d145ca",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-02-16 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "699196350096f4a4b7d145c5",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-15T09:47:33.286Z",
+    "updatedAt": "2026-02-15T09:47:33.286Z",
+    "__v": 0
+  },
+  {
+    "_id": "6991a0e50096f4a4b7d14716",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Bella Ciao | 45Ft\n2026-02-16 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6991a0e50096f4a4b7d14712",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-15T10:33:09.306Z",
+    "updatedAt": "2026-02-15T10:33:09.306Z",
+    "__v": 0
+  },
+  {
+    "_id": "6991ea4f0096f4a4b7d14763",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Ferretti 550 | 55Ft\n2026-02-16 17:30 – 19:30\n- by Sunil",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-15T15:46:23.983Z",
+    "updatedAt": "2026-02-15T17:56:09.625Z",
+    "__v": 0
+  },
+  {
+    "_id": "6991ea9e0096f4a4b7d14797",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Ferretti 550 | 55Ft\n2026-02-16 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6991ea9e0096f4a4b7d14793",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-02-15T15:47:42.857Z",
+    "updatedAt": "2026-02-15T15:48:09.762Z",
+    "__v": 0
+  },
+  {
+    "_id": "6991eac20096f4a4b7d147c6",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ferretti 550 | 55Ft\n2026-02-16 17:30 – 19:30",
+    "type": "booking_status_updated",
+    "bookingId": "6991ea9e0096f4a4b7d14793",
+    "lockedId": null,
+    "recipients": [
+      "69667fcbb62f11866f5bd4a2",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-15T15:48:18.701Z",
+    "updatedAt": "2026-02-15T15:48:18.701Z",
+    "__v": 0
+  },
+  {
+    "_id": "699202820096f4a4b7d14805",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ferretti 550 | 55Ft\n2026-02-16 17:30 – 19:30",
+    "type": "booking_status_updated",
+    "bookingId": "6991ea9e0096f4a4b7d14793",
+    "lockedId": null,
+    "recipients": [
+      "69667fcbb62f11866f5bd4a2",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-15T17:29:38.450Z",
+    "updatedAt": "2026-02-15T17:29:38.450Z",
+    "__v": 0
+  },
+  {
+    "_id": "699341950096f4a4b7d14ac3",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-02-17 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "699341950096f4a4b7d14abf",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-16T16:11:01.235Z",
+    "updatedAt": "2026-02-16T16:11:01.235Z",
+    "__v": 0
+  },
+  {
+    "_id": "69941e950096f4a4b7d14ec7",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Venus Yacht\n2026-02-18 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69941e950096f4a4b7d14ec3",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-17T07:53:57.535Z",
+    "updatedAt": "2026-02-17T07:53:57.535Z",
+    "__v": 0
+  },
+  {
+    "_id": "6995783e0096f4a4b7d14f4d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Venus Yacht\n2026-02-20 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6995783e0096f4a4b7d14f48",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-18T08:28:46.450Z",
+    "updatedAt": "2026-02-18T08:28:46.450Z",
+    "__v": 0
+  },
+  {
+    "_id": "6995859f0096f4a4b7d14f79",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Tara \n2026-02-21 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6995859f0096f4a4b7d14f74",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-18T09:25:51.485Z",
+    "updatedAt": "2026-02-18T09:25:51.485Z",
+    "__v": 0
+  },
+  {
+    "_id": "6996d8e90096f4a4b7d15073",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Prawn yacht\n2026-02-19 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6996d8e90096f4a4b7d1506f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-19T09:33:29.433Z",
+    "updatedAt": "2026-02-19T09:33:29.433Z",
+    "__v": 0
+  },
+  {
+    "_id": "69983f9a6f747914e0bbc7d4",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #1 \n2026-02-20 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69983f9a6f747914e0bbc7d0",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-20T11:03:54.559Z",
+    "updatedAt": "2026-02-20T11:03:54.559Z",
+    "__v": 0
+  },
+  {
+    "_id": "699872726f747914e0bbc85d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-02-24 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "699872726f747914e0bbc858",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-20T14:40:50.129Z",
+    "updatedAt": "2026-02-20T14:40:50.129Z",
+    "__v": 0
+  },
+  {
+    "_id": "699935606f747914e0bbc8d0",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-02-21 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "699935606f747914e0bbc8cb",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-21T04:32:32.960Z",
+    "updatedAt": "2026-02-21T04:32:32.960Z",
+    "__v": 0
+  },
+  {
+    "_id": "6999d7416f747914e0bbcba0",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Phoenix Yacht \n2026-02-27 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6999d7416f747914e0bbcb9c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-21T16:03:13.438Z",
+    "updatedAt": "2026-02-21T16:03:13.438Z",
+    "__v": 0
+  },
+  {
+    "_id": "699ac5dc6f747914e0bbce19",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-02-22 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "699ac5db6f747914e0bbce15",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-22T09:01:16.021Z",
+    "updatedAt": "2026-02-22T09:01:16.021Z",
+    "__v": 0
+  },
+  {
+    "_id": "699c05946f747914e0bbde48",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-03-18 14:00 – 16:00",
+    "type": "booking_created",
+    "bookingId": "699c05946f747914e0bbde43",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-23T07:45:24.425Z",
+    "updatedAt": "2026-02-23T07:45:24.425Z",
+    "__v": 0
+  },
+  {
+    "_id": "699c31c36f747914e0bbdff2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #1 \n2026-02-23 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "699c31c26f747914e0bbdfee",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-23T10:53:55.003Z",
+    "updatedAt": "2026-02-23T10:53:55.003Z",
+    "__v": 0
+  },
+  {
+    "_id": "699d51b1b23777acb5578acd",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Phoenix Yacht \n2026-02-28 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "699d51b0b23777acb5578ac8",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-24T07:22:25.062Z",
+    "updatedAt": "2026-02-24T07:22:25.062Z",
+    "__v": 0
+  },
+  {
+    "_id": "699d5284b23777acb5578b02",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Foxy Lady | Ferretti 66Ft\n2026-03-13 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "699d5284b23777acb5578afd",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-24T07:25:56.175Z",
+    "updatedAt": "2026-02-24T07:25:56.175Z",
+    "__v": 0
+  },
+  {
+    "_id": "699d5f41b23777acb5578b87",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ferretti 550 | 55Ft\n2026-02-27 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "699d5f41b23777acb5578b83",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-24T08:20:17.750Z",
+    "updatedAt": "2026-02-24T08:20:17.750Z",
+    "__v": 0
+  },
+  {
+    "_id": "699d758eb23777acb5578be6",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Tara \n2026-03-02 10:00 – 12:00",
+    "type": "booking_created",
+    "bookingId": "699d758eb23777acb5578be1",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-24T09:55:26.687Z",
+    "updatedAt": "2026-02-24T09:55:26.687Z",
+    "__v": 0
+  },
+  {
+    "_id": "699ec16cb23777acb5578d06",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-07 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "699ec16cb23777acb5578d01",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-25T09:31:24.356Z",
+    "updatedAt": "2026-02-25T09:31:24.356Z",
+    "__v": 0
+  },
+  {
+    "_id": "699eea52b23777acb5578df2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Solaris Yacht\n2026-02-25 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "699eea52b23777acb5578dee",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-25T12:25:54.495Z",
+    "updatedAt": "2026-02-25T12:25:54.495Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a283c3b23777acb5578ecc",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-02-28 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69a283c3b23777acb5578ec7",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-28T05:57:23.094Z",
+    "updatedAt": "2026-02-28T05:57:23.094Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a2ac3fb23777acb5578f63",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-01 08:00 – 09:00",
+    "type": "booking_created",
+    "bookingId": "69a2ac3fb23777acb5578f5f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-28T08:50:07.347Z",
+    "updatedAt": "2026-02-28T08:50:07.347Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a2d78bb23777acb5579056",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Phoenix Yacht \n2026-03-04 06:00 – 08:00",
+    "type": "booking_created",
+    "bookingId": "69a2d78bb23777acb5579052",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-28T11:54:51.341Z",
+    "updatedAt": "2026-02-28T11:54:51.341Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a326e1b23777acb5579098",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Hawana Vikings\n2026-03-09 12:00 – 14:00",
+    "type": "booking_created",
+    "bookingId": "69a326e1b23777acb5579093",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-02-28T17:33:21.390Z",
+    "updatedAt": "2026-02-28T17:33:21.390Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a3e601b23777acb557920e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-01 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69a3e601b23777acb5579209",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-01T07:08:49.406Z",
+    "updatedAt": "2026-03-01T07:08:49.406Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a41228b23777acb557924b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-02 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69a41228b23777acb5579246",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-01T10:17:12.429Z",
+    "updatedAt": "2026-03-01T10:17:12.429Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a43a12b23777acb5579380",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-02 10:00 – 12:00",
+    "type": "booking_created",
+    "bookingId": "69a43a11b23777acb557937b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-01T13:07:30.031Z",
+    "updatedAt": "2026-03-01T13:07:30.031Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a52b60b23777acb55794a8",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Prestige Yacht | 36Ft\n2026-03-02 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69a52b60b23777acb55794a4",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-02T06:17:04.512Z",
+    "updatedAt": "2026-03-02T06:17:04.512Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a5ad57b23777acb55794f1",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Amenzonite\n2026-03-03 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69a5ad57b23777acb55794ec",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-02T15:31:35.790Z",
+    "updatedAt": "2026-03-02T15:31:35.790Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a68a18b23777acb5579581",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-03 14:00 – 15:30",
+    "type": "booking_created",
+    "bookingId": "69a68a18b23777acb557957c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-03T07:13:28.549Z",
+    "updatedAt": "2026-03-03T07:13:28.549Z",
+    "__v": 0
+  },
+  {
+    "_id": "69a7191cb23777acb55799ae",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-05 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69a7191bb23777acb55799aa",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-03T17:23:40.071Z",
+    "updatedAt": "2026-03-03T17:23:40.071Z",
+    "__v": 0
+  },
+  {
+    "_id": "69aa8231b23777acb5579ab2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-03-11 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69aa8231b23777acb5579aae",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-06T07:28:49.177Z",
+    "updatedAt": "2026-03-06T07:28:49.177Z",
+    "__v": 0
+  },
+  {
+    "_id": "69aab40db23777acb5579af9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ferretti 550 | 55Ft\n2026-03-07 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69aab40db23777acb5579af4",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-06T11:01:33.185Z",
+    "updatedAt": "2026-03-06T11:01:33.185Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ac23588c393686ff04cdda",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Venus Yacht\n2026-03-23 14:00 – 15:30",
+    "type": "booking_created",
+    "bookingId": "69ac23588c393686ff04cdd6",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-07T13:08:40.720Z",
+    "updatedAt": "2026-03-07T13:08:40.720Z",
+    "__v": 0
+  },
+  {
+    "_id": "69acfde08c393686ff04ce35",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-10 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69acfde08c393686ff04ce31",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-08T04:41:04.688Z",
+    "updatedAt": "2026-03-08T04:41:04.688Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ae77fe8c393686ff04d43c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Phoenix Yacht \n2026-03-12 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69ae77fe8c393686ff04d438",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-09T07:34:22.458Z",
+    "updatedAt": "2026-03-09T07:34:22.458Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ae7e488c393686ff04d530",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-03-11 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69ae7e488c393686ff04d52c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-09T08:01:12.217Z",
+    "updatedAt": "2026-03-09T08:01:12.217Z",
+    "__v": 0
+  },
+  {
+    "_id": "69aebaee8c393686ff04d5f0",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Amenzonite\n2026-03-16 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69aebaee8c393686ff04d5eb",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-09T12:19:58.903Z",
+    "updatedAt": "2026-03-09T12:19:58.903Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b102508c393686ff04d916",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-03-16 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69b102508c393686ff04d912",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-11T05:49:04.578Z",
+    "updatedAt": "2026-03-11T05:49:04.578Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b126b88c393686ff04d987",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-03-22 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69b126b88c393686ff04d982",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-11T08:24:24.804Z",
+    "updatedAt": "2026-03-11T08:24:24.804Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b25fe48c393686ff04dad9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-04-06 17:45 – 19:45",
+    "type": "booking_created",
+    "bookingId": "69b25fe48c393686ff04dad5",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-12T06:40:36.662Z",
+    "updatedAt": "2026-03-12T06:40:36.662Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b27c5d8c393686ff04db30",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-03-20 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69b27c5d8c393686ff04db2b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-12T08:42:05.141Z",
+    "updatedAt": "2026-03-12T08:42:05.141Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b2d0288c393686ff04db6d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-13 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69b2d0288c393686ff04db68",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-12T14:39:36.844Z",
+    "updatedAt": "2026-03-12T14:39:36.844Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b3aa4b8c393686ff04dd8c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-03-13 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69b3aa4b8c393686ff04dd88",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-13T06:10:19.660Z",
+    "updatedAt": "2026-03-13T06:10:19.660Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b427518c393686ff04e05d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-28 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69b427518c393686ff04e058",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-13T15:03:45.605Z",
+    "updatedAt": "2026-03-13T15:03:45.605Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b504368c393686ff04e10c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-15 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69b504358c393686ff04e107",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-14T06:46:14.003Z",
+    "updatedAt": "2026-03-14T06:46:14.003Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b644a58c393686ff04e47a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Lady White Pearl\n2026-03-15 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69b644a58c393686ff04e476",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-15T05:33:25.434Z",
+    "updatedAt": "2026-03-15T05:33:25.434Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b6b9588c393686ff04e7b4",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-03-20 16:00 – 19:00",
+    "type": "booking_created",
+    "bookingId": "69b6b9588c393686ff04e7b0",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-15T13:51:20.538Z",
+    "updatedAt": "2026-03-15T13:51:20.538Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b6df1574149306490e3f6d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "MV Tara \n2026-03-17 19:30 – 21:30",
+    "type": "booking_created",
+    "bookingId": "69b6df1574149306490e3f68",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-15T16:32:21.294Z",
+    "updatedAt": "2026-03-15T16:32:21.294Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b6e07374149306490e3fe1",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "MV Tara \n2026-03-15 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69b6e07374149306490e3fdc",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-15T16:38:11.609Z",
+    "updatedAt": "2026-03-15T16:38:11.609Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b6e1fa74149306490e415f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "MV Tara \n2026-03-17 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69b6e1fa74149306490e415a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-15T16:44:42.331Z",
+    "updatedAt": "2026-03-15T16:44:42.331Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b6e67674149306490e4352",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Pegasus Yacht \n2026-03-18 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69b6e67674149306490e434d",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-15T17:03:50.330Z",
+    "updatedAt": "2026-03-15T17:03:50.330Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b78efeaaffedf9161964f3",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Pegasus Yacht \n2026-03-16 20:00 – 22:00",
+    "type": "booking_created",
+    "bookingId": "69b78efeaaffedf9161964ee",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-16T05:02:54.594Z",
+    "updatedAt": "2026-03-16T05:02:54.594Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b793ceaaffedf91619663a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Pegasus Yacht \n2026-03-16 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69b793ceaaffedf916196636",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-16T05:23:26.620Z",
+    "updatedAt": "2026-03-16T05:23:26.620Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b79855aaffedf91619672b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Venus Yacht\n2026-03-16 18:00 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69b79855aaffedf916196727",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-16T05:42:45.924Z",
+    "updatedAt": "2026-03-16T05:42:45.924Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b79d6baaffedf916196816",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Venus Yacht\n2026-03-18 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69b79d6baaffedf916196812",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-16T06:04:27.751Z",
+    "updatedAt": "2026-03-16T06:04:27.751Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b7e400aaffedf916196e9f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Ripple Chicque\n2026-03-16 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69b7e400aaffedf916196e9b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-16T11:05:36.704Z",
+    "updatedAt": "2026-03-16T11:05:36.704Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b812b0aaffedf916196fd0",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Coco Queen\n2026-03-17 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69b812b0aaffedf916196fcc",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-16T14:24:48.487Z",
+    "updatedAt": "2026-03-16T14:24:48.487Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b820f3aaffedf9161970df",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Coco Queen\n2026-03-17 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69b820f3aaffedf9161970db",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-16T15:25:39.738Z",
+    "updatedAt": "2026-03-16T15:25:39.738Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b946f97e55a50b51eb6dfc",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-04 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69b946f97e55a50b51eb6df8",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-17T12:20:09.243Z",
+    "updatedAt": "2026-03-17T12:20:09.243Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ba35437e55a50b51eb6f28",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "MV Dreamz Yacht\n2026-03-18 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69ba35437e55a50b51eb6f24",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-18T05:16:51.796Z",
+    "updatedAt": "2026-03-18T05:16:51.796Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ba70bb7e55a50b51eb7032",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-03-18 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69ba70bb7e55a50b51eb702e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-18T09:30:35.405Z",
+    "updatedAt": "2026-03-18T09:30:35.405Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ba726c7e55a50b51eb70ef",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-03 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69ba726c7e55a50b51eb70eb",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-18T09:37:48.604Z",
+    "updatedAt": "2026-03-18T09:37:48.604Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ba81467e55a50b51eb724e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Nityay Yacht \n2026-03-21 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69ba81467e55a50b51eb724a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-18T10:41:10.753Z",
+    "updatedAt": "2026-03-18T10:41:10.753Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ba8c747e55a50b51eb72a2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #1 \n2026-03-18 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69ba8c747e55a50b51eb729e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-18T11:28:52.213Z",
+    "updatedAt": "2026-03-18T11:28:52.213Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bb8abff3a79484c7992aae",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Joan of Arc\n2026-03-28 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69bb8abef3a79484c7992aaa",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-19T05:33:51.048Z",
+    "updatedAt": "2026-03-19T05:33:51.048Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bbc2d2f3a79484c7993106",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-20 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69bbc2d2f3a79484c7993102",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-19T09:33:06.610Z",
+    "updatedAt": "2026-03-19T09:33:06.610Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bbe9f3f3a79484c79932ad",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-26 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69bbe9f3f3a79484c79932a9",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-19T12:20:03.100Z",
+    "updatedAt": "2026-03-19T12:20:03.100Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bc249ff3a79484c79935a8",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-03-22 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69bc249ff3a79484c79935a4",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-19T16:30:23.506Z",
+    "updatedAt": "2026-03-19T16:30:23.506Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bcc7adf3a79484c7993a79",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Taj Exotica | 50Ft\n2026-03-20 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69bcc7adf3a79484c7993a74",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-20T04:06:05.210Z",
+    "updatedAt": "2026-03-20T04:06:05.210Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bcc7b5f3a79484c7993a9a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Taj Exotica | 50Ft\n2026-03-20 18:00 – 20:00",
+    "type": "booking_status_updated",
+    "bookingId": "69bcc7adf3a79484c7993a74",
+    "lockedId": null,
+    "recipients": [
+      "695e417cfea29ce4103d17e9",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-20T04:06:13.756Z",
+    "updatedAt": "2026-03-20T04:06:13.756Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bcd33af3a79484c7993b98",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Sea Heiress \n2026-03-20 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69bcd33af3a79484c7993b94",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-20T04:55:22.840Z",
+    "updatedAt": "2026-03-20T04:55:22.840Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bd01f9f3a79484c7993c75",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Ralston Yacht #2\n2026-04-05 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69bd01f9f3a79484c7993c71",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-20T08:14:49.361Z",
+    "updatedAt": "2026-03-20T08:14:49.361Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bd1955f3a79484c7993ce2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Bella Ciao | 45Ft\n2026-03-20 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69bd1955f3a79484c7993cde",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-20T09:54:29.602Z",
+    "updatedAt": "2026-03-20T09:54:29.602Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bd3872f3a79484c7993df2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Coco Queen\n2026-03-22 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69bd3872f3a79484c7993dee",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-20T12:07:14.321Z",
+    "updatedAt": "2026-03-20T12:07:14.321Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bd57dff3a79484c7993f4b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Hawana Vikings\n2026-03-22 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69bd57dff3a79484c7993f47",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-20T14:21:19.639Z",
+    "updatedAt": "2026-03-20T14:21:19.639Z",
+    "__v": 0
+  },
+  {
+    "_id": "69be9d35f3a79484c799420c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-03-25 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69be9d35f3a79484c7994207",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-21T13:29:25.876Z",
+    "updatedAt": "2026-03-21T13:29:25.876Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bfa528f3a79484c79943a5",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Polaris Luxury Yacht\n2026-03-22 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69bfa528f3a79484c79943a1",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-22T08:15:36.952Z",
+    "updatedAt": "2026-03-22T08:15:36.952Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bfba10f3a79484c7994518",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Clypso Yacht Catamaran\n2026-03-23 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69bfba10f3a79484c7994513",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-22T09:44:48.767Z",
+    "updatedAt": "2026-03-22T09:44:48.767Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bfc4d4f3a79484c7994578",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Blue Diamond | 50Ft\n2026-03-22 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69bfc4d4f3a79484c7994574",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-22T10:30:44.790Z",
+    "updatedAt": "2026-03-22T10:30:44.790Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c10b315a053d1aa62ab73c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-03-24 18:00 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c10b315a053d1aa62ab738",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-23T09:43:13.811Z",
+    "updatedAt": "2026-03-23T09:43:13.811Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c10b925a053d1aa62ab795",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-03-31 08:00 – 10:00",
+    "type": "booking_created",
+    "bookingId": "69c10b925a053d1aa62ab791",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-23T09:44:50.757Z",
+    "updatedAt": "2026-03-23T09:44:50.757Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c10e515a053d1aa62ab8b1",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-03-30 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c10e515a053d1aa62ab8ad",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-23T09:56:33.736Z",
+    "updatedAt": "2026-03-23T09:56:33.736Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c13af35a053d1aa62abac2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Havana Vikings\n2026-03-26 11:00 – 13:00",
+    "type": "booking_created",
+    "bookingId": "69c13af35a053d1aa62ababe",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-23T13:06:59.820Z",
+    "updatedAt": "2026-03-23T13:06:59.820Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c23af18cdd118bf5db206e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "GYW Celavi Yacht\n2026-03-25 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69c23af18cdd118bf5db206a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-24T07:19:13.642Z",
+    "updatedAt": "2026-03-24T07:19:13.642Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c2623e8cdd118bf5db21c5",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "MV Tara \n2026-03-28 16:00 – 18:00\n- by Smartflyer",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-03-24T10:06:54.783Z",
+    "updatedAt": "2026-03-24T16:56:24.638Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c38c9c8cdd118bf5db2750",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Aquila Yacht\n2026-03-25 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c38c9b8cdd118bf5db274c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-25T07:19:56.043Z",
+    "updatedAt": "2026-03-25T07:19:56.043Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c394058cdd118bf5db2a98",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Aquila Yacht\n2026-03-27 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c394058cdd118bf5db2a94",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-25T07:51:33.612Z",
+    "updatedAt": "2026-03-25T07:51:33.612Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c3d5568cdd118bf5db2df9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-01 15:30 – 17:30",
+    "type": "booking_created",
+    "bookingId": "69c3d5568cdd118bf5db2df5",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-25T12:30:14.707Z",
+    "updatedAt": "2026-03-25T12:30:14.707Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c3d9c98cdd118bf5db315e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Aquila Yacht\n2026-04-05 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c3d9c98cdd118bf5db315a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-25T12:49:13.674Z",
+    "updatedAt": "2026-03-25T12:49:13.674Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c40b9c8cdd118bf5db3a66",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "MV Dreamz Yacht\n2026-04-03 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c40b9c8cdd118bf5db3a62",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-25T16:21:48.316Z",
+    "updatedAt": "2026-03-25T16:21:48.316Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c4c6968cdd118bf5db3d0f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-03-26 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69c4c6968cdd118bf5db3d0b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-26T05:39:34.374Z",
+    "updatedAt": "2026-03-26T05:39:34.374Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c52e6d8cdd118bf5db3f10",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-03-27 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c52e6d8cdd118bf5db3f0c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-26T13:02:37.830Z",
+    "updatedAt": "2026-03-26T13:02:37.830Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c62e6a8cdd118bf5db74b3",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-04-23 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c62e6a8cdd118bf5db74af",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-27T07:14:50.762Z",
+    "updatedAt": "2026-03-27T07:14:50.762Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c674ec8cdd118bf5db7ac2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ferretti 460 | 46Ft\n2026-03-28 16:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c674ec8cdd118bf5db7abe",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-27T12:15:40.543Z",
+    "updatedAt": "2026-03-27T12:15:40.543Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c6b362f77542d00ea8bf0f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-04-09 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69c6b362f77542d00ea8bf0b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-27T16:42:10.662Z",
+    "updatedAt": "2026-03-27T16:42:10.662Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c6b9e5f77542d00ea8c10b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-04-03 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69c6b9e4f77542d00ea8c107",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-27T17:09:57.030Z",
+    "updatedAt": "2026-03-27T17:09:57.030Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c778daf77542d00ea8c420",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-03 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c778daf77542d00ea8c41c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-28T06:44:42.349Z",
+    "updatedAt": "2026-03-28T06:44:42.349Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c7e86df77542d00ea8c614",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "MV Dreamz Yacht\n2026-03-29 09:00 – 11:00",
+    "type": "booking_created",
+    "bookingId": "69c7e86df77542d00ea8c610",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-28T14:40:45.463Z",
+    "updatedAt": "2026-03-28T14:40:45.463Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c8ae046ede668212508042",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-03-29 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69c8ae046ede66821250803e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-29T04:43:48.902Z",
+    "updatedAt": "2026-03-29T04:43:48.902Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c93ddb6ede668212508793",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Ripple Chicque\n2026-04-06 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69c93ddb6ede66821250878e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-29T14:57:31.257Z",
+    "updatedAt": "2026-03-29T14:57:31.257Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c94bc76ede66821250883c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-01 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69c94bc76ede668212508838",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-29T15:56:55.597Z",
+    "updatedAt": "2026-03-29T15:56:55.597Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ca27e66ede6682125089b1",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Bella Ciao | 45Ft\n2026-04-05 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69ca27e66ede6682125089ac",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-30T07:36:06.247Z",
+    "updatedAt": "2026-03-30T07:36:06.247Z",
+    "__v": 0
+  },
+  {
+    "_id": "69cb7cf76ede668212508ca3",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-03-31 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69cb7cf76ede668212508c9e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-31T07:51:19.772Z",
+    "updatedAt": "2026-03-31T07:51:19.772Z",
+    "__v": 0
+  },
+  {
+    "_id": "69cb7ed46ede668212508cfa",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Pegasus Yacht \n2026-03-31 12:00 – 14:00",
+    "type": "booking_created",
+    "bookingId": "69cb7ed46ede668212508cf5",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-31T07:59:16.845Z",
+    "updatedAt": "2026-03-31T07:59:16.845Z",
+    "__v": 0
+  },
+  {
+    "_id": "69cb96486ede668212508d4b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-03-31 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69cb96476ede668212508d46",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-31T09:39:20.025Z",
+    "updatedAt": "2026-03-31T09:39:20.025Z",
+    "__v": 0
+  },
+  {
+    "_id": "69cb9af06ede668212508de7",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Ripple Chicque\n2026-04-03 17:00 – 19:00",
+    "type": "booking_created",
+    "bookingId": "69cb9af06ede668212508de2",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-03-31T09:59:12.099Z",
+    "updatedAt": "2026-03-31T09:59:12.099Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ccac876ede66821250956f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Bella Ciao | 45Ft\n2026-04-01 17:00 – 19:00",
+    "type": "booking_created",
+    "bookingId": "69ccac876ede66821250956a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-01T05:26:31.252Z",
+    "updatedAt": "2026-04-01T05:26:31.252Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ccafc66ede6682125095b9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-05 15:00 – 17:00",
+    "type": "booking_created",
+    "bookingId": "69ccafc56ede6682125095b4",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-01T05:40:22.090Z",
+    "updatedAt": "2026-04-01T05:40:22.090Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ce245e6ede668212509897",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Angel Yacht\n2026-04-02 17:00 – 19:00",
+    "type": "booking_created",
+    "bookingId": "69ce245d6ede668212509892",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-02T08:10:06.001Z",
+    "updatedAt": "2026-04-02T08:10:06.001Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ce61896ede6682125099bc",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Shantam Catamaran \n2026-04-03 17:00 – 19:00",
+    "type": "booking_created",
+    "bookingId": "69ce61896ede6682125099b7",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-02T12:31:05.472Z",
+    "updatedAt": "2026-04-02T12:31:05.472Z",
+    "__v": 0
+  },
+  {
+    "_id": "69cf47f96ede668212509ac8",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Venus Yacht\n2026-04-03 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69cf47f96ede668212509ac3",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-03T04:54:17.345Z",
+    "updatedAt": "2026-04-03T04:54:17.345Z",
+    "__v": 0
+  },
+  {
+    "_id": "69cfa7e96ede668212509e16",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-04-05 07:00 – 09:00",
+    "type": "booking_created",
+    "bookingId": "69cfa7e96ede668212509e12",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-03T11:43:37.558Z",
+    "updatedAt": "2026-04-03T11:43:37.558Z",
+    "__v": 0
+  },
+  {
+    "_id": "69cff3fc6ede668212509f0d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-04 20:00 – 22:00",
+    "type": "booking_created",
+    "bookingId": "69cff3fc6ede668212509f08",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-03T17:08:12.329Z",
+    "updatedAt": "2026-04-03T17:08:12.329Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d0a5536ede668212509fd2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #1 \n2026-04-04 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69d0a5526ede668212509fce",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-04T05:44:51.029Z",
+    "updatedAt": "2026-04-04T05:44:51.029Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d0aaf06ede66821250a043",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "MV Nityay Yacht \n2026-04-04 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69d0aaf06ede66821250a03f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-04T06:08:48.159Z",
+    "updatedAt": "2026-04-04T06:08:48.159Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d0b4db6ede66821250a1cb",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #2\n2026-04-04 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69d0b4db6ede66821250a1c7",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-04T06:51:07.349Z",
+    "updatedAt": "2026-04-04T06:51:07.349Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d0c6d76ede66821250a646",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-05 06:30 – 08:30",
+    "type": "booking_created",
+    "bookingId": "69d0c6d76ede66821250a642",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-04T08:07:51.726Z",
+    "updatedAt": "2026-04-04T08:07:51.726Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d0f6a36ede66821250a969",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Phoenix Yacht \n2026-04-05 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69d0f6a36ede66821250a965",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-04T11:31:47.374Z",
+    "updatedAt": "2026-04-04T11:31:47.374Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d14ac76ede66821250aad8",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-04-05 06:00 – 08:00",
+    "type": "booking_created",
+    "bookingId": "69d14ac66ede66821250aad4",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-04T17:30:47.045Z",
+    "updatedAt": "2026-04-04T17:30:47.045Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d1d4746ede66821250ad42",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "MV Dhruv \n2026-04-05 16:00 – 18:00\n- by cubixholidays",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-04-05T03:18:12.820Z",
+    "updatedAt": "2026-04-06T12:05:25.218Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d1d4d96ede66821250ad78",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "MV Dhruv \n2026-04-05 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69d1d4d96ede66821250ad74",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-04-05T03:19:53.594Z",
+    "updatedAt": "2026-04-05T14:59:28.433Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d1d9f16ede66821250af33",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Urmi Yacht\n2026-04-09 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69d1d9f16ede66821250af2f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-05T03:41:37.772Z",
+    "updatedAt": "2026-04-05T03:41:37.772Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d1fb7f6ede66821250b05a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Horse\n2026-04-05 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69d1fb7f6ede66821250b056",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-05T06:04:47.839Z",
+    "updatedAt": "2026-04-05T06:04:47.839Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d214a46ede66821250b244",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Aquila Yacht\n2026-04-06 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69d214a46ede66821250b23f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-05T07:52:04.330Z",
+    "updatedAt": "2026-04-05T07:52:04.330Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d224d86ede66821250b368",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Prawn Yacht\n2026-04-05 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69d224d86ede66821250b364",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-05T09:01:12.639Z",
+    "updatedAt": "2026-04-05T09:01:12.639Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d34ee06ede66821250c3d2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-06 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69d34ee06ede66821250c3ce",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-06T06:12:48.951Z",
+    "updatedAt": "2026-04-06T06:12:48.951Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d3514d6ede66821250c483",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-04-07 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69d3514d6ede66821250c47f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-06T06:23:09.311Z",
+    "updatedAt": "2026-04-06T06:23:09.311Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d36fa26ede66821250c738",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-06 14:00 – 15:30",
+    "type": "booking_created",
+    "bookingId": "69d36fa16ede66821250c734",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-06T08:32:34.070Z",
+    "updatedAt": "2026-04-06T08:32:34.070Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d47c5f6ede66821250f336",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-19 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69d47c5f6ede66821250f332",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-07T03:39:11.390Z",
+    "updatedAt": "2026-04-07T03:39:11.390Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d4a8fa6ede668212510d37",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Phoenix Yacht \n2026-04-11 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69d4a8fa6ede668212510d33",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-07T06:49:30.832Z",
+    "updatedAt": "2026-04-07T06:49:30.832Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d4b8b96ede668212510e3b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-08 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69d4b8b96ede668212510e37",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-07T07:56:41.295Z",
+    "updatedAt": "2026-04-07T07:56:41.295Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d5f6296ede668212511153",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-08 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69d5f6296ede66821251114f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-08T06:31:05.239Z",
+    "updatedAt": "2026-04-08T06:31:05.239Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d603546ede6682125111bf",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Searay 330F\n2026-04-14 12:00 – 14:00",
+    "type": "booking_created",
+    "bookingId": "69d603546ede6682125111ba",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-04-08T07:27:16.962Z",
+    "updatedAt": "2026-04-08T07:27:56.445Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d603cb6ede668212511212",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CANCELLED",
+    "message": "Searay 330F\n2026-04-14 12:00 – 14:00",
+    "type": "booking_status_updated",
+    "bookingId": "69d603546ede6682125111ba",
+    "lockedId": null,
+    "recipients": [
+      "69d602606ede66821251117a",
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-08T07:29:15.280Z",
+    "updatedAt": "2026-04-08T07:29:15.280Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d662236ede66821251153d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-09 12:00 – 13:00",
+    "type": "booking_created",
+    "bookingId": "69d662236ede668212511539",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-08T14:11:47.918Z",
+    "updatedAt": "2026-04-08T14:11:47.918Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d6794a6ede6682125115fb",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Ripple Chique\n2026-04-19 17:30 – 21:30",
+    "type": "booking_created",
+    "bookingId": "69d679496ede6682125115f7",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-08T15:50:34.077Z",
+    "updatedAt": "2026-04-08T15:50:34.077Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d690746ede668212511780",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Joan of Arc\n2026-04-15 14:00 – 16:00",
+    "type": "booking_created",
+    "bookingId": "69d690746ede66821251177c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-08T17:29:24.910Z",
+    "updatedAt": "2026-04-08T17:29:24.910Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d703b56ede668212511a0d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-04-09 09:00 – 11:00",
+    "type": "booking_created",
+    "bookingId": "69d703b56ede668212511a09",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-09T01:41:09.202Z",
+    "updatedAt": "2026-04-09T01:41:09.202Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d752a26ede668212511ad9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "GYW MV Mighty Declan\n2026-04-09 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69d752a26ede668212511ad4",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-09T07:17:54.723Z",
+    "updatedAt": "2026-04-09T07:17:54.723Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d769756ede668212511c01",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Venus Yacht\n2026-04-13 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69d769756ede668212511bfd",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-09T08:55:17.584Z",
+    "updatedAt": "2026-04-09T08:55:17.584Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d7719e6ede668212511d94",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-04-13 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69d7719e6ede668212511d8f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-09T09:30:06.860Z",
+    "updatedAt": "2026-04-09T09:30:06.860Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d791036ede668212511ec2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-09 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69d791036ede668212511ebd",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-09T11:44:03.457Z",
+    "updatedAt": "2026-04-09T11:44:03.457Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d7b2c16ede6682125120a8",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-10 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69d7b2c16ede6682125120a4",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-09T14:08:01.668Z",
+    "updatedAt": "2026-04-09T14:08:01.668Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d881326ede66821251224c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-11 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69d881326ede668212512248",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-10T04:48:50.254Z",
+    "updatedAt": "2026-04-10T04:48:50.254Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d8a7b16ede668212512356",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-10 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69d8a7b16ede668212512351",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-10T07:33:05.473Z",
+    "updatedAt": "2026-04-10T07:33:05.473Z",
+    "__v": 0
+  },
+  {
+    "_id": "69da0d276ede668212512535",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Bella Ciao | 45Ft\n2026-04-11 18:15 – 20:15",
+    "type": "booking_created",
+    "bookingId": "69da0d276ede668212512531",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-11T08:58:15.387Z",
+    "updatedAt": "2026-04-11T08:58:15.387Z",
+    "__v": 0
+  },
+  {
+    "_id": "69da1ae66ede66821251261e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-12 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69da1ae56ede668212512619",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-11T09:56:54.079Z",
+    "updatedAt": "2026-04-11T09:56:54.079Z",
+    "__v": 0
+  },
+  {
+    "_id": "69da679a6ede6682125126ee",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Angel Yacht\n2026-04-12 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69da679a6ede6682125126e9",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-11T15:24:10.456Z",
+    "updatedAt": "2026-04-11T15:24:10.456Z",
+    "__v": 0
+  },
+  {
+    "_id": "69db1e016ede6682125128a1",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-13 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69db1e016ede66821251289d",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-12T04:22:25.796Z",
+    "updatedAt": "2026-04-12T04:22:25.796Z",
+    "__v": 0
+  },
+  {
+    "_id": "69db6f336ede66821251291c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-04-12 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69db6f336ede668212512917",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-12T10:08:51.541Z",
+    "updatedAt": "2026-04-12T10:08:51.541Z",
+    "__v": 0
+  },
+  {
+    "_id": "69db81fd6ede66821251298f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Shantam Catamaran \n2026-04-12 18:00 – 22:00",
+    "type": "booking_created",
+    "bookingId": "69db81fd6ede66821251298a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-12T11:29:01.727Z",
+    "updatedAt": "2026-04-12T11:29:01.727Z",
+    "__v": 0
+  },
+  {
+    "_id": "69db844c6ede668212512a1e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-04-14 08:00 – 10:00",
+    "type": "booking_created",
+    "bookingId": "69db844c6ede668212512a19",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-12T11:38:52.304Z",
+    "updatedAt": "2026-04-12T11:38:52.304Z",
+    "__v": 0
+  },
+  {
+    "_id": "69dcb9236ede668212512be9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Coco Queen\n2026-04-13 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69dcb9236ede668212512be5",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-13T09:36:35.627Z",
+    "updatedAt": "2026-04-13T09:36:35.627Z",
+    "__v": 0
+  },
+  {
+    "_id": "69dce3fb6ede668212512fc7",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-14 09:00 – 10:00",
+    "type": "booking_created",
+    "bookingId": "69dce3fb6ede668212512fc3",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-13T12:39:23.707Z",
+    "updatedAt": "2026-04-13T12:39:23.707Z",
+    "__v": 0
+  },
+  {
+    "_id": "69dd243a6ede66821251442c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Aquila Yacht\n2026-04-20 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69dd243a6ede668212514427",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-13T17:13:30.797Z",
+    "updatedAt": "2026-04-13T17:13:30.797Z",
+    "__v": 0
+  },
+  {
+    "_id": "69dd29176ede668212514894",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-30 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69dd29166ede668212514890",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-13T17:34:15.003Z",
+    "updatedAt": "2026-04-13T17:34:15.003Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ddbd886ede668212515089",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sinq Nautica Yacht\n2026-04-14 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69ddbd886ede668212515085",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-14T04:07:36.712Z",
+    "updatedAt": "2026-04-14T04:07:36.712Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ddf3506ede6682125156fd",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Blue Diamond | 50Ft\n2026-04-14 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69ddf3506ede6682125156f9",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-14T07:57:04.852Z",
+    "updatedAt": "2026-04-14T07:57:04.852Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de01ff6ede6682125159c4",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Luxury Mi-Amor\n2026-04-15 17:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69de01ff6ede6682125159c0",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-14T08:59:43.313Z",
+    "updatedAt": "2026-04-14T08:59:43.313Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de20096ede668212515afa",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-21 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69de20096ede668212515af6",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-14T11:07:53.080Z",
+    "updatedAt": "2026-04-14T11:07:53.080Z",
+    "__v": 0
+  },
+  {
+    "_id": "69df17e76ede6682125161a6",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Shantam Catamaran \n2026-05-13 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69df17e76ede6682125161a2",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-15T04:45:27.677Z",
+    "updatedAt": "2026-04-15T04:45:27.677Z",
+    "__v": 0
+  },
+  {
+    "_id": "69df53606ede668212516507",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-05-05 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69df53606ede668212516503",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-15T08:59:12.453Z",
+    "updatedAt": "2026-04-15T08:59:12.453Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e071b46ede668212516955",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-22 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69e071b46ede668212516951",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-16T05:20:52.287Z",
+    "updatedAt": "2026-04-16T05:20:52.287Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e116c86ede668212516cff",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Phoenix Yacht \n2026-04-17 18:00 – 20:00\n- by Goa Villa",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-04-16T17:05:12.794Z",
+    "updatedAt": "2026-04-16T17:45:21.851Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e1c36e6ede668212516e41",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "Phoenix Yacht \n2026-04-17 18:00 – 20:00\n- by Goa Villa",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-04-17T05:21:50.936Z",
+    "updatedAt": "2026-04-17T08:01:17.073Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e1c5576ede668212516e99",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Phoenix Yacht \n2026-04-17 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69e1c5576ede668212516e94",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-17T05:29:59.333Z",
+    "updatedAt": "2026-04-17T05:29:59.333Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e1c7456ede668212516f5e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-17 15:00 – 17:00",
+    "type": "booking_created",
+    "bookingId": "69e1c7456ede668212516f5a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-17T05:38:13.977Z",
+    "updatedAt": "2026-04-17T05:38:13.977Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e1db786ede668212517075",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-18 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69e1db786ede668212517071",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-17T07:04:24.445Z",
+    "updatedAt": "2026-04-17T07:04:24.445Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e20d256ede66821251730d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-18 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69e20d256ede668212517309",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-17T10:36:21.357Z",
+    "updatedAt": "2026-04-17T10:36:21.357Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e213be6ede6682125173ba",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Havana Vikings\n2026-04-26 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69e213be6ede6682125173b6",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-17T11:04:30.664Z",
+    "updatedAt": "2026-04-17T11:04:30.664Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e47a9658c2d6a32d4a3108",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-19 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69e47a9658c2d6a32d4a3104",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-19T06:47:50.750Z",
+    "updatedAt": "2026-04-19T06:47:50.750Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e48a1958c2d6a32d4a349e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #2\n2026-04-19 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69e48a1958c2d6a32d4a349a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-19T07:54:01.808Z",
+    "updatedAt": "2026-04-19T07:54:01.808Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e4a3e458c2d6a32d4a3723",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-19 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69e4a3e458c2d6a32d4a371f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-19T09:44:04.638Z",
+    "updatedAt": "2026-04-19T09:44:04.638Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e4b83f58c2d6a32d4a37db",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #1 \n2026-04-19 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69e4b83f58c2d6a32d4a37d7",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-19T11:10:55.935Z",
+    "updatedAt": "2026-04-19T11:10:55.935Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e5ad81912587d75a345053",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-08 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69e5ad81912587d75a34504f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-20T04:37:21.570Z",
+    "updatedAt": "2026-04-20T04:37:21.570Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e76c31912587d75a345bea",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-23 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69e76c31912587d75a345be6",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-21T12:23:13.753Z",
+    "updatedAt": "2026-04-21T12:23:13.753Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e88746912587d75a345fd0",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Waving Jet - Speed boat\n2026-04-25 17:00 – 19:00",
+    "type": "booking_created",
+    "bookingId": "69e88746912587d75a345fcc",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-22T08:31:02.606Z",
+    "updatedAt": "2026-04-22T08:31:02.606Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e8c633912587d75a3462ab",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Rivera\n2026-05-30 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69e8c633912587d75a3462a7",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-22T12:59:31.410Z",
+    "updatedAt": "2026-04-22T12:59:31.410Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e8cd60912587d75a346328",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-23 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69e8cd60912587d75a346324",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-22T13:30:08.734Z",
+    "updatedAt": "2026-04-22T13:30:08.734Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e8f215912587d75a34681d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ferretti 460 | 46Ft\n2026-04-23 17:00 – 19:00",
+    "type": "booking_created",
+    "bookingId": "69e8f215912587d75a346819",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-22T16:06:45.964Z",
+    "updatedAt": "2026-04-22T16:06:45.964Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e8f320912587d75a3468fa",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ripple Chique\n2026-05-01 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69e8f320912587d75a3468f6",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-22T16:11:12.741Z",
+    "updatedAt": "2026-04-22T16:11:12.741Z",
+    "__v": 0
+  },
+  {
+    "_id": "69eb02589833c6f92fe3d9ef",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Manta Ray\n2026-04-24 14:00 – 16:00",
+    "type": "booking_created",
+    "bookingId": "69eb02579833c6f92fe3d9eb",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-24T05:40:40.069Z",
+    "updatedAt": "2026-04-24T05:40:40.069Z",
+    "__v": 0
+  },
+  {
+    "_id": "69eb1aae9833c6f92fe3dab9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-07-26 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69eb1aae9833c6f92fe3dab5",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-24T07:24:30.211Z",
+    "updatedAt": "2026-04-24T07:24:30.211Z",
+    "__v": 0
+  },
+  {
+    "_id": "69eb21aa9833c6f92fe3dbe9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Aquila Yacht\n2026-04-24 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69eb21aa9833c6f92fe3dbe5",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-24T07:54:18.888Z",
+    "updatedAt": "2026-04-24T07:54:18.888Z",
+    "__v": 0
+  },
+  {
+    "_id": "69eb2baa9833c6f92fe3de91",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Manta Ray\n2026-04-24 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69eb2baa9833c6f92fe3de8d",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-24T08:36:58.640Z",
+    "updatedAt": "2026-04-24T08:36:58.640Z",
+    "__v": 0
+  },
+  {
+    "_id": "69eb69ac9833c6f92fe3e195",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Tara \n2026-04-25 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69eb69ac9833c6f92fe3e191",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-24T13:01:32.305Z",
+    "updatedAt": "2026-04-24T13:01:32.305Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ec5a5e9833c6f92fe3e4ff",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ripple Chique\n2026-04-26 20:00 – 22:00",
+    "type": "booking_created",
+    "bookingId": "69ec5a5e9833c6f92fe3e4fa",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-25T06:08:30.836Z",
+    "updatedAt": "2026-04-25T06:08:30.836Z",
+    "__v": 0
+  },
+  {
+    "_id": "69eca2399833c6f92fe3ee2a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Ferretti 550 | 55Ft\n2026-05-15 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69eca2399833c6f92fe3ee26",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-25T11:15:05.909Z",
+    "updatedAt": "2026-04-25T11:15:05.909Z",
+    "__v": 0
+  },
+  {
+    "_id": "69edea41b0b967ed9714f72d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-01 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69edea40b0b967ed9714f728",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-26T10:34:41.023Z",
+    "updatedAt": "2026-04-26T10:34:41.023Z",
+    "__v": 0
+  },
+  {
+    "_id": "69edf652b0b967ed9714f7c3",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-26 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69edf652b0b967ed9714f7bf",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-26T11:26:10.952Z",
+    "updatedAt": "2026-04-26T11:26:10.952Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ef2650e3198ebc56190516",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-27 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69ef2650e3198ebc56190511",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-27T09:03:12.665Z",
+    "updatedAt": "2026-04-27T09:03:12.665Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ef2d8ee3198ebc561905fc",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Nityay Yacht \n2026-04-27 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69ef2d8ee3198ebc561905f8",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-27T09:34:06.326Z",
+    "updatedAt": "2026-04-27T09:34:06.326Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f056e2e3198ebc56190718",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-30 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69f056e2e3198ebc56190713",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-28T06:42:42.496Z",
+    "updatedAt": "2026-04-28T06:42:42.496Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f057e3e3198ebc5619076d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Phoenix Yacht \n2026-04-28 17:00 – 19:00",
+    "type": "booking_created",
+    "bookingId": "69f057e3e3198ebc56190768",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-28T06:46:59.948Z",
+    "updatedAt": "2026-04-28T06:46:59.948Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f0738be3198ebc561908c3",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-30 10:00 – 12:00",
+    "type": "booking_created",
+    "bookingId": "69f0738be3198ebc561908be",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-28T08:44:59.598Z",
+    "updatedAt": "2026-04-28T08:44:59.598Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f07462e3198ebc5619091c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-05 16:00 – 19:00",
+    "type": "booking_created",
+    "bookingId": "69f07462e3198ebc56190917",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-28T08:48:34.835Z",
+    "updatedAt": "2026-04-28T08:48:34.835Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f19059e3198ebc56190d3d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-04-30 08:00 – 10:00",
+    "type": "booking_created",
+    "bookingId": "69f19058e3198ebc56190d39",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-29T05:00:09.068Z",
+    "updatedAt": "2026-04-29T05:00:09.068Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f1b911e3198ebc56190f7a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #2\n2026-05-01 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69f1b911e3198ebc56190f75",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-29T07:53:53.506Z",
+    "updatedAt": "2026-04-29T07:53:53.506Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f1bddae3198ebc56191117",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Slot Locked",
+    "message": "MV Tara \n2026-05-01 17:30 – 19:30\n- by My Tour Partner n Global tour and Services",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "readBy": [
+      "69527a4645411bbca4e60db9"
+    ],
+    "createdAt": "2026-04-29T08:14:18.696Z",
+    "updatedAt": "2026-04-29T08:25:38.128Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f1bf1be3198ebc56191163",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-04-30 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f1bf1be3198ebc5619115e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-29T08:19:39.587Z",
+    "updatedAt": "2026-04-29T08:19:39.587Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f1dd73e3198ebc561912f4",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-04-29 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f1dd73e3198ebc561912f0",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-29T10:29:07.524Z",
+    "updatedAt": "2026-04-29T10:29:07.524Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f1e97de3198ebc561913f1",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Heiress \n2026-04-29 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f1e97de3198ebc561913ec",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-29T11:20:29.361Z",
+    "updatedAt": "2026-04-29T11:20:29.361Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f30b8ee3198ebc5619167b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-04-30 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69f30b8de3198ebc56191676",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-30T07:58:06.091Z",
+    "updatedAt": "2026-04-30T07:58:06.091Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f31be6e3198ebc5619173c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-04-30 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f31be6e3198ebc56191737",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-30T09:07:50.607Z",
+    "updatedAt": "2026-04-30T09:07:50.607Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f31fa9e3198ebc56191858",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-05-01 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f31fa9e3198ebc56191854",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-30T09:23:53.484Z",
+    "updatedAt": "2026-04-30T09:23:53.484Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f33015e3198ebc5619195d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-17 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f33015e3198ebc56191958",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-30T10:33:57.464Z",
+    "updatedAt": "2026-04-30T10:33:57.464Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f33405e3198ebc56191a2b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-02 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69f33405e3198ebc56191a27",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-30T10:50:45.123Z",
+    "updatedAt": "2026-04-30T10:50:45.123Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f3562ee3198ebc56191b9b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-05-16 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69f3562ee3198ebc56191b96",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-30T13:16:30.623Z",
+    "updatedAt": "2026-04-30T13:16:30.623Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f369efe3198ebc56191c23",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Havana Vikings\n2026-05-01 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69f369efe3198ebc56191c1e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-04-30T14:40:47.972Z",
+    "updatedAt": "2026-04-30T14:40:47.972Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f44c98e3198ebc56191e7e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Lady White Pearl\n2026-05-02 17:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f44c98e3198ebc56191e7a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-01T06:47:52.884Z",
+    "updatedAt": "2026-05-01T06:47:52.884Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f48b40e3198ebc561920a6",
+    "company": "6969006bb62f11866f5be114",
+    "title": "Booking CONFIRMED",
+    "message": "MV Hawana Yacht\n2026-05-01 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f48b40e3198ebc561920a2",
+    "lockedId": null,
+    "recipients": [
+      "6969086eb62f11866f5be208"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-01T11:15:12.448Z",
+    "updatedAt": "2026-05-01T11:15:12.448Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f48c3be3198ebc5619214a",
+    "company": "6969006bb62f11866f5be114",
+    "title": "Slot Locked",
+    "message": "MV Hawana Yacht\n2026-05-01 20:00 – 22:00\n- by Kanha",
+    "type": "slot_locked",
+    "lockedId": null,
+    "recipients": [
+      "6968fef7d78421b977c7e371"
+    ],
+    "readBy": [
+      "6968fef7d78421b977c7e371"
+    ],
+    "createdAt": "2026-05-01T11:19:23.084Z",
+    "updatedAt": "2026-05-01T11:19:32.512Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f59026e3198ebc56192556",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Ray R330\n2026-05-02 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f59026e3198ebc56192551",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-02T05:48:22.777Z",
+    "updatedAt": "2026-05-02T05:48:22.777Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f59fe2e3198ebc561925c0",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-03 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f59fe2e3198ebc561925bb",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-02T06:55:30.660Z",
+    "updatedAt": "2026-05-02T06:55:30.660Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f77752e3198ebc56192a24",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Amzonite\n2026-05-04 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69f77751e3198ebc56192a1f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-03T16:26:58.045Z",
+    "updatedAt": "2026-05-03T16:26:58.045Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f8418ae3198ebc56192aba",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-04 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69f8418ae3198ebc56192ab6",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-04T06:49:46.773Z",
+    "updatedAt": "2026-05-04T06:49:46.773Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f855bce3198ebc56192c51",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-04 18:30 – 20:30",
+    "type": "booking_created",
+    "bookingId": "69f855bbe3198ebc56192c4d",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-04T08:15:56.028Z",
+    "updatedAt": "2026-05-04T08:15:56.028Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f98446e3198ebc56192ebb",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-06 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69f98446e3198ebc56192eb7",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-05T05:46:46.995Z",
+    "updatedAt": "2026-05-05T05:46:46.995Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f9c756e3198ebc561931b5",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-05-22 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f9c756e3198ebc561931b1",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-05T10:32:54.788Z",
+    "updatedAt": "2026-05-05T10:32:54.788Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f9de20e3198ebc5619326b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Phoenix Yacht \n2026-05-06 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69f9de20e3198ebc56193267",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-05T12:10:08.110Z",
+    "updatedAt": "2026-05-05T12:10:08.110Z",
+    "__v": 0
+  },
+  {
+    "_id": "69fae7d2e3198ebc561933be",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-05-06 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69fae7d2e3198ebc561933b9",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-06T07:03:46.377Z",
+    "updatedAt": "2026-05-06T07:03:46.377Z",
+    "__v": 0
+  },
+  {
+    "_id": "69fb0e2ae3198ebc5619346f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-05-16 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69fb0e2ae3198ebc5619346b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-06T09:47:22.531Z",
+    "updatedAt": "2026-05-06T09:47:22.531Z",
+    "__v": 0
+  },
+  {
+    "_id": "69fb1a4ee3198ebc5619366c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Prawn Yacht\n2026-05-06 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69fb1a4ee3198ebc56193668",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-06T10:39:10.662Z",
+    "updatedAt": "2026-05-06T10:39:10.662Z",
+    "__v": 0
+  },
+  {
+    "_id": "69fb51d6e3198ebc561937ad",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-05-07 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69fb51d6e3198ebc561937a9",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-06T14:36:06.937Z",
+    "updatedAt": "2026-05-06T14:36:06.937Z",
+    "__v": 0
+  },
+  {
+    "_id": "69fc1cc2e3198ebc56193bcc",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-07 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69fc1cc2e3198ebc56193bc8",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-07T05:01:54.795Z",
+    "updatedAt": "2026-05-07T05:01:54.795Z",
+    "__v": 0
+  },
+  {
+    "_id": "69fdc2cde3198ebc56194146",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Foxy Lady | Ferretti 66Ft\n2026-06-07 16:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69fdc2cde3198ebc56194142",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-08T11:02:37.189Z",
+    "updatedAt": "2026-05-08T11:02:37.189Z",
+    "__v": 0
+  },
+  {
+    "_id": "69febf53e3198ebc561942f3",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-19 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "69febf52e3198ebc561942ee",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-09T05:00:03.069Z",
+    "updatedAt": "2026-05-09T05:00:03.069Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ff1250e3198ebc5619447f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-09 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "69ff1250e3198ebc5619447b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-09T10:54:08.603Z",
+    "updatedAt": "2026-05-09T10:54:08.603Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ff1d53e3198ebc56194529",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-09 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "69ff1d53e3198ebc56194525",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-09T11:41:07.996Z",
+    "updatedAt": "2026-05-09T11:41:07.996Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a00096de3198ebc56194702",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Nityay Yacht \n2026-05-10 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a00096de3198ebc561946fe",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-10T04:28:29.107Z",
+    "updatedAt": "2026-05-10T04:28:29.107Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0017d9e3198ebc561947be",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Nityay Yacht \n2026-05-10 12:00 – 14:00",
+    "type": "booking_created",
+    "bookingId": "6a0017d9e3198ebc561947ba",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-10T05:30:01.911Z",
+    "updatedAt": "2026-05-10T05:30:01.911Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a015197e3198ebc561949a6",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc\n2026-05-19 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a015197e3198ebc561949a2",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-11T03:48:39.715Z",
+    "updatedAt": "2026-05-11T03:48:39.715Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a016059e3198ebc56194bc2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-05-11 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a016059e3198ebc56194bbe",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-11T04:51:37.424Z",
+    "updatedAt": "2026-05-11T04:51:37.424Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a016a75e3198ebc56194cce",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-11 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6a016a75e3198ebc56194cca",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-11T05:34:45.340Z",
+    "updatedAt": "2026-05-11T05:34:45.340Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a019422e3198ebc56194d53",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-20 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a019421e3198ebc56194d4e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-11T08:32:34.205Z",
+    "updatedAt": "2026-05-11T08:32:34.205Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a02d26de3198ebc56194f61",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-15 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a02d26de3198ebc56194f5d",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-12T07:10:37.778Z",
+    "updatedAt": "2026-05-12T07:10:37.778Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a056bfde3198ebc561953ec",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-05-17 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a056bfde3198ebc561953e7",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-14T06:30:21.528Z",
+    "updatedAt": "2026-05-14T06:30:21.528Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a06fce0e3198ebc561954df",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-15 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6a06fce0e3198ebc561954db",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-15T11:00:48.182Z",
+    "updatedAt": "2026-05-15T11:00:48.182Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a082d1196a668cfbb1bda97",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-30 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a082d1196a668cfbb1bda93",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-16T08:38:41.096Z",
+    "updatedAt": "2026-05-16T08:38:41.096Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0831e096a668cfbb1bdc8d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-16 17:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a0831df96a668cfbb1bdc89",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-16T08:59:12.053Z",
+    "updatedAt": "2026-05-16T08:59:12.053Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0851db96a668cfbb1bdd39",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-05-16 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a0851db96a668cfbb1bdd35",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-16T11:15:39.928Z",
+    "updatedAt": "2026-05-16T11:15:39.928Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0955c896a668cfbb1be229",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-17 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a0955c896a668cfbb1be224",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-17T05:44:40.596Z",
+    "updatedAt": "2026-05-17T05:44:40.596Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0988b996a668cfbb1be2fa",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-17 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a0988b996a668cfbb1be2f5",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-17T09:22:01.157Z",
+    "updatedAt": "2026-05-17T09:22:01.157Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a09a22b96a668cfbb1be48a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "GYW MV Mighty Declan\n2026-05-17 17:30 – 19:00",
+    "type": "booking_created",
+    "bookingId": "6a09a22b96a668cfbb1be486",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-17T11:10:35.883Z",
+    "updatedAt": "2026-05-17T11:10:35.883Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0a977e96a668cfbb1be6f0",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Tara \n2026-05-25 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a0a977d96a668cfbb1be6ec",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-18T04:37:18.053Z",
+    "updatedAt": "2026-05-18T04:37:18.053Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0a97d796a668cfbb1be74d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-05-19 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a0a97d796a668cfbb1be749",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-18T04:38:47.953Z",
+    "updatedAt": "2026-05-18T04:38:47.953Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0ab02296a668cfbb1be7f6",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-05-18 12:30 – 14:30",
+    "type": "booking_created",
+    "bookingId": "6a0ab02296a668cfbb1be7f2",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-18T06:22:26.974Z",
+    "updatedAt": "2026-05-18T06:22:26.974Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0abd9396a668cfbb1be898",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-05-18 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a0abd9396a668cfbb1be894",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-18T07:19:47.537Z",
+    "updatedAt": "2026-05-18T07:19:47.537Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0ac12e96a668cfbb1be92f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Lady White Pearl\n2026-05-18 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a0ac12e96a668cfbb1be92b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-18T07:35:10.861Z",
+    "updatedAt": "2026-05-18T07:35:10.861Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0ac61d96a668cfbb1bea2d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Ray R330\n2026-05-18 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a0ac61d96a668cfbb1bea29",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-18T07:56:13.262Z",
+    "updatedAt": "2026-05-18T07:56:13.262Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0acf5c96a668cfbb1beb0e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Lady White Pearl\n2026-05-18 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a0acf5c96a668cfbb1beb0a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-18T08:35:40.960Z",
+    "updatedAt": "2026-05-18T08:35:40.960Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0c010996a668cfbb1beed8",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-19 20:00 – 22:00",
+    "type": "booking_created",
+    "bookingId": "6a0c010996a668cfbb1beed4",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-19T06:19:53.159Z",
+    "updatedAt": "2026-05-19T06:19:53.159Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0c2b3896a668cfbb1befa5",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-19 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a0c2b3796a668cfbb1befa1",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-19T09:19:52.040Z",
+    "updatedAt": "2026-05-19T09:19:52.040Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0c83d896a668cfbb1bf269",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-06-02 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a0c83d896a668cfbb1bf265",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-19T15:38:00.900Z",
+    "updatedAt": "2026-05-19T15:38:00.900Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0c882f96a668cfbb1bf320",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Nityay Yacht \n2026-05-20 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a0c882f96a668cfbb1bf31c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-19T15:56:31.595Z",
+    "updatedAt": "2026-05-19T15:56:31.595Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0d4db796a668cfbb1bf4bc",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-20 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a0d4db796a668cfbb1bf4b8",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-20T05:59:19.290Z",
+    "updatedAt": "2026-05-20T05:59:19.290Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0d4f0696a668cfbb1bf578",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Polaris Luxury Yacht\n2026-06-12 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6a0d4f0696a668cfbb1bf574",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-20T06:04:54.958Z",
+    "updatedAt": "2026-05-20T06:04:54.958Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0d743996a668cfbb1bf74f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-21 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a0d743996a668cfbb1bf74b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-20T08:43:37.899Z",
+    "updatedAt": "2026-05-20T08:43:37.899Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0e9df796a668cfbb1bfbde",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-21 15:00 – 16:00",
+    "type": "booking_created",
+    "bookingId": "6a0e9df796a668cfbb1bfbda",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-21T05:53:59.735Z",
+    "updatedAt": "2026-05-21T05:53:59.735Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0ff9f496a668cfbb1c018c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-28 09:00 – 11:00",
+    "type": "booking_created",
+    "bookingId": "6a0ff9f496a668cfbb1c0187",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-22T06:38:44.306Z",
+    "updatedAt": "2026-05-22T06:38:44.306Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a0ffec796a668cfbb1c027d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Eagle Yacht\n2026-05-23 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a0ffec796a668cfbb1c0279",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-22T06:59:19.349Z",
+    "updatedAt": "2026-05-22T06:59:19.349Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a10456896a668cfbb1c038c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-06-08 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a10456896a668cfbb1c0388",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-22T12:00:40.542Z",
+    "updatedAt": "2026-05-22T12:00:40.542Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a10470d96a668cfbb1c0438",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Coco Queen\n2026-05-23 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a10470d96a668cfbb1c0434",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-22T12:07:41.366Z",
+    "updatedAt": "2026-05-22T12:07:41.366Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a12ac1296a668cfbb1c07f9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-24 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a12ac1296a668cfbb1c07f4",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-24T07:43:14.940Z",
+    "updatedAt": "2026-05-24T07:43:14.940Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a13eefa96a668cfbb1c0a16",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-25 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a13eefa96a668cfbb1c0a11",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-25T06:40:58.895Z",
+    "updatedAt": "2026-05-25T06:40:58.895Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a143db996a668cfbb1c0b54",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Lady White Pearl\n2026-05-25 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a143db996a668cfbb1c0b4f",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-25T12:16:57.590Z",
+    "updatedAt": "2026-05-25T12:16:57.590Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a1455f696a668cfbb1c0c8f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-28 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a1455f696a668cfbb1c0c8b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-25T14:00:22.153Z",
+    "updatedAt": "2026-05-25T14:00:22.153Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a15171e96a668cfbb1c0f3d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-26 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a15171e96a668cfbb1c0f39",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-26T03:44:30.390Z",
+    "updatedAt": "2026-05-26T03:44:30.390Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a152f3496a668cfbb1c10f6",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Pegasus Yacht \n2026-06-08 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a152f3396a668cfbb1c10f1",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-26T05:27:16.026Z",
+    "updatedAt": "2026-05-26T05:27:16.026Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a154d8496a668cfbb1c11d9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-26 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a154d8496a668cfbb1c11d5",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-26T07:36:36.164Z",
+    "updatedAt": "2026-05-26T07:36:36.164Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a15748396a668cfbb1c1379",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Lady White Pearl\n2026-05-26 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a15748396a668cfbb1c1375",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-26T10:22:59.703Z",
+    "updatedAt": "2026-05-26T10:22:59.703Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a17cee696a668cfbb1c1693",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-28 14:00 – 16:00",
+    "type": "booking_created",
+    "bookingId": "6a17cee696a668cfbb1c168e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-28T05:13:10.194Z",
+    "updatedAt": "2026-05-28T05:13:10.194Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a17e86296a668cfbb1c173f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Nicolyn Yacht\n2026-05-28 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a17e86196a668cfbb1c173a",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-28T07:01:54.022Z",
+    "updatedAt": "2026-05-28T07:01:54.022Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a17ee3996a668cfbb1c1853",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ralston Yacht #1 \n2026-05-28 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a17ee3996a668cfbb1c184e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-28T07:26:49.491Z",
+    "updatedAt": "2026-05-28T07:26:49.491Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a1876f696a668cfbb1c1a54",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Pegasus Yacht \n2026-05-29 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a1876f696a668cfbb1c1a50",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-28T17:10:14.142Z",
+    "updatedAt": "2026-05-28T17:10:14.142Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a1967e496a668cfbb1c1c37",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Sea Horse\n2026-05-30 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6a1967e496a668cfbb1c1c32",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-29T10:18:12.894Z",
+    "updatedAt": "2026-05-29T10:18:12.894Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a19a6c596a668cfbb1c1cf9",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-05-31 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a19a6c596a668cfbb1c1cf4",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-29T14:46:29.250Z",
+    "updatedAt": "2026-05-29T14:46:29.250Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a19ab3b96a668cfbb1c1d4b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-30 08:00 – 10:00",
+    "type": "booking_created",
+    "bookingId": "6a19ab3b96a668cfbb1c1d46",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-29T15:05:31.927Z",
+    "updatedAt": "2026-05-29T15:05:31.927Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a1a93c796a668cfbb1c1ec4",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-05-30 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a1a93c796a668cfbb1c1ebf",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-30T07:37:43.945Z",
+    "updatedAt": "2026-05-30T07:37:43.945Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a1acef796a668cfbb1c2045",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Taj Exotica | 50Ft\n2026-05-31 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a1acef796a668cfbb1c2040",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-30T11:50:15.982Z",
+    "updatedAt": "2026-05-30T11:50:15.982Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a1c4462703c04f29b0b9539",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Rivera\n2026-06-13 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a1c4462703c04f29b0b9534",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-05-31T14:23:30.703Z",
+    "updatedAt": "2026-05-31T14:23:30.703Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a1d4b5c703c04f29b0b9628",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-06-05 08:00 – 09:00",
+    "type": "booking_created",
+    "bookingId": "6a1d4b5c703c04f29b0b9623",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-01T09:05:32.816Z",
+    "updatedAt": "2026-06-01T09:05:32.816Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a1e7a16703c04f29b0b972e",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-06-04 08:00 – 10:00",
+    "type": "booking_created",
+    "bookingId": "6a1e7a16703c04f29b0b9729",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-02T06:37:10.567Z",
+    "updatedAt": "2026-06-02T06:37:10.567Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a1ea661703c04f29b0b97e2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-06-03 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a1ea661703c04f29b0b97dd",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-02T09:46:09.613Z",
+    "updatedAt": "2026-06-02T09:46:09.613Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a215a5b703c04f29b0b9a58",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-06-10 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a215a5b703c04f29b0b9a54",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-04T10:58:35.704Z",
+    "updatedAt": "2026-06-04T10:58:35.704Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a226ab7703c04f29b0b9b9c",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Dreamz Yacht\n2026-06-08 12:00 – 14:00",
+    "type": "booking_created",
+    "bookingId": "6a226ab7703c04f29b0b9b97",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-05T06:20:39.223Z",
+    "updatedAt": "2026-06-05T06:20:39.223Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a228ed5703c04f29b0b9c22",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc ( White Sea )\n2026-06-06 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a228ed5703c04f29b0b9c1e",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-05T08:54:45.291Z",
+    "updatedAt": "2026-06-05T08:54:45.291Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a22a120703c04f29b0b9cd2",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-06-05 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6a22a120703c04f29b0b9cce",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-05T10:12:48.637Z",
+    "updatedAt": "2026-06-05T10:12:48.637Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a22aa37703c04f29b0b9dcc",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-06-05 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6a22aa37703c04f29b0b9dc8",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-05T10:51:35.515Z",
+    "updatedAt": "2026-06-05T10:51:35.515Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a22b12a703c04f29b0b9e58",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc ( White Sea )\n2026-06-05 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a22b12a703c04f29b0b9e54",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-05T11:21:14.403Z",
+    "updatedAt": "2026-06-05T11:21:14.403Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a23d10e703c04f29b0ba01b",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc ( White Sea )\n2026-06-26 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a23d10e703c04f29b0ba017",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-06T07:49:34.974Z",
+    "updatedAt": "2026-06-06T07:49:34.974Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a23f482703c04f29b0ba135",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Bella Ciao | 45Ft\n2026-06-06 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a23f482703c04f29b0ba131",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-06T10:20:50.595Z",
+    "updatedAt": "2026-06-06T10:20:50.595Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a250d6e703c04f29b0ba3de",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-06-07 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a250d6e703c04f29b0ba3d9",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-07T06:19:26.726Z",
+    "updatedAt": "2026-06-07T06:19:26.726Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a252e52703c04f29b0ba6cd",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "MV Rivera\n2026-06-11 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a252e52703c04f29b0ba6c9",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-07T08:39:46.714Z",
+    "updatedAt": "2026-06-07T08:39:46.714Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a2556ad703c04f29b0ba95d",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Ferretti 550 | 55Ft\n2026-06-07 17:30 – 19:30",
+    "type": "booking_created",
+    "bookingId": "6a2556ac703c04f29b0ba959",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-07T11:31:57.009Z",
+    "updatedAt": "2026-06-07T11:31:57.009Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a266ca7703c04f29b0bab24",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking PENDING",
+    "message": "Coco Queen\n2026-06-08 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a266ca7703c04f29b0bab20",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-08T07:17:59.601Z",
+    "updatedAt": "2026-06-08T07:17:59.601Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a26a6c6703c04f29b0bad57",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-06-08 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a26a6c6703c04f29b0bad53",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-08T11:25:58.325Z",
+    "updatedAt": "2026-06-08T11:25:58.325Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a26d136703c04f29b0baeb3",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-06-10 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a26d136703c04f29b0baeaf",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-08T14:27:02.852Z",
+    "updatedAt": "2026-06-08T14:27:02.852Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a27be63703c04f29b0bb064",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Coco Queen\n2026-06-09 14:00 – 16:00",
+    "type": "booking_created",
+    "bookingId": "6a27be63703c04f29b0bb060",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-09T07:18:59.442Z",
+    "updatedAt": "2026-06-09T07:18:59.442Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a27cff4703c04f29b0bb11f",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-06-13 08:00 – 10:00",
+    "type": "booking_created",
+    "bookingId": "6a27cff4703c04f29b0bb11b",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-09T08:33:56.555Z",
+    "updatedAt": "2026-06-09T08:33:56.555Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a2a502c703c04f29b0bb517",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-06-25 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a2a502c703c04f29b0bb513",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-11T06:05:32.102Z",
+    "updatedAt": "2026-06-11T06:05:32.102Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a2a5517703c04f29b0bb59a",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc ( White Sea )\n2026-06-11 18:00 – 20:00",
+    "type": "booking_created",
+    "bookingId": "6a2a5517703c04f29b0bb596",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-11T06:26:31.697Z",
+    "updatedAt": "2026-06-11T06:26:31.697Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a2a8b72703c04f29b0bb754",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc ( White Sea )\n2026-06-16 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a2a8b72703c04f29b0bb750",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-11T10:18:26.705Z",
+    "updatedAt": "2026-06-11T10:18:26.705Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a2b9275703c04f29b0bbb50",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Joan of Arc ( White Sea )\n2026-06-12 16:00 – 18:00",
+    "type": "booking_created",
+    "bookingId": "6a2b9274703c04f29b0bbb4c",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-12T05:00:37.018Z",
+    "updatedAt": "2026-06-12T05:00:37.018Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a2bae91703c04f29b0bbc75",
+    "company": "695b5320fea29ce4103d0aef",
+    "title": "Booking CONFIRMED",
+    "message": "Aquila Yacht\n2026-06-12 14:00 – 15:00",
+    "type": "booking_created",
+    "bookingId": "6a2bae91703c04f29b0bbc71",
+    "lockedId": null,
+    "recipients": [
+      "69627d4ccaa532d06cfa1776"
+    ],
+    "readBy": [],
+    "createdAt": "2026-06-12T07:00:33.745Z",
+    "updatedAt": "2026-06-12T07:00:33.745Z",
+    "__v": 0
+  }
+]

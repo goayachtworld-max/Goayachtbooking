@@ -1,0 +1,743 @@
+[
+  {
+    "_id": "68c6bac5e72d458e988aa31b",
+    "type": "admin",
+    "username": "harshal",
+    "password": "$2b$10$fFruMHeGe0cAzaQcNImGdutCts7GfxFUasOuuaqTS9rxnp6cyUUKi",
+    "name": "Harshal",
+    "contact": "+917387618063",
+    "email": "admin@example.com",
+    "status": "active",
+    "company": [
+      "695b4f0efea29ce4103d0ae7"
+    ],
+    "updatedAt": "2026-05-20T11:18:13.388Z",
+    "isPrivate": true,
+    "lastSeenAt": "2026-05-20T11:15:19.548Z",
+    "lastLoginAt": "2026-05-20T11:18:13.387Z",
+    "systemAdministrator": false,
+    "pin": "$2b$10$asR0.nvbh1b0MO5p9Oe9Y.QbY9YJzDump072NB9rjpx6E1C8VDPwG"
+  },
+  {
+    "_id": "69527a4645411bbca4e60db9",
+    "type": "admin",
+    "username": "gyw",
+    "password": "$2b$10$088bwO9t48c7/KAerMlug..zpRj9wwD.wkDL/vF.CiwmbXiq.L6ma",
+    "name": "Goayachtworld",
+    "contact": "7058455985",
+    "email": "goayachtworld@gmail.com",
+    "status": "active",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "updatedAt": "2026-06-12T07:53:04.990Z",
+    "isPrivate": true,
+    "profilePhoto": "https://res.cloudinary.com/db8e8hqwt/image/upload/v1773726478/yaut/employees/t4ccbrtldpirqhsstcng.png",
+    "lastLoginAt": "2026-06-11T06:04:21.672Z",
+    "lastSeenAt": "2026-06-12T07:53:04.989Z",
+    "systemAdministrator": true,
+    "pin": "$2b$10$ggbOrR0rmi/s.VQGYXfsd.QylOGT.2yOd3SxWvrBkHo2FqqsOXKJC"
+  },
+  {
+    "_id": "695aacb583a3998c78a08e0d",
+    "type": "admin",
+    "username": "abhi",
+    "password": "$2b$10$ommrPEo9pJeaU2QkI1mXTO9T38el.7mSt7fnwUjwy8MEQ4wH8Uu2y",
+    "name": "Abhijit",
+    "contact": "+917387618063",
+    "email": "abhi@gmail.com",
+    "status": "active",
+    "company": [
+      "695b5042fea29ce4103d0aeb"
+    ],
+    "isPrivate": true,
+    "lastLoginAt": "2026-04-16T05:54:04.761Z",
+    "systemAdministrator": false,
+    "updatedAt": "2026-04-16T10:01:22.434Z",
+    "lastSeenAt": "2026-04-16T10:01:22.434Z"
+  },
+  {
+    "_id": "695e417cfea29ce4103d17e9",
+    "type": "backdesk",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "trip2explore",
+    "password": "$2b$10$FkN4xZjdHAlOO/g2vrV2Wu0Ze.w3Ek1ZNPGHLtwEw2/0zXNRoAlia",
+    "name": "Harpreet Kaur",
+    "contact": "9111555170",
+    "email": "test@trip2explore.com",
+    "status": "active",
+    "isPrivate": true,
+    "createdAt": "2026-01-07T11:20:28.917Z",
+    "updatedAt": "2026-01-07T11:20:28.917Z",
+    "__v": 0
+  },
+  {
+    "_id": "696088facaa532d06cf9fbdb",
+    "type": "backdesk",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "jyoti",
+    "password": "$2b$10$y4trcB7E3zZVDlewhl3cpurvI.wZkn1gif4us/IvcOntGBItdqKd2",
+    "name": "Jyoti Travels",
+    "contact": "8420859999",
+    "email": "deepaksaraf2009@gmail.com",
+    "status": "active",
+    "isPrivate": true,
+    "createdAt": "2026-01-09T04:50:02.625Z",
+    "updatedAt": "2026-01-29T07:41:09.179Z",
+    "__v": 0
+  },
+  {
+    "_id": "69627d4ccaa532d06cfa1776",
+    "type": "onsite",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "sky",
+    "password": "$2b$10$..wUDrX/HMda4uokOHSoquKrKY4qFRMOv3eP1M1fO4j867Jn/pnxe",
+    "name": "Sanjeet",
+    "contact": "9876344860",
+    "email": "sanjeet@goayachtworld.com",
+    "status": "active",
+    "isPrivate": true,
+    "createdAt": "2026-01-10T16:24:44.936Z",
+    "updatedAt": "2026-02-04T05:51:28.409Z",
+    "__v": 0,
+    "lastLoginAt": "2026-02-04T05:51:28.408Z",
+    "lastSeenAt": "2026-02-04T05:50:38.205Z"
+  },
+  {
+    "_id": "6963d6dacaa532d06cfa17ee",
+    "type": "backdesk",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "sid",
+    "password": "$2b$10$Rj/D1N51Psao1oIDIGRQH.b/BPqz6EtLeD/VCVFKToBHXlwHMOyP6",
+    "name": "Siddhant",
+    "contact": "7770044447",
+    "email": "sid@gmail.com",
+    "status": "active",
+    "isPrivate": true,
+    "createdAt": "2026-01-11T16:59:06.460Z",
+    "updatedAt": "2026-01-11T16:59:06.460Z",
+    "__v": 0
+  },
+  {
+    "_id": "69667fcbb62f11866f5bd4a2",
+    "type": "backdesk",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "sunil",
+    "password": "$2b$10$Nd.JkI2uiZqMwRFwZlA.WeqOIHS.MnTxXS6woJEl2vNnN7CZSZPHy",
+    "name": "Sunil",
+    "contact": "7972558353",
+    "email": "sunil09623@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": false,
+    "createdAt": "2026-01-13T17:24:27.434Z",
+    "updatedAt": "2026-02-15T15:46:08.001Z",
+    "__v": 0,
+    "lastLoginAt": "2026-02-15T15:46:07.746Z",
+    "lastSeenAt": "2026-02-15T15:46:08.001Z"
+  },
+  {
+    "_id": "6968fef7d78421b977c7e371",
+    "type": "admin",
+    "username": "lovely",
+    "password": "$2b$10$bGgIZkN29TTqn3EeaGs.xu/gwzIV6Mgt8ydkOiFiqAvIyxYy.HHkK",
+    "name": "Lovely Water World",
+    "contact": "+917777777777",
+    "email": "lovely@gmail.com",
+    "status": "active",
+    "isPrivate": true,
+    "company": [
+      "6969006bb62f11866f5be114"
+    ],
+    "updatedAt": "2026-05-01T11:13:43.468Z",
+    "lastLoginAt": "2026-05-01T11:13:42.035Z",
+    "lastSeenAt": "2026-05-01T11:13:43.468Z",
+    "systemAdministrator": false
+  },
+  {
+    "_id": "6968ffe9d78421b977c7e372",
+    "type": "admin",
+    "username": "ocenair",
+    "password": "$2b$10$bGgIZkN29TTqn3EeaGs.xu/gwzIV6Mgt8ydkOiFiqAvIyxYy.HHkK",
+    "name": "Ocenair Admin",
+    "contact": "+917777777777",
+    "email": "ocenair@gmail.com",
+    "status": "active",
+    "isPrivate": true,
+    "company": [
+      "696900c2b62f11866f5be118"
+    ],
+    "updatedAt": "2026-01-15T14:59:14.229Z"
+  },
+  {
+    "_id": "6969086eb62f11866f5be208",
+    "type": "onsite",
+    "company": [
+      "6969006bb62f11866f5be114"
+    ],
+    "username": "rama",
+    "password": "$2b$10$.nrBg/2l.HPiGeKi5Q6Ky.Rzoe1IquBu2TdrTk1YKvUtNvoCvyt6S",
+    "name": "Rama",
+    "contact": "7620425839",
+    "email": "rama@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "createdAt": "2026-01-15T15:31:58.693Z",
+    "updatedAt": "2026-01-15T15:31:58.693Z",
+    "__v": 0
+  },
+  {
+    "_id": "69690dadb62f11866f5be4f8",
+    "type": "backdesk",
+    "company": [
+      "6969006bb62f11866f5be114",
+      "696e4c70ed8d893e01d14ddd",
+      "69bc2878f3a79484c7993821"
+    ],
+    "username": "sunil1",
+    "password": "$2b$10$oU8tSrxinIrKYqGJplwO6uEilVYbAqEnIUwKDkReeeIXgd30x8iCK",
+    "name": "Sunil",
+    "contact": "7058455985",
+    "email": "insidergoa@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "createdAt": "2026-01-15T15:54:21.083Z",
+    "updatedAt": "2026-05-01T11:17:04.928Z",
+    "__v": 0,
+    "lastLoginAt": "2026-02-04T05:38:36.090Z",
+    "lastSeenAt": "2026-02-04T05:37:48.315Z",
+    "systemAdministrator": false
+  },
+  {
+    "_id": "696915fcb62f11866f5beb35",
+    "type": "backdesk",
+    "company": [
+      "6969006bb62f11866f5be114"
+    ],
+    "username": "nexgo",
+    "password": "$2b$10$nSsiHoTqyc4hBk38k5qTAeWLpHk/DRvs2gnE/xnnAbdOvmU5998Tu",
+    "name": "Nexgo Goa",
+    "contact": "9999999999",
+    "email": "test@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": false,
+    "createdAt": "2026-01-15T16:29:48.039Z",
+    "updatedAt": "2026-01-29T07:40:43.843Z",
+    "__v": 0
+  },
+  {
+    "_id": "696c7f89b62f11866f5c0a83",
+    "type": "backdesk",
+    "company": [
+      "695b5042fea29ce4103d0aeb"
+    ],
+    "username": "alley",
+    "password": "$2b$10$PE5MFTM1NUNnbnkLGr0SC.4bFXT0qMEa0jGKSbJb7q37J7OQ4pzCm",
+    "name": "Alan and Alley",
+    "contact": "9673683283",
+    "email": "test@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "createdAt": "2026-01-18T06:36:57.119Z",
+    "updatedAt": "2026-01-18T06:37:21.817Z",
+    "__v": 0
+  },
+  {
+    "_id": "696e4c0fed8d893e01d14dd8",
+    "type": "admin",
+    "username": "zyrel",
+    "password": "$2b$10$bGgIZkN29TTqn3EeaGs.xu/gwzIV6Mgt8ydkOiFiqAvIyxYy.HHkK",
+    "name": "Zyrel Admin",
+    "contact": "+917777777777",
+    "email": "zyrel@gmail.com",
+    "status": "active",
+    "isPrivate": true,
+    "company": [
+      "696e4c70ed8d893e01d14ddd"
+    ],
+    "lastLoginAt": "2026-02-03T08:29:02.972Z",
+    "updatedAt": "2026-02-03T08:29:02.973Z",
+    "lastSeenAt": "2026-02-03T08:15:37.664Z"
+  },
+  {
+    "_id": "696f3784b62f11866f5c2e3f",
+    "type": "backdesk",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "mayur",
+    "password": "$2b$10$YNJBll4YUl5wnHMTthliruhbLpVmfr5LlB9mNTcaLnzIiLTpcgNam",
+    "name": "Mayur Chaudhary",
+    "contact": "7000723449",
+    "email": "mayur@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "createdAt": "2026-01-20T08:06:28.305Z",
+    "updatedAt": "2026-06-07T17:07:17.339Z",
+    "__v": 0,
+    "lastLoginAt": "2026-06-06T10:40:20.586Z",
+    "systemAdministrator": false,
+    "lastSeenAt": "2026-06-07T17:07:17.339Z"
+  },
+  {
+    "_id": "697af1d05b332c8382502b64",
+    "type": "backdesk",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "setholidays",
+    "password": "$2b$10$KxPd6ByCvRKzsgtdwA7hZeqDTZRkXilNy7svz5eVTSHR2My/q3dV.",
+    "name": "Set Holidays",
+    "contact": "9128799863",
+    "email": "test@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "createdAt": "2026-01-29T05:36:16.169Z",
+    "updatedAt": "2026-01-29T12:54:35.609Z",
+    "__v": 0,
+    "lastSeenAt": "2026-01-29T12:54:35.609Z"
+  },
+  {
+    "_id": "697b7b8c349a9e9cf007f690",
+    "type": "backdesk",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "blt",
+    "password": "$2b$10$kcpizKE82.qBF/fU1tiIhuk8Q5y4YzyYgCY1SfS83F09NZTJuNOVe",
+    "name": "Bucket List Trips",
+    "contact": "9720098999",
+    "email": "info.bucketlisttrips@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-01-29T15:45:02.076Z",
+    "lastSeenAt": "2026-01-29T15:45:02.373Z",
+    "createdAt": "2026-01-29T15:23:56.870Z",
+    "updatedAt": "2026-01-29T15:45:02.373Z",
+    "__v": 0
+  },
+  {
+    "_id": "697ca7fc349a9e9cf007f98e",
+    "type": "backdesk",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "holidayb",
+    "password": "$2b$10$/b1BsGLTERYsQOiK31zFVuLaRK7RNke1VcbGBi58J/7wiXh.9ZAGu",
+    "name": "Holiday Baazar",
+    "contact": "9945980120",
+    "email": "marketing@holidaybaazar.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-02-06T09:17:25.395Z",
+    "lastSeenAt": "2026-02-06T09:17:25.501Z",
+    "createdAt": "2026-01-30T12:45:48.004Z",
+    "updatedAt": "2026-02-06T09:17:25.502Z",
+    "__v": 0
+  },
+  {
+    "_id": "699348f60096f4a4b7d14d87",
+    "type": "backdesk",
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "sahil",
+    "password": "$2b$10$x7spnXySreoZWZgjBBA0oeLsj8D.f/TZsJqa.hMRyMoUaVdZF5d72",
+    "name": "Sahil",
+    "contact": "+919049983719",
+    "email": "sahil@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-03-28T07:12:21.345Z",
+    "lastSeenAt": "2026-04-11T15:33:01.617Z",
+    "createdAt": "2026-02-16T16:42:30.953Z",
+    "updatedAt": "2026-04-11T15:33:01.618Z",
+    "__v": 0,
+    "systemAdministrator": false
+  },
+  {
+    "_id": "69ad04768c393686ff04ce73",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "holidaybizz",
+    "password": "$2b$10$eqkaX4IzuSoN7tNWGwjcROOCoBDE8CKUP0Bhz.06Bj0sE1vtTbwUi",
+    "name": "Rajesh",
+    "contact": "9599500503",
+    "email": "holidaybizz@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-03-08T16:41:49.991Z",
+    "lastSeenAt": "2026-03-08T17:24:13.312Z",
+    "createdAt": "2026-03-08T05:09:10.873Z",
+    "updatedAt": "2026-03-08T17:24:13.312Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b7be3daaffedf9161968d2",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "dipiksha",
+    "password": "$2b$10$SoxdmOzkHi4xMh2OJjHr7e/GifEYRBNBF7cts.6.X6LSGCqyoigiC",
+    "name": "Goa Villa",
+    "contact": "7028040005",
+    "email": "dipiksha@gmail.com",
+    "profilePhoto": null,
+    "status": "inactive",
+    "isPrivate": true,
+    "lastLoginAt": "2026-03-16T08:50:12.638Z",
+    "lastSeenAt": "2026-03-16T08:31:07.289Z",
+    "createdAt": "2026-03-16T08:24:29.851Z",
+    "updatedAt": "2026-03-16T08:56:24.834Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b7c571aaffedf916196d65",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "dipishka",
+    "password": "$2b$10$XlfMYoNhiGD8eGAtJ4sLVu5Tq41Ha.mEQSGTZIoPIjvaoOmOxMnFm",
+    "name": "Goa Villa",
+    "contact": "7028040005",
+    "email": "dipishka@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-05-30T07:17:07.854Z",
+    "lastSeenAt": "2026-05-30T07:17:08.050Z",
+    "createdAt": "2026-03-16T08:55:13.814Z",
+    "updatedAt": "2026-05-30T07:17:08.050Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b948737e55a50b51eb6e30",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "7dh",
+    "password": "$2b$10$D5xv0lRPDyB2ljF3j4xTc.nRhdTwlC6NgYKanNIxbIqnTcKrkG81O",
+    "name": "7 Dream Holidays",
+    "contact": "7639066000",
+    "email": "7dreamholidays@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-03-31T06:03:35.812Z",
+    "lastSeenAt": "2026-04-03T13:52:29.640Z",
+    "createdAt": "2026-03-17T12:26:27.040Z",
+    "updatedAt": "2026-04-03T13:52:29.640Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bbcb70f3a79484c7993182",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "shivaay",
+    "password": "$2b$10$yhHzWrTztD5xocQZ2VpOA.TsG8s9CQ7PsVJcoaZsYfpsiCUm6GxJy",
+    "name": "Shivaay tours & travels",
+    "contact": "9910953443",
+    "email": "shivaay@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-03-19T10:14:30.639Z",
+    "lastSeenAt": "2026-03-19T10:14:30.966Z",
+    "createdAt": "2026-03-19T10:09:52.108Z",
+    "updatedAt": "2026-03-19T10:14:30.966Z",
+    "__v": 0
+  },
+  {
+    "_id": "69bc2878f3a79484c799381f",
+    "type": "admin",
+    "systemAdministrator": false,
+    "company": [
+      "69bc2878f3a79484c7993821"
+    ],
+    "username": "boatgoa",
+    "password": "$2b$10$.xIQ7QO.qhIodRwAAuU3r.l73RyxirwOr86CBYCeWKBlt7rWDFBS2",
+    "name": "Gulshan",
+    "contact": "9029012416",
+    "email": "boatgoa@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": false,
+    "lastLoginAt": "2026-03-19T16:47:01.197Z",
+    "lastSeenAt": "2026-03-19T17:23:46.394Z",
+    "createdAt": "2026-03-19T16:46:48.237Z",
+    "updatedAt": "2026-03-19T17:23:46.394Z",
+    "__v": 1
+  },
+  {
+    "_id": "69c103635a053d1aa62ab6e9",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "abhishek",
+    "password": "$2b$10$ehacDQY3QwO6zJO./DmhauzcbeRaoFooutz6/8U0SiSFAYIh4jdD6",
+    "name": "Rezlive India",
+    "contact": "7380594483",
+    "email": "sales@rezlive.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-05-27T14:36:02.063Z",
+    "lastSeenAt": "2026-05-27T14:36:02.249Z",
+    "createdAt": "2026-03-23T09:09:55.901Z",
+    "updatedAt": "2026-05-27T14:36:02.250Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c1332d5a053d1aa62ab9bd",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "anjali",
+    "password": "$2b$10$osaC2hF21oGVFxLezCivh.O.4FvK/CLfCZizjQOR7D3F0cXgj..n6",
+    "name": "Smartflyer",
+    "contact": "9067867855",
+    "email": "anjali.smartflyer@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-03-24T10:24:15.788Z",
+    "lastSeenAt": "2026-03-24T15:19:26.198Z",
+    "createdAt": "2026-03-23T12:33:49.971Z",
+    "updatedAt": "2026-03-24T15:19:26.199Z",
+    "__v": 0
+  },
+  {
+    "_id": "69c6b53cf77542d00ea8bff2",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "flyhigh",
+    "password": "$2b$10$bltY0olAgCqgsSqhvGtNb.b2G1gC5DysGw/Z4JM.Vs9StnwhTyQ9e",
+    "pin": null,
+    "name": "Flyhigh Travels",
+    "contact": "9830031368",
+    "email": "flyhightravels@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": null,
+    "lastSeenAt": null,
+    "createdAt": "2026-03-27T16:50:04.492Z",
+    "updatedAt": "2026-03-27T16:50:04.492Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d1d35a6ede66821250ac9a",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "cubix",
+    "password": "$2b$10$/7Wt8rOiXoo.UVV2888WP.IpqBF5S2mIeeomehqxgMwbm8FGWrQxq",
+    "pin": null,
+    "name": "cubixholidays",
+    "contact": "9003018183",
+    "email": "cubixholidays@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-04-05T03:17:37.400Z",
+    "lastSeenAt": "2026-04-05T03:17:37.581Z",
+    "createdAt": "2026-04-05T03:13:30.979Z",
+    "updatedAt": "2026-04-05T03:17:37.581Z",
+    "__v": 0
+  },
+  {
+    "_id": "69d602606ede66821251117a",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "chandani",
+    "password": "$2b$10$MxrX9TGMlic8EvdgQ3x6q.l2M45x/m3CohVQujTBukKWtFZYBLBuS",
+    "pin": null,
+    "name": "Chandani Tours and Travels",
+    "contact": "9111654545",
+    "email": "chandanitravel2018@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-04-08T07:24:35.958Z",
+    "lastSeenAt": "2026-04-08T07:24:36.283Z",
+    "createdAt": "2026-04-08T07:23:12.701Z",
+    "updatedAt": "2026-04-08T07:33:19.264Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e220f76ede6682125174b9",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "barkha",
+    "password": "$2b$10$vb46JVOsVsjqZlxC.zh7rORIBdq5TSEtwe7HvpJjsXaqGNxNH9Nw.",
+    "pin": null,
+    "name": "Purple Miles Pvt Ltd",
+    "contact": "9811271222",
+    "email": "barkha@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-04-18T06:03:02.901Z",
+    "lastSeenAt": "2026-04-18T06:03:03.354Z",
+    "createdAt": "2026-04-17T12:00:55.121Z",
+    "updatedAt": "2026-04-18T06:03:03.354Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e3a4196ede668212517ea1",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "goareddy",
+    "password": "$2b$10$NR0N1TLcjyqs0OY9ueij5ukLT0Ga4IQYKqpoM.2.X1kvV4vYqNNOu",
+    "pin": null,
+    "name": "Goa Reddy",
+    "contact": "8906666667",
+    "email": "goareddy@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-06-06T14:57:16.323Z",
+    "lastSeenAt": "2026-06-07T11:11:51.023Z",
+    "createdAt": "2026-04-18T15:32:41.024Z",
+    "updatedAt": "2026-06-07T11:11:51.023Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e5c838912587d75a34520f",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "mernal",
+    "password": "$2b$10$GvGYZNzhFkLtrxg7ZNQrKuS0SgJ.mnvbeoPsgvVf2KmGkH6Fna13m",
+    "pin": null,
+    "name": "My Tour Partner n Global tour and Service",
+    "contact": "9029070970",
+    "email": "meenal@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": null,
+    "lastSeenAt": null,
+    "createdAt": "2026-04-20T06:31:20.100Z",
+    "updatedAt": "2026-04-20T06:35:24.791Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e5c9d0912587d75a34529a",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "meenal",
+    "password": "$2b$10$rnUKaJ7sh9MbDSVM6p4DH.Q9Msd.84QdGRg7a69EsV3EstDRXmQCW",
+    "pin": null,
+    "name": "My Tour Partner n Global tour and Services",
+    "contact": "9029070970",
+    "email": "globaltoursandtravelservices@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-04-20T06:40:29.113Z",
+    "lastSeenAt": "2026-04-29T08:13:18.866Z",
+    "createdAt": "2026-04-20T06:38:08.015Z",
+    "updatedAt": "2026-04-29T08:13:18.866Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f48c13e3198ebc56192123",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "6969006bb62f11866f5be114"
+    ],
+    "username": "kanha",
+    "password": "$2b$10$PUcpWshZgrF6GS2GznYntOGHaTK5YJdO8ko/VCao4KJNqsoOfYySG",
+    "pin": null,
+    "name": "Kanha",
+    "contact": "9356041353",
+    "email": "kanhabehera1234568@gmail.com",
+    "profilePhoto": null,
+    "status": "active",
+    "isPrivate": true,
+    "lastLoginAt": "2026-05-01T11:19:04.590Z",
+    "lastSeenAt": "2026-05-01T11:19:05.413Z",
+    "createdAt": "2026-05-01T11:18:43.747Z",
+    "updatedAt": "2026-05-01T11:19:05.413Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f9a981e3198ebc56193018",
+    "type": "backdesk",
+    "systemAdministrator": false,
+    "company": [
+      "695b5320fea29ce4103d0aef"
+    ],
+    "username": "iyt",
+    "password": "$2b$10$9hyrgxOWT1xlBKPokPbRMuUg65drwtYbVU77WuYMc6l2jaaxNyKfS",
+    "pin": null,
+    "name": "Ink Your Trip",
+    "contact": "7668434322",
+    "email": "inkyourtrip@gmail.com",
+    "profilePhoto": null,
+    "status": "inactive",
+    "isPrivate": true,
+    "lastLoginAt": "2026-05-05T08:27:41.370Z",
+    "lastSeenAt": "2026-05-05T08:27:41.631Z",
+    "createdAt": "2026-05-05T08:25:37.838Z",
+    "updatedAt": "2026-05-05T09:27:43.933Z",
+    "__v": 0
+  }
+]

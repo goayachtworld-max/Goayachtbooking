@@ -1,0 +1,91 @@
+[
+  {
+    "_id": "695b4f0efea29ce4103d0ae7",
+    "name": "Goa Luxury Yachts",
+    "code": "GLYGOA",
+    "companyOwner": "68c6bac5e72d458e988aa31b",
+    "email": "info@goaluxuryyachts.com",
+    "contact": "+917387618063",
+    "address": "Jetty Road, Panaji, Goa, India",
+    "status": "active",
+    "createdAt": "2026-01-05T05:41:34.030Z",
+    "updatedAt": "2026-01-05T05:41:34.030Z",
+    "__v": 0
+  },
+  {
+    "_id": "695b5042fea29ce4103d0aeb",
+    "name": "Goa Yachts Abhi",
+    "code": "GOABHI",
+    "companyOwner": "695aacb583a3998c78a08e0d",
+    "email": "info@goabhi.com",
+    "contact": "+917387618063",
+    "address": "Jetty Road, Panaji, Goa, India",
+    "status": "active",
+    "createdAt": "2026-01-05T05:46:42.044Z",
+    "updatedAt": "2026-01-05T05:46:42.044Z",
+    "__v": 0
+  },
+  {
+    "_id": "695b5320fea29ce4103d0aef",
+    "name": "GoaYachtWorld",
+    "code": "GYW",
+    "companyOwner": "69527a4645411bbca4e60db9",
+    "email": "info@goabhi.com",
+    "contact": "+917387618063",
+    "address": "Jetty Road, Panaji, Goa, India",
+    "status": "active",
+    "createdAt": "2026-01-05T05:58:56.089Z",
+    "updatedAt": "2026-01-05T05:58:56.089Z",
+    "__v": 0,
+    "disclaimer": "Terms & Conditions: \n- Please reach 10mins before boarding time at the boarding point.\n- Token amount is not refundable in case of no show or cancellation from guest side. \n- ⁠Full refundable if cancelled from yacht owners side due to change in weather conditions or technical issues.\n- ⁠You will have to do full payment before boarding to authorised person and can read more about terms & conditions https://goayachtworld.com/condtions .\nFind your ticket details at https://goaboat.com/ with ticket id :"
+  },
+  {
+    "_id": "6969006bb62f11866f5be114",
+    "name": "Lovely Water",
+    "code": "LW",
+    "companyOwner": "6968ffe9d78421b977c7e371",
+    "email": "lovely@gmail.com",
+    "contact": "+9177777777",
+    "address": "Jetty Road, Panaji, Goa, India",
+    "status": "active",
+    "createdAt": "2026-01-15T14:57:47.545Z",
+    "updatedAt": "2026-01-15T14:57:47.545Z",
+    "__v": 0
+  },
+  {
+    "_id": "696900c2b62f11866f5be118",
+    "name": "Ocenair Goa",
+    "code": "OG",
+    "companyOwner": "6968ffe9d78421b977c7e372",
+    "email": "ocenair@gmail.com",
+    "contact": "+9177777777",
+    "address": "Jetty Road, Panaji, Goa, India",
+    "status": "active",
+    "createdAt": "2026-01-15T14:59:14.196Z",
+    "updatedAt": "2026-01-15T14:59:14.196Z",
+    "__v": 0
+  },
+  {
+    "_id": "696e4c70ed8d893e01d14ddd",
+    "name": "Yacht Life Goa",
+    "code": "YLG",
+    "companyOwner": "696e4c0fed8d893e01d14dd8",
+    "email": "ylg@gmail.com",
+    "contact": "+9177777777",
+    "address": "Jetty Road, Panaji, Goa, India",
+    "status": "active"
+  },
+  {
+    "_id": "69bc2878f3a79484c7993821",
+    "name": "Boat Goa",
+    "code": "BG",
+    "companyOwner": "69bc2878f3a79484c799381f",
+    "email": "boatgoa@gmail.com",
+    "contact": "9029012416",
+    "address": "Panjim Goa",
+    "status": "active",
+    "createdAt": "2026-03-19T16:46:48.269Z",
+    "updatedAt": "2026-03-19T16:46:48.269Z",
+    "__v": 0
+  }
+]
