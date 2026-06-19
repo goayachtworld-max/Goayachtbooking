@@ -7,6 +7,7 @@ import { createTransactionAndUpdateBooking } from "../services/operations/transa
 import { FiSliders } from "react-icons/fi";
 import { Eye, Copy, Phone, GlassWater, Bell, Pencil, Star } from "lucide-react";
 import toast from "react-hot-toast";
+import DemandModal from "./DemandModal";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Bookings.css";
@@ -110,6 +111,7 @@ function Bookings({ user }) {
   // Screen
   const [isMobile, setIsMobile] = useState(window.innerWidth < 550);
   const [showFilters, setShowFilters] = useState(false);
+  const [showDemandModal, setShowDemandModal] = useState(false);
 
   // ---------------- FILTER STATES (FROM URL) ----------------
   const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
@@ -521,11 +523,8 @@ function Bookings({ user }) {
 
     const hardCodedDisclaimer = `Disclaimer:\n• Reporting time is 30 minutes prior to departure\n• No refund for late arrival or no-show\n• Subject to weather and government regulations\nThank you for booking with ${booking.company?.name}`;
 
-    const isCancelledBP = booking.status === "cancelled";
-
-    const boardingPassText = isCancelledBP
-      ? `# Ticket Number: Voided\nBooking Status: Cancelled\nGuest Name: ${booking.customerId?.name}\nContact No.: ${booking.customerId?.contact}\nGroup Size: ${booking.numPeople} Pax\nYacht Name: ${booking.yachtId?.name}\n\nTrip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)`
-      : (`# Ticket Number: ${booking._id.slice(-5).toUpperCase()}\n\nBooking Status: ${booking.status.toUpperCase()}${isPending
+    const boardingPassText =
+      `# Ticket Number: ${booking._id.slice(-5).toUpperCase()}\n\nBooking Status: ${booking.status.toUpperCase()}${isPending
           ? "\n⚠️ NOTE: This is a TENTATIVE booking. Your slot is NOT yet confirmed. Please confirm by paying Token Amount."
           : ""
         }\n\n👤 Guest Name: ${booking.customerId?.name}\n📞 Contact No.: ${booking.customerId?.contact}\n👥 Group Size: ${booking.numPeople
@@ -543,10 +542,10 @@ function Bookings({ user }) {
           ? `\nExtra Add On's Services:\n${paidServices.map((i) => `• ${i.replace("-", "").trim()}`).join("\n")}`
           : ""
         }\n${notes ? `\nNotes:\n• ${notes.replace(/\n/g, "\n• ")}` : ""}`.trim() +
-        `\n\n${booking?.company?.disclaimer
-          ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]\n\nThank You`
-          : hardCodedDisclaimer
-        }\n`);
+      `\n\n${booking?.company?.disclaimer
+        ? `${booking.company.disclaimer}[${booking._id.slice(-5).toUpperCase()}]\n\nThank You`
+        : hardCodedDisclaimer
+      }\n`;
 
     navigator.clipboard.writeText(boardingPassText);
     toast.success("Boarding Pass copied to clipboard");
@@ -603,16 +602,12 @@ function Bookings({ user }) {
       ? `${booking.company.disclaimer}[${ticketNumber}]\n\nThank You`
       : `Terms & Conditions: \n- Please reach 10mins before boarding time at the boarding point.\n- Token amount is not refundable in case of no show or cancellation from guest side. \n- Full refundable if cancelled from yacht owners side due to change in weather conditions or technical issues.\n- You will have to do full payment before boarding to authorised person and can read more about terms & conditions https://goayachtworld.com/condtions .\nFind your ticket details at https://goaboat.com/ with ticket id :[${ticketNumber}]\n\nThank You`;
 
-    const isCancelled = booking.status === "cancelled";
-    const isPendingWA  = booking.status === "pending";
-
-    const message = isCancelled
-      ? `# Ticket Number: Voided\nBooking Status: Cancelled\nGuest Name: ${booking.customerId?.name}\nContact No.: ${booking.customerId?.contact}\nGroup Size: ${booking.numPeople} Pax\nYacht Name: ${yachtName}\n\nTrip Date: ${formatDate(booking.date)} | ⏰ Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)`
-      : `Hi ${customerName}! \n\nThank you for booking with ${companyName} \n\nYour boarding pass for ${yachtName} on ${tripDate} is ready.\n${passLink}\n\n\nBooking summary\nTicket Number: ${ticketNumber}\n\nBooking Status: ${booking.status.toUpperCase()}\n\nGuest Name: ${booking.customerId?.name}\nContact No.: ${booking.customerId?.contact}\nGroup Size: ${booking.numPeople} Pax\nYacht Name: ${yachtName}\n\nTrip Date: ${formatDate(booking.date)} | Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)\n\nBooking Price: Rs.${booking.quotedAmount}/-\n\nToken Paid: Rs.${tokenPaid}/-\nBalance Pending: Rs.${booking.pendingAmount}/- (to be collected before boarding)\n\nBoarding Location\n${isPendingWA ? "Location will be shared once booking is confirmed" : boardingLocation}` +
-        (inclusions.length ? `\n\nExtra Inclusions:\n${inclusions.map((i) => `* ${i.replace(/^-/, "").trim()}`).join("\n")}` : "") +
-        (paidServices.length ? `\n\nExtra Add On's Services:\n${paidServices.map((i) => `* ${i.replace(/^-/, "").trim()}`).join("\n")}` : "") +
-        (notesRaw ? `\n\nNotes:\n* ${notesRaw.replace(/\n/g, "\n* ")}` : "") +
-        `\n\n${disclaimer}`;
+    const message =
+      `Hi ${customerName}! \n\nThank you for booking with ${companyName} \n\nYour boarding pass for ${yachtName} on ${tripDate} is ready.\n${passLink}\n\n\nBooking summary\nTicket Number: ${ticketNumber}\n\nBooking Status: ${booking.status.toUpperCase()}\n\nGuest Name: ${booking.customerId?.name}\nContact No.: ${booking.customerId?.contact}\nGroup Size: ${booking.numPeople} Pax\nYacht Name: ${yachtName}\n\nTrip Date: ${formatDate(booking.date)} | Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)\n\nBooking Price: Rs.${booking.quotedAmount}/-\n\nToken Paid: Rs.${tokenPaid}/-\nBalance Pending: Rs.${booking.pendingAmount}/- (to be collected before boarding)\n\nBoarding Location\n${boardingLocation}` +
+      (inclusions.length ? `\n\nExtra Inclusions:\n${inclusions.map((i) => `* ${i.replace(/^-/, "").trim()}`).join("\n")}` : "") +
+      (paidServices.length ? `\n\nExtra Add On's Services:\n${paidServices.map((i) => `* ${i.replace(/^-/, "").trim()}`).join("\n")}` : "") +
+      (notesRaw ? `\n\nNotes:\n* ${notesRaw.replace(/\n/g, "\n* ")}` : "") +
+      `\n\n${disclaimer}`;
 
     let phone = booking.customerId?.contact?.replace(/\D/g, "");
     if (phone && !phone.startsWith("91") && phone.length === 10) phone = "91" + phone;
@@ -820,7 +815,10 @@ Goa Yacht World`;
         <div className="d-flex justify-content-between align-items-center mb-3">
           <span className="booking-count-badge">Total Bookings: {filteredBookings.length}</span>
           {(user?.type === "admin" || user?.type === "backdesk") && (
-            <button className="btn-new-quotation" onClick={handleCreateBooking} title="New Quotation">Q</button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn-new-quotation" onClick={handleCreateBooking} title="New Quotation">Q</button>
+              <button className="btn-new-demand" onClick={() => setShowDemandModal(true)} title="New Demand">D</button>
+            </div>
           )}
         </div>
       )}
@@ -955,7 +953,10 @@ Goa Yacht World`;
               {filteredBookings.length} bookings
             </span>
             {(user?.type === "admin" || user?.type === "backdesk") && (
-              <button className="btn-new-quotation" onClick={handleCreateBooking} title="New Quotation">Q</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="btn-new-quotation" onClick={handleCreateBooking} title="New Quotation">Q</button>
+                <button className="btn-new-demand" onClick={() => setShowDemandModal(true)} title="New Demand">D</button>
+              </div>
             )}
           </div>
         </div>
@@ -1537,6 +1538,10 @@ Goa Yacht World`;
             </div>
           )}
         </div>
+      )}
+      {/* Demand Modal */}
+      {showDemandModal && (
+        <DemandModal user={user} onClose={() => setShowDemandModal(false)} />
       )}
     </div>
   );

@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { getPastBookingsAPI, settleBookingAPI } from "../services/operations/bookingAPI";
+import { getPastBookingsAPI } from "../services/operations/bookingAPI";
+import { createTransactionAndUpdateBooking } from "../services/operations/transactionAPI";
 import { yaut } from "../services/apis";
 import { apiConnector } from "../services/apiConnector";
 import toast from "react-hot-toast";
 import { FiSliders } from "react-icons/fi";
 import "./Bookings.css";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 /* ── helpers ── */
 const toISTDateStr = (utcStr) => {
@@ -56,10 +59,15 @@ const formatCalLabel = (dateStr) => {
   return `${parseInt(d)} ${CAL_MONTHS_SHORT[parseInt(m) - 1]}`;
 };
 
+/* ── Settlement localStorage persistence ── */
+const SETTLE_KEY  = "rpt_settlement";
+const loadSettled = () => { try { return JSON.parse(localStorage.getItem(SETTLE_KEY) || "{}"); } catch { return {}; } };
+const saveSettled = (obj) => { try { localStorage.setItem(SETTLE_KEY, JSON.stringify(obj)); } catch {} };
+
 /* ──────────────────────────────────────────────────────────────
    DatePickerField — reuses bk-cal-* CSS from Bookings.css
    ────────────────────────────────────────────────────────────── */
-function DatePickerField({ label, value, onChange, minDate, maxDate, shortcuts }) {
+function DatePickerField({ label, value, onChange, minDate, maxDate, shortcuts = [] }) {
   const today = getTodayIST();
   const initYear  = value ? parseInt(value.slice(0, 4)) : new Date().getFullYear();
   const initMonth = value ? parseInt(value.slice(5, 7)) - 1 : new Date().getMonth();
@@ -182,7 +190,13 @@ function DatePickerField({ label, value, onChange, minDate, maxDate, shortcuts }
               </div>
             )}
             <div className="bk-cal-footer">
-              <button onClick={() => pick(today)}>Today</button>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", flex: 1 }}>
+                {Array.isArray(shortcuts) && shortcuts.map((s, idx) => (
+                  <button key={idx} onClick={() => s.onClick ? s.onClick() : pick(s.value)}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
               {value && <button onClick={() => { onChange(""); setOpen(false); }}>Clear</button>}
             </div>
           </div>
@@ -195,11 +209,16 @@ function DatePickerField({ label, value, onChange, minDate, maxDate, shortcuts }
 /* ──────────────────────────────────────────────────────────────
    YachtTypeahead — smart search-as-you-type with match highlight
    ────────────────────────────────────────────────────────────── */
-function YachtMultiSelect({ value, onChange, yachtNames }) {
-  const [open, setOpen]     = useState(false);
-  const [query, setQuery]   = useState("");
-  const wrapRef             = useRef(null);
+function YachtTypeahead({ value, onChange, yachtNames }) {
+  const [inputVal, setInputVal] = useState(value || "");
+  const [open, setOpen]         = useState(false);
+  const [focused, setFocused]   = useState(false);
+  const wrapRef                 = useRef(null);
 
+  /* Keep input in sync if cleared from outside */
+  useEffect(() => { setInputVal(value || ""); }, [value]);
+
+  /* Close on outside click */
   useEffect(() => {
     if (!open) return;
     const handler = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
@@ -208,108 +227,125 @@ function YachtMultiSelect({ value, onChange, yachtNames }) {
   }, [open]);
 
   const suggestions = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return q ? yachtNames.filter(n => n.toLowerCase().includes(q)) : yachtNames;
-  }, [query, yachtNames]);
+    const q = inputVal.trim().toLowerCase();
+    if (!q) return yachtNames; // show all when focused with empty input
+    return yachtNames.filter(n => n.toLowerCase().includes(q));
+  }, [inputVal, yachtNames]);
 
-  const toggle = (name) => {
-    onChange(value.includes(name) ? value.filter(v => v !== name) : [...value, name]);
+  const select = (name) => {
+    setInputVal(name);
+    onChange(name);
+    setOpen(false);
   };
 
-  const clearAll = () => { onChange([]); setQuery(""); setOpen(false); };
+  const clear = () => {
+    setInputVal("");
+    onChange("");
+    setOpen(false);
+  };
+
+  /* Highlight matching portion of suggestion */
+  const highlight = (text, query) => {
+    if (!query.trim()) return text;
+    const idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if (idx === -1) return text;
+    return (
+      <>
+        {text.slice(0, idx)}
+        <strong style={{ color: "#1d6fa4", fontWeight: 700 }}>{text.slice(idx, idx + query.length)}</strong>
+        {text.slice(idx + query.length)}
+      </>
+    );
+  };
 
   return (
     <div>
       <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>Yacht</label>
       <div ref={wrapRef} style={{ position: "relative" }}>
-        <div
-          onClick={() => setOpen(o => !o)}
-          style={{
-            display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4,
-            minHeight: 36, padding: "4px 32px 4px 10px",
-            border: "1.5px solid #cbd5e1", borderRadius: 8,
-            background: "#f8fafc", cursor: "pointer", position: "relative",
-          }}
-        >
-          {value.length === 0 ? (
-            <span style={{ fontSize: "0.83rem", color: "#94a3b8" }}>All Yachts</span>
-          ) : (
-            value.map(y => (
-              <span
-                key={y}
-                style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#e0f2fe", color: "#0369a1", borderRadius: 999, padding: "2px 8px", fontSize: "0.75rem", fontWeight: 700 }}
-              >
-                {y}
-                <span
-                  onClick={e => { e.stopPropagation(); toggle(y); }}
-                  style={{ cursor: "pointer", fontWeight: 900, lineHeight: 1 }}
-                >×</span>
-              </span>
-            ))
-          )}
-          {value.length > 0 && (
-            <span
-              onClick={e => { e.stopPropagation(); clearAll(); }}
-              style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#94a3b8", fontSize: "1rem", lineHeight: 1 }}
-            >×</span>
+        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+          <svg
+            width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+            style={{ position: "absolute", left: 10, flexShrink: 0, pointerEvents: "none" }}
+          >
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input
+            type="text"
+            value={inputVal}
+            placeholder="Search yacht…"
+            onChange={e => { setInputVal(e.target.value); onChange(""); setOpen(true); }}
+            onFocus={() => { setFocused(true); setOpen(true); }}
+            onBlur={() => setFocused(false)}
+            style={{
+              width: "100%", padding: "8px 32px 8px 30px", borderRadius: 8,
+              border: `1.5px solid ${value ? "#1d6fa4" : focused ? "#1d6fa4" : "#cbd5e1"}`,
+              fontSize: "0.83rem", color: "#1e293b",
+              background: value ? "#eff6ff" : "#f8fafc",
+              outline: "none", fontFamily: "inherit",
+              transition: "border-color 0.15s, background 0.15s",
+            }}
+          />
+          {inputVal && (
+            <button
+              onClick={clear}
+              style={{ position: "absolute", right: 8, background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94a3b8", fontSize: 14, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", transition: "background 0.12s" }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(220,38,38,0.1)"}
+              onMouseLeave={e => e.currentTarget.style.background = "none"}
+            >×</button>
           )}
         </div>
 
-        {open && (
+        {open && suggestions.length > 0 && (
           <div style={{
-            position: "absolute", zIndex: 999, top: "calc(100% + 4px)", left: 0, right: 0,
-            background: "#fff", border: "1.5px solid #cbd5e1", borderRadius: 10,
-            boxShadow: "0 8px 24px rgba(15,23,42,0.12)", maxHeight: 220, overflow: "hidden",
-            display: "flex", flexDirection: "column",
+            position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+            background: "#fff", border: "1px solid #e2e8f4",
+            borderRadius: 12, boxShadow: "0 8px 30px rgba(5,24,41,0.14)",
+            maxHeight: 220, overflowY: "auto", zIndex: 10000,
+            animation: "bk-cal-drop 0.14s ease-out",
           }}>
-            <div style={{ padding: "8px 10px", borderBottom: "1px solid #e2e8f0" }}>
-              <input
-                autoFocus
-                type="text"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search yacht…"
-                style={{ width: "100%", border: "none", outline: "none", fontSize: "0.83rem", background: "transparent", color: "#1e293b" }}
-              />
-            </div>
-            <div style={{ overflowY: "auto", flex: 1 }}>
-              {suggestions.length === 0 ? (
-                <div style={{ padding: "10px 14px", fontSize: "0.8rem", color: "#94a3b8" }}>No yachts found</div>
-              ) : suggestions.map(name => {
-                const selected = value.includes(name);
-                return (
-                  <div
-                    key={name}
-                    onClick={() => toggle(name)}
-                    style={{
-                      padding: "8px 14px", cursor: "pointer", fontSize: "0.83rem",
-                      display: "flex", alignItems: "center", gap: 8,
-                      background: selected ? "#eff6ff" : "transparent",
-                      color: selected ? "#1d4ed8" : "#1e293b",
-                      fontWeight: selected ? 700 : 400,
-                    }}
-                  >
-                    <span style={{
-                      width: 16, height: 16, borderRadius: 4, flexShrink: 0,
-                      border: selected ? "none" : "1.5px solid #cbd5e1",
-                      background: selected ? "#3b82f6" : "transparent",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      {selected && <span style={{ color: "#fff", fontSize: 11, fontWeight: 900 }}>✓</span>}
-                    </span>
-                    {name}
-                  </div>
-                );
-              })}
-            </div>
-            {value.length > 0 && (
-              <div
-                onClick={clearAll}
-                style={{ padding: "8px 14px", borderTop: "1px solid #e2e8f0", cursor: "pointer", fontSize: "0.78rem", color: "#ef4444", fontWeight: 700 }}
-              >
-                Clear all ({value.length})
+            {!inputVal.trim() && (
+              <div style={{ padding: "6px 14px 4px", fontSize: "0.7rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid #f1f5f9" }}>
+                All Yachts
               </div>
             )}
+            {suggestions.map(name => (
+              <button
+                key={name}
+                onMouseDown={() => select(name)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  width: "100%", textAlign: "left",
+                  padding: "9px 14px", border: "none", background: "none",
+                  fontSize: "0.83rem", color: "#1e293b", cursor: "pointer",
+                  fontFamily: "inherit", fontWeight: name === value ? 600 : 400,
+                  borderBottom: "1px solid #f1f5f9",
+                  transition: "background 0.1s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "#f0f7fd"}
+                onMouseLeave={e => e.currentTarget.style.background = "none"}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span>{highlight(name, inputVal)}</span>
+                {name === value && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1d6fa4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto", flexShrink: 0 }}>
+                    <path d="M20 6 9 17l-5-5"/>
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {open && suggestions.length === 0 && inputVal.trim() && (
+          <div style={{
+            position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+            background: "#fff", border: "1px solid #e2e8f4", borderRadius: 12,
+            padding: "12px 14px", fontSize: "0.8rem", color: "#94a3b8",
+            boxShadow: "0 8px 30px rgba(5,24,41,0.14)", zIndex: 10000,
+          }}>
+            No yacht matches "{inputVal}"
           </div>
         )}
       </div>
@@ -460,14 +496,13 @@ export default function Reports({ user }) {
   /* ── Filters ── */
   const [fromDate, setFromDate]         = useState(getPast7Days);
   const [toDate, setToDate]             = useState(getTodayIST);
-  const [filterYacht, setFilterYacht]   = useState([]);
+  const [filterYacht, setFilterYacht]   = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [searchQuery, setSearchQuery]   = useState("");
 
   /* ── Sort ── */
-  const [sortKey, setSortKey] = useState("date");   // "date" | "yacht" | "settle"
+  const [sortKey, setSortKey] = useState("date");   // "date" | "yacht"
   const [sortDir, setSortDir] = useState("desc");   // "asc" | "desc"
-  const [sortSettle, setSortSettle] = useState("");  // "" | "unsettled" | "settled"
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -493,9 +528,16 @@ export default function Reports({ user }) {
   const [yachts, setYachts]     = useState([]);
   const [loading, setLoading]   = useState(false);
 
-  /* ── Settlement state (keyed by booking._id) — input value only, actual settled flag comes from DB ── */
-  const [settlementInput, setSettlementInput] = useState({}); // { [id]: string } — what's typed in the input
-  const [settling, setSettling] = useState(null); // booking._id being settled/unsettled right now
+  /* ── Settlement (keyed by booking._id, persisted to localStorage) ── */
+  const [settlement, setSettlement] = useState(loadSettled);
+
+  /* ── Mark Complete ── */
+  const [completing, setCompleting] = useState(null);
+
+  const yachtNames = useMemo(
+    () => yachts.map(y => y.name).filter(Boolean),
+    [yachts]
+  );
 
   /* ── Fetch yachts for typeahead ── */
   useEffect(() => {
@@ -540,7 +582,7 @@ export default function Reports({ user }) {
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const list = bookings.filter((b) => {
-      if (filterYacht.length > 0 && !filterYacht.includes(b.yachtId?.name)) return false;
+      if (filterYacht && b.yachtId?.name !== filterYacht) return false;
       if (filterStatus === "completed" && !isCompleted(b)) return false;
       if (filterStatus === "pending"   && b.status !== "pending") return false;
       if (filterStatus === "confirmed" && b.status !== "confirmed") return false;
@@ -553,16 +595,6 @@ export default function Reports({ user }) {
       return true;
     });
     list.sort((a, b) => {
-      // Settle sort takes priority when selected
-      if (sortSettle === "unsettled") {
-        const aS = a.settledAmount != null ? 1 : 0;
-        const bS = b.settledAmount != null ? 1 : 0;
-        if (aS !== bS) return aS - bS; // unsettled (0) first
-      } else if (sortSettle === "settled") {
-        const aS = a.settledAmount != null ? 0 : 1;
-        const bS = b.settledAmount != null ? 0 : 1;
-        if (aS !== bS) return aS - bS; // settled (0) first
-      }
       let cmp = 0;
       if (sortKey === "date") {
         cmp = new Date(a.date) - new Date(b.date);
@@ -572,7 +604,7 @@ export default function Reports({ user }) {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
-  }, [bookings, filterYacht, filterStatus, sortKey, sortDir, sortSettle, searchQuery]);
+  }, [bookings, filterYacht, filterStatus, sortKey, sortDir, searchQuery]);
 
   /* ── Totals ── */
   const totals = useMemo(() => {
@@ -580,85 +612,134 @@ export default function Reports({ user }) {
     filtered.forEach(bk => {
       b2b     += Number(bk.yachtId?.runningCost || 0);
       selling += Number(bk.quotedAmount || 0);
-      if (bk.settledAmount !== null && bk.settledAmount !== undefined) settled += Number(bk.settledAmount);
+      settled += Number(bk.quotedAmount || 0) - Number(bk.pendingAmount || 0);
     });
-    return { b2b, selling, settled };
+    return { b2b, selling, settled, profit: selling - b2b };
   }, [filtered]);
 
-  /* ── Settle handler ── */
-  const handleSettle = async (bk) => {
-    if (settling) return;
-    setSettling(bk._id);
-    const raw = settlementInput[bk._id];
-    // Default to sellingAmt (quotedAmount) if nothing typed
-    const amount = raw !== undefined && raw !== "" ? Number(raw) : Number(bk.quotedAmount || 0);
+  /* ── Settlement handlers ── */
+  const toggleSettled = (id) => {
+    setSettlement(prev => { const next = { ...prev, [id]: { ...prev[id], settled: !prev[id]?.settled } }; saveSettled(next); return next; });
+  };
+  const setBalance = (id, val) => {
+    setSettlement(prev => { const next = { ...prev, [id]: { ...prev[id], balance: val } }; saveSettled(next); return next; });
+  };
+
+  /* ── Mark trip complete via API ── */
+  const handleMarkComplete = async (bk) => {
+    if (completing) return;
+    setCompleting(bk._id);
     try {
-      await settleBookingAPI(bk._id, amount, token);
-      setBookings(prev => prev.map(b => b._id === bk._id ? { ...b, settledAmount: amount } : b));
-      toast.success(`✅ Settled at ${fmtINR(amount)}`);
+      const s = settlement[bk._id] || {};
+      // Use entered balance amount if provided, otherwise settle full pending amount
+      const amountToSettle = s.balance ? Number(s.balance) : Number(bk.pendingAmount || 0);
+      const data = new FormData();
+      data.append("bookingId", bk._id);
+      data.append("type", "settlement");
+      data.append("status", "confirmed");
+      data.append("amount", amountToSettle);
+      await createTransactionAndUpdateBooking(data, token);
+      const newPending = Number(bk.pendingAmount || 0) - amountToSettle;
+      toast.success(newPending > 0 ? `✅ ₹${amountToSettle.toLocaleString("en-IN")} settled` : "Booking marked complete ✅");
+      setBookings(prev => prev.map(b => b._id === bk._id ? { ...b, pendingAmount: newPending <= 0 ? 0 : newPending, status: newPending <= 0 ? "confirmed" : b.status } : b));
+      // Clear the entered balance after settlement
+      setSettlement(prev => { const next = { ...prev, [bk._id]: { ...prev[bk._id], balance: "" } }; saveSettled(next); return next; });
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to settle");
+      toast.error(err?.response?.data?.message || "Failed to mark complete");
     } finally {
-      setSettling(null);
+      setCompleting(null);
     }
   };
 
-  const handleUnsettle = async (bk) => {
-    if (settling) return;
-    setSettling(bk._id);
-    try {
-      await settleBookingAPI(bk._id, null, token);
-      setBookings(prev => prev.map(b => b._id === bk._id ? { ...b, settledAmount: null } : b));
-      setSettlementInput(prev => ({ ...prev, [bk._id]: "" }));
-      toast.success("Booking un-settled");
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to un-settle");
-    } finally {
-      setSettling(null);
-    }
+  /* ── Export helpers ── */
+  const getStatusLabel = (bk) => {
+    const comp = isCompleted(bk);
+    if (comp) return "Completed";
+    const map = { confirmed: "Confirmed", pending: "Pending", cancelled: "Cancelled" };
+    return map[bk.status] || "Pending";
   };
 
-  /* ── CSV export ── */
-  const exportCSV = () => {
-    const headers = ["Date","Customer","Phone","Pax","Yacht","Time","B2b Price","Settled Amt","Selling Amt","Status","Settled"];
-    const rows = filtered.map(bk => {
-      const isSettled = bk.settledAmount !== null && bk.settledAmount !== undefined;
-      const stat = isCompleted(bk) ? "Completed" : (bk.status ? bk.status.charAt(0).toUpperCase() + bk.status.slice(1) : "");
-      const timeStr = `${to12h(bk.startTime)} - ${to12h(bk.endTime)}`;
-      return [
-        fmtDate(bk.date),
-        bk.customerId?.name || "",
-        bk.customerId?.contact || "",
-        bk.numPeople || "",
-        bk.yachtId?.name || "",
-        timeStr,
-        bk.yachtId?.runningCost || "",
-        isSettled ? bk.settledAmount : "",
-        bk.quotedAmount || "",
-        stat,
-        isSettled ? "Yes" : "No",
-      ];
+  const buildRows = () =>
+    filtered.map((bk) => {
+      const s = settlement[bk._id] || {};
+      return {
+        date:     fmtDate(bk.date),
+        customer: bk.customerId?.name || "—",
+        phone:    bk.customerId?.contact || "—",
+        pax:      bk.numPeople ?? "—",
+        yacht:    bk.yachtId?.name || "—",
+        time:     `${to12h(bk.startTime)} – ${to12h(bk.endTime)}`,
+        b2b:      bk.yachtId?.runningCost != null ? Number(bk.yachtId.runningCost) : "",
+        selling:  bk.quotedAmount != null ? Number(bk.quotedAmount) : "",
+        status:   getStatusLabel(bk),
+        settled:  s.settled ? "Yes" : "No",
+        balance:  s.balance ?? "",
+      };
     });
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+  const exportCSV = () => {
+    const headers = ["Date","Customer","Phone","Pax","Yacht","Time","B2b Price","Selling Amount","Status","Settled","Balance"];
+    const rows = buildRows();
+    const escape = (v) => {
+      const str = String(v ?? "");
+      return str.includes(",") || str.includes('"') || str.includes("\n")
+        ? `"${str.replace(/"/g, '""')}"` : str;
+    };
+    const csv = [
+      headers.join(","),
+      ...rows.map(r => [r.date,r.customer,r.phone,r.pax,r.yacht,r.time,r.b2b,r.selling,r.status,r.settled,r.balance].map(escape).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
     a.href     = url;
-    a.download = `bookings-report_${fromDate || "all"}_to_${toDate || "all"}.csv`;
-    document.body.appendChild(a);
+    a.download = `booking-report-${fromDate}-to-${toDate}.csv`;
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    toast.success("CSV downloaded");
   };
 
-  /* ── Yacht names for typeahead ── */
-  const yachtNames = useMemo(() => {
-    const s = new Set();
-    yachts.forEach(y => { if (y.name) s.add(y.name); });
-    return [...s].sort();
-  }, [yachts]);
+  const exportPDF = () => {
+    const rows = buildRows();
+    const doc  = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+
+    doc.setFontSize(14);
+    doc.setTextColor(5, 24, 41);
+    doc.text("Booking Report", 40, 36);
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Period: ${fromDate}  to  ${toDate}    Bookings: ${filtered.length}`, 40, 52);
+
+    autoTable(doc, {
+      startY: 64,
+      head: [["Date","Customer","Phone","Pax","Yacht","Time","B2b Price","Selling Amount","Status","Settled","Balance"]],
+      body: rows.map(r => [r.date,r.customer,r.phone,r.pax,r.yacht,r.time,
+        r.b2b !== "" ? `Rs.${Number(r.b2b).toLocaleString("en-IN")}` : "—",
+        r.selling !== "" ? `Rs.${Number(r.selling).toLocaleString("en-IN")}` : "—",
+        r.status, r.settled, r.balance !== "" ? `Rs.${Number(r.balance).toLocaleString("en-IN")}` : "—"]),
+      styles: { fontSize: 7.5, cellPadding: 5, overflow: "linebreak" },
+      headStyles: { fillColor: [5,24,41], textColor: [201,168,76], fontStyle: "bold", fontSize: 7.5 },
+      alternateRowStyles: { fillColor: [248,250,252] },
+      columnStyles: {
+        0: { cellWidth: 62 },
+        1: { cellWidth: 72 },
+        2: { cellWidth: 72 },
+        3: { cellWidth: 28 },
+        4: { cellWidth: 72 },
+        5: { cellWidth: 88 },
+        6: { cellWidth: 60 },
+        7: { cellWidth: 64 },
+        8: { cellWidth: 54 },
+        9: { cellWidth: 38 },
+        10:{ cellWidth: 58 },
+      },
+      margin: { left: 40, right: 40 },
+    });
+
+    doc.save(`booking-report-${fromDate}-to-${toDate}.pdf`);
+    toast.success("PDF downloaded");
+  };
 
   /* ── Status badge ── */
   const StatusBadge = ({ booking }) => {
@@ -686,16 +767,30 @@ export default function Reports({ user }) {
           <h5 style={{ margin: 0, fontWeight: 800, color: "#051829", fontSize: isMobile ? "1rem" : "1.1rem", letterSpacing: "0.01em" }}>Booking Reports</h5>
           {!isMobile && <p style={{ margin: 0, color: "#64748b", fontSize: "0.8rem", marginTop: 2 }}>Filter and review bookings with settlement tracking</p>}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {filtered.length > 0 && (
-            <button
-              onClick={exportCSV}
-              style={{ padding: "7px 16px", borderRadius: 8, border: "1.5px solid #15803d", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
-            >
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
-              Export CSV
-            </button>
-          )}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {/* Export CSV */}
+          <button
+            onClick={exportCSV}
+            disabled={loading || filtered.length === 0}
+            title="Download visible data as CSV"
+            style={{ padding: "7px 16px", borderRadius: 8, border: "1.5px solid #16a34a", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "0.82rem", cursor: (loading || filtered.length === 0) ? "not-allowed" : "pointer", opacity: (loading || filtered.length === 0) ? 0.5 : 1, display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            Export CSV
+          </button>
+
+          {/* Export PDF */}
+          <button
+            onClick={exportPDF}
+            disabled={loading || filtered.length === 0}
+            title="Download visible data as PDF"
+            style={{ padding: "7px 16px", borderRadius: 8, border: "1.5px solid #b45309", background: "#fffbeb", color: "#b45309", fontWeight: 700, fontSize: "0.82rem", cursor: (loading || filtered.length === 0) ? "not-allowed" : "pointer", opacity: (loading || filtered.length === 0) ? 0.5 : 1, display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/><path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.396-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 5.753 5.753 0 0 1 1.334.05c.364.066.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.712 5.712 0 0 1-.911-.95 11.651 11.651 0 0 0-1.997.406 11.307 11.307 0 0 1-1.02 1.51c-.292.35-.609.656-.927.787a.793.793 0 0 1-.58.029zm1.379-1.901c-.166.076-.32.156-.459.238-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361.01.022.02.036.026.044a.266.266 0 0 0 .035-.012c.137-.056.355-.235.635-.572a8.18 8.18 0 0 0 .45-.606zm1.64-1.33a12.71 12.71 0 0 1 1.01-.193 11.744 11.744 0 0 1-.51-.858 20.801 20.801 0 0 1-.5 1.05zm2.446.45c.15.163.296.3.435.41.24.19.407.253.498.256a.107.107 0 0 0 .07-.015.307.307 0 0 0 .094-.125.436.436 0 0 0 .059-.2.095.095 0 0 0-.026-.063c-.052-.062-.2-.152-.518-.209a3.876 3.876 0 0 0-.612-.053zM8.078 7.8a6.7 6.7 0 0 0 .2-.828c.031-.188.043-.343.038-.465a.613.613 0 0 0-.032-.198.517.517 0 0 0-.145.04c-.087.035-.158.106-.196.283-.04.192-.03.469.046.822.024.111.054.227.09.346z"/></svg>
+            Export PDF
+          </button>
+
+          {/* Refresh */}
           <button
             onClick={fetchBookings}
             disabled={loading}
@@ -714,19 +809,84 @@ export default function Reports({ user }) {
       {isMobile && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
           <button
-            className={`mobile-filter-btn${(filterYacht.length > 0 || filterStatus) ? " has-active" : ""}`}
+            className={`mobile-filter-btn${(filterYacht || filterStatus) ? " has-active" : ""}`}
             onClick={() => setShowFilters(true)}
             title="Open filters"
           >
             <FiSliders size={18} />
-            {[filterYacht.length > 0, filterStatus].filter(Boolean).length > 0 && (
-              <span className="filter-badge">{[filterYacht.length > 0, filterStatus].filter(Boolean).length}</span>
+            {[filterYacht, filterStatus].filter(Boolean).length > 0 && (
+              <span className="filter-badge">{[filterYacht, filterStatus].filter(Boolean).length}</span>
             )}
           </button>
           <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
             {fromDate && <span style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8", fontWeight: 600 }}>{formatCalLabel(fromDate)} → {toDate ? formatCalLabel(toDate) : "…"}</span>}
-            {filterYacht.length > 0 && filterYacht.map(y => <span key={y} style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", fontWeight: 600 }}>{y}</span>)}
+            {filterYacht && <span style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", fontWeight: 600 }}>{filterYacht}</span>}
             {filterStatus && <span style={{ fontSize: "0.73rem", padding: "3px 10px", borderRadius: 999, background: "#fef3c7", border: "1px solid #fde68a", color: "#92400e", fontWeight: 600, textTransform: "capitalize" }}>{filterStatus}</span>}
+          </div>
+        </div>
+      )}
+
+      {/* ── Desktop: Filter Card ── */}
+      {!isMobile && (
+        <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 1px 12px rgba(5,24,41,0.08)", border: "1px solid #e8edf2", padding: "16px 20px", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <svg width="15" height="15" fill="#0a2d4a" viewBox="0 0 16 16"><path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/></svg>
+            <span style={{ fontWeight: 700, color: "#051829", fontSize: "0.85rem" }}>Filters</span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: "14px 16px", alignItems: "end" }}>
+            <DatePickerField
+              label="From Date"
+              value={fromDate}
+              onChange={setFromDate}
+              maxDate={toDate || getTodayIST()}
+              shortcuts={[
+                { label: "Month",  value: getStartOfMonth() },
+                { label: "7 Days", value: getPast7Days() },
+                { label: "Today",  value: getTodayIST() },
+              ]}
+            />
+            <DatePickerField
+              label="To Date"
+              value={toDate}
+              onChange={setToDate}
+              minDate={fromDate}
+              maxDate={getTodayIST()}
+              shortcuts={[
+                { label: "Today", value: getTodayIST() },
+              ]}
+            />
+            <YachtTypeahead
+              value={filterYacht}
+              onChange={setFilterYacht}
+              yachtNames={yachtNames}
+            />
+
+            {/* Status filter */}
+            <div>
+              <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>Status</label>
+              <select
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: "0.83rem", color: "#1e293b", background: "#f8fafc", outline: "none", cursor: "pointer", height: 36 }}
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+
+            {/* Reset */}
+            <div>
+              <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "transparent", display: "block", marginBottom: 4 }}>‎</label>
+              <button
+                onClick={() => { setFromDate(getPast7Days()); setToDate(getTodayIST()); setFilterYacht(""); setFilterStatus(""); }}
+                style={{ width: "100%", height: 36, borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: "0.83rem", color: "#64748b", background: "#f1f5f9", cursor: "pointer", fontWeight: 600 }}
+              >
+                Reset
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -761,8 +921,9 @@ export default function Reports({ user }) {
                 value={toDate}
                 onChange={v => { setToDate(v); if (v) setShowFilters(false); }}
                 minDate={fromDate}
+                maxDate={getTodayIST()}
               />
-              <YachtMultiSelect value={filterYacht} onChange={v => { setFilterYacht(v); }} yachtNames={yachtNames} />
+              <YachtTypeahead value={filterYacht} onChange={v => { setFilterYacht(v); if (v) setShowFilters(false); }} yachtNames={yachtNames} />
               <div>
                 <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>Status</label>
                 <div className="status-pill-group">
@@ -796,7 +957,7 @@ export default function Reports({ user }) {
       )}
 
       {/* ── Desktop Filter Card ── */}
-      {!isMobile && (
+      {/* {!isMobile && (
         <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 1px 12px rgba(5,24,41,0.08)", border: "1px solid #e8edf2", padding: "16px 20px", marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
             <svg width="15" height="15" fill="#0a2d4a" viewBox="0 0 16 16"><path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/></svg>
@@ -819,8 +980,9 @@ export default function Reports({ user }) {
               value={toDate}
               onChange={setToDate}
               minDate={fromDate}
+              maxDate={getTodayIST()}
             />
-            <YachtMultiSelect value={filterYacht} onChange={setFilterYacht} yachtNames={yachtNames} />
+            <YachtTypeahead value={filterYacht} onChange={setFilterYacht} yachtNames={yachtNames} />
             <div>
               <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>Status</label>
               <select
@@ -843,7 +1005,7 @@ export default function Reports({ user }) {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* ── Smart Search Bar ── */}
       {!loading && (
@@ -873,30 +1035,11 @@ export default function Reports({ user }) {
           <div style={{ padding: "6px 14px", borderRadius: 999, background: "#f0fdf4", border: "1px solid #bbf7d0", fontSize: "0.8rem", color: "#15803d", fontWeight: 600 }}>
             Selling Total: {fmtINR(totals.selling)}
           </div>
-        </div>
-      )}
-
-      {/* ── Settlement sort ── */}
-      {!loading && filtered.length > 0 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#475569" }}>Sort by settlement:</span>
-          {[
-            { value: "", label: "Default" },
-            { value: "unsettled", label: "Unsettled first" },
-            { value: "settled",   label: "Settled first" },
-          ].map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setSortSettle(opt.value)}
-              style={{
-                padding: "4px 12px", borderRadius: 999, fontSize: "0.75rem", fontWeight: 600, cursor: "pointer",
-                border: sortSettle === opt.value ? "1.5px solid #1d6fa4" : "1.5px solid #e2e8f0",
-                background: sortSettle === opt.value ? "#eff6ff" : "#f8fafc",
-                color: sortSettle === opt.value ? "#1d6fa4" : "#64748b",
-                transition: "all 0.12s",
-              }}
-            >{opt.label}</button>
-          ))}
+          {(totals.selling > 0 || totals.b2b > 0) && (
+            <div style={{ padding: "6px 14px", borderRadius: 999, background: totals.profit >= 0 ? "#fefce8" : "#fef2f2", border: `1px solid ${totals.profit >= 0 ? "#fde68a" : "#fecaca"}`, fontSize: "0.8rem", color: totals.profit >= 0 ? "#92400e" : "#dc2626", fontWeight: 600 }}>
+              Total Profit: {fmtINR(totals.profit)}
+            </div>
+          )}
         </div>
       )}
 
@@ -914,8 +1057,8 @@ export default function Reports({ user }) {
         <>
           {/* ── Desktop Table ── */}
           <div className="d-none d-md-block" style={{ background: "#fff", borderRadius: 14, boxShadow: "0 1px 12px rgba(5,24,41,0.08)", border: "1px solid #e8edf2", overflow: "hidden" }}>
-            <div style={{ overflowX: "auto", direction: "rtl" }}>
-              <table style={{ direction: "ltr", width: "100%", borderCollapse: "collapse", fontSize: "0.83rem" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.83rem" }}>
                 <thead>
                   <tr style={{ background: "linear-gradient(90deg,#051829,#0a2d4a)", color: "#c9a84c" }}>
                     {[
@@ -958,13 +1101,10 @@ export default function Reports({ user }) {
                 </thead>
                 <tbody>
                   {filtered.map((bk, i) => {
-                    const isSettled = bk.settledAmount !== null && bk.settledAmount !== undefined;
-                    const sellingAmt = Number(bk.quotedAmount || 0);
-                    // If user hasn't touched the input yet, seed it to sellingAmt so it's always controlled
-                    const rawInput = settlementInput[bk._id];
-                    const inputVal = rawInput !== undefined ? rawInput : String(sellingAmt);
+                    const s        = settlement[bk._id] || {};
+                    const rowGreen = s.settled;
                     return (
-                      <tr key={bk._id} style={{ background: isSettled ? "rgba(5,150,105,0.13)" : (i % 2 === 0 ? "#fff" : "#f8fafc"), borderBottom: "1px solid #f1f5f9", transition: "background 0.25s" }}>
+                      <tr key={bk._id} style={{ background: rowGreen ? "rgba(16,185,129,0.08)" : (i % 2 === 0 ? "#fff" : "#f8fafc"), borderBottom: "1px solid #f1f5f9", transition: "background 0.25s" }}>
                         <td style={{ padding: "10px 14px", fontWeight: 600, color: "#1e293b", whiteSpace: "nowrap" }}>{fmtDate(bk.date)}</td>
                         <td style={{ padding: "10px 14px", color: "#1e293b", fontWeight: 500, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bk.customerId?.name || "—"}</td>
                         <td style={{ padding: "10px 14px", color: "#475569", whiteSpace: "nowrap" }}>{bk.customerId?.contact || "—"}</td>
@@ -981,44 +1121,29 @@ export default function Reports({ user }) {
                         <td style={{ padding: "10px 14px", color: "#15803d", fontWeight: 700, whiteSpace: "nowrap" }}>{fmtINR(bk.quotedAmount)}</td>
                         <td style={{ padding: "10px 14px" }}><StatusBadge booking={bk} /></td>
                         <td style={{ padding: "8px 14px" }}>
-                          {bk.status !== "cancelled" ? (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                              <input
-                                type="number"
-                                disabled={isSettled}
-                                value={isSettled ? bk.settledAmount : inputVal}
-                                onChange={e => setSettlementInput(prev => ({ ...prev, [bk._id]: e.target.value }))}
-                                style={{ width: 110, padding: "5px 8px", borderRadius: 6, border: `1.5px solid ${isSettled ? "#6ee7b7" : "#cbd5e1"}`, fontSize: "0.8rem", color: "#1e293b", background: isSettled ? "#f0fdf4" : "#f8fafc", outline: "none", opacity: isSettled ? 0.8 : 1 }}
-                              />
-
-                            </div>
+                          {bk.pendingAmount > 0 && bk.status !== "cancelled" ? (
+                            <input
+                              type="number"
+                              placeholder={`Max ₹${Number(bk.pendingAmount).toLocaleString("en-IN")}`}
+                              value={s.balance || ""}
+                              onChange={e => setBalance(bk._id, e.target.value)}
+                              style={{ width: 130, padding: "5px 8px", borderRadius: 6, border: "1.5px solid #6ee7b7", fontSize: "0.8rem", color: "#1e293b", background: "#f0fdf4", outline: "none" }}
+                            />
                           ) : (
                             <span style={{ fontSize: "0.75rem", color: "#cbd5e1" }}>—</span>
                           )}
                         </td>
                         <td style={{ padding: "8px 14px" }}>
-                          {bk.status !== "cancelled" ? (
-                            isSettled ? (
-                              <button
-                                disabled={settling === bk._id}
-                                onClick={() => handleUnsettle(bk)}
-                                style={{ padding: "5px 12px", borderRadius: 7, border: "1.5px solid #dc2626", background: "#fff5f5", color: "#dc2626", fontWeight: 700, fontSize: "0.75rem", cursor: settling === bk._id ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: settling === bk._id ? 0.7 : 1 }}
-                              >
-                                {settling === bk._id ? "…" : "Un-Settle"}
-                              </button>
-                            ) : isCompleted(bk) ? (
-                              <button
-                                disabled={settling === bk._id}
-                                onClick={() => handleSettle(bk)}
-                                style={{ padding: "5px 12px", borderRadius: 7, border: "1.5px solid #15803d", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "0.75rem", cursor: settling === bk._id ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: settling === bk._id ? 0.7 : 1 }}
-                              >
-                                {settling === bk._id ? "…" : "Settle"}
-                              </button>
-                            ) : (
-                              <button disabled title="Only completed bookings can be settled" style={{ padding: "5px 12px", borderRadius: 7, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#94a3b8", fontWeight: 700, fontSize: "0.75rem", cursor: "not-allowed", whiteSpace: "nowrap", opacity: 0.5 }}>
-                                Settle
-                              </button>
-                            )
+                          {bk.pendingAmount > 0 && bk.status !== "cancelled" ? (
+                            <button
+                              disabled={completing === bk._id}
+                              onClick={() => handleMarkComplete(bk)}
+                              style={{ padding: "5px 12px", borderRadius: 7, border: "1.5px solid #15803d", background: completing === bk._id ? "#f0fdf4" : "#fff", color: "#15803d", fontWeight: 700, fontSize: "0.75rem", cursor: completing === bk._id ? "not-allowed" : "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5, opacity: completing === bk._id ? 0.7 : 1 }}
+                            >
+                              {completing === bk._id ? "Saving…" : "Mark Complete"}
+                            </button>
+                          ) : bk.pendingAmount <= 0 ? (
+                            <span style={{ fontSize: "0.75rem", color: "#22c55e", fontWeight: 700 }}>Done</span>
                           ) : (
                             <span style={{ fontSize: "0.75rem", color: "#cbd5e1" }}>—</span>
                           )}
@@ -1034,14 +1159,12 @@ export default function Reports({ user }) {
           {/* ── Mobile Cards ── */}
           <div className="d-md-none" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {filtered.map((bk) => {
-              const isSettled = bk.settledAmount !== null && bk.settledAmount !== undefined;
-              const sellingAmt = Number(bk.quotedAmount || 0);
-              const rawInputM = settlementInput[bk._id];
-              const inputVal = rawInputM !== undefined ? rawInputM : String(sellingAmt);
+              const s        = settlement[bk._id] || {};
+              const rowGreen = s.settled;
+              const hasPending = bk.pendingAmount > 0 && bk.status !== "cancelled";
               const amtReceived = Number(bk.quotedAmount||0) - Number(bk.pendingAmount||0);
-              const hasPending = bk.status !== "cancelled";
               return (
-                <div key={bk._id} style={{ background: isSettled ? "rgba(5,150,105,0.10)" : "#fff", borderLeft: `3px solid ${isSettled ? "#10b981" : bk.pendingAmount > 0 ? "#f59e0b" : "#22c55e"}`, borderRadius: 10, padding: "10px 12px", boxShadow: "0 1px 6px rgba(5,24,41,0.07)", border: `1px solid ${isSettled ? "rgba(5,150,105,0.4)" : "#e8edf2"}`, transition: "all 0.2s" }}>
+                <div key={bk._id} style={{ background: rowGreen ? "rgba(16,185,129,0.06)" : "#fff", borderLeft: `3px solid ${rowGreen ? "#10b981" : bk.pendingAmount > 0 ? "#f59e0b" : "#22c55e"}`, borderRadius: 10, padding: "10px 12px", boxShadow: "0 1px 6px rgba(5,24,41,0.07)", border: `1px solid ${rowGreen ? "rgba(16,185,129,0.3)" : "#e8edf2"}`, transition: "all 0.2s" }}>
 
                   {/* Row 1: Name + Status */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -1069,42 +1192,23 @@ export default function Reports({ user }) {
                     <MiniStat label="Selling Amt"  value={fmtINR(bk.quotedAmount)} color="#15803d" />
                   </div>
 
-                  {/* Row 4: Settle / Un-Settle */}
+                  {/* Row 4: Settle + Mark Complete (only when pending) */}
                   {hasPending && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingTop: 8, borderTop: "1px solid #f1f5f9" }}>
-                      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <input
-                            type="number"
-                            disabled={isSettled}
-                            value={isSettled ? bk.settledAmount : inputVal}
-                            onChange={e => setSettlementInput(prev => ({ ...prev, [bk._id]: e.target.value }))}
-                            style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: `1.5px solid ${isSettled ? "#6ee7b7" : "#cbd5e1"}`, fontSize: "0.78rem", background: isSettled ? "#f0fdf4" : "#f8fafc", outline: "none", color: "#1e293b", opacity: isSettled ? 0.8 : 1 }}
-                          />
-
-                        </div>
-                        {isSettled ? (
-                          <button
-                            disabled={settling === bk._id}
-                            onClick={() => handleUnsettle(bk)}
-                            style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 7, border: "1.5px solid #dc2626", background: "#fff5f5", color: "#dc2626", fontWeight: 700, fontSize: "0.75rem", cursor: settling === bk._id ? "not-allowed" : "pointer", opacity: settling === bk._id ? 0.7 : 1, whiteSpace: "nowrap" }}
-                          >
-                            {settling === bk._id ? "…" : "Un-Settle"}
-                          </button>
-                        ) : isCompleted(bk) ? (
-                          <button
-                            disabled={settling === bk._id}
-                            onClick={() => handleSettle(bk)}
-                            style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 7, border: "1.5px solid #15803d", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "0.75rem", cursor: settling === bk._id ? "not-allowed" : "pointer", opacity: settling === bk._id ? 0.7 : 1, whiteSpace: "nowrap" }}
-                          >
-                            {settling === bk._id ? "…" : "Settle"}
-                          </button>
-                        ) : (
-                          <button disabled title="Only completed bookings can be settled" style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 7, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#94a3b8", fontWeight: 700, fontSize: "0.75rem", cursor: "not-allowed", opacity: 0.5, whiteSpace: "nowrap" }}>
-                            Settle
-                          </button>
-                        )}
-                      </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", paddingTop: 8, borderTop: "1px solid #f1f5f9" }}>
+                      <input
+                        type="number"
+                        placeholder={`Amt (max ₹${Number(bk.pendingAmount).toLocaleString("en-IN")})`}
+                        value={s.balance || ""}
+                        onChange={e => setBalance(bk._id, e.target.value)}
+                        style={{ flex: 1, padding: "5px 8px", borderRadius: 6, border: "1.5px solid #6ee7b7", fontSize: "0.78rem", background: "#f0fdf4", outline: "none", color: "#1e293b", minWidth: 0 }}
+                      />
+                      <button
+                        disabled={completing === bk._id}
+                        onClick={() => handleMarkComplete(bk)}
+                        style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 7, border: "1.5px solid #15803d", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "0.75rem", cursor: completing === bk._id ? "not-allowed" : "pointer", opacity: completing === bk._id ? 0.7 : 1, whiteSpace: "nowrap" }}
+                      >
+                        {completing === bk._id ? "Saving…" : "Done"}
+                      </button>
                     </div>
                   )}
                 </div>

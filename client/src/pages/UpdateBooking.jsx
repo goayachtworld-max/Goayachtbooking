@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import { createTransactionAndUpdateBooking, updateTransactionAPI } from "../services/operations/transactionAPI";
-import { updateBookingAmountsAPI, rescheduleBookingAPI, updateBookingExtrasAPI } from "../services/operations/bookingAPI";
+import { updateBookingAmountsAPI, rescheduleBookingAPI, updateBookingExtrasAPI, updateBookingAPI } from "../services/operations/bookingAPI";
 import { updateCustomerAPI } from "../services/operations/customerAPI";
 import { getAllYachtsAPI } from "../services/operations/yautAPI";
 
@@ -46,10 +46,11 @@ function UpdateBooking() {
   const [startTimeOptions, setStartTimeOptions] = useState([]);
   const [runningCost, setRunningCost] = useState(0);
   const [bookingData, setBookingData] = useState({
-    yachtId:   booking?.yachtId?._id || "",
-    date:      booking?.date?.split("T")[0] || "",
-    startTime: booking?.startTime || "",
-    endTime:   booking?.endTime || "",
+    yachtId:       booking?.yachtId?._id || "",
+    date:          booking?.date?.split("T")[0] || "",
+    startTime:     booking?.startTime || "",
+    endTime:       booking?.endTime || "",
+    bookingStatus: booking?.status || "pending",
   });
   const [customerData, setCustomerData] = useState({
     name:             booking?.customerId?.name || "",
@@ -119,6 +120,8 @@ function UpdateBooking() {
   const isPaxChanged = () =>
     numPeople !== "" && Number(numPeople) !== Number(booking?.numPeople);
 
+  const isStatusEditChanged = () => isAdmin && bookingData.bookingStatus !== booking.status;
+
   const isEditSubmitDisabled = () => {
     if (!customerData.name || !customerData.contact) return true;
     if (isAdmin) {
@@ -128,7 +131,7 @@ function UpdateBooking() {
       if (!finalStart || !finalEnd) return true;
       if (customTimeEnabled && toMin(finalStart) >= toMin(finalEnd)) return true;
     }
-    if (!isCustomerChanged() && !isBookingChanged() && !isExtrasChanged() && !isPaxChanged()) return true;
+    if (!isCustomerChanged() && !isBookingChanged() && !isExtrasChanged() && !isPaxChanged() && !isStatusEditChanged()) return true;
     return false;
   };
 
@@ -247,18 +250,6 @@ function UpdateBooking() {
       if (isAdmin && isBookingChanged()) {
         const finalStart = customTimeEnabled ? customStart : bookingData.startTime;
         const finalEnd   = customTimeEnabled ? customEnd   : bookingData.endTime;
-
-        // Block reschedule to past date/time
-        if (bookingData.date && finalStart) {
-          const [yr, mo, dy] = bookingData.date.split("-").map(Number);
-          const [sh, sm] = finalStart.split(":").map(Number);
-          const rescheduleStart = new Date(yr, mo - 1, dy, sh, sm);
-          if (rescheduleStart < new Date()) {
-            toast.error("Cannot reschedule a booking to a past date or time.");
-            setEditLoading(false); return;
-          }
-        }
-
         if (customTimeEnabled && isCustomTimeColliding(finalStart, finalEnd, yachts.find(y => y._id === bookingData.yachtId)?.bookings)) {
           toast.error("Custom time overlaps an existing booking — choose a different time.");
           setEditLoading(false); return;
@@ -266,8 +257,13 @@ function UpdateBooking() {
         await rescheduleBookingAPI(booking._id, { yachtId: bookingData.yachtId, date: bookingData.date, startTime: finalStart, endTime: finalEnd, extraDetails }, token);
       }
       if (isPaxChanged()) {
-        await updateBookingExtrasAPI(booking._id, { numPeople: Number(numPeople) }, token);
+        await updateBookingAPI(booking._id, { numPeople: Number(numPeople) }, token);
         setLiveBooking((prev) => ({ ...prev, numPeople: Number(numPeople) }));
+      }
+      if (isStatusEditChanged()) {
+        await updateBookingAPI(booking._id, { status: bookingData.bookingStatus }, token);
+        setLiveBooking((prev) => ({ ...prev, status: bookingData.bookingStatus }));
+        setFormData((prev) => ({ ...prev, status: bookingData.bookingStatus }));
       }
       toast.success("Booking updated successfully");
       navigate("/bookings");
@@ -289,17 +285,13 @@ function UpdateBooking() {
     type:      "advance",
     proofFile: null,
   });
-  const initialFormData  = { status: booking?.status || "", amount: "", proofFile: null };
   const isPaymentChanged =
-    formData.status !== initialFormData.status ||
     (formData.amount !== "" && Number(formData.amount) > 0) ||
     formData.proofFile !== null;
 
-  const [statusChanged, setStatusChanged] = useState(false);
-
   const handleFormChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "status" && value !== booking.status) setStatusChanged(true);
+
     if (name === "amount") {
       // Block negative sign input
       if (value !== "" && Number(value) < 0) return;
@@ -473,7 +465,6 @@ function UpdateBooking() {
       // Reset form fields — use resolvedStatus (server-confirmed) so the dropdown
       // reflects the new status immediately without a browser refresh
       setFormData({ status: resolvedStatus, amount: "", type: "advance", proofFile: null });
-      setStatusChanged(false);
       toast.success("Updated successfully");
     } catch (err) {
       setPaymentError(err.response?.data?.error || err.response?.data?.message || "Failed to update");
@@ -728,6 +719,29 @@ function UpdateBooking() {
                   </div>
                 </div>
 
+                {/* ── Booking Status (admin only) ── */}
+                {isAdmin && (
+                  <div className={styles.formRow}>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.label}>Booking Status</label>
+                      <select
+                        className={styles.select}
+                        value={bookingData.bookingStatus}
+                        onChange={(e) => setBookingData((p) => ({ ...p, bookingStatus: e.target.value }))}
+                      >
+                        <option value="pending"   disabled={booking.status === "cancelled"}>Pending</option>
+                        <option value="confirmed" disabled={booking.status === "cancelled"}>Confirmed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                      {isStatusEditChanged() && (
+                        <p className={styles.warnText}>
+                          ⚠ Status will change from <strong>{booking.status}</strong> → <strong>{bookingData.bookingStatus}</strong> on save.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* ── Admin custom time override ── */}
                 {isAdmin && bookingData.startTime && (
                   <div style={{ marginBottom: 14 }}>
@@ -926,19 +940,9 @@ function UpdateBooking() {
 
                 <form onSubmit={handlePaymentSubmit} className={styles.form}>
 
-                  {/* Status + new amount */}
-                  <p className={styles.formSectionLabel}>Update Status & Payment</p>
+                  {/* New payment */}
+                  <p className={styles.formSectionLabel}>Record Payment</p>
                   <div className={styles.formRow}>
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.label}>Booking Status</label>
-                      <select className={styles.select} name="status" value={formData.status} onChange={handleFormChange} required>
-                        <option value="pending"   disabled={isConfirmed || isCancelled}>Pending</option>
-                        <option value="confirmed" disabled={isCancelled}>Confirmed</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                      {statusChanged && isConfirmed && <p className={styles.warnText}>⚠️ You're changing a confirmed booking.</p>}
-                      {statusChanged && isCancelled && <p className={styles.dangerText}>⚠️ Modifying a cancelled booking may affect records.</p>}
-                    </div>
                     <div className={styles.fieldGroup}>
                       <label className={styles.label}>New Payment Received</label>
                       <div className={styles.inputPrefix}>

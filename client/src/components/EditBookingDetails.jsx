@@ -19,6 +19,9 @@ function EditBookingDetails() {
     const [yachts, setYachts] = useState([]);
     const [startTimeOptions, setStartTimeOptions] = useState([]);
     const [runningCost, setRunningCost] = useState(0);
+    const [yachtSearch, setYachtSearch]     = useState(booking?.yachtId?.name || "");
+    const [yachtSugg,   setYachtSugg]       = useState([]);
+    const [showYachtSugg, setShowYachtSugg] = useState(false);
 
 
 
@@ -87,7 +90,6 @@ function EditBookingDetails() {
         paidServices: [
             "DSLR Photography",
             "Drone - Photography & Videography",
-            "Ballon-Flower Decoration",
         ],
     };
 
@@ -107,7 +109,10 @@ function EditBookingDetails() {
 
     const handleCustomerChange = (e) => {
         const { name, value } = e.target;
-        setCustomerData((p) => ({ ...p, [name]: value }));
+        const cleaned = (name === "contact" || name === "alternateContact")
+            ? value.replace(/\s/g, "")
+            : value;
+        setCustomerData((p) => ({ ...p, [name]: cleaned }));
     };
 
     const isCustomerChanged = () => {
@@ -387,6 +392,14 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
         fetchYachts();
     }, [bookingData.date, isAdmin]);
 
+    /* Sync yachtSearch text when yachts list loads */
+    useEffect(() => {
+        if (bookingData.yachtId && yachts.length > 0 && !yachtSearch) {
+            const found = yachts.find((y) => y._id === bookingData.yachtId);
+            if (found) setYachtSearch(found.name);
+        }
+    }, [yachts]);
+
     const ticketId = booking._id
         ? booking._id.slice(-5).toUpperCase()
         : "-----";
@@ -504,30 +517,86 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                         <div className="col-12">
                             <label className="form-label fw-bold">Yacht</label>
                             {isAdmin ? (
-                                <select
-                                    className="form-select"
-                                    name="yachtId"
-                                    value={bookingData.yachtId || ""}
-                                    onChange={(e) =>
-                                        setBookingData((p) => ({
-                                            ...p,
-                                            yachtId: e.target.value,
-                                            startTime: "",
-                                            endTime: "",
-                                        }))
-                                    }
-                                >
-                                    <option value="" disabled>
-                                        -- Select Yacht --
-                                    </option>
-
-                                    {yachts.map((y) => (
-                                        <option key={y._id} value={y._id}>
-                                            {y.name}
-                                        </option>
-                                    ))}
-                                </select>
-
+                                <div style={{ position: "relative" }}>
+                                    <input
+                                        className="form-control"
+                                        type="text"
+                                        autoComplete="off"
+                                        placeholder="Search yacht…"
+                                        value={yachtSearch}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setYachtSearch(val);
+                                            setBookingData((p) => ({ ...p, yachtId: "", startTime: "", endTime: "" }));
+                                            const q = val.toLowerCase();
+                                            const filtered = q
+                                                ? yachts.filter((y) => y.name?.toLowerCase().includes(q))
+                                                : yachts;
+                                            setYachtSugg(filtered.slice(0, 12));
+                                            setShowYachtSugg(true);
+                                        }}
+                                        onFocus={() => {
+                                            const q = yachtSearch.toLowerCase();
+                                            const filtered = q
+                                                ? yachts.filter((y) => y.name?.toLowerCase().includes(q))
+                                                : yachts;
+                                            setYachtSugg(filtered.slice(0, 12));
+                                            setShowYachtSugg(true);
+                                        }}
+                                        onBlur={() => setTimeout(() => setShowYachtSugg(false), 150)}
+                                        style={{ paddingRight: yachtSearch ? 30 : undefined }}
+                                    />
+                                    {yachtSearch && (
+                                        <span
+                                            onClick={() => {
+                                                setYachtSearch("");
+                                                setYachtSugg([]);
+                                                setShowYachtSugg(false);
+                                                setBookingData((p) => ({ ...p, yachtId: "", startTime: "", endTime: "" }));
+                                            }}
+                                            style={{
+                                                position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                                                cursor: "pointer", color: "#94a3b8", fontSize: "1.1rem", lineHeight: 1,
+                                                padding: "0 2px", zIndex: 1,
+                                            }}
+                                        >×</span>
+                                    )}
+                                    {showYachtSugg && yachtSugg.length > 0 && (
+                                        <div style={{
+                                            position: "absolute", top: "100%", left: 0, right: 0, zIndex: 9999,
+                                            background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 10,
+                                            boxShadow: "0 8px 24px rgba(5,24,41,0.13)", marginTop: 3,
+                                            maxHeight: 220, overflowY: "auto",
+                                        }}>
+                                            {yachtSugg.map((y) => {
+                                                const isSelected = bookingData.yachtId === y._id;
+                                                return (
+                                                    <div
+                                                        key={y._id}
+                                                        onMouseDown={() => {
+                                                            setYachtSearch(y.name);
+                                                            setYachtSugg([]);
+                                                            setShowYachtSugg(false);
+                                                            setBookingData((p) => ({ ...p, yachtId: y._id, startTime: "", endTime: "" }));
+                                                        }}
+                                                        style={{
+                                                            padding: "9px 14px", cursor: "pointer", fontSize: "0.88rem",
+                                                            background: isSelected ? "#eff6ff" : "#fff",
+                                                            borderBottom: "1px solid #f1f5f9",
+                                                        }}
+                                                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f8fafc"; }}
+                                                        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "#fff"; }}
+                                                    >
+                                                        <div style={{ fontWeight: 600, color: "#1e293b" }}>{y.name}</div>
+                                                        {y.capacity && (
+                                                            <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: 1 }}>Cap: {y.capacity}</div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <input
                                     className="form-control"

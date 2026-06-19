@@ -297,58 +297,6 @@ const S = StyleSheet.create({
     marginBottom: 1,
   },
 
-  /* ── RECEIPT LINK STRIP ── */
-  receiptStrip: {
-    backgroundColor: NAVY,
-    borderRadius: 8,
-    padding: "10 16",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 4,
-  },
-  receiptStripLeft: { flexDirection: "column" },
-  receiptStripLabel: { fontSize: 7.5, color: MUTED, letterSpacing: 1, marginBottom: 2 },
-  receiptStripTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", color: WHITE },
-  receiptStripLink: {
-    backgroundColor: GOLD,
-    borderRadius: 5,
-    padding: "5 12",
-  },
-  receiptStripLinkText: {
-    fontSize: 8.5,
-    fontFamily: "Helvetica-Bold",
-    color: NAVY,
-    letterSpacing: 0.5,
-  },
-
-  /* ── RECEIPT LINK STRIP ── */
-  // receiptStrip: {
-  //   backgroundColor: NAVY,
-  //   borderRadius: 8,
-  //   padding: "10 16",
-  //   flexDirection: "row",
-  //   justifyContent: "space-between",
-  //   alignItems: "center",
-  //   marginTop: 10,
-  //   marginBottom: 4,
-  // },
-  // receiptStripLeft: { flexDirection: "column" },
-  // receiptStripLabel: { fontSize: 7.5, color: MUTED, letterSpacing: 1, marginBottom: 2 },
-  // receiptStripTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", color: WHITE },
-  receiptStripBtn: {
-    backgroundColor: GOLD,
-    borderRadius: 5,
-    padding: "5 12",
-  },
-  receiptStripBtnText: {
-    fontSize: 8.5,
-    fontFamily: "Helvetica-Bold",
-    color: NAVY,
-    letterSpacing: 0.5,
-  },
-
   /* ── FOOTER STAMP ── */
   footer: {
     flexDirection: "row",
@@ -528,30 +476,6 @@ export default function BoardingPassPDF({ booking }) {
             {/* ── PERFORATED TEAR LINE ── */}
             <Perforated />
 
-            {/* ── SECTION: Contact Person (confirmed only) ── */}
-            {!isPending && (booking.yachtId?.contactPersonName || booking.yachtId?.contactPersonNumber) && (
-              <>
-                <Text style={S.sectionTitle}>Yacht Contact</Text>
-                <View style={[S.row, { marginBottom: 12 }]}>
-                  {booking.yachtId?.contactPersonName && (
-                    <InfoField label="CONTACT PERSON" value={booking.yachtId.contactPersonName} />
-                  )}
-                  {booking.yachtId?.contactPersonNumber && (
-                    <View style={S.col}>
-                      <Text style={S.label}>CONTACT NUMBER</Text>
-                      <Link
-                        src={`tel:${booking.yachtId.contactPersonNumber}`}
-                        style={[S.value, { color: NAVY, textDecoration: "none" }]}
-                      >
-                        {booking.yachtId.contactPersonNumber}
-                      </Link>
-                    </View>
-                  )}
-                  <View style={S.col} />
-                </View>
-              </>
-            )}
-
             {/* ── SECTION: Payment ── */}
             {!isPending && (
               <>
@@ -632,22 +556,6 @@ export default function BoardingPassPDF({ booking }) {
                 </Text>
               ))}
             </View>
-
-            {/* ── RECEIPT DOWNLOAD LINK ── */}
-            <Link
-              src={`https://goaboat.com/?ticket=${ticket}&download=receipt`}
-              style={{ textDecoration: "none" }}
-            >
-              <View style={S.receiptStrip}>
-                <View style={S.receiptStripLeft}>
-                  <Text style={S.receiptStripLabel}>TAP TO DOWNLOAD</Text>
-                  <Text style={S.receiptStripTitle}>Payment Receipt</Text>
-                </View>
-                <View style={S.receiptStripBtn}>
-                  <Text style={S.receiptStripBtnText}>⬇  Get Receipt</Text>
-                </View>
-              </View>
-            </Link>
 
             {/* ── FOOTER ── */}
             <View style={S.footer}>

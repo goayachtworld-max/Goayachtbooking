@@ -22,7 +22,10 @@ function CustomerForm() {
     } else if (name === "govtIdImage") {
       setFormData((prev) => ({ ...prev, govtIdImage: files[0] }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      const cleaned = (name === "contact" || name === "alternateContact")
+        ? value.replace(/\s/g, "")
+        : value;
+      setFormData((prev) => ({ ...prev, [name]: cleaned }));
     }
   };
 

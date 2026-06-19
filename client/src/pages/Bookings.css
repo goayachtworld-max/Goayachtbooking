@@ -354,6 +354,38 @@
   box-shadow: 0 2px 8px rgba(29, 111, 164, 0.3);
 }
 
+/* ── New Demand button ── */
+.btn-new-demand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  background: #a07830;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 14px rgba(160, 120, 48, 0.45);
+  flex-shrink: 0;
+}
+
+.btn-new-demand:hover {
+  background: #c9a84c;
+  transform: scale(1.06);
+  box-shadow: 0 6px 20px rgba(201, 168, 76, 0.55);
+}
+
+.btn-new-demand:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(160, 120, 48, 0.3);
+}
+
 /* ── Combined Date Filter (Month / Date toggle) ── */
 .date-combined-filter {
   display: flex;
