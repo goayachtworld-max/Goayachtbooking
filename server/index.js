@@ -21,6 +21,7 @@ import notificationRouter   from "./routes/notification.routes.js";
 import companyRouter        from "./routes/company.route.js";
 import customerAuthRouter   from "./routes/customer.auth.routes.js";
 import publicBookingRouter  from "./routes/public.booking.routes.js";
+import demandRouter         from "./routes/demand.routes.js";
 
 dotenv.config();
 
@@ -56,6 +57,7 @@ app.use("/api/notifications",  notificationRouter);
 app.use("/api/company",        companyRouter);
 app.use("/api/customer/auth",  customerAuthRouter);   // OTP login for public site
 app.use("/api/public",         publicBookingRouter);
+app.use("/api/demands",        demandRouter);          // Demand / inquiry capture
 
 app.use(globalErrorHandler);
 
