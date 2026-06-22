@@ -8,6 +8,7 @@ import { FiSliders } from "react-icons/fi";
 import { Eye, Copy, Phone, GlassWater, Bell, Pencil, Star } from "lucide-react";
 import toast from "react-hot-toast";
 import DemandModal from "./DemandModal";
+import { getDemandsAPI, updateDemandStatusAPI } from "../services/operations/demandAPI";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Bookings.css";
@@ -112,6 +113,11 @@ function Bookings({ user }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 550);
   const [showFilters, setShowFilters] = useState(false);
   const [showDemandModal, setShowDemandModal] = useState(false);
+
+  // ── Demands ──
+  const [activeView, setActiveView]     = useState("bookings"); // "bookings" | "demands"
+  const [demands, setDemands]           = useState([]);
+  const [demandsLoading, setDemandsLoading] = useState(false);
 
   // ---------------- FILTER STATES (FROM URL) ----------------
   const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
@@ -354,6 +360,24 @@ function Bookings({ user }) {
       setLoading(false);
     }
   };
+
+  const fetchDemands = async () => {
+    setDemandsLoading(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const res = await getDemandsAPI(token, { limit: 50 });
+      setDemands(res?.data?.demands || []);
+    } catch (e) {
+      console.error("❌ Error fetching demands", e);
+    } finally {
+      setDemandsLoading(false);
+    }
+  };
+
+  // Fetch demands when tab switches to demands
+  useEffect(() => {
+    if (activeView === "demands") fetchDemands();
+  }, [activeView]);
 
   // ---------------- SYNC URL PARAMS ----------------
   useEffect(() => {
@@ -1127,8 +1151,65 @@ Goa Yacht World`;
         </div>
       )}
 
+      {/* ── View Tab Switcher ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 14, borderBottom: "2px solid #e2e8f0" }}>
+        <button
+          onClick={() => setActiveView("bookings")}
+          style={{
+            padding: "8px 20px",
+            fontWeight: 700,
+            fontSize: "0.82rem",
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            color: activeView === "bookings" ? "#0a2d4a" : "#94a3b8",
+            borderBottom: activeView === "bookings" ? "2px solid #0a2d4a" : "2px solid transparent",
+            marginBottom: -2,
+            letterSpacing: "0.03em",
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            transition: "color 0.15s",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Bookings
+          <span style={{ background: activeView === "bookings" ? "#0a2d4a" : "#e2e8f0", color: activeView === "bookings" ? "#c9a84c" : "#64748b", borderRadius: 99, padding: "1px 8px", fontSize: "0.72rem", fontWeight: 800, minWidth: 22, textAlign: "center" }}>
+            {filteredBookings.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveView("demands")}
+          style={{
+            padding: "8px 20px",
+            fontWeight: 700,
+            fontSize: "0.82rem",
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            color: activeView === "demands" ? "#a07830" : "#94a3b8",
+            borderBottom: activeView === "demands" ? "2px solid #a07830" : "2px solid transparent",
+            marginBottom: -2,
+            letterSpacing: "0.03em",
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            transition: "color 0.15s",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Demands
+          {demands.length > 0 && (
+            <span style={{ background: activeView === "demands" ? "#a07830" : "#e2e8f0", color: activeView === "demands" ? "#fff" : "#64748b", borderRadius: 99, padding: "1px 8px", fontSize: "0.72rem", fontWeight: 800, minWidth: 22, textAlign: "center" }}>
+              {demands.length}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Booking cards */}
-      {loading ? (
+      {activeView === "bookings" && (loading ? (
         <div className="row">
           {Array.from({ length: 6 }).map((_, i) => <BookingSkeletonCard key={i} />)}
         </div>
@@ -1538,10 +1619,125 @@ Goa Yacht World`;
             </div>
           )}
         </div>
+      ))}
+
+      {/* ── Demands View ── */}
+      {activeView === "demands" && (
+        <div>
+          {demandsLoading ? (
+            <div className="row">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="col-lg-4 col-md-6 mb-3">
+                  <div style={{ background: "#fff", borderRadius: 12, borderLeft: "3px solid #e2e8f0", boxShadow: "0 1px 6px rgba(5,24,41,0.06)", padding: 16 }}>
+                    <div className="bk-skel-line" style={{ width: "55%", height: 13, marginBottom: 8 }} />
+                    <div className="bk-skel-line" style={{ width: "80%", height: 11, marginBottom: 6 }} />
+                    <div className="bk-skel-line" style={{ width: "60%", height: 11, marginBottom: 6 }} />
+                    <div className="bk-skel-line" style={{ width: "40%", height: 11 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : demands.length === 0 ? (
+            <div className="text-center py-5 text-muted">
+              <div style={{ fontSize: "2.5rem" }}>💬</div>
+              <p className="mt-2 mb-1 fw-semibold">No demands yet</p>
+              <small>Tap the D button to capture a new inquiry</small>
+            </div>
+          ) : (
+            <div className="row">
+              {demands.map((d) => {
+                const statusColor = d.status === "open" ? "#a07830" : d.status === "converted" ? "#198754" : "#94a3b8";
+                const statusBg   = d.status === "open" ? "#fef3c7" : d.status === "converted" ? "#d1fae5" : "#f1f5f9";
+                const dateStr    = d.date ? new Date(d.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "Asia/Kolkata" }) : "—";
+                const fmt12 = (t) => {
+                  if (!t) return "";
+                  const [h, m] = t.split(":").map(Number);
+                  const ap = h < 12 ? "AM" : "PM";
+                  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                  return `${h12}:${String(m).padStart(2, "0")} ${ap}`;
+                };
+                return (
+                  <div key={d._id} className="col-lg-4 col-md-6 mb-3">
+                    <div style={{ background: "#fff", borderRadius: 12, borderLeft: `3px solid ${statusColor}`, boxShadow: "0 1px 8px rgba(5,24,41,0.08)", padding: "14px 16px", height: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+
+                      {/* Header row */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: "0.92rem", color: "#0a2d4a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {d.customerName || d.customerId?.name || "—"}
+                          </div>
+                          {(d.agentName || d.agentId?.name) && (
+                            <div style={{ fontSize: "0.72rem", color: "#64748b", marginTop: 2 }}>
+                              via {d.agentName || d.agentId?.name}
+                            </div>
+                          )}
+                        </div>
+                        <span style={{ fontSize: "0.65rem", fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: statusBg, color: statusColor, border: `1px solid ${statusColor}30`, textTransform: "capitalize", flexShrink: 0, marginLeft: 8 }}>
+                          {d.status}
+                        </span>
+                      </div>
+
+                      {/* Details */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {(d.yachtName || d.yachtId?.name) && (
+                          <div style={{ fontSize: "0.78rem", color: "#475569", display: "flex", alignItems: "center", gap: 6 }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><path d="M3 17l3-8 5 5 5-8 3 8"/><path d="M3 20h18"/></svg>
+                            {d.yachtName || d.yachtId?.name}
+                          </div>
+                        )}
+                        <div style={{ fontSize: "0.78rem", color: "#475569", display: "flex", alignItems: "center", gap: 6 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                          {dateStr}
+                          {d.time && <><span style={{ color: "#cbd5e1" }}>·</span>{fmt12(d.time)}</>}
+                        </div>
+                        {d.notes && (
+                          <div style={{ fontSize: "0.73rem", color: "#64748b", fontStyle: "italic", borderTop: "1px solid #f1f5f9", paddingTop: 6, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                            {d.notes}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action row — only for open demands */}
+                      {d.status === "open" && (user?.type === "admin" || user?.type === "backdesk") && (
+                        <div style={{ display: "flex", gap: 6, marginTop: "auto", paddingTop: 6 }}>
+                          <button
+                            onClick={async () => {
+                              const token = localStorage.getItem("authToken");
+                              try {
+                                await updateDemandStatusAPI(d._id, "converted", token);
+                                setDemands((prev) => prev.map((x) => x._id === d._id ? { ...x, status: "converted" } : x));
+                              } catch { /* ignore */ }
+                            }}
+                            style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1.5px solid #198754", background: "#fff", color: "#198754", fontSize: "0.74rem", fontWeight: 700, cursor: "pointer" }}
+                          >
+                            Converted
+                          </button>
+                          <button
+                            onClick={async () => {
+                              const token = localStorage.getItem("authToken");
+                              try {
+                                await updateDemandStatusAPI(d._id, "closed", token);
+                                setDemands((prev) => prev.map((x) => x._id === d._id ? { ...x, status: "closed" } : x));
+                              } catch { /* ignore */ }
+                            }}
+                            style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", color: "#94a3b8", fontSize: "0.74rem", fontWeight: 700, cursor: "pointer" }}
+                          >
+                            Close
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
+
       {/* Demand Modal */}
       {showDemandModal && (
-        <DemandModal user={user} onClose={() => setShowDemandModal(false)} />
+        <DemandModal user={user} onClose={() => { setShowDemandModal(false); if (activeView === "demands") fetchDemands(); }} />
       )}
     </div>
   );

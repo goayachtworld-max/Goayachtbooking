@@ -39,19 +39,29 @@ export const createDemand = async (req, res, next) => {
 export const getDemands = async (req, res, next) => {
     try {
         const page  = parseInt(req.query.page)  || 1;
-        const limit = parseInt(req.query.limit) || 20;
+        const limit = parseInt(req.query.limit) || 50;
         const skip  = (page - 1) * limit;
 
-        // Optional filters
         const filter = { company: { $in: req.user.company } };
 
         if (req.query.status) filter.status = req.query.status;
 
-        // Date range filter (e.g. ?from=2025-01-01&to=2025-12-31)
+        // Yacht filter
+        if (req.query.yachtId) filter.yachtId = req.query.yachtId;
+
+        // Date range filter (?from=YYYY-MM-DD&to=YYYY-MM-DD)
         if (req.query.from || req.query.to) {
             filter.date = {};
             if (req.query.from) filter.date.$gte = new Date(req.query.from);
             if (req.query.to)   filter.date.$lte = new Date(req.query.to);
+        }
+
+        // Month filter (?month=YYYY-MM) — overrides from/to if both provided
+        if (req.query.month) {
+            const [y, m] = req.query.month.split('-').map(Number);
+            const start  = new Date(y, m - 1, 1);
+            const end    = new Date(y, m, 1);
+            filter.date  = { $gte: start, $lt: end };
         }
 
         const [demands, total] = await Promise.all([
