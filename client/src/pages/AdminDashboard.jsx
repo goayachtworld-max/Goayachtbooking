@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../styles/AdminDashboard.module.css";
 import { getBookingsAPI } from "../services/operations/bookingAPI";
+import { getDemandsAPI } from "../services/operations/demandAPI";
 
 /* ── Cache helpers ── */
 const DB_CACHE_TTL = 90 * 1000;
@@ -105,9 +106,13 @@ const formatDate = () =>
 
 export default function AdminDashboard({ user }) {
   const navigate = useNavigate();
-  const [stats, setStats]         = useState({ today:0, upcoming7Days:0, month:0, createdToday:0, confirmed:0, pending:0, cancelled:0, completed:0 });
-  const [loaded, setLoaded]       = useState(false);
+  const [stats, setStats]           = useState({ today:0, upcoming7Days:0, month:0, createdToday:0, confirmed:0, pending:0, cancelled:0, completed:0 });
+  const [loaded, setLoaded]         = useState(false);
   const [cardsReady, setCardsReady] = useState(false);
+  const [demandStats, setDemandStats]   = useState({ upcoming: [] });
+  const [demandsLoaded, setDemandsLoaded] = useState(false);
+  const [todayBookings, setTodayBookings]   = useState([]);
+  const [bookingsLoaded, setBookingsLoaded] = useState(false);
 
   const getNowIST   = () => new Date(new Date().toLocaleString("en-US", { timeZone:"Asia/Kolkata" }));
   const getTodayIST = () => { const n=getNowIST(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; };
@@ -147,8 +152,33 @@ export default function AdminDashboard({ user }) {
         const res=await getBookingsAPI(token,{});
         const computed=computeStats(res?.data?.bookings||[]);
         setStats(computed); dbSetCache(uid,computed);
+        const todayIST = getTodayIST();
+        const todays = (res?.data?.bookings||[])
+          .filter(b => b.date?.split("T")[0] === todayIST && b.status !== "cancelled")
+          .sort((a,b) => a.startTime?.localeCompare(b.startTime));
+        setTodayBookings(todays);
       } catch(e) { console.error(e); }
-      finally { setLoaded(true); }
+      finally { setLoaded(true); setBookingsLoaded(true); }
+    })();
+
+    (async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        const todayIST = getTodayIST();
+        const todayMid = new Date(`${todayIST}T00:00:00+05:30`);
+        const plus3    = new Date(todayMid); plus3.setDate(plus3.getDate() + 3);
+        const res = await getDemandsAPI(token, { limit: 100 });
+        const demands = res?.data?.demands || [];
+        const upcoming = demands
+          .filter((d) => {
+            if (d.status === "cancelled" || d.status === "completed") return false;
+            const dd = new Date(`${d.date.split("T")[0]}T00:00:00+05:30`);
+            return dd >= todayMid && dd <= plus3;
+          })
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
+        setDemandStats({ upcoming });
+      } catch(e) { console.error(e); }
+      finally { setDemandsLoaded(true); }
     })();
   }, []);
 
@@ -172,20 +202,38 @@ export default function AdminDashboard({ user }) {
     { label:"Availability",   desc:"Yacht overview",                 iconBg:"#fef3c7", iconColor:"#b45309", icon:<Ico.Yacht />,     linkColor:"#b45309", nav:"/availability" },
   ];
 
-  const firstName = user?.name?.split(" ")[0] || "Welcome";
+  const fmt12 = (t) => {
+    if (!t) return "";
+    const [h,m] = t.split(":").map(Number);
+    const ap = h < 12 ? "AM" : "PM";
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${h12}:${String(m).padStart(2,"0")} ${ap}`;
+  };
+
+  /* ── shared base pill style ── */
+  const pillBase = (statusColor) => ({
+    display: "inline-flex",
+    alignItems: "flex-start",
+    gap: 10,
+    background: "#fff",
+    border: "1px solid #e2e8f0",
+    borderLeft: `3px solid ${statusColor}`,
+    borderRadius: 9,
+    padding: "10px 14px",
+    cursor: "pointer",
+    transition: "box-shadow 0.15s",
+    minWidth: 0,
+  });
 
   return (
     <div className={styles.dashboardWrapper}>
-
-      {/* ── Content ── */}
       <div className={styles.contentArea}>
 
-        {/* Overview stats */}
+        {/* ── 1. Overview ── */}
         <div className={styles.sectionLabel}>
           <span className={styles.sectionLabelText}>Overview</span>
           <div className={styles.sectionLabelLine} />
         </div>
-
         <div className={styles.statsGrid}>
           {STATS.map((s, i) => (
             <div
@@ -195,9 +243,7 @@ export default function AdminDashboard({ user }) {
               onClick={() => loaded ? navigate(s.nav) : undefined}
             >
               <div className={styles.statCardLeft}>
-                {loaded
-                  ? <span className={styles.statValue}>{s.value}</span>
-                  : <span className={styles.skelNum} />}
+                {loaded ? <span className={styles.statValue}>{s.value}</span> : <span className={styles.skelNum} />}
                 <span className={styles.statLabel}>{s.label}</span>
               </div>
               <div className={styles.statIcon}>{s.icon}</div>
@@ -205,35 +251,173 @@ export default function AdminDashboard({ user }) {
           ))}
         </div>
 
-        {/* Management */}
-        <div className={styles.sectionLabel}>
+        {/* ── 2. Bookings — Today ── */}
+        <div className={styles.sectionLabel} style={{ marginTop: 20 }}>
+          <span className={styles.sectionLabelText}>Bookings · Today</span>
+          <div className={styles.sectionLabelLine} />
+          <button
+            onClick={() => navigate(`/bookings?date=${todayStr}`)}
+            style={{ fontSize:"0.65rem", fontWeight:700, color:"#0a2d4a", background:"none", border:"none", cursor:"pointer", whiteSpace:"nowrap", textDecoration:"underline", flexShrink:0 }}
+          >View all</button>
+        </div>
+
+        {!bookingsLoaded ? (
+          <div style={{ display:"flex", gap:6 }}>
+            {[1,2,3].map(i => (
+              <div key={i} style={{ width:180, height:56, borderRadius:9, background:"#e8edf2", animation:"db-shimmer 1.4s ease-in-out infinite" }} />
+            ))}
+          </div>
+        ) : todayBookings.length === 0 ? (
+          <div style={{ padding:"14px 0", color:"#94a3b8", fontSize:"0.8rem", fontWeight:600 }}>No bookings scheduled for today.</div>
+        ) : (
+          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+            {todayBookings.map((b) => {
+              const isCompleted = new Date(`${b.date.split("T")[0]}T${b.endTime}:00+05:30`) < new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+              const statusColor = isCompleted ? "#6366f1" : b.status==="confirmed" ? "#16a34a" : "#d97706";
+              return (
+                <div
+                  key={b._id}
+                  onClick={() => navigate(`/bookings?date=${todayStr}`)}
+                  style={pillBase(statusColor)}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 12px rgba(15,23,42,0.10)"}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow="none"}
+                >
+                  {/* Time */}
+                  <div style={{ textAlign:"center", flexShrink:0 }}>
+                    <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#0a2d4a", whiteSpace:"nowrap" }}>{fmt12(b.startTime)}</div>
+                    <div style={{ fontSize:"0.6rem", color:"#94a3b8", fontWeight:600, whiteSpace:"nowrap" }}>–{fmt12(b.endTime)}</div>
+                  </div>
+                  <div style={{ width:1, alignSelf:"stretch", background:"#e2e8f0", flexShrink:0 }} />
+                  {/* Name + yacht */}
+                  <div style={{ flexShrink:0 }}>
+                    <div style={{ fontWeight:700, fontSize:"0.82rem", color:"#0a2d4a", whiteSpace:"nowrap" }}>
+                      {b.customerId?.name || "—"}
+                    </div>
+                    <div style={{ fontSize:"0.66rem", color:"#64748b", marginTop:1, whiteSpace:"nowrap" }}>
+                      {b.yachtId?.name}{b.numPeople ? ` · ${b.numPeople} pax` : ""}
+                    </div>
+                  </div>
+                  {b.pendingAmount > 0 && (
+                    <span style={{ fontSize:"0.65rem", fontWeight:700, color:"#b45309", background:"#fef3c7", borderRadius:99, padding:"2px 8px", flexShrink:0, alignSelf:"center" }}>
+                      ₹{b.pendingAmount}
+                    </span>
+                  )}
+                  <span style={{ width:8, height:8, borderRadius:"50%", background:statusColor, flexShrink:0, alignSelf:"center", marginLeft:"auto" }} title={isCompleted?"completed":b.status} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── 3. Demands — Next 3 Days ── */}
+        {(demandsLoaded && demandStats.upcoming.length > 0) && (
+          <>
+            <div className={styles.sectionLabel} style={{ marginTop: 20 }}>
+              <span className={styles.sectionLabelText}>Demands · Next 3 Days</span>
+              <div className={styles.sectionLabelLine} />
+              <button
+                onClick={() => navigate("/bookings", { state: { openTab: "demands" } })}
+                style={{ fontSize:"0.65rem", fontWeight:700, color:"#0a2d4a", background:"none", border:"none", cursor:"pointer", whiteSpace:"nowrap", textDecoration:"underline", flexShrink:0 }}
+              >View all</button>
+            </div>
+
+            <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+              {demandStats.upcoming.map((d) => {
+                const dateStr = new Date(d.date).toLocaleDateString("en-IN", {
+                  weekday:"short", day:"numeric", month:"short", timeZone:"Asia/Kolkata"
+                });
+                const statusColor = d.status==="pending" ? "#d97706" : d.status==="confirmed" ? "#16a34a" : "#2563eb";
+                const customerLabel = d.customerName || d.customerId?.name || d.agentName || "—";
+
+                return (
+                  <div
+                    key={d._id}
+                    onClick={() => navigate("/bookings", { state: { openTab: "demands" } })}
+                    style={pillBase(statusColor)}
+                    onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 12px rgba(15,23,42,0.10)"}
+                    onMouseLeave={e => e.currentTarget.style.boxShadow="none"}
+                  >
+                    {/* ── Customer name (header row) + detail rows below ── */}
+                    <div style={{ flexShrink:0, minWidth:0 }}>
+
+                      {/* Customer name */}
+                      <div style={{ fontWeight:700, fontSize:"0.82rem", color:"#0a2d4a", whiteSpace:"nowrap", marginBottom:4 }}>
+                        {customerLabel}
+                      </div>
+
+                      <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+
+                        {/* Yacht */}
+                        {(d.yachtName || d.yachtId?.name) && (
+                          <div style={{ fontSize:"0.78rem", color:"#475569", display:"flex", alignItems:"center", gap:6 }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
+                              <path d="M3 17l3-8 5 5 5-8 3 8"/>
+                              <path d="M3 20h18"/>
+                            </svg>
+                            <span style={{ whiteSpace:"nowrap" }}>{d.yachtName || d.yachtId?.name}</span>
+                          </div>
+                        )}
+
+                        {/* Date + time */}
+                        <div style={{ fontSize:"0.78rem", color:"#475569", display:"flex", alignItems:"center", gap:6 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8"  y1="2" x2="8"  y2="6"/>
+                            <line x1="3"  y1="10" x2="21" y2="10"/>
+                          </svg>
+                          <span style={{ whiteSpace:"nowrap" }}>
+                            {dateStr}
+                            {d.time && (
+                              <> <span style={{ color:"#cbd5e1" }}>·</span> {fmt12(d.time)}</>
+                            )}
+                          </span>
+                        </div>
+
+                        {/* Notes */}
+                        {d.notes && (
+                          <div style={{
+                            fontSize:"0.73rem", color:"#64748b", fontStyle:"italic",
+                            borderTop:"1px solid #f1f5f9", paddingTop:6, lineHeight:1.4,
+                            display:"-webkit-box", WebkitLineClamp:2,
+                            WebkitBoxOrient:"vertical", overflow:"hidden",
+                            maxWidth:260,
+                          }}>
+                            {d.notes}
+                          </div>
+                        )}
+
+                      </div>
+                    </div>
+
+                    {/* Status dot — pinned right */}
+                    <span style={{ width:8, height:8, borderRadius:"50%", background:statusColor, flexShrink:0, alignSelf:"flex-start", marginLeft:8, marginTop:3 }} title={d.status} />
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* ── 4. Management ── */}
+        <div className={styles.sectionLabel} style={{ marginTop: 20 }}>
           <span className={styles.sectionLabelText}>Management</span>
           <div className={styles.sectionLabelLine} />
         </div>
-
         <div className={styles.mgmtGrid}>
           {MGMT.map((m, i) => (
             <div
               key={m.label}
               className={`${styles.mgmtCard} ${cardsReady ? styles.mgmtCardVisible : ""}`}
-              style={{ transitionDelay:`${360 + i*70}ms` }}
+              style={{ transitionDelay:`${i*70}ms` }}
               onClick={() => navigate(m.nav)}
             >
               <div className={styles.mgmtCardTop}>
-                <div className={styles.mgmtIconWrap} style={{ background:m.iconBg, color:m.iconColor }}>
-                  {m.icon}
-                </div>
-                <div className={styles.mgmtCardBody}>
-                  <h5>{m.label}</h5>
-                  <p>{m.desc}</p>
-                </div>
+                <div className={styles.mgmtIconWrap} style={{ background:m.iconBg, color:m.iconColor }}>{m.icon}</div>
+                <div className={styles.mgmtCardBody}><h5>{m.label}</h5><p>{m.desc}</p></div>
               </div>
               <div className={styles.mgmtCardFooter}>
-                <a
-                  className={styles.mgmtLink}
-                  style={{ color:m.linkColor }}
-                  onClick={(e) => { e.stopPropagation(); navigate(m.nav); }}
-                >
+                <a className={styles.mgmtLink} style={{ color:m.linkColor }} onClick={(e) => { e.stopPropagation(); navigate(m.nav); }}>
                   Open <Ico.Arrow />
                 </a>
               </div>

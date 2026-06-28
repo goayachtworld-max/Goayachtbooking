@@ -118,6 +118,15 @@ function Bookings({ user }) {
   const [activeView, setActiveView]     = useState("bookings"); // "bookings" | "demands"
   const [demands, setDemands]           = useState([]);
   const [demandsLoading, setDemandsLoading] = useState(false);
+  const [demandStatusFilter, setDemandStatusFilter] = useState(""); // "" | "pending" | "confirmed" | "completed" | "cancelled"
+
+  // Auto-open demands tab if navigated from dashboard
+  useEffect(() => {
+    if (location.state?.openTab === "demands") {
+      setActiveView("demands");
+      navigate(".", { replace: true, state: {} });
+    }
+  }, [location.state?.openTab]);
 
   // ---------------- FILTER STATES (FROM URL) ----------------
   const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
@@ -1624,6 +1633,48 @@ Goa Yacht World`;
       {/* ── Demands View ── */}
       {activeView === "demands" && (
         <div>
+          {/* ── Demand Status Filter Pills ── */}
+          {!demandsLoading && demands.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+              {[
+                { value: "",           label: "All",       color: "#64748b", activeBg: "#475569" },
+                { value: "pending",    label: "Pending",   color: "#d97706", activeBg: "#d97706" },
+                { value: "confirmed",  label: "Confirmed", color: "#16a34a", activeBg: "#16a34a" },
+                { value: "completed",  label: "Completed", color: "#2563eb", activeBg: "#2563eb" },
+                { value: "cancelled",  label: "Cancelled", color: "#dc2626", activeBg: "#dc2626" },
+              ].map(({ value, label, color, activeBg }) => {
+                const isActive = demandStatusFilter === value;
+                const count = value === "" ? demands.length : demands.filter(d => d.status === value).length;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setDemandStatusFilter(value)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "5px 12px", borderRadius: 99,
+                      border: `1.5px solid ${isActive ? activeBg : "#e2e8f0"}`,
+                      background: isActive ? activeBg : "#fff",
+                      color: isActive ? "#fff" : color,
+                      fontWeight: 700, fontSize: "0.76rem",
+                      cursor: "pointer", transition: "all 0.15s",
+                    }}
+                  >
+                    {value && (
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: isActive ? "rgba(255,255,255,0.85)" : color, flexShrink: 0 }} />
+                    )}
+                    {label}
+                    <span style={{
+                      background: isActive ? "rgba(255,255,255,0.25)" : "#f1f5f9",
+                      color: isActive ? "#fff" : "#64748b",
+                      borderRadius: 99, padding: "0 6px",
+                      fontSize: "0.68rem", fontWeight: 800,
+                    }}>{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {demandsLoading ? (
             <div className="row">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -1645,9 +1696,19 @@ Goa Yacht World`;
             </div>
           ) : (
             <div className="row">
-              {demands.map((d) => {
-                const statusColor = d.status === "open" ? "#a07830" : d.status === "converted" ? "#198754" : "#94a3b8";
-                const statusBg   = d.status === "open" ? "#fef3c7" : d.status === "converted" ? "#d1fae5" : "#f1f5f9";
+              {demands.filter(d => demandStatusFilter === "" || d.status === demandStatusFilter).length === 0 ? (
+                <div className="col-12 text-center py-5 text-muted">
+                  <div style={{ fontSize: "2rem" }}>🔍</div>
+                  <p className="mt-2 mb-1 fw-semibold">No {demandStatusFilter || "matching"} demands</p>
+                  <button
+                    onClick={() => setDemandStatusFilter("")}
+                    style={{ marginTop: 8, padding: "5px 16px", borderRadius: 99, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}
+                  >Show all</button>
+                </div>
+              ) : null}
+              {demands.filter(d => demandStatusFilter === "" || d.status === demandStatusFilter).map((d) => {
+                const statusColor = d.status === "pending" ? "#d97706" : d.status === "confirmed" ? "#198754" : d.status === "completed" ? "#2563eb" : "#dc2626";
+                const statusBg   = d.status === "pending" ? "#fef3c7" : d.status === "confirmed" ? "#d1fae5" : d.status === "completed" ? "#dbeafe" : "#fee2e2";
                 const dateStr    = d.date ? new Date(d.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "Asia/Kolkata" }) : "—";
                 const fmt12 = (t) => {
                   if (!t) return "";
@@ -1697,32 +1758,80 @@ Goa Yacht World`;
                         )}
                       </div>
 
-                      {/* Action row — only for open demands */}
-                      {d.status === "open" && (user?.type === "admin" || user?.type === "backdesk") && (
+                      {/* Action row — only for pending demands */}
+                      {d.status === "pending" && (user?.type === "admin" || user?.type === "backdesk") && (
                         <div style={{ display: "flex", gap: 6, marginTop: "auto", paddingTop: 6 }}>
                           <button
-                            onClick={async () => {
+                            onClick={async (e) => {
+                              e.currentTarget.disabled = true;
                               const token = localStorage.getItem("authToken");
                               try {
-                                await updateDemandStatusAPI(d._id, "converted", token);
-                                setDemands((prev) => prev.map((x) => x._id === d._id ? { ...x, status: "converted" } : x));
-                              } catch { /* ignore */ }
+                                await updateDemandStatusAPI(d._id, "confirmed", token);
+                                setDemands((prev) => prev.map((x) => x._id === d._id ? { ...x, status: "confirmed" } : x));
+                                toast.success("Demand confirmed");
+                              } catch (err) {
+                                toast.error(err?.response?.data?.message || "Failed to update status");
+                                e.currentTarget.disabled = false;
+                              }
                             }}
                             style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1.5px solid #198754", background: "#fff", color: "#198754", fontSize: "0.74rem", fontWeight: 700, cursor: "pointer" }}
                           >
-                            Converted
+                            Confirm
                           </button>
                           <button
-                            onClick={async () => {
+                            onClick={async (e) => {
+                              e.currentTarget.disabled = true;
                               const token = localStorage.getItem("authToken");
                               try {
-                                await updateDemandStatusAPI(d._id, "closed", token);
-                                setDemands((prev) => prev.map((x) => x._id === d._id ? { ...x, status: "closed" } : x));
-                              } catch { /* ignore */ }
+                                await updateDemandStatusAPI(d._id, "cancelled", token);
+                                setDemands((prev) => prev.map((x) => x._id === d._id ? { ...x, status: "cancelled" } : x));
+                                toast.success("Demand cancelled");
+                              } catch (err) {
+                                toast.error(err?.response?.data?.message || "Failed to update status");
+                                e.currentTarget.disabled = false;
+                              }
                             }}
-                            style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", color: "#94a3b8", fontSize: "0.74rem", fontWeight: 700, cursor: "pointer" }}
+                            style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1.5px solid #fee2e2", background: "#fff", color: "#dc2626", fontSize: "0.74rem", fontWeight: 700, cursor: "pointer" }}
                           >
-                            Close
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                      {d.status === "confirmed" && (user?.type === "admin" || user?.type === "backdesk") && (
+                        <div style={{ display: "flex", gap: 6, marginTop: "auto", paddingTop: 6 }}>
+                          <button
+                            onClick={async (e) => {
+                              e.currentTarget.disabled = true;
+                              const token = localStorage.getItem("authToken");
+                              try {
+                                await updateDemandStatusAPI(d._id, "completed", token);
+                                setDemands((prev) => prev.map((x) => x._id === d._id ? { ...x, status: "completed" } : x));
+                                toast.success("Demand completed");
+                              } catch (err) {
+                                toast.error(err?.response?.data?.message || "Failed to update status");
+                                e.currentTarget.disabled = false;
+                              }
+                            }}
+                            style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1.5px solid #2563eb", background: "#fff", color: "#2563eb", fontSize: "0.74rem", fontWeight: 700, cursor: "pointer" }}
+                          >
+                            Complete
+                          </button>
+                          <button
+                            onClick={async (e) => {
+                              e.currentTarget.disabled = true;
+                              const token = localStorage.getItem("authToken");
+                              try {
+                                await updateDemandStatusAPI(d._id, "cancelled", token);
+                                setDemands((prev) => prev.map((x) => x._id === d._id ? { ...x, status: "cancelled" } : x));
+                                toast.success("Demand cancelled");
+                              } catch (err) {
+                                toast.error(err?.response?.data?.message || "Failed to update status");
+                                e.currentTarget.disabled = false;
+                              }
+                            }}
+                            style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1.5px solid #fee2e2", background: "#fff", color: "#dc2626", fontSize: "0.74rem", fontWeight: 700, cursor: "pointer" }}
+                          >
+                            Cancel
                           </button>
                         </div>
                       )}

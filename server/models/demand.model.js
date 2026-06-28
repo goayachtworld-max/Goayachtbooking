@@ -58,8 +58,8 @@ const demandSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['open', 'converted', 'closed'],
-        default: 'open'
+        enum: ['pending', 'confirmed', 'completed', 'cancelled'],
+        default: 'pending'
     }
 }, {
     timestamps: true,

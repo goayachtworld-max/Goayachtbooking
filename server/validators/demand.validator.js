@@ -14,7 +14,7 @@ export const demandSchema = z.object({
         message: 'Time must be in HH:MM (24-hour) format'
     }),
     notes:  z.string().trim().optional(),
-    status: z.enum(['open', 'converted', 'closed']).optional(),
+    status: z.enum(['pending', 'confirmed', 'completed', 'cancelled']).optional(),
 }).refine(
     (data) => !!(data.customerName?.trim() || data.agentName?.trim()),
     { message: 'At least one of customerName or agentName is required' }

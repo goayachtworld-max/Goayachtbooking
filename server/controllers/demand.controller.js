@@ -113,10 +113,15 @@ export const updateDemandStatus = async (req, res, next) => {
     try {
         const { status } = req.body;
 
+        const allowedStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+        if (!status || !allowedStatuses.includes(status)) {
+            return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${allowedStatuses.join(', ')}` });
+        }
+
         const demand = await DemandModel.findOneAndUpdate(
             { _id: req.params.id, company: { $in: req.user.company } },
             { status },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
         if (!demand) {
