@@ -120,14 +120,6 @@ function Bookings({ user }) {
   const [demandsLoading, setDemandsLoading] = useState(false);
   const [demandStatusFilter, setDemandStatusFilter] = useState(""); // "" | "pending" | "confirmed" | "completed" | "cancelled"
 
-  // Auto-open demands tab if navigated from dashboard
-  useEffect(() => {
-    if (location.state?.openTab === "demands") {
-      setActiveView("demands");
-      navigate(".", { replace: true, state: {} });
-    }
-  }, [location.state?.openTab]);
-
   // ---------------- FILTER STATES (FROM URL) ----------------
   const [searchQuery, setSearchQuery] = useState(params.get("search") || "");
   const [filterDate, setFilterDate] = useState(params.get("date") || "");

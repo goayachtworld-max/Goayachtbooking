@@ -47,6 +47,7 @@ function CreateBooking() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [runningCost, setRunningCost] = useState(0);
+  const [runningCostMargin, setRunningCostMargin] = useState(0);
 
   const [customerSuggestions, setCustomerSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -54,9 +55,6 @@ function CreateBooking() {
   const originalSlotRef = useRef({ start: "", end: "" }); // stores the clean slot times before any custom override
   const [employees, setEmployees] = useState([]);
   const [showExtraDetails, setShowExtraDetails] = useState(false);
-  const [yachtSearch, setYachtSearch]   = useState("");
-  const [yachtSugg,   setYachtSugg]     = useState([]);
-  const [showYachtSugg, setShowYachtSugg] = useState(false);
   const [
     customTimeEnabled, setCustomTimeEnabled] = useState(false);
   const [customStart, setCustomStart] = useState("");
@@ -68,6 +66,7 @@ function CreateBooking() {
   const [sailingHours, setSailingHours] = useState("");
   const [anchoringHours, setAnchoringHours] = useState("");
   const [calculatedAmount, setCalculatedAmount] = useState(null);
+  const [calculatedSettleAmount, setCalculatedSettleAmount] = useState(null);
 
   const extraOptions = {
     inclusions: [
@@ -81,6 +80,7 @@ function CreateBooking() {
     paidServices: [
       "DSLR Photography",
       "Drone - Photography & Videography",
+      "Ballon-flowers Decoration",
     ],
   };
 
@@ -175,8 +175,11 @@ function CreateBooking() {
     const sHrs = parseFloat(sailingHours) || 0;
     const aHrs = parseFloat(anchoringHours) || 0;
     if (sHrs === 0 && aHrs === 0) { setCalculatedAmount(null); return; }
-    const calc = (sHrs * (yacht.sailingCost || 0)) + (aHrs * (yacht.anchorageCost || 0));
+    const calc = (sHrs * ((yacht.sailingCost || 0) + (yacht.sailingMargin || 0) )) + (aHrs * ((yacht.anchorageCost || 0) + (yacht.anchorageMargin || 0) ));
     setCalculatedAmount(calc);
+    const calcSettle = (sHrs * (yacht.sailingCost || 0)) + (aHrs * (yacht.anchorageCost || 0));
+    setCalculatedSettleAmount(calcSettle);
+
     // Pre-fill total amount only if it hasn't been manually touched
     setFormData((p) => ({ ...p, totalAmount: String(Math.round(calc)) }));
   }, [sailingHours, anchoringHours, formData.yachtId, yachts]);
@@ -343,9 +346,6 @@ function CreateBooking() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const cleaned = (name === "contact" || name === "alternateContact")
-      ? value.replace(/\s/g, "")
-      : value;
     if (name === "yachtId" || name === "date") {
       // Changing yacht or date invalidates the slot + all custom/pricing state
       setCustomTimeEnabled(false);
@@ -355,15 +355,16 @@ function CreateBooking() {
       setSailingHours("");
       setAnchoringHours("");
       setCalculatedAmount(null);
+      setCalculatedSettleAmount(null);
       setFormData((p) => ({
         ...p,
-        [name]: cleaned,
+        [name]: value,
         startTime: "",
         endTime: "",
         ...(name === "yachtId" ? {} : {}),
       }));
     } else {
-      setFormData((p) => ({ ...p, [name]: cleaned }));
+      setFormData((p) => ({ ...p, [name]: value }));
     }
   };
 
@@ -386,6 +387,7 @@ function CreateBooking() {
     setCustomStart(slotStart);
     setCustomEnd(slotEnd);
     setCalculatedAmount(null);
+    setCalculatedSettleAmount(null);
 
     // Prefill sailing/anchoring using yacht's default ratio (falls back to 50/50)
     if (slot) {
@@ -597,14 +599,6 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
     }));
     setShowSuggestions(false);
   };
-
-  /* Sync yachtSearch text when yachts list loads (handles prefill) */
-  useEffect(() => {
-    if (formData.yachtId && yachts.length > 0 && !yachtSearch) {
-      const found = yachts.find((y) => (y.id || y._id) === formData.yachtId);
-      if (found) setYachtSearch(found.name);
-    }
-  }, [yachts]);
 
   const selectedYachtObj = yachts.find((y) => (y.id || y._id) === formData.yachtId);
   const isMobileView = typeof window !== "undefined" && window.innerWidth < 768;
@@ -897,101 +891,12 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                     />
                   </div>
 
-                  <div className="cb-f" style={{ position: "relative" }}>
+                  <div className="cb-f">
                     <label className="cb-lbl">Yacht</label>
-                    <div style={{ position: "relative" }}>
-                      <input
-                        className="cb-inp"
-                        type="text"
-                        autoComplete="off"
-                        placeholder="Search yacht…"
-                        value={yachtSearch}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setYachtSearch(val);
-                          setFormData((p) => ({ ...p, yachtId: "" }));
-                          setCustomTimeEnabled(false);
-                          setCustomStart(""); setCustomEnd("");
-                          originalSlotRef.current = { start: "", end: "" };
-                          setSailingHours(""); setAnchoringHours("");
-                          setCalculatedAmount(null);
-                          const q = val.toLowerCase();
-                          const filtered = q
-                            ? yachts.filter((y) => y.name?.toLowerCase().includes(q))
-                            : yachts;
-                          setYachtSugg(filtered.slice(0, 12));
-                          setShowYachtSugg(true);
-                        }}
-                        onFocus={() => {
-                          const q = yachtSearch.toLowerCase();
-                          const filtered = q
-                            ? yachts.filter((y) => y.name?.toLowerCase().includes(q))
-                            : yachts;
-                          setYachtSugg(filtered.slice(0, 12));
-                          setShowYachtSugg(true);
-                        }}
-                        onBlur={() => setTimeout(() => setShowYachtSugg(false), 150)}
-                        required
-                        style={{ paddingRight: yachtSearch ? 30 : undefined }}
-                      />
-                      {yachtSearch && (
-                        <span
-                          onClick={() => {
-                            setYachtSearch("");
-                            setYachtSugg([]);
-                            setShowYachtSugg(false);
-                            setFormData((p) => ({ ...p, yachtId: "" }));
-                            setCustomTimeEnabled(false);
-                            setCustomStart(""); setCustomEnd("");
-                            originalSlotRef.current = { start: "", end: "" };
-                            setSailingHours(""); setAnchoringHours("");
-                            setCalculatedAmount(null);
-                          }}
-                          style={{
-                            position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-                            cursor: "pointer", color: "#94a3b8", fontSize: "1rem", lineHeight: 1,
-                            padding: "0 2px", zIndex: 1,
-                          }}
-                        >×</span>
-                      )}
-                    </div>
-                    {showYachtSugg && yachtSugg.length > 0 && (
-                      <div className="cb-ac" style={{ maxHeight: 220, overflowY: "auto" }}>
-                        {yachtSugg.map((y) => {
-                          const id = y.id || y._id;
-                          const isSelected = formData.yachtId === id;
-                          return (
-                            <div
-                              key={id}
-                              className="cb-ac-item"
-                              style={isSelected ? { background: "#eff6ff" } : {}}
-                              onMouseDown={() => {
-                                setYachtSearch(y.name);
-                                setYachtSugg([]);
-                                setShowYachtSugg(false);
-                                /* reuse same slot-reset logic as handleChange for yachtId */
-                                setCustomTimeEnabled(false);
-                                setCustomStart(""); setCustomEnd("");
-                                originalSlotRef.current = { start: "", end: "" };
-                                setSailingHours(""); setAnchoringHours("");
-                                setCalculatedAmount(null);
-                                setFormData((p) => ({
-                                  ...p,
-                                  yachtId: id,
-                                  startTime: "",
-                                  endTime: "",
-                                }));
-                              }}
-                            >
-                              <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{y.name}</div>
-                              {y.capacity && (
-                                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>Cap: {y.capacity}</div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                    <select className="cb-inp" name="yachtId" value={formData.yachtId} onChange={handleChange} required>
+                      <option value="">— Select —</option>
+                      {yachts.map((y) => <option key={y.id || y._id} value={y.id || y._id}>{y.name}</option>)}
+                    </select>
                   </div>
 
                   <div className="cb-f">
@@ -1152,7 +1057,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                         <div className="cb-f">
                           <label className="cb-lbl">
                             Sailing Hrs
-                            {yacht?.sailingCost > 0 && <span style={{ color: "#64748b", fontWeight: 400, fontSize: 11, marginLeft: 5 }}>₹{Number(yacht.sailingCost).toLocaleString("en-IN")}/hr</span>}
+                            {(yacht?.sailingCost + yacht?.sailingMargin) > 0 && <span style={{ color: "#64748b", fontWeight: 400, fontSize: 11, marginLeft: 5 }}>₹{(Number(yacht.sailingCost) + (Number(yacht.sailingMargin))).toLocaleString("en-IN")}/hr</span>}
                           </label>
                           <input
                             className="cb-inp"
@@ -1176,7 +1081,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                         <div className="cb-f">
                           <label className="cb-lbl">
                             Anchoring Hrs
-                            {yacht?.anchorageCost > 0 && <span style={{ color: "#64748b", fontWeight: 400, fontSize: 11, marginLeft: 5 }}>₹{Number(yacht.anchorageCost).toLocaleString("en-IN")}/hr</span>}
+                            {(yacht?.anchorageCost + yacht?.anchorageMargin) > 0 && <span style={{ color: "#64748b", fontWeight: 400, fontSize: 11, marginLeft: 5 }}>₹{(Number(yacht.anchorageCost) + Number(yacht.anchorageMargin)).toLocaleString("en-IN")}/hr</span>}
                           </label>
                           <input
                             className="cb-inp"
@@ -1246,12 +1151,12 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                   <div className="cb-f">
                     <label className="cb-lbl">
                       Total Amount
-                      {runningCost > 0 && <span style={{ color: "#64748b", fontWeight: 500, marginLeft: 6, fontSize: 12, textTransform: "none" }}>min ₹{Number(runningCost).toLocaleString("en-IN")}</span>}
+                      {runningCost > 0 && <span style={{ color: "#64748b", fontWeight: 500, marginLeft: 6, fontSize: 12, textTransform: "none" }}>min ₹{Number(calculatedSettleAmount).toLocaleString("en-IN")}</span>}
                     </label>
                     <input className={`cb-inp ${isAmountInvalid ? "err" : ""}`} type="number"
                       name="totalAmount" value={formData.totalAmount} onChange={handleChange}
                       required placeholder="₹ 0" />
-                    {isAmountInvalid && <div className="cb-err-msg">⚠ Below running cost ₹{Number(runningCost).toLocaleString("en-IN")}</div>}
+                    {isAmountInvalid && <div className="cb-err-msg">⚠ Below running cost ₹{Number(calculatedSettleAmount).toLocaleString("en-IN")}</div>}
                   </div>
 
                   {isQuotation ? (
