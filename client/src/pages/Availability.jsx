@@ -33,6 +33,11 @@ const getAvUserPrefix = () => {
   try { return JSON.parse(localStorage.getItem("user") || "{}")?._id || "anon"; } catch { return "anon"; }
 };
 
+// Only admins can see B2B (runningCost). Read straight from localStorage.
+const getIsAdmin = () => {
+  try { return JSON.parse(localStorage.getItem("user") || "{}")?.type === "admin"; } catch { return false; }
+};
+
 const getCached = (key) => {
   try {
     const raw = localStorage.getItem(key);
@@ -113,6 +118,7 @@ const DesktopSkeletonCard = () => (
 function Availability() {
   const navigate = useNavigate();
   const token = localStorage.getItem("authToken");
+  const isAdmin = getIsAdmin();
 
   const [availability, setAvailability] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState("");
@@ -413,9 +419,24 @@ function Availability() {
                       <span className="text-muted small fw-semibold">👥 {yacht.capacity}</span>
                     </div>
                     <p className="text-muted small mb-2">
-                      B2b: <strong>₹{yacht.runningCost}</strong>
-                      {yacht.sellingPrice > 0 && <> | Sp: <strong>₹{yacht.sellingPrice}</strong></>}
-                      {yacht.maxSellingPrice > 0 && <> | Csp: <strong style={{ color: "#c2410c" }}>₹{yacht.maxSellingPrice}</strong></>}
+                      {[
+                        isAdmin && (
+                          <span key="b2b">B2b: <strong>₹{yacht.runningCost}</strong></span>
+                        ),
+                        yacht.sellingPrice > 0 && (
+                          <span key="sp">Sp: <strong>₹{yacht.sellingPrice}</strong></span>
+                        ),
+                        yacht.maxSellingPrice > 0 && (
+                          <span key="csp">Csp: <strong style={{ color: "#c2410c" }}>₹{yacht.maxSellingPrice}</strong></span>
+                        ),
+                      ]
+                        .filter(Boolean)
+                        .map((el, i) => (
+                          <React.Fragment key={i}>
+                            {i > 0 && " | "}
+                            {el}
+                          </React.Fragment>
+                        ))}
                     </p>
 
                     <div className="d-flex justify-content-between mt-3">
@@ -537,7 +558,9 @@ function Availability() {
                       <span style={{ fontSize: 12, color: "#475569", fontWeight: 600, whiteSpace: "nowrap" }}>👥 {yacht.capacity}</span>
                     </div>
                     <div className="av-meta">
-                      <span><span style={{ opacity: 0.65 }}>B2b</span> ₹{yacht.runningCost}</span>
+                      {isAdmin && (
+                        <span><span style={{ opacity: 0.65 }}>B2b</span> ₹{yacht.runningCost}</span>
+                      )}
                       {yacht.sellingPrice > 0 && <span><span style={{ opacity: 0.65 }}>Sp</span> ₹{yacht.sellingPrice}</span>}
                       {yacht.maxSellingPrice > 0 && <span style={{ color: "#c2410c" }}><span style={{ opacity: 0.75 }}>Csp</span> ₹{yacht.maxSellingPrice}</span>}
                     </div>

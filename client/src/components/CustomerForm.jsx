@@ -11,23 +11,50 @@ function CustomerForm() {
     email: "", govtIdType: "None", govtIdNo: "", govtIdImage: null,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState("");
+  const [error, setError] = useState("");
   const [fieldErr, setFieldErr] = useState({});
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
+
     setFieldErr((prev) => ({ ...prev, [name]: "" }));
+
     if (name === "govtIdType" && value === "None") {
-      setFormData((prev) => ({ ...prev, govtIdType: "None", govtIdNo: "", govtIdImage: null }));
+      setFormData((prev) => ({
+        ...prev,
+        govtIdType: "None",
+        govtIdNo: "",
+        govtIdImage: null,
+      }));
     } else if (name === "govtIdImage") {
-      setFormData((prev) => ({ ...prev, govtIdImage: files[0] }));
+      setFormData((prev) => ({
+        ...prev,
+        govtIdImage: files[0],
+      }));
     } else {
-      const cleaned = (name === "contact" || name === "alternateContact")
-        ? value.replace(/\s/g, "")
-        : value;
-      setFormData((prev) => ({ ...prev, [name]: cleaned }));
+      let cleaned = value;
+
+      if (name === "contact" || name === "alternateContact") {
+        // Remove everything except digits and +
+        cleaned = value.replace(/[^\d+]/g, "");
+
+        // Keep + only at the beginning
+        cleaned =
+          (cleaned.startsWith("+") ? "+" : "") +
+          cleaned.replace(/\+/g, "");
+
+        // Limit to 15 digits, excluding +
+        const prefix = cleaned.startsWith("+") ? "+" : "";
+        cleaned = prefix + cleaned.slice(prefix.length, prefix.length + 15);
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,7 +75,7 @@ function CustomerForm() {
 
     try {
       setLoading(true);
-      const token   = localStorage.getItem("authToken");
+      const token = localStorage.getItem("authToken");
       const payload = new FormData();
       for (let key in formData) {
         if (formData.govtIdType === "None" && (key === "govtIdNo" || key === "govtIdImage")) continue;
@@ -107,7 +134,7 @@ function CustomerForm() {
               cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
           </button>
           <div style={{ flex: 1 }}>
             <h1 style={{ fontSize: "1.35rem", fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1.1 }}>
@@ -124,7 +151,7 @@ function CustomerForm() {
               color: "#e8d5a0", cursor: "pointer", transition: "all 0.15s",
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
             All Customers
           </button>
         </div>
@@ -136,7 +163,7 @@ function CustomerForm() {
             fontSize: "0.84rem", fontWeight: 600, padding: "11px 16px",
             borderRadius: 10, marginBottom: 16, display: "flex", alignItems: "center", gap: 8,
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
             {error}
           </div>
         )}
@@ -207,7 +234,8 @@ function CustomerForm() {
                 {/* ID Type */}
                 <Field label="ID Type">
                   <div style={{ position: "relative" }}>
-                    <select className="cf-inp" style={{ ...inpStyle(), paddingRight: 36, cursor: "pointer",
+                    <select className="cf-inp" style={{
+                      ...inpStyle(), paddingRight: 36, cursor: "pointer",
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E")`,
                       backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center", appearance: "none",
                     }} name="govtIdType" value={formData.govtIdType} onChange={handleChange}>
@@ -241,8 +269,8 @@ function CustomerForm() {
                       transition: "border-color 0.15s",
                     }}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={noId ? "#cbd5e1" : "#64748b"} strokeWidth="1.8">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
+                        <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
                       </svg>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: "0.82rem", fontWeight: 600, color: noId ? "#94a3b8" : "#475569" }}>
@@ -282,7 +310,7 @@ function CustomerForm() {
                   </>
                 ) : (
                   <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="16" y1="11" x2="22" y2="11" /></svg>
                     Create Customer Profile
                   </>
                 )}
@@ -317,7 +345,7 @@ function Field({ label, required, optional, error, children }) {
       {children}
       {error && (
         <span style={{ fontSize: "0.72rem", color: "#ef4444", marginTop: 3, display: "flex", alignItems: "center", gap: 3 }}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
           {error}
         </span>
       )}

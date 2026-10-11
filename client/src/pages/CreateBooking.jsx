@@ -127,14 +127,14 @@ function CreateBooking() {
   // Falls back to 50/50 if no defaults are set.
   const splitHoursForSlot = (totalHrs, yacht) => {
     const fmt = (v) => v % 1 === 0 ? String(v) : parseFloat(v.toFixed(2)).toString();
-    const defSail  = parseFloat(yacht?.defaultSailingHours);
-    const defAnch  = parseFloat(yacht?.defaultAnchoringHours);
+    const defSail = parseFloat(yacht?.defaultSailingHours);
+    const defAnch = parseFloat(yacht?.defaultAnchoringHours);
     const hasDefaults = !isNaN(defSail) && !isNaN(defAnch) && (defSail + defAnch) > 0;
     if (hasDefaults) {
       const defTotal = defSail + defAnch;
       const sailRatio = defSail / defTotal;
-      const sailHrs   = parseFloat((totalHrs * sailRatio).toFixed(2));
-      const anchHrs   = parseFloat((totalHrs - sailHrs).toFixed(2));
+      const sailHrs = parseFloat((totalHrs * sailRatio).toFixed(2));
+      const anchHrs = parseFloat((totalHrs - sailHrs).toFixed(2));
       return { sailing: fmt(sailHrs), anchoring: fmt(anchHrs) };
     }
     // Fallback: 50/50
@@ -145,7 +145,7 @@ function CreateBooking() {
   // Total slot duration in hours (decimal), e.g. 3.0 for a 3-hr slot
   const slotTotalHours = useMemo(() => {
     const start = customTimeEnabled ? customStart : formData.startTime;
-    const end   = customTimeEnabled ? customEnd   : formData.endTime;
+    const end = customTimeEnabled ? customEnd : formData.endTime;
     if (!start || !end) return 0;
     const diff = hhmmToMinutes(end) - hhmmToMinutes(start);
     return diff > 0 ? diff / 60 : 0;
@@ -161,7 +161,7 @@ function CreateBooking() {
     const yacht = yachts.find((y) => (y.id || y._id) === prefill.yachtId);
     if (!yacht) return;
     const totalMins = hhmmToMinutes(prefill.endTime) - hhmmToMinutes(prefill.startTime);
-    const totalHrs  = totalMins / 60;
+    const totalHrs = totalMins / 60;
     if (totalHrs <= 0) return;
     const { sailing, anchoring } = splitHoursForSlot(totalHrs, yacht);
     setSailingHours(sailing);
@@ -175,7 +175,7 @@ function CreateBooking() {
     const sHrs = parseFloat(sailingHours) || 0;
     const aHrs = parseFloat(anchoringHours) || 0;
     if (sHrs === 0 && aHrs === 0) { setCalculatedAmount(null); return; }
-    const calc = (sHrs * ((yacht.sailingCost || 0) + (yacht.sailingMargin || 0) )) + (aHrs * ((yacht.anchorageCost || 0) + (yacht.anchorageMargin || 0) ));
+    const calc = (sHrs * ((yacht.sailingCost || 0) + (yacht.sailingMargin || 0))) + (aHrs * ((yacht.anchorageCost || 0) + (yacht.anchorageMargin || 0)));
     setCalculatedAmount(calc);
     const calcSettle = (sHrs * (yacht.sailingCost || 0)) + (aHrs * (yacht.anchorageCost || 0));
     setCalculatedSettleAmount(calcSettle);
@@ -188,10 +188,10 @@ function CreateBooking() {
   const isSlotBooked = (slot, bookings) => {
     if (!bookings?.length) return false;
     const slotStart = hhmmToMinutes(slot.start);
-    const slotEnd   = hhmmToMinutes(slot.end);
+    const slotEnd = hhmmToMinutes(slot.end);
     return bookings.some((b) => {
       const bStart = hhmmToMinutes(b.startTime);
-      const bEnd   = hhmmToMinutes(b.endTime);
+      const bEnd = hhmmToMinutes(b.endTime);
       return slotStart < bEnd && slotEnd > bStart;
     });
   };
@@ -204,7 +204,7 @@ function CreateBooking() {
     if (e <= s) return false;
     return bookings.some((b) => {
       const bStart = hhmmToMinutes(b.startTime);
-      const bEnd   = hhmmToMinutes(b.endTime);
+      const bEnd = hhmmToMinutes(b.endTime);
       return s < bEnd && e > bStart;
     });
   };
@@ -328,7 +328,7 @@ function CreateBooking() {
         setFormData((p) => ({ ...p, endTime: match.end }));
         // Auto-populate sailing/anchoring hours from prefilled slot
         const totalMins = hhmmToMinutes(match.end) - hhmmToMinutes(match.start);
-        const totalHrs  = totalMins / 60;
+        const totalHrs = totalMins / 60;
         if (totalHrs > 0 && sailingHours === "" && anchoringHours === "") {
           const { sailing, anchoring } = splitHoursForSlot(totalHrs, selectedYacht);
           setSailingHours(sailing);
@@ -344,10 +344,11 @@ function CreateBooking() {
     return () => document.removeEventListener("click", close);
   }, []);
 
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const updatedValue =name === "contact" ? value.replace(/\s/g, "") : value;
     if (name === "yachtId" || name === "date") {
-      // Changing yacht or date invalidates the slot + all custom/pricing state
       setCustomTimeEnabled(false);
       setCustomStart("");
       setCustomEnd("");
@@ -358,13 +359,15 @@ function CreateBooking() {
       setCalculatedSettleAmount(null);
       setFormData((p) => ({
         ...p,
-        [name]: value,
+        [name]: updatedValue,
         startTime: "",
         endTime: "",
-        ...(name === "yachtId" ? {} : {}),
       }));
     } else {
-      setFormData((p) => ({ ...p, [name]: value }));
+      setFormData((p) => ({
+        ...p,
+        [name]: updatedValue,
+      }));
     }
   };
 
@@ -478,7 +481,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
       // Guard: sailing + anchoring must add up to total slot hours
       const finalStartForCalc = customTimeEnabled ? customStart : formData.startTime;
-      const finalEndForCalc   = customTimeEnabled ? customEnd   : formData.endTime;
+      const finalEndForCalc = customTimeEnabled ? customEnd : formData.endTime;
       if (finalStartForCalc && finalEndForCalc) {
         const slotHrs = (hhmmToMinutes(finalEndForCalc) - hhmmToMinutes(finalStartForCalc)) / 60;
         const sHrs = parseFloat(sailingHours) || 0;
@@ -492,7 +495,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
 
       // Resolve final start/end: use custom if enabled, else use slot selection
       const finalStartTime = customTimeEnabled ? customStart : formData.startTime;
-      const finalEndTime   = customTimeEnabled ? customEnd   : formData.endTime;
+      const finalEndTime = customTimeEnabled ? customEnd : formData.endTime;
 
       // Guard: block submit if custom time is invalid
       if (customTimeEnabled) {
@@ -789,7 +792,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
           {/* ── Header row ── */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
             <button className="btn-back-icon" onClick={() => navigate(-1)} title="Go back">
-              <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg viewBox="0 0 20 20" fill="none"><path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <div>
               <div style={{ fontSize: "clamp(18px, 5vw, 26px)", fontWeight: 900, color: "#051829", lineHeight: 1.1 }}>{isQuotation ? "Create Quotation" : "Create Booking"}</div>
@@ -979,28 +982,28 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                         (() => {
                           const selectedYacht = yachts.find((y) => (y.id || y._id) === formData.yachtId);
                           const isInvalidTime = customStart && customEnd && hhmmToMinutes(customStart) >= hhmmToMinutes(customEnd);
-                          const hasCollision  = !isInvalidTime && isCustomTimeColliding(customStart, customEnd, selectedYacht?.bookings);
+                          const hasCollision = !isInvalidTime && isCustomTimeColliding(customStart, customEnd, selectedYacht?.bookings);
                           const hasError = isInvalidTime || hasCollision;
                           const errorBorder = hasError ? "2px solid #dc2626" : undefined;
-                          const errorBg     = hasError ? "#fef2f2" : undefined;
-                          const labelColor  = hasError ? "#dc2626" : "#64748b";
+                          const errorBg = hasError ? "#fef2f2" : undefined;
+                          const labelColor = hasError ? "#dc2626" : "#64748b";
                           const labelWeight = hasError ? 700 : 400;
                           // ── Time slabs (relative to selected slot) ──────────────
-                          const minToHHMM = (m) => { const h=Math.floor(m/60),mm=m%60; return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`; };
+                          const minToHHMM = (m) => { const h = Math.floor(m / 60), mm = m % 60; return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`; };
                           const baseStartMin = hhmmToMinutes(formData.startTime);
-                          const baseEndMin   = hhmmToMinutes(formData.endTime);
+                          const baseEndMin = hhmmToMinutes(formData.endTime);
                           const yachtSailStart = selectedYacht?.sailStartTime ? hhmmToMinutes(selectedYacht.sailStartTime) : 0;
-                          const yachtSailEnd   = selectedYacht?.sailEndTime   ? hhmmToMinutes(selectedYacht.sailEndTime)   : 23*60+59;
-                          const minStartMin = (selectedYacht?.bookings||[]).reduce((a,b)=>{ const em=hhmmToMinutes(b.endTime); return em<=baseStartMin?Math.max(a,em):a; }, yachtSailStart);
-                          const maxEndMin   = (selectedYacht?.bookings||[]).reduce((a,b)=>{ const sm=hhmmToMinutes(b.startTime); return sm>baseStartMin?Math.min(a,sm):a; }, yachtSailEnd);
+                          const yachtSailEnd = selectedYacht?.sailEndTime ? hhmmToMinutes(selectedYacht.sailEndTime) : 23 * 60 + 59;
+                          const minStartMin = (selectedYacht?.bookings || []).reduce((a, b) => { const em = hhmmToMinutes(b.endTime); return em <= baseStartMin ? Math.max(a, em) : a; }, yachtSailStart);
+                          const maxEndMin = (selectedYacht?.bookings || []).reduce((a, b) => { const sm = hhmmToMinutes(b.startTime); return sm > baseStartMin ? Math.min(a, sm) : a; }, yachtSailEnd);
                           const curStartMin = hhmmToMinutes(customStart);
-                          const startOpts   = [-60,-30,0,30,60,90].map(d=>({ v:minToHHMM(baseStartMin+d), m:baseStartMin+d }));
-                          const endOpts     = [-60,-30,0,30,60,90,120,150,180].map(d=>({ v:minToHHMM(baseEndMin+d), m:baseEndMin+d }));
-                          const slabSel = { width:"100%", padding:"10px 12px", borderRadius:10, border: hasError?"1.5px solid #dc2626":"1.5px solid #e2e8f0", fontSize:14, fontWeight:600, color:"#051829", background: hasError?"#fef2f2":"#f8fafc", cursor:"pointer", appearance:"auto" };
+                          const startOpts = [-60, -30, 0, 30, 60, 90].map(d => ({ v: minToHHMM(baseStartMin + d), m: baseStartMin + d }));
+                          const endOpts = [-60, -30, 0, 30, 60, 90, 120, 150, 180].map(d => ({ v: minToHHMM(baseEndMin + d), m: baseEndMin + d }));
+                          const slabSel = { width: "100%", padding: "10px 12px", borderRadius: 10, border: hasError ? "1.5px solid #dc2626" : "1.5px solid #e2e8f0", fontSize: 14, fontWeight: 600, color: "#051829", background: hasError ? "#fef2f2" : "#f8fafc", cursor: "pointer", appearance: "auto" };
                           return (
-                            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                               <div>
-                                <label style={{ fontSize:11, color: labelColor, display:"block", marginBottom:6, fontWeight: labelWeight }}>Start Time</label>
+                                <label style={{ fontSize: 11, color: labelColor, display: "block", marginBottom: 6, fontWeight: labelWeight }}>Start Time</label>
                                 <select style={slabSel} value={customStart} onChange={(e) => {
                                   const v = e.target.value; setCustomStart(v);
                                   if (v && customEnd && hhmmToMinutes(v) < hhmmToMinutes(customEnd)) {
@@ -1013,7 +1016,7 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                                 </select>
                               </div>
                               <div>
-                                <label style={{ fontSize:11, color: labelColor, display:"block", marginBottom:6, fontWeight: labelWeight }}>End Time</label>
+                                <label style={{ fontSize: 11, color: labelColor, display: "block", marginBottom: 6, fontWeight: labelWeight }}>End Time</label>
                                 <select style={slabSel} value={customEnd} onChange={(e) => {
                                   const v = e.target.value; setCustomEnd(v);
                                   if (customStart && v && hhmmToMinutes(customStart) < hhmmToMinutes(v)) {
@@ -1026,15 +1029,15 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                                 </select>
                               </div>
                               {isInvalidTime ? (
-                                <div style={{ gridColumn:"span 2", fontSize:11, color:"#dc2626", background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:6, padding:"5px 8px", fontWeight:600 }}>
+                                <div style={{ gridColumn: "span 2", fontSize: 11, color: "#dc2626", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, padding: "5px 8px", fontWeight: 600 }}>
                                   ⛔ End time must be after start time.
                                 </div>
                               ) : hasCollision ? (
-                                <div style={{ gridColumn:"span 2", fontSize:11, color:"#dc2626", background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:6, padding:"5px 8px", fontWeight:600 }}>
+                                <div style={{ gridColumn: "span 2", fontSize: 11, color: "#dc2626", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, padding: "5px 8px", fontWeight: 600 }}>
                                   ⛔ This time overlaps an existing booking — please choose a different time.
                                 </div>
                               ) : (
-                                <div style={{ gridColumn:"span 2", fontSize:11, color:"#92400e", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:6, padding:"5px 8px" }}>
+                                <div style={{ gridColumn: "span 2", fontSize: 11, color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, padding: "5px 8px" }}>
                                   ⚠ Slot layout for this date will be updated to reflect the custom time.
                                 </div>
                               )}
@@ -1194,12 +1197,12 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                   <button type="button" className={`cb-ext-toggle ${showExtraDetails ? "open" : ""}`}>
                     {showExtraDetails ? (
                       <>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                         Collapse
                       </>
                     ) : (
                       <>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                         Add
                       </>
                     )}

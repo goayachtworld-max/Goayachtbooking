@@ -104,15 +104,58 @@ const getGreeting = () => {
 const formatDate = () =>
   new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long", year:"numeric", timeZone:"Asia/Kolkata" });
 
+/* ── Service helpers (extraDetails -> pills / filters) ── */
+const parseServices = (txt = "") =>
+  (txt || "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("-"))
+    .map((l) => l.replace(/^-\s*/, "").trim())
+    .filter(Boolean);
+
+const hasDrone = (extras) => extras.includes("Drone");
+const hasDslr  = (extras) => extras.includes("DSLR");
+
+// "Drone - Photography & Videography" -> "Drone", "DSLR Photography" -> "DSLR"
+const shortLabel = (s) => (/drone/i.test(s) ? "Drone" : /dslr/i.test(s) ? "DSLR" : s);
+
+const pillColors = (label) =>
+  label === "Drone" ? { bg: "#dbeafe", fg: "#1d4ed8" }
+  : label === "DSLR" ? { bg: "#ede9fe", fg: "#6d28d9" }
+  : { bg: "#fef3c7", fg: "#b45309" };
+
+// Same paid add-ons as ADDON_CONFIG (paid: true) in Bookings.jsx.
+// Regular inclusions (Soft Drink, Ice Cube, Water, Speaker, Crew, Snacks) are NOT listed here.
+const PAID_ADDONS = [
+  { label: "Drone",      match: "drone" },
+  { label: "DSLR",       match: "dslr" },
+  { label: "Balloon",    match: "balloon" },
+  { label: "Decoration", match: "decoration" },
+  { label: "Cake",       match: "cake" },
+];
+
+// Returns the labels of every paid add-on found in extraDetails
+const getExtraServices = (txt = "") => {
+  const text = (txt || "").toLowerCase();
+  return PAID_ADDONS.filter(({ match }) => text.includes(match)).map(({ label }) => label);
+};
+
+const MAX_PILLS = 3;
+
 export default function AdminDashboard({ user }) {
   const navigate = useNavigate();
   const [stats, setStats]           = useState({ today:0, upcoming7Days:0, month:0, createdToday:0, confirmed:0, pending:0, cancelled:0, completed:0 });
   const [loaded, setLoaded]         = useState(false);
   const [cardsReady, setCardsReady] = useState(false);
-  const [demandStats, setDemandStats]   = useState({ upcoming: [] });
+  const [demandStats, setDemandStats]     = useState({ upcoming: [] });
   const [demandsLoaded, setDemandsLoaded] = useState(false);
   const [todayBookings, setTodayBookings]   = useState([]);
   const [bookingsLoaded, setBookingsLoaded] = useState(false);
+
+  /* Today-bookings filters */
+  const [filterDrone, setFilterDrone] = useState(false);
+  const [filterDslr, setFilterDslr]   = useState(false);
+  const [search, setSearch]           = useState("");
 
   const getNowIST   = () => new Date(new Date().toLocaleString("en-US", { timeZone:"Asia/Kolkata" }));
   const getTodayIST = () => { const n=getNowIST(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; };
@@ -186,14 +229,14 @@ export default function AdminDashboard({ user }) {
   const monthStr = getTodayIST().slice(0,7);
 
   const STATS = [
-    { label:"Today",       value:stats.today,        accent:"#3b82f6", icon:<Ico.Calendar />,  nav:`/bookings?date=${todayStr}` },
+    { label:"Today",       value:stats.today,         accent:"#3b82f6", icon:<Ico.Calendar />, nav:`/bookings?date=${todayStr}` },
     { label:"Next 7 Days", value:stats.upcoming7Days, accent:"#f59e0b", icon:<Ico.Clock7 />,   nav:"/bookings?range=7days" },
-    { label:"This Month",  value:stats.month,         accent:"#8b5cf6", icon:<Ico.Month />,     nav:`/bookings?month=${monthStr}` },
-    { label:"New Today",   value:stats.createdToday,  accent:"#06b6d4", icon:<Ico.Star />,      nav:"/bookings?created=today" },
-    { label:"Pending",     value:stats.pending,       accent:"#f97316", icon:<Ico.Pending />,   nav:"/bookings?status=pending" },
-    { label:"Confirmed",   value:stats.confirmed,     accent:"#10b981", icon:<Ico.Check />,     nav:"/bookings?status=confirmed" },
-    { label:"Completed",   value:stats.completed,     accent:"#6366f1", icon:<Ico.Done />,      nav:"/bookings?status=completed" },
-    { label:"Cancelled",   value:stats.cancelled,     accent:"#ef4444", icon:<Ico.X />,         nav:"/bookings?status=cancelled" },
+    { label:"This Month",  value:stats.month,         accent:"#8b5cf6", icon:<Ico.Month />,    nav:`/bookings?month=${monthStr}` },
+    { label:"New Today",   value:stats.createdToday,  accent:"#06b6d4", icon:<Ico.Star />,     nav:"/bookings?created=today" },
+    { label:"Pending",     value:stats.pending,       accent:"#f97316", icon:<Ico.Pending />,  nav:"/bookings?status=pending" },
+    { label:"Confirmed",   value:stats.confirmed,     accent:"#10b981", icon:<Ico.Check />,    nav:"/bookings?status=confirmed" },
+    { label:"Completed",   value:stats.completed,     accent:"#6366f1", icon:<Ico.Done />,     nav:"/bookings?status=completed" },
+    { label:"Cancelled",   value:stats.cancelled,     accent:"#ef4444", icon:<Ico.X />,        nav:"/bookings?status=cancelled" },
   ];
 
   const MGMT = [
@@ -210,6 +253,40 @@ export default function AdminDashboard({ user }) {
     return `${h12}:${String(m).padStart(2,"0")} ${ap}`;
   };
 
+  /* ── Filtered "Bookings · Today" ── */
+  const filteredToday = todayBookings.filter((b) => {
+    const svcs   = parseServices(b.extraDetails);
+    const extras = getExtraServices(b.extraDetails);
+
+    // Checkbox filters (OR). Nothing ticked = no filter.
+    if (filterDrone || filterDslr) {
+      const ok = (filterDrone && hasDrone(extras)) || (filterDslr && hasDslr(extras));
+      if (!ok) return false;
+    }
+
+    // Search across visible + a few hidden fields; every typed word must match
+    const q = search.trim().toLowerCase();
+    if (q) {
+      const haystack = [
+        b.customerId?.name,
+        b.customerId?.contact,
+        b.yachtId?.name,
+        b.yachtId?.contactPersonName,
+        b.yachtId?.contactPersonNumber,
+        b.employeeId?.name,
+        b.status,
+        b.startTime, b.endTime,
+        fmt12(b.startTime), fmt12(b.endTime),
+        b.numPeople ? `${b.numPeople} pax` : "",
+        b.pendingAmount, b.quotedAmount,
+        ...svcs, ...extras,
+      ].filter((v) => v !== undefined && v !== null).join(" ").toLowerCase();
+
+      if (!q.split(/\s+/).every((w) => haystack.includes(w))) return false;
+    }
+    return true;
+  });
+
   /* ── shared base pill style ── */
   const pillBase = (statusColor) => ({
     display: "inline-flex",
@@ -223,6 +300,26 @@ export default function AdminDashboard({ user }) {
     cursor: "pointer",
     transition: "box-shadow 0.15s",
     minWidth: 0,
+  });
+
+  /* ── fixed-size card for Bookings · Today ── */
+  const todayCardStyle = (statusColor) => ({
+    ...pillBase(statusColor),
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 8,
+    width: 320,
+    boxSizing: "border-box",
+    overflow: "hidden",
+  });
+
+  const checkLabel = (active) => ({
+    display: "inline-flex", alignItems: "center", gap: 6,
+    fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", userSelect: "none",
+    padding: "5px 10px", borderRadius: 99,
+    border: `1px solid ${active ? "#0a2d4a" : "#e2e8f0"}`,
+    background: active ? "#0a2d4a" : "#fff",
+    color: active ? "#fff" : "#475569",
   });
 
   return (
@@ -261,48 +358,117 @@ export default function AdminDashboard({ user }) {
           >View all</button>
         </div>
 
+        {/* Filters */}
+        <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:8, marginBottom:10 }}>
+          <label style={checkLabel(filterDrone)}>
+            <input type="checkbox" checked={filterDrone} onChange={(e)=>setFilterDrone(e.target.checked)} style={{ accentColor:"#0a2d4a" }} />
+            Drone
+          </label>
+          <label style={checkLabel(filterDslr)}>
+            <input type="checkbox" checked={filterDslr} onChange={(e)=>setFilterDslr(e.target.checked)} style={{ accentColor:"#0a2d4a" }} />
+            DSLR
+          </label>
+          <input
+            type="text"
+            value={search}
+            onChange={(e)=>setSearch(e.target.value)}
+            placeholder="Search name, phone, yacht, time, service…"
+            style={{ flex:"1 1 220px", maxWidth:360, fontSize:"0.78rem", padding:"6px 12px", borderRadius:99, border:"1px solid #e2e8f0", outline:"none" }}
+          />
+          {(filterDrone || filterDslr || search) && (
+            <button
+              onClick={()=>{ setFilterDrone(false); setFilterDslr(false); setSearch(""); }}
+              style={{ fontSize:"0.68rem", fontWeight:700, color:"#64748b", background:"none", border:"none", cursor:"pointer", textDecoration:"underline" }}
+            >Clear</button>
+          )}
+          <span style={{ fontSize:"0.68rem", color:"#94a3b8", fontWeight:600 }}>
+            {filteredToday.length}/{todayBookings.length}
+          </span>
+        </div>
+
         {!bookingsLoaded ? (
           <div style={{ display:"flex", gap:6 }}>
             {[1,2,3].map(i => (
-              <div key={i} style={{ width:180, height:56, borderRadius:9, background:"#e8edf2", animation:"db-shimmer 1.4s ease-in-out infinite" }} />
+              <div key={i} style={{ width:320, height:64, borderRadius:9, background:"#e8edf2", animation:"db-shimmer 1.4s ease-in-out infinite" }} />
             ))}
           </div>
-        ) : todayBookings.length === 0 ? (
-          <div style={{ padding:"14px 0", color:"#94a3b8", fontSize:"0.8rem", fontWeight:600 }}>No bookings scheduled for today.</div>
+        ) : filteredToday.length === 0 ? (
+          <div style={{ padding:"14px 0", color:"#94a3b8", fontSize:"0.8rem", fontWeight:600 }}>
+            {todayBookings.length === 0 ? "No bookings scheduled for today." : "No bookings match your filters."}
+          </div>
         ) : (
           <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-            {todayBookings.map((b) => {
+            {filteredToday.map((b) => {
               const isCompleted = new Date(`${b.date.split("T")[0]}T${b.endTime}:00+05:30`) < new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
               const statusColor = isCompleted ? "#6366f1" : b.status==="confirmed" ? "#16a34a" : "#d97706";
+              const labels  = getExtraServices(b.extraDetails);
+              const visible = labels.slice(0, MAX_PILLS);
+              const extra   = labels.length - visible.length;
+
               return (
                 <div
                   key={b._id}
                   onClick={() => navigate(`/bookings?date=${todayStr}`)}
-                  style={pillBase(statusColor)}
+                  style={todayCardStyle(statusColor)}
                   onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 12px rgba(15,23,42,0.10)"}
                   onMouseLeave={e => e.currentTarget.style.boxShadow="none"}
                 >
-                  {/* Time */}
-                  <div style={{ textAlign:"center", flexShrink:0 }}>
-                    <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#0a2d4a", whiteSpace:"nowrap" }}>{fmt12(b.startTime)}</div>
-                    <div style={{ fontSize:"0.6rem", color:"#94a3b8", fontWeight:600, whiteSpace:"nowrap" }}>–{fmt12(b.endTime)}</div>
-                  </div>
-                  <div style={{ width:1, alignSelf:"stretch", background:"#e2e8f0", flexShrink:0 }} />
-                  {/* Name + yacht */}
-                  <div style={{ flexShrink:0 }}>
-                    <div style={{ fontWeight:700, fontSize:"0.82rem", color:"#0a2d4a", whiteSpace:"nowrap" }}>
-                      {b.customerId?.name || "—"}
+                  {/* Row 1: time | name + yacht | amount | dot */}
+                  <div style={{ display:"flex", alignItems:"flex-start", gap:10, minWidth:0 }}>
+                    <div style={{ textAlign:"center", flexShrink:0 }}>
+                      <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#0a2d4a", whiteSpace:"nowrap" }}>{fmt12(b.startTime)}</div>
+                      <div style={{ fontSize:"0.6rem", color:"#94a3b8", fontWeight:600, whiteSpace:"nowrap" }}>–{fmt12(b.endTime)}</div>
                     </div>
-                    <div style={{ fontSize:"0.66rem", color:"#64748b", marginTop:1, whiteSpace:"nowrap" }}>
-                      {b.yachtId?.name}{b.numPeople ? ` · ${b.numPeople} pax` : ""}
+                    <div style={{ width:1, alignSelf:"stretch", background:"#e2e8f0", flexShrink:0 }} />
+
+                    {/* flex:1 + minWidth:0 + ellipsis = constant width */}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div
+                        title={b.customerId?.name}
+                        style={{ fontWeight:700, fontSize:"0.82rem", color:"#0a2d4a", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}
+                      >
+                        {b.customerId?.name || "—"}
+                      </div>
+                      <div
+                        title={b.yachtId?.name}
+                        style={{ fontSize:"0.66rem", color:"#64748b", marginTop:1, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}
+                      >
+                        {b.yachtId?.name}{b.numPeople ? ` · ${b.numPeople} pax` : ""}
+                      </div>
                     </div>
+
+                    {b.pendingAmount > 0 && (
+                      <span style={{ fontSize:"0.65rem", fontWeight:700, color:"#b45309", background:"#fef3c7", borderRadius:99, padding:"2px 8px", flexShrink:0, alignSelf:"center" }}>
+                        ₹{b.pendingAmount}
+                      </span>
+                    )}
+                    <span style={{ width:8, height:8, borderRadius:"50%", background:statusColor, flexShrink:0, alignSelf:"center" }} title={isCompleted?"completed":b.status} />
                   </div>
-                  {b.pendingAmount > 0 && (
-                    <span style={{ fontSize:"0.65rem", fontWeight:700, color:"#b45309", background:"#fef3c7", borderRadius:99, padding:"2px 8px", flexShrink:0, alignSelf:"center" }}>
-                      ₹{b.pendingAmount}
-                    </span>
+
+                  {/* Row 2: service pills */}
+                  {labels.length > 0 && (
+                  <div style={{ display:"flex", flexWrap:"nowrap", gap:4, overflow:"hidden" }}>
+                    {visible.map((l, i) => {
+                      const c = pillColors(l);
+                      return (
+                        <span
+                          key={i}
+                          style={{ fontSize:"0.62rem", fontWeight:700, background:c.bg, color:c.fg, borderRadius:99, padding:"2px 8px", whiteSpace:"nowrap", flexShrink:0, maxWidth:110, overflow:"hidden", textOverflow:"ellipsis" }}
+                        >
+                          {l}
+                        </span>
+                      );
+                    })}
+                    {extra > 0 && (
+                      <span
+                        title={labels.slice(MAX_PILLS).join(", ")}
+                        style={{ fontSize:"0.62rem", fontWeight:700, background:"#f1f5f9", color:"#64748b", borderRadius:99, padding:"2px 8px", whiteSpace:"nowrap", flexShrink:0 }}
+                      >
+                        +{extra}
+                      </span>
+                    )}
+                  </div>
                   )}
-                  <span style={{ width:8, height:8, borderRadius:"50%", background:statusColor, flexShrink:0, alignSelf:"center", marginLeft:"auto" }} title={isCompleted?"completed":b.status} />
                 </div>
               );
             })}
@@ -337,7 +503,6 @@ export default function AdminDashboard({ user }) {
                     onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 12px rgba(15,23,42,0.10)"}
                     onMouseLeave={e => e.currentTarget.style.boxShadow="none"}
                   >
-                    {/* ── Customer name (header row) + detail rows below ── */}
                     <div style={{ flexShrink:0, minWidth:0 }}>
 
                       {/* Customer name */}

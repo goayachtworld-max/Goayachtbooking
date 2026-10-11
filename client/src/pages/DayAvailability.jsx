@@ -1013,7 +1013,8 @@ function DayAvailability() {
           <div className="card shadow-sm border-0 rounded-4 p-3">
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
               <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
-                {yacht?.runningCost > 0 && (
+                {/* B2B price — admin only */}
+                {isAdmin && yacht?.runningCost > 0 && (
                   <span className="badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: 11 }}>
                     B2b: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
                   </span>
