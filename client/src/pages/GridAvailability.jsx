@@ -265,6 +265,7 @@ function GridAvailability() {
   const isAdminOrOnsite =
     employee.type === "admin" || employee.type === "onsite";
 
+  const isAdmin = user.type === "admin";
   const isOwner = (slot) =>
     slot.appliedBy && slot.appliedBy === employee._id;
 
@@ -1237,9 +1238,12 @@ function GridAvailability() {
             <div className={`d-flex justify-content-between align-items-center flex-wrap gap-2 ${styles.mobileInfoBar}`}>
               {yacht && (
                 <div className="d-flex gap-2 align-items-center flex-wrap">
-                  <span className={`badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold ${styles.mobileInfoBadge}`} style={{ fontSize: "11px" }}>
-                    B2b: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
-                  </span>
+                  {/* B2B price — admin only */}
+                  {isAdmin && (
+                    <span className={`badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold ${styles.mobileInfoBadge}`} style={{ fontSize: "11px" }}>
+                      B2b: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
+                    </span>
+                  )}
                   <span className={`badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-semibold ${styles.mobileInfoBadge}`} style={{ fontSize: "11px" }}>
                     Selling: ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
                   </span>
@@ -1266,9 +1270,12 @@ function GridAvailability() {
           <div className="mb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
             {yacht && (
               <div className="d-flex gap-2 align-items-center flex-wrap">
-                <span className="badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: "13px" }}>
-                  B2b: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
-                </span>
+                {/* B2B price — admin only */}
+                {isAdmin && (
+                  <span className="badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: "13px" }}>
+                    B2b: ₹{Number(yacht.runningCost).toLocaleString("en-IN")}
+                  </span>
+                )}
                 <span className="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-semibold" style={{ fontSize: "13px" }}>
                   Selling: ₹{Number(yacht.sellingPrice).toLocaleString("en-IN")}
                 </span>
