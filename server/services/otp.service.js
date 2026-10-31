@@ -17,12 +17,26 @@
 //   • The phone cleaning below handles Indian numbers correctly (91XXXXXXXX too)
 //
 // ENV (optional):
-//   NODE_ENV=production    ← dev mode just logs OTPs to console, no WA needed
+//   WA_ENABLED=true        ← send for real in ANY environment (otherwise only when NODE_ENV=production)
 
 import pkg   from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
 import crypto  from 'crypto';
+
+// ─── LIVE vs DEV mode ──────────────────────────────────────────────────────────
+// LIVE  = the WhatsApp client starts and messages are really sent.
+// DEV   = nothing is sent; OTPs / booking messages are printed to the console.
+//
+//   WA_ENABLED=true   -> LIVE in any environment (local, staging, production)
+//   WA_ENABLED=false  -> DEV even in production
+//   (not set)         -> LIVE only when NODE_ENV=production (the old behaviour)
+export const isWhatsAppLive = () => {
+  const flag = String(process.env.WA_ENABLED ?? '').trim().toLowerCase();
+  if (flag === 'true') return true;
+  if (flag === 'false') return false;
+  return process.env.NODE_ENV === 'production';
+};
 
 // ─── WhatsApp client singleton ─────────────────────────────────────────────────
 let waClient   = null;
@@ -34,8 +48,8 @@ export const initWhatsApp = () => {
   initCalled = true;
 
   // Dev: skip WA entirely — OTPs print to console
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('INFO [DEV] WhatsApp OTP disabled — OTPs will be logged to console.');
+  if (!isWhatsAppLive()) {
+    console.log('INFO [DEV] WhatsApp is OFF — OTPs and booking messages are only printed to the console. Set WA_ENABLED=true in .env to send for real.');
     return null;
   }
 
@@ -57,7 +71,7 @@ export const initWhatsApp = () => {
 
   waClient.on('ready', () => {
     waReady = true;
-    console.log('WhatsApp OTP service ready');
+    console.log('WhatsApp service READY — OTPs and booking messages will be sent for real');
   });
 
   waClient.on('auth_failure', (msg) => {
@@ -119,7 +133,7 @@ const toWaId = (phone) => `91${phone}@c.us`;
 // ─── Send OTP ──────────────────────────────────────────────────────────────────
 export const sendOtpWhatsApp = async (phone, otp) => {
   // Dev: print to console so you can test without a real WhatsApp session
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isWhatsAppLive()) {
     console.log('--------------------------------------------');
     console.log(`  [DEV] OTP for +91${phone}: ${otp}`);
     console.log('--------------------------------------------');
@@ -150,5 +164,31 @@ export const sendOtpWhatsApp = async (phone, otp) => {
       success: false,
       message: 'Could not send OTP via WhatsApp. Please try again.',
     };
+  }
+};
+
+// ─── Send any text message (used for booking cancellation / update notices) ───
+// `waNumber` = full international number, digits only (e.g. "919876543210").
+export const sendWhatsAppText = async (waNumber, text) => {
+  // Dev: print to console, nothing is sent
+  if (!isWhatsAppLive()) {
+    console.log('--------------------------------------------');
+    console.log(`  [DEV] WhatsApp to +${waNumber}:\n${text}`);
+    console.log('--------------------------------------------');
+    return { success: true, dev: true };
+  }
+
+  if (!waReady || !waClient) {
+    return { success: false, reason: 'WhatsApp client not ready' };
+  }
+
+  try {
+    // Resolve the number first: fails cleanly if it is not on WhatsApp
+    const id = await waClient.getNumberId(waNumber);
+    if (!id) return { success: false, reason: 'Number is not on WhatsApp' };
+    await waClient.sendMessage(id._serialized, text);
+    return { success: true };
+  } catch (err) {
+    return { success: false, reason: err.message };
   }
 };

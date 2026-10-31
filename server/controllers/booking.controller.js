@@ -7,6 +7,12 @@ import { YachtModel } from "../models/yacht.model.js";
 import { sendNotification } from "../services/notification.service.js";
 import { EmployeeModel } from "../models/employee.model.js";
 import { syncDayLayout } from "../utils/daySlots.js";
+import {
+  notifyBookingConfirmed,
+  notifyBookingCancelled,
+  notifyBookingUpdated,
+  snapshot,
+} from "../services/bookingWhatsApp.service.js";
 
 export const createBooking = async (req, res, next) => {
   try {
@@ -184,6 +190,12 @@ export const createBooking = async (req, res, next) => {
       excludeUserId: req.user.id,
     });
 
+    // WhatsApp: confirmation to the customer (waits ~30s so the advance payment is included).
+    // Pending bookings / quotations are not messaged until they are confirmed.
+    if (bookingStatus === "confirmed") {
+      notifyBookingConfirmed(booking._id);
+    }
+
     console.log("booking : ", booking);
     res.status(201).json({ success: true, booking });
   } catch (err) {
@@ -227,6 +239,13 @@ export const updateBooking = async (req, res, next) => {
       },
       { new: true }
     ).populate("customerId employeeId transactionId");
+
+    // WhatsApp: only on a real status transition
+    if (status === "cancelled" && booking.status !== "cancelled") {
+      notifyBookingCancelled(bookingId, { wasConfirmed: booking.status === "confirmed" });
+    } else if (status === "confirmed" && booking.status !== "confirmed") {
+      notifyBookingConfirmed(bookingId);
+    }
 
     return res.status(200).json(updatedBooking);
   } catch (error) {
@@ -452,6 +471,10 @@ export const updateBookingYachtInfo = async (req, res, next) => {
       return res.status(400).json({ success: false, message: reason });
     }
 
+    // Snapshot BEFORE we change anything (used for the WhatsApp "what changed")
+    const oldYacht = await YachtModel.findById(booking.yachtId).select("name").lean();
+    const waBefore = snapshot(booking, oldYacht?.name);
+
     // 6️⃣ Remove old availability slot
     await AvailabilityModel.findOneAndDelete({
       bookingId: booking._id,
@@ -492,6 +515,9 @@ export const updateBookingYachtInfo = async (req, res, next) => {
       console.error("syncDayLayout failed (booking still updated):", syncErr);
     }
 
+    // WhatsApp: yacht / date / time change (no message if nothing really changed)
+    notifyBookingUpdated(booking._id, waBefore, snapshot(booking, yacht.name));
+
     res.status(200).json({
       success: true,
       message: "Booking updated successfully",
@@ -524,9 +550,13 @@ export const updateBookingExtraDetails = async (req, res, next) => {
         .json({ success: false, message: "Booking not found" });
     }
 
+    const waBefore = snapshot(booking);
     if (extraDetails !== undefined) booking.extraDetails = extraDetails;
     if (numPeople !== undefined) booking.numPeople = Number(numPeople);
     await booking.save();
+
+    // WhatsApp: group size / inclusions changed
+    notifyBookingUpdated(booking._id, waBefore, snapshot(booking));
 
     res.status(200).json({
       success: true,
@@ -599,6 +629,8 @@ export const updateBookingAmounts = async (req, res, next) => {
       });
     }
 
+    const waBefore = snapshot(booking);
+
     // 6️⃣ Calculate totalPaid from existing transactions
     const totalPaid = booking.transactionIds.reduce((sum, txn) => {
       return sum + (txn.amount || 0);
@@ -626,6 +658,9 @@ export const updateBookingAmounts = async (req, res, next) => {
     }
 
     await booking.save();
+
+    // WhatsApp: price / token edit (off unless WA_NOTIFY_AMOUNTS=true)
+    notifyBookingUpdated(booking._id, waBefore, snapshot(booking));
 
     // 9️⃣ Return fully populated booking
     const updatedBooking = await BookingModel.findById(bookingId)

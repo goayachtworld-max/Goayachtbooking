@@ -4,6 +4,7 @@ import { BookingModel } from "../models/booking.model.js";
 import { deleteAvailabilityForBooking } from "./availability.controller.js";
 import { EmployeeModel } from "../models/employee.model.js";
 import { sendNotification } from "../services/notification.service.js";
+import { notifyBookingCancelled, notifyBookingConfirmed } from "../services/bookingWhatsApp.service.js";
 
 
 export const createTransactionAndUpdateBooking = async (req, res, next) => {
@@ -11,6 +12,7 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
 
   let transaction = null;
   let populatedBooking = null;
+  let statusBefore = null; // booking.status before this request (to detect a real cancellation)
 
   const { bookingId, type, amount, paymentProof, status } = req.body;
   const incStatus = req.body.status;
@@ -52,6 +54,8 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
     if (updatedPendingAmount < 0) {
       throw new Error("Amount cannot exceed pending amount");
     }
+
+    statusBefore = booking.status;
 
     if (status) {
       booking.status = status;
@@ -100,6 +104,14 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
   // ====================================================
   // 🚫 OUTSIDE TRANSACTION (SIDE EFFECTS ONLY)
   // ====================================================
+
+  // WhatsApp: customer gets a message only on a real status transition
+  if (statusBefore !== "cancelled" && populatedBooking?.status === "cancelled") {
+    notifyBookingCancelled(populatedBooking._id, { wasConfirmed: statusBefore === "confirmed" });
+  } else if (statusBefore !== "confirmed" && populatedBooking?.status === "confirmed") {
+    notifyBookingConfirmed(populatedBooking._id);
+  }
+
   try {
     if (incStatus) {
       const bookingCreator = await EmployeeModel.findById(
