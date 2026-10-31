@@ -9,69 +9,12 @@ import { YachtModel }        from '../models/yacht.model.js';
 import { BookingModel }      from '../models/booking.model.js';
 import { AvailabilityModel } from '../models/availability.model.js';
 import { CustomerModel }     from '../models/customer.model.js';
+import { toMin, getResolvedDaySlots, syncDayLayout } from '../utils/daySlots.js';
 
-// ─── Helpers (mirrors CreateBooking.jsx buildSlotsForYacht exactly) ───────────
-const timeToMin = (t) => {
-  if (!t) return 0;
-  const [h, m] = String(t).split(':').map(Number);
-  return h * 60 + m;
-};
-const minToTime = (m) => {
-  const h  = Math.floor(m / 60) % 24;
-  const mm = m % 60;
-  return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-};
-
-const buildSlots = (yacht, dateStr) => {
-  // Priority 1 — date-specific slot overrides stored on the yacht document
-  const slotsForDate = yacht.slots?.find(
-    (sg) => new Date(sg.date).toDateString() === new Date(dateStr).toDateString()
-  );
-  if (slotsForDate?.slots?.length > 0) {
-    return slotsForDate.slots
-      .map((s) => ({ start: s.start, end: s.end }))
-      .sort((a, b) => timeToMin(a.start) - timeToMin(b.start));
-  }
-
-  // Priority 2 — compute from yacht config (same algorithm as CreateBooking.jsx)
-  const sailStart    = yacht.sailStartTime;
-  const sailEnd      = yacht.sailEndTime;
-  const durationRaw  = yacht.slotDurationMinutes || yacht.duration;
-  const specialSlots = yacht.specialSlots || [];
-
-  if (!sailStart || !sailEnd || !durationRaw) return [];
-
-  let duration = 0;
-  if (typeof durationRaw === 'string' && durationRaw.includes(':')) {
-    const [h, m] = durationRaw.split(':').map(Number);
-    duration = h * 60 + (m || 0);
-  } else {
-    duration = Number(durationRaw);
-  }
-  if (!duration) return [];
-
-  const startMin    = timeToMin(sailStart);
-  let   endMin      = timeToMin(sailEnd);
-  const specialMins = specialSlots.map(timeToMin).sort((a, b) => a - b);
-
-  if (endMin <= startMin) endMin += 24 * 60;
-  if (sailEnd === '00:00') endMin = 24 * 60 - 1;
-
-  const slots  = [];
-  let   cursor = startMin;
-  while (cursor < endMin) {
-    const next = cursor + duration;
-    const hit  = specialMins.find((sp) => sp > cursor && sp < next);
-    if (hit) {
-      slots.push({ start: cursor, end: hit });
-      cursor = hit;
-    } else {
-      slots.push({ start: cursor, end: Math.min(next, endMin) });
-      cursor = next;
-    }
-  }
-  return slots.map((s) => ({ start: minToTime(s.start), end: minToTime(s.end) }));
-};
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Slots now come from the SAME place as the admin screens (utils/daySlots.js):
+// stored day layout (or generated default) reconciled with bookings/locks.
+const timeToMin = toMin;
 
 const overlaps = (slot, takenList) => {
   const sS = timeToMin(slot.start), sE = timeToMin(slot.end);
@@ -88,11 +31,11 @@ export const getPublicSlots = async (req, res, next) => {
     }
 
     const yacht = await YachtModel.findById(yachtId)
-      .select('sailStartTime sailEndTime slotDurationMinutes duration specialSlots slots')
+      .select('sailStartTime sailEndTime slotDurationMinutes duration specialSlots')
       .lean();
     if (!yacht) return res.status(404).json({ success: false, message: 'Yacht not found' });
 
-    const slots = buildSlots(yacht, date);
+    const { slots } = await getResolvedDaySlots(yachtId, date, yacht);
     if (!slots.length) return res.json({ success: true, date, slots: [] });
 
     // Fetch booked + locked slots for this yacht+date
@@ -140,8 +83,21 @@ export const createPublicBooking = async (req, res, next) => {
       });
     }
 
-    const yacht = await YachtModel.findById(yachtId).select('_id company name sellingPrice');
+    const yacht = await YachtModel.findById(yachtId)
+      .select('_id company name sellingPrice sailStartTime sailEndTime slotDurationMinutes duration specialSlots')
+      .lean();
     if (!yacht) return res.status(404).json({ success: false, message: 'Yacht not found' });
+
+    // The requested slot must exist in the day's real layout — the public site
+    // may not invent times.
+    const { slots: validSlots } = await getResolvedDaySlots(yachtId, date, yacht);
+    const slotExists = validSlots.some((s) => s.start === slot.start && s.end === slot.end);
+    if (!slotExists) {
+      return res.status(409).json({
+        success: false,
+        message: 'Slots for this day have changed. Please reselect a slot.',
+      });
+    }
 
     // Re-check availability at submission time (race condition guard)
     const [booked, locked] = await Promise.all([
@@ -204,6 +160,8 @@ export const createPublicBooking = async (req, res, next) => {
       bookingId:  booking._id,
       deleteAfter: new Date(date + 'T' + slot.end + ':00'),
     });
+
+    try { await syncDayLayout(yachtId, date); } catch (e) { console.error('syncDayLayout failed:', e); }
 
     res.status(201).json({
       success: true,

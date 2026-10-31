@@ -320,7 +320,14 @@ function CreateBooking() {
       isBooked: isSlotBooked(slot, selectedYacht.bookings),
     }));
     setStartTimeOptions(slotsWithStatus);
-    setDaySlotList(slots); // keep full list (plain) for slot adjustment
+    // keep full list for slot adjustment — tagged with `type` so adjustSlots()
+    // can refuse to move/trim a slot that is already booked
+    setDaySlotList(
+      slots.map((s) => ({
+        ...s,
+        type: isSlotBooked(s, selectedYacht.bookings) ? "booked" : "free",
+      }))
+    );
 
     if (formData.startTime) {
       const match = slots.find((s) => s.start === formData.startTime);
@@ -347,7 +354,7 @@ function CreateBooking() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const updatedValue =name === "contact" ? value.replace(/\s/g, "") : value;
+    const updatedValue = name === "contact" ? value.replace(/\s/g, "") : value;
     if (name === "yachtId" || name === "date") {
       setCustomTimeEnabled(false);
       setCustomStart("");
@@ -516,32 +523,38 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
       bookingPayload.startTime = finalStartTime;
       bookingPayload.endTime = finalEndTime;
 
-      // If admin used custom time, update the day's slot layout before booking
-      const originalSlot = startTimeOptions[selectedSlotIndex];
-      const isTimeEdited = customTimeEnabled && originalSlot &&
-        (finalStartTime !== originalSlot.start || finalEndTime !== originalSlot.end);
-
-      if (isTimeEdited && selectedSlotIndex >= 0) {
-        const updatedSlots = adjustSlots({
-          allSlots: daySlotList,
-          targetIndex: selectedSlotIndex,
-          newStart: finalStartTime,
-          newEnd: finalEndTime,
-          durationMinutes: hhmmToMinutes(
-            yachts.find((y) => (y.id || y._id) === formData.yachtId)?.slotDurationMinutes ||
-            yachts.find((y) => (y.id || y._id) === formData.yachtId)?.duration || "120"
-          ),
-        });
-        await updateDaySlots(
-          formData.yachtId,
-          formData.date,
-          updatedSlots.map(({ start, end }) => ({ start, end })),
-          token
-        );
-      }
-
       const response = await createBookingAPI(bookingPayload, token);
       const booking = response.data.booking;
+
+      // Booking exists now. Tidy the day's slot layout around the custom time.
+      // The server already keeps the booked range intact in the layout, so a
+      // failure here must not look like a failed booking.
+      try {
+        const originalSlot = startTimeOptions[selectedSlotIndex];
+        const isTimeEdited = customTimeEnabled && originalSlot &&
+          (finalStartTime !== originalSlot.start || finalEndTime !== originalSlot.end);
+
+        if (isTimeEdited && selectedSlotIndex >= 0) {
+          const updatedSlots = adjustSlots({
+            allSlots: daySlotList,
+            targetIndex: selectedSlotIndex,
+            newStart: finalStartTime,
+            newEnd: finalEndTime,
+            durationMinutes: hhmmToMinutes(
+              yachts.find((y) => (y.id || y._id) === formData.yachtId)?.slotDurationMinutes ||
+              yachts.find((y) => (y.id || y._id) === formData.yachtId)?.duration || "120"
+            ),
+          });
+          await updateDaySlots(
+            formData.yachtId,
+            formData.date,
+            updatedSlots.map(({ start, end }) => ({ start, end })),
+            token
+          );
+        }
+      } catch (layoutErr) {
+        console.error("Slot layout tidy-up failed (booking was created):", layoutErr);
+      }
 
       toast.success(isQuotationNow ? "Quotation created successfully!" : "Booking created successfully!");
 
@@ -1154,12 +1167,12 @@ ${manualNotes ? `Notes:\n${manualNotes}` : ""}
                   <div className="cb-f">
                     <label className="cb-lbl">
                       Total Amount
-                      {runningCost > 0 && <span style={{ color: "#64748b", fontWeight: 500, marginLeft: 6, fontSize: 12, textTransform: "none" }}>min ₹{Number(calculatedSettleAmount).toLocaleString("en-IN")}</span>}
+                      {runningCost > 0 && <span style={{ color: "#64748b", fontWeight: 500, marginLeft: 6, fontSize: 12, textTransform: "none" }}>min ₹{Number(calculatedAmount).toLocaleString("en-IN")}</span>}
                     </label>
                     <input className={`cb-inp ${isAmountInvalid ? "err" : ""}`} type="number"
                       name="totalAmount" value={formData.totalAmount} onChange={handleChange}
                       required placeholder="₹ 0" />
-                    {isAmountInvalid && <div className="cb-err-msg">⚠ Below running cost ₹{Number(calculatedSettleAmount).toLocaleString("en-IN")}</div>}
+                    {isAmountInvalid && <div className="cb-err-msg">⚠ Below running cost ₹{Number(calculatedAmount).toLocaleString("en-IN")}</div>}
                   </div>
 
                   {isQuotation ? (

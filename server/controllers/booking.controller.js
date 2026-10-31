@@ -6,6 +6,7 @@ import { sendEmail } from "../utils/sendEmail.js";
 import { YachtModel } from "../models/yacht.model.js";
 import { sendNotification } from "../services/notification.service.js";
 import { EmployeeModel } from "../models/employee.model.js";
+import { syncDayLayout } from "../utils/daySlots.js";
 
 export const createBooking = async (req, res, next) => {
   try {
@@ -153,6 +154,14 @@ export const createBooking = async (req, res, next) => {
         bookingId: booking._id,
         deleteAfter: tripEnd,
       });
+    }
+
+    // 8️⃣ Keep the day's slot layout in line with this booking's exact times
+    //    (server-side, so it does not depend on the client's stale copy).
+    try {
+      await syncDayLayout(yachtId, date);
+    } catch (syncErr) {
+      console.error("syncDayLayout failed (booking still created):", syncErr);
     }
 
     let roles;
@@ -475,6 +484,12 @@ export const updateBookingYachtInfo = async (req, res, next) => {
         bookingId: booking._id,
         deleteAfter: tripEnd,
       });
+    }
+
+    try {
+      await syncDayLayout(yachtId, date);
+    } catch (syncErr) {
+      console.error("syncDayLayout failed (booking still updated):", syncErr);
     }
 
     res.status(200).json({

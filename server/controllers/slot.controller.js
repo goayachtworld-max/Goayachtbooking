@@ -1,5 +1,10 @@
 import { SlotModel } from "../models/slot.model.js";
 import { YachtModel } from "../models/yacht.model.js";
+import {
+  reconcileLayout,
+  getProtectedRanges,
+  toDateKey,
+} from "../utils/daySlots.js";
 
 export const createOrUpdateSlot = async (req, res) => {
   try {
@@ -30,37 +35,59 @@ export const createOrUpdateSlot = async (req, res) => {
       });
     }
 
+    // Validate payload shape
+    const timeRe = /^\d{1,2}:\d{2}$/;
+    const bad = slots.find(
+      (s) => !s || !timeRe.test(String(s.start)) || !timeRe.test(String(s.end))
+    );
+    if (bad) {
+      return res.status(400).json({
+        success: false,
+        message: "Every slot needs start and end in HH:MM format",
+      });
+    }
+
+    // SINGLE SOURCE OF TRUTH: bookings and locks always win.
+    // Whatever layout the client sends, the saved layout must contain the exact
+    // booked/locked ranges and must not overlap them.
+    const dateKey = toDateKey(date);
+    const protectedRanges = await getProtectedRanges(yachtId, dateKey);
+    const requested = slots.map((s) => ({ start: s.start, end: s.end }));
+    const finalSlots = reconcileLayout(requested, protectedRanges);
+
+    const norm = (arr) => arr.map((s) => `${s.start}-${s.end}`).sort().join("|");
+    const adjusted = norm(finalSlots) !== norm(
+      reconcileLayout(requested, [])   // same sort/merge, without bookings
+    );
+
     // Find existing slot
     let slot = await SlotModel.findOne({
       yachtId,
       date: { $gte: startOfDay, $lte: endOfDay },
     });
 
-    // Update slot
+    let created = false;
     if (slot) {
-      slot.slots = slots;
+      slot.slots = finalSlots;
       await slot.save();
-    }
-    // Create slot
-    else {
+    } else {
       slot = await SlotModel.create({
         yachtId,
         date: startOfDay,
-        slots,
+        slots: finalSlots,
       });
+      created = true;
     }
 
-    // ✅ SAFE UPDATE: no validation triggered
     await YachtModel.updateOne(
       { _id: yachtId },
       { $addToSet: { slots: slot._id } } // prevents duplicates
     );
 
-    return res.status(slot.isNew ? 201 : 200).json({
+    return res.status(created ? 201 : 200).json({
       success: true,
-      message: slot.isNew
-        ? "Slot created successfully"
-        : "Slot updated successfully",
+      message: created ? "Slot created successfully" : "Slot updated successfully",
+      adjusted, // true => server kept booked/locked times intact
       data: slot,
     });
 

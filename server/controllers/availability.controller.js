@@ -3,6 +3,7 @@ import { BookingModel } from "../models/booking.model.js";
 import { EmployeeModel } from "../models/employee.model.js";
 import { YachtModel } from "../models/yacht.model.js";
 import { sendNotification } from "../services/notification.service.js";
+import { reconcileLayout, getProtectedRanges, toDateKey } from "../utils/daySlots.js";
 
 // -------------------------
 // Helper: Convert HH:mm to minutes
@@ -22,7 +23,8 @@ export const checkSlotAvailability = async ({
   startTime,
   endTime,
   employeeId,
-  userType
+  userType,
+  ignoreBookingId = null, // when rescheduling, don't conflict with the booking's own old time
 }) => {
   if (!yachtId || !date || !startTime || !endTime) {
     return {
@@ -40,6 +42,7 @@ export const checkSlotAvailability = async ({
   // 1️⃣ Check for overlap in AVAILABILITY (locked/booked)
   const availSlots = await AvailabilityModel.find({ yachtId, date });
   for (const slot of availSlots) {
+    if (ignoreBookingId && String(slot.bookingId) === String(ignoreBookingId)) continue;
     const slotStart = toMinutes(slot.startTime);
     const slotEnd = toMinutes(slot.endTime);
     const overlap = newStart < slotEnd && newEnd > slotStart;
@@ -83,6 +86,7 @@ export const checkSlotAvailability = async ({
   });
 
   for (const b of existingBookings) {
+    if (ignoreBookingId && String(b._id) === String(ignoreBookingId)) continue;
     const bStart = toMinutes(b.startTime);
     const bEnd = toMinutes(b.endTime);
     const overlap = newStart < bEnd && newEnd > bStart;
@@ -403,9 +407,9 @@ export const getDayAvailability = async (req, res, next) => {
     const dayEnd = new Date(date);
     dayEnd.setHours(23, 59, 59, 999);
 
-    // Convert to string to match your slotSchema string format
-    const startStr = dayStart.toString();
-    const endStr = dayEnd.toString();
+    // Slot.date is a real Date, so match with Dates (not toString() strings)
+    const startStr = dayStart;
+    const endStr = dayEnd;
 
     // ===========================================
     // ✅ GET YACHT + ONLY SLOTS MATCHING THIS DATE
@@ -445,8 +449,8 @@ export const getDayAvailability = async (req, res, next) => {
       end: b.endTime,
       status: b.status,
       appliedBy: b.employeeId?._id,
-      empName: b.employeeId.name,
-      custName: b.customerId.name
+      empName: b.employeeId?.name,
+      custName: b.customerId?.name
     }));
 
     // ===========================================
@@ -470,6 +474,25 @@ export const getDayAvailability = async (req, res, next) => {
     }));
 
     // ===========================================
+    // ✅ SINGLE SOURCE OF TRUTH
+    // The stored layout is reconciled with bookings/locks on every read, so a
+    // layout that was saved out of sync can never be shown to the user.
+    // ===========================================
+    const protectedRanges = await getProtectedRanges(yachtId, toDateKey(date));
+    const reconciledSlots = (yacht.slots || [])
+      .filter(Boolean)
+      .map((doc) => {
+        const obj = typeof doc.toObject === "function" ? doc.toObject() : doc;
+        return {
+          ...obj,
+          slots: reconcileLayout(
+            (obj.slots || []).map((x) => ({ start: x.start, end: x.end })),
+            protectedRanges
+          ),
+        };
+      });
+
+    // ===========================================
     // ✅ SEND RESPONSE
     // ===========================================
     return res.status(200).json({
@@ -479,7 +502,7 @@ export const getDayAvailability = async (req, res, next) => {
       date,
       bookedSlots,
       lockedSlots,
-      slots: yacht.slots // <--- NOW CORRECTLY POPULATED
+      slots: reconciledSlots
     });
   } catch (error) {
     console.error("getDayAvailability error:", error);
