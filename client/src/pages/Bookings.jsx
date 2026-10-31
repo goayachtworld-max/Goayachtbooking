@@ -600,6 +600,30 @@ function Bookings({ user }) {
       h = h % 12 || 12;
       return `${h}.${m.toString().padStart(2, "0")} ${period}`;
     };
+    const openWhatsApp = (text) => {
+      let phone = booking.customerId?.contact?.replace(/\D/g, "");
+      if (phone && !phone.startsWith("91") && phone.length === 10) phone = "91" + phone;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
+    };
+
+    // Cancelled booking -> short message (no boarding pass, price or terms)
+    if (booking.status === "cancelled") {
+      const cancelMessage =
+        `Hi ${customerName},\n\n` +
+        `Your booking with ${companyName} has been cancelled.\n\n` +
+        `Booking Status: CANCELLED\n\n` +
+        `Guest Name: ${booking.customerId?.name}\n` +
+        `Contact No.: ${booking.customerId?.contact}\n` +
+        `Group Size: ${booking.numPeople} Pax\n` +
+        `Yacht Name: ${yachtName}\n\n` +
+        `Trip Date: ${formatDate(booking.date)} | Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n` +
+        `(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)\n\n` +
+        `If you have any questions or would like to book another date, please message us here.\n\n` +
+        `Thank you,\n${companyName}`;
+      openWhatsApp(cancelMessage);
+      return;
+    }
+
     const sanitizeText = (text = "") =>
       text
         .replace(/\u2022|\u2023|\u25E6/g, "-")
@@ -634,10 +658,7 @@ function Bookings({ user }) {
       (notesRaw ? `\n\nNotes:\n* ${notesRaw.replace(/\n/g, "\n* ")}` : "") +
       `\n\n${disclaimer}`;
 
-    let phone = booking.customerId?.contact?.replace(/\D/g, "");
-    if (phone && !phone.startsWith("91") && phone.length === 10) phone = "91" + phone;
-    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, "_blank");
+    openWhatsApp(message);
   };
 
   const handleCreateBooking = () => navigate("/create-booking", { state: { source: "bookings" } });
