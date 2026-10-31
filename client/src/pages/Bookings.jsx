@@ -613,8 +613,6 @@ function Bookings({ user }) {
         `Your booking with ${companyName} has been cancelled.\n\n` +
         `Booking Status: CANCELLED\n\n` +
         `Guest Name: ${booking.customerId?.name}\n` +
-        `Contact No.: ${booking.customerId?.contact}\n` +
-        `Group Size: ${booking.numPeople} Pax\n` +
         `Yacht Name: ${yachtName}\n\n` +
         `Trip Date: ${formatDate(booking.date)} | Time: ${formatTime(booking.startTime)} to ${formatTime(booking.endTime)}\n` +
         `(${booking.sailingHours ?? 1} Hour Sailing + ${booking.anchoringHours ?? 1} Hour Anchor)\n\n` +
