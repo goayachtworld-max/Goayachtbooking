@@ -41,6 +41,46 @@ export const isWhatsAppLive = () => {
 // ─── WhatsApp client singleton ─────────────────────────────────────────────────
 let waClient   = null;
 let waReady    = false;
+// ─── Keep a WhatsApp / Chrome hiccup from taking the whole API down ────────────
+// whatsapp-web.js sometimes throws "Execution context was destroyed" when the
+// WhatsApp page reloads. Uncaught, that crashed the entire server. Now such
+// errors are logged, the server keeps running, and the WhatsApp client restarts
+// itself (at most once every 30 s).
+let guardInstalled = false;
+let lastRecovery = 0;
+
+const isWaLibError = (err) => {
+  const text = `${err?.message ?? ''}\n${err?.stack ?? ''}`;
+  return /whatsapp-web\.js|puppeteer/i.test(text);
+};
+
+const recoverWhatsApp = (why) => {
+  waReady = false;
+  const now = Date.now();
+  if (now - lastRecovery < 30_000) return;
+  lastRecovery = now;
+  console.warn(`WhatsApp: ${why} — restarting the WhatsApp client in 10s`);
+  setTimeout(async () => {
+    try { await waClient?.destroy(); } catch { /* browser may already be gone */ }
+    waClient = null;
+    initCalled = false;
+    initWhatsApp();
+  }, 10_000);
+};
+
+const installCrashGuard = () => {
+  if (guardInstalled) return;
+  guardInstalled = true;
+  process.on('unhandledRejection', (reason) => {
+    if (isWaLibError(reason)) {
+      console.error('WhatsApp library error (server kept running):', reason?.message);
+      recoverWhatsApp('library error');
+      return;
+    }
+    throw reason; // anything else behaves exactly as before (crash + PM2 restart)
+  });
+};
+
 let initCalled = false;
 
 export const initWhatsApp = () => {
@@ -53,6 +93,7 @@ export const initWhatsApp = () => {
     return null;
   }
 
+  installCrashGuard();
   console.log('WhatsApp: LIVE mode — starting client (a QR code or "READY" line follows within ~1 minute)');
 
   waClient = new Client({
@@ -217,6 +258,10 @@ export const sendWhatsAppText = async (waNumber, text) => {
     await waClient.sendMessage(id._serialized, text);
     return { success: true };
   } catch (err) {
+    if (/Execution context was destroyed|Session closed|Target closed|Protocol error|detached Frame/i.test(err.message)) {
+      recoverWhatsApp(`send failed (${err.message})`);
+      return { success: false, reason: 'WhatsApp client not ready' };
+    }
     return { success: false, reason: err.message };
   }
 };
