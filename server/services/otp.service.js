@@ -53,6 +53,8 @@ export const initWhatsApp = () => {
     return null;
   }
 
+  console.log('WhatsApp: LIVE mode — starting client (a QR code or "READY" line follows within ~1 minute)');
+
   waClient = new Client({
     authStrategy: new LocalAuth({ dataPath: './.wa-session' }),
     puppeteer: {
@@ -74,6 +76,15 @@ export const initWhatsApp = () => {
     console.log('WhatsApp service READY — OTPs and booking messages will be sent for real');
   });
 
+  // Progress logging: shows exactly where start-up stops if READY never arrives
+  waClient.on('loading_screen', (percent, message) =>
+    console.log(`WhatsApp: loading ${percent}% — ${message}`)
+  );
+  waClient.on('authenticated', () =>
+    console.log('WhatsApp: authenticated (saved session accepted) — waiting for READY...')
+  );
+  waClient.on('change_state', (state) => console.log('WhatsApp: state ->', state));
+
   waClient.on('auth_failure', (msg) => {
     // Session invalid — delete .wa-session/ and restart to get a fresh QR
     waReady = false;
@@ -92,7 +103,24 @@ export const initWhatsApp = () => {
     }, 5_000);
   });
 
-  waClient.initialize();
+  // Watchdog: if neither a QR nor READY shows up, say so once a minute (max 10 min)
+  const startedAt = Date.now();
+  const watchdog = setInterval(() => {
+    const secs = Math.round((Date.now() - startedAt) / 1000);
+    if (waReady || secs > 600) return clearInterval(watchdog);
+    console.warn(`WhatsApp: still NOT ready ${secs}s after start (no QR / READY received yet)`);
+  }, 60_000);
+  watchdog.unref?.();
+
+  // Without a catch, a failed start (e.g. Chromium missing) is silent or crashes the server.
+  waClient.initialize().catch((err) => {
+    waReady = false;
+    console.error('WhatsApp FAILED TO START:', err.message);
+    console.error(
+      'WhatsApp: most common cause is Chromium or its system libraries missing on this server. ' +
+      'Messages will keep failing with "WhatsApp client not ready" until this is fixed and the server restarted.'
+    );
+  });
   return waClient;
 };
 
