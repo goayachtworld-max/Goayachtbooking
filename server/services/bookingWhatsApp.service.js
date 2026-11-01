@@ -20,7 +20,9 @@
 //   WA_CONFIRM_DELAY_SECONDS=30   wait before sending the confirmation, so the
 //                                 advance payment (recorded a moment after the
 //                                 booking is created) is included. Default 30.
-//   NODE_ENV!=production          messages are printed to the console, not sent
+//   WA_ENABLED=true               send for real in any environment (see otp.service.js).
+//                                 Without it, messages only print to the console unless
+//                                 NODE_ENV=production.
 
 import { BookingModel } from "../models/booking.model.js";
 import { WaMessageLogModel } from "../models/waMessageLog.model.js";
@@ -233,6 +235,25 @@ const enqueue = (job) => {
     .then(() => sleep(2000 + Math.random() * 2000));
 };
 
+// If WhatsApp is still starting up (or briefly disconnected) the send is retried
+// instead of being dropped: up to 5 more tries, one minute apart.
+const RETRY = Symbol("retry");
+const MAX_RETRIES = 5;
+const RETRY_DELAY_MS = 60 * 1000;
+
+const run = (job, attempt = 0) => {
+  enqueue(async () => {
+    const outcome = await job(attempt >= MAX_RETRIES);
+    if (outcome === RETRY) {
+      console.warn(
+        `[WA booking notify] WhatsApp not ready — retry ${attempt + 1}/${MAX_RETRIES} in ${RETRY_DELAY_MS / 1000}s`
+      );
+      const t = setTimeout(() => run(job, attempt + 1), RETRY_DELAY_MS);
+      t.unref?.();
+    }
+  });
+};
+
 const loadBooking = (bookingId) =>
   BookingModel.findById(bookingId)
     .populate("customerId", "name contact")
@@ -244,13 +265,16 @@ const log = (booking, event, status, { to = null, reason = null, text = null } =
     console.error("[WA booking notify] could not write log:", e?.message)
   );
 
-const deliver = async (booking, event, text) => {
+const deliver = async (booking, event, text, final = true) => {
   const to = normalizeWaNumber(booking.customerId?.contact);
   if (!to) {
     await log(booking, event, "skipped", { reason: "No valid customer phone number", text });
     return;
   }
   const result = await sendWhatsAppText(to, text);
+  if (!result.success && result.reason === "WhatsApp client not ready" && !final) {
+    return RETRY; // try again shortly; nothing is logged until the last attempt
+  }
   if (result.success) {
     await log(booking, event, "sent", { to, text, reason: result.dev ? "dev: printed to console" : null });
   } else {
@@ -271,12 +295,12 @@ const alreadySent = (bookingId, event) =>
 export const notifyBookingConfirmed = (bookingId) => {
   if (!enabled()) return;
   const timer = setTimeout(() => {
-    enqueue(async () => {
+    run(async (final) => {
       const booking = await loadBooking(bookingId);
       if (!booking) return;
       if (booking.status !== "confirmed") return; // cancelled / not confirmed any more
       if (await alreadySent(booking._id, "confirmed")) return;
-      await deliver(booking, "confirmed", buildConfirmedMessage(booking));
+      return deliver(booking, "confirmed", buildConfirmedMessage(booking), final);
     });
   }, confirmDelayMs());
   timer.unref?.();
@@ -289,11 +313,11 @@ export const notifyBookingConfirmed = (bookingId) => {
  */
 export const notifyBookingCancelled = (bookingId, { wasConfirmed = false } = {}) => {
   if (!enabled() || !wasConfirmed) return;
-  enqueue(async () => {
+  run(async (final) => {
     const booking = await loadBooking(bookingId);
     if (!booking) return;
     if (await alreadySent(booking._id, "cancelled")) return;
-    await deliver(booking, "cancelled", buildCancelledMessage(booking));
+    return deliver(booking, "cancelled", buildCancelledMessage(booking), final);
   });
 };
 
@@ -305,10 +329,10 @@ export const notifyBookingUpdated = (bookingId, before, after) => {
   if (!enabled()) return;
   const changes = buildChanges(before, after, { includeAmounts: amountsEnabled() });
   if (!changes.length) return;
-  enqueue(async () => {
+  run(async (final) => {
     const booking = await loadBooking(bookingId);
     if (!booking) return;
     if (booking.status !== "confirmed") return; // pending/cancelled: customer wasn't told, so don't update
-    await deliver(booking, "updated", buildUpdatedMessage(booking, changes));
+    return deliver(booking, "updated", buildUpdatedMessage(booking, changes), final);
   });
 };
