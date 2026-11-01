@@ -54,19 +54,25 @@ const isWaLibError = (err) => {
   return /whatsapp-web\.js|puppeteer/i.test(text);
 };
 
-const recoverWhatsApp = (why) => {
+const recoverWhatsApp = (why, delayMs = 10_000) => {
   waReady = false;
   const now = Date.now();
   if (now - lastRecovery < 30_000) return;
   lastRecovery = now;
-  console.warn(`WhatsApp: ${why} — restarting the WhatsApp client in 10s`);
+  console.warn(`WhatsApp: ${why} — restarting the WhatsApp client in ${Math.round(delayMs / 1000)}s`);
   setTimeout(async () => {
-    try { await waClient?.destroy(); } catch { /* browser may already be gone */ }
+    try {
+      // never wait more than 15s for a stuck browser to close
+      await Promise.race([waClient?.destroy(), new Promise((r) => setTimeout(r, 15_000))]);
+    } catch { /* browser may already be gone */ }
+    try { waClient?.pupBrowser?.process()?.kill('SIGKILL'); } catch { /* already gone */ }
     waClient = null;
     initCalled = false;
     initWhatsApp();
-  }, 10_000);
+  }, delayMs);
 };
+
+let startFailures = 0; // consecutive failed start-ups; reset on READY
 
 const installCrashGuard = () => {
   if (guardInstalled) return;
@@ -100,7 +106,20 @@ export const initWhatsApp = () => {
     authStrategy: new LocalAuth({ dataPath: './.wa-session' }),
     puppeteer: {
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      // Loading WhatsApp Web can be slow on a small VPS; the default limit is 3 min.
+      protocolTimeout: 10 * 60 * 1000,
+      timeout: 2 * 60 * 1000,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-extensions',
+        '--disable-background-networking',
+        '--disable-default-apps',
+        '--no-first-run',
+        '--mute-audio',
+      ],
     },
   });
 
@@ -114,6 +133,7 @@ export const initWhatsApp = () => {
 
   waClient.on('ready', () => {
     waReady = true;
+    startFailures = 0;
     console.log('WhatsApp service READY — OTPs and booking messages will be sent for real');
   });
 
@@ -156,11 +176,27 @@ export const initWhatsApp = () => {
   // Without a catch, a failed start (e.g. Chromium missing) is silent or crashes the server.
   waClient.initialize().catch((err) => {
     waReady = false;
+    startFailures += 1;
     console.error('WhatsApp FAILED TO START:', err.message);
-    console.error(
-      'WhatsApp: most common cause is Chromium or its system libraries missing on this server. ' +
-      'Messages will keep failing with "WhatsApp client not ready" until this is fixed and the server restarted.'
-    );
+
+    if (/timed out|timeout/i.test(err.message)) {
+      console.error(
+        'WhatsApp: Chrome is responding too slowly on this server (not enough CPU / RAM?). ' +
+        'Check `free -m` and `uptime`; adding swap or a bigger VPS usually fixes it.'
+      );
+    } else {
+      console.error(
+        'WhatsApp: if this is a "could not find Chrome" / shared-library error, Chromium or its ' +
+        'system libraries are missing on this server.'
+      );
+    }
+
+    if (startFailures <= 5) {
+      const delay = Math.min(10_000 * 2 ** (startFailures - 1), 5 * 60_000);
+      recoverWhatsApp(`start-up failed (attempt ${startFailures}/5)`, delay);
+    } else {
+      console.error('WhatsApp: giving up after 5 failed start-ups — fix the cause above, then restart the server.');
+    }
   });
   return waClient;
 };
