@@ -69,6 +69,10 @@ const employeeSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  passwordChangedAt: {
+    type: Date,
+    default: null   // set by "forgot password"; logins issued before this are rejected
+  },
   lastSeenAt: {
     type: Date,
     default: null

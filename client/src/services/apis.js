@@ -12,6 +12,9 @@ export const employee = {
   GET_EMPLOYEES_NOT_IN_COMPANY: `${BASE_URL}/employees/not-in-company`,
   ADD_EMPLOYEE_TO_COMPANY: `${BASE_URL}/employees/add-to-company`,
   SET_PIN_API: `${BASE_URL}/employees/set-pin`,
+  FORGOT_PASSWORD_API: `${BASE_URL}/employees/forgot-password`,
+  CHECK_RESET_TOKEN_API: `${BASE_URL}/employees/reset-password/check`,
+  RESET_PASSWORD_API: `${BASE_URL}/employees/reset-password`,
 };
 
 export const customer = {

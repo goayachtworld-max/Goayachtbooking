@@ -18,11 +18,32 @@ import { upload, uploadFileToCloudinaryV2, uploadToCloudinary } from "../middlew
 import { employeeSchema } from "../validators/employee.validator.js";
 import { validate } from "../middleware/validate.js";
 import { authMiddleware, onlyAdmin } from "../middleware/auth.js";
+import {
+  forgotPassword,
+  checkResetToken,
+  resetPassword,
+} from "../controllers/passwordReset.controller.js";
+import { rateLimit } from "../utils/rateLimit.js";
 
 const router = express.Router();
 
 router.get("/", authMiddleware, onlyAdmin, getEmployees);
 router.post("/login", loginEmployee);
+
+// Forgot password (staff only, public routes: the user is not logged in)
+const forgotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: "Too many requests. Please try again in a few minutes.",
+});
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: "Too many attempts. Please try again in a few minutes.",
+});
+router.post("/forgot-password", forgotLimiter, forgotPassword);
+router.post("/reset-password/check", resetLimiter, checkResetToken);
+router.post("/reset-password", resetLimiter, resetPassword);
 router.post("/set-pin", authMiddleware, setPin);
 router.post("/createEmployee", authMiddleware, onlyAdmin, validate(employeeSchema), createEmployee);
 router.get("/bookingpage",authMiddleware, getEmployeesForBooking);

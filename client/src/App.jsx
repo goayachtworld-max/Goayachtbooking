@@ -32,6 +32,8 @@ const EditBookingDetails= lazy(() => import("./components/EditBookingDetails"));
 const RegisterCompany   = lazy(() => import("./pages/RegisterCompany"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const Reports           = lazy(() => import("./pages/Reports"));
+const ForgotPassword    = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword     = lazy(() => import("./pages/ResetPassword"));
 
 const PageLoader = () => (
   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
@@ -267,6 +269,10 @@ function App() {
                 <NotificationsPage />
               </ProtectedRoute>
             } />
+
+            {/* Staff password reset: public, no login needed */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             <Route path="*" element={<NotFound user={user} />} />
           </Routes>

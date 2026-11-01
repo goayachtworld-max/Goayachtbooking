@@ -615,6 +615,17 @@ function Login({ onLogin }) {
                 )}
               </div>
 
+              <div className={styles.forgotRow}>
+                <button
+                  type="button"
+                  className={styles.forgotLink}
+                  onClick={() => navigate("/forgot-password", { state: { identifier: identifier.trim() } })}
+                  disabled={loading}
+                >
+                  Forgot password?
+                </button>
+              </div>
+
               {error && <p className={styles.errorMsg}>{error}</p>}
 
               <button className={styles.loginButton} type="submit" disabled={loading}>

@@ -21,3 +21,16 @@ export const createEmployeeAPI = async (data, token) => {
     Authorization: `Bearer ${token}`,
   });
 };
+
+// ── Forgot / reset password (staff only, no login needed) ──
+export const forgotPasswordAPI = async (identifier) => {
+  return apiConnector("POST", employee.FORGOT_PASSWORD_API, { identifier });
+};
+
+export const checkResetTokenAPI = async (token) => {
+  return apiConnector("POST", employee.CHECK_RESET_TOKEN_API, { token });
+};
+
+export const resetPasswordAPI = async (token, newPassword) => {
+  return apiConnector("POST", employee.RESET_PASSWORD_API, { token, newPassword });
+};

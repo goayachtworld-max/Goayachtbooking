@@ -19,7 +19,7 @@ export const authMiddleware = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const employee = await EmployeeModel.findById(decoded.id)
-      .select("_id type company isPrivate status lastSeenAt systemAdministrator");
+      .select("_id type company isPrivate status lastSeenAt systemAdministrator passwordChangedAt");
 
     if (!employee) {
       return res.status(401).json({
@@ -34,6 +34,17 @@ export const authMiddleware = async (req, res, next) => {
         message: "Employee is inactive"
       });
     }
+    // Password was reset after this login token was issued -> sign in again
+    if (
+      employee.passwordChangedAt &&
+      decoded.iat < Math.floor(employee.passwordChangedAt.getTime() / 1000)
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "Your password was changed. Please sign in again."
+      });
+    }
+
     const THIRTY_MIN = 30 * 60 * 1000;
     const now = Date.now();
     if (
