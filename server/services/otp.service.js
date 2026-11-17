@@ -1,209 +1,59 @@
 // services/otp.service.js
-// WhatsApp OTP via whatsapp-web.js — free, no API key, no per-message cost.
+// Customer login codes (OTP) over WhatsApp, sent from the "system" WhatsApp
+// account: the original session (.wa-session/session).
 //
-// HOW IT WORKS:
-//   - Uses your WhatsApp Business number (+91 9921710376)
-//   - Scans QR ONCE on first run; session saved to .wa-session/ (survives restarts)
-//   - Sends OTP messages directly as a normal WhatsApp user
-//   - No Meta approval, no BSP, no DLT registration needed
+// The WhatsApp engine itself (sessions, QR codes, recovery) now lives in
+// waSessions.service.js, because several accounts run side by side:
+//   system        -> this file: customer OTP
+//   company       -> booking messages for admin / staff / public bookings
+//   agent         -> booking messages for that agent's bookings
+// (see whatsappAccounts.service.js)
 //
-// SETUP (one-time):
-//   npm install whatsapp-web.js qrcode-terminal
-//   node index.js          ← scan the QR that prints in your terminal
+// SETUP: the first time the system session starts, a QR code prints in the
+// server log. Scan it with the system WhatsApp number; the login is saved in
+// .wa-session/ (keep that folder out of git).
 //
-// IMPORTANT:
-//   • Use your WhatsApp Business number, NOT your personal one
-//   • Add .wa-session/ to .gitignore — it contains your auth credentials
-//   • The phone cleaning below handles Indian numbers correctly (91XXXXXXXX too)
-//
-// ENV (optional):
-//   WA_ENABLED=true        ← send for real in ANY environment (otherwise only when NODE_ENV=production)
+//   WA_ENABLED=true   send for real in ANY environment (otherwise only when NODE_ENV=production)
 
-import pkg   from 'whatsapp-web.js';
-const { Client, LocalAuth } = pkg;
-import qrcode from 'qrcode-terminal';
-import crypto  from 'crypto';
+import crypto from 'crypto';
+import {
+  isWhatsAppLive,
+  startSession,
+  getSnapshot,
+  sendText,
+} from './waSessions.service.js';
 
-// ─── LIVE vs DEV mode ──────────────────────────────────────────────────────────
-// LIVE  = the WhatsApp client starts and messages are really sent.
-// DEV   = nothing is sent; OTPs / booking messages are printed to the console.
-//
-//   WA_ENABLED=true   -> LIVE in any environment (local, staging, production)
-//   WA_ENABLED=false  -> DEV even in production
-//   (not set)         -> LIVE only when NODE_ENV=production (the old behaviour)
-export const isWhatsAppLive = () => {
-  const flag = String(process.env.WA_ENABLED ?? '').trim().toLowerCase();
-  if (flag === 'true') return true;
-  if (flag === 'false') return false;
-  return process.env.NODE_ENV === 'production';
-};
+export { isWhatsAppLive };
 
-// ─── WhatsApp client singleton ─────────────────────────────────────────────────
-let waClient   = null;
-let waReady    = false;
-// ─── Keep a WhatsApp / Chrome hiccup from taking the whole API down ────────────
-// whatsapp-web.js sometimes throws "Execution context was destroyed" when the
-// WhatsApp page reloads. Uncaught, that crashed the entire server. Now such
-// errors are logged, the server keeps running, and the WhatsApp client restarts
-// itself (at most once every 30 s).
-let guardInstalled = false;
-let lastRecovery = 0;
-
-const isWaLibError = (err) => {
-  const text = `${err?.message ?? ''}\n${err?.stack ?? ''}`;
-  return /whatsapp-web\.js|puppeteer/i.test(text);
-};
-
-const recoverWhatsApp = (why, delayMs = 10_000) => {
-  waReady = false;
-  const now = Date.now();
-  if (now - lastRecovery < 30_000) return;
-  lastRecovery = now;
-  console.warn(`WhatsApp: ${why} — restarting the WhatsApp client in ${Math.round(delayMs / 1000)}s`);
-  setTimeout(async () => {
-    try {
-      // never wait more than 15s for a stuck browser to close
-      await Promise.race([waClient?.destroy(), new Promise((r) => setTimeout(r, 15_000))]);
-    } catch { /* browser may already be gone */ }
-    try { waClient?.pupBrowser?.process()?.kill('SIGKILL'); } catch { /* already gone */ }
-    waClient = null;
-    initCalled = false;
-    initWhatsApp();
-  }, delayMs);
-};
-
-let startFailures = 0; // consecutive failed start-ups; reset on READY
-
-const installCrashGuard = () => {
-  if (guardInstalled) return;
-  guardInstalled = true;
-  process.on('unhandledRejection', (reason) => {
-    if (isWaLibError(reason)) {
-      console.error('WhatsApp library error (server kept running):', reason?.message);
-      recoverWhatsApp('library error');
-      return;
-    }
-    throw reason; // anything else behaves exactly as before (crash + PM2 restart)
-  });
-};
-
+const SYSTEM = 'system';
 let initCalled = false;
 
+// ─── Start WhatsApp (called once from index.js) ────────────────────────────────
 export const initWhatsApp = () => {
-  if (initCalled) return waClient;   // guard against double-init
+  if (initCalled) return null;
   initCalled = true;
 
-  // Dev: skip WA entirely — OTPs print to console
   if (!isWhatsAppLive()) {
     console.log('INFO [DEV] WhatsApp is OFF — OTPs and booking messages are only printed to the console. Set WA_ENABLED=true in .env to send for real.');
     return null;
   }
 
-  installCrashGuard();
-  console.log('WhatsApp: LIVE mode — starting client (a QR code or "READY" line follows within ~1 minute)');
+  console.log('WhatsApp: LIVE mode — starting the system account (a QR code or "READY" line follows within ~1 minute)');
+  startSession(SYSTEM).catch((e) => console.error('WhatsApp system start failed:', e?.message));
 
-  waClient = new Client({
-    authStrategy: new LocalAuth({ dataPath: './.wa-session' }),
-    puppeteer: {
-      headless: true,
-      // Loading WhatsApp Web can be slow on a small VPS; the default limit is 3 min.
-      protocolTimeout: 10 * 60 * 1000,
-      timeout: 2 * 60 * 1000,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-extensions',
-        '--disable-background-networking',
-        '--disable-default-apps',
-        '--no-first-run',
-        '--mute-audio',
-      ],
-    },
-  });
+  // Company and agent accounts that were linked before come back online one by one
+  import('./whatsappAccounts.service.js')
+    .then((m) => m.bootLinkedAccounts())
+    .catch((e) => console.error('WhatsApp account boot failed:', e?.message));
 
-  waClient.on('qr', (qr) => {
-    console.log('\n======================================================');
-    console.log('   SCAN THIS QR WITH YOUR WHATSAPP BUSINESS NUMBER');
-    console.log('   (One-time only — session saved to .wa-session/)');
-    console.log('======================================================\n');
-    qrcode.generate(qr, { small: true });
-  });
-
-  waClient.on('ready', () => {
-    waReady = true;
-    startFailures = 0;
-    console.log('WhatsApp service READY — OTPs and booking messages will be sent for real');
-  });
-
-  // Progress logging: shows exactly where start-up stops if READY never arrives
-  waClient.on('loading_screen', (percent, message) =>
-    console.log(`WhatsApp: loading ${percent}% — ${message}`)
-  );
-  waClient.on('authenticated', () =>
-    console.log('WhatsApp: authenticated (saved session accepted) — waiting for READY...')
-  );
-  waClient.on('change_state', (state) => console.log('WhatsApp: state ->', state));
-
-  waClient.on('auth_failure', (msg) => {
-    // Session invalid — delete .wa-session/ and restart to get a fresh QR
-    waReady = false;
-    console.error('WhatsApp auth failed — delete .wa-session/ and restart:', msg);
-  });
-
-  waClient.on('disconnected', (reason) => {
-    waReady = false;
-    console.warn('WhatsApp disconnected:', reason, '— reconnecting in 5s');
-    setTimeout(() => {
-      if (waClient) {
-        waClient.initialize().catch(err =>
-          console.error('WhatsApp re-init failed:', err.message)
-        );
-      }
-    }, 5_000);
-  });
-
-  // Watchdog: if neither a QR nor READY shows up, say so once a minute (max 10 min)
-  const startedAt = Date.now();
-  const watchdog = setInterval(() => {
-    const secs = Math.round((Date.now() - startedAt) / 1000);
-    if (waReady || secs > 600) return clearInterval(watchdog);
-    console.warn(`WhatsApp: still NOT ready ${secs}s after start (no QR / READY received yet)`);
-  }, 60_000);
-  watchdog.unref?.();
-
-  // Without a catch, a failed start (e.g. Chromium missing) is silent or crashes the server.
-  waClient.initialize().catch((err) => {
-    waReady = false;
-    startFailures += 1;
-    console.error('WhatsApp FAILED TO START:', err.message);
-
-    if (/timed out|timeout/i.test(err.message)) {
-      console.error(
-        'WhatsApp: Chrome is responding too slowly on this server (not enough CPU / RAM?). ' +
-        'Check `free -m` and `uptime`; adding swap or a bigger VPS usually fixes it.'
-      );
-    } else {
-      console.error(
-        'WhatsApp: if this is a "could not find Chrome" / shared-library error, Chromium or its ' +
-        'system libraries are missing on this server.'
-      );
-    }
-
-    if (startFailures <= 5) {
-      const delay = Math.min(10_000 * 2 ** (startFailures - 1), 5 * 60_000);
-      recoverWhatsApp(`start-up failed (attempt ${startFailures}/5)`, delay);
-    } else {
-      console.error('WhatsApp: giving up after 5 failed start-ups — fix the cause above, then restart the server.');
-    }
-  });
-  return waClient;
+  return null;
 };
 
-export const isWhatsAppReady = () => waReady;
+export const isWhatsAppReady = () => getSnapshot(SYSTEM)?.state === 'ready';
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+// ─── OTP helpers ───────────────────────────────────────────────────────────────
+
+/** Generate a cryptographically secure 6-digit OTP */
 export const generateOtp = () =>
   String(crypto.randomInt(100_000, 999_999));
 
@@ -233,9 +83,6 @@ export const cleanPhone = (phone) => {
   return digits.slice(-10);
 };
 
-const toWaId = (phone) => `91${phone}@c.us`;
-
-// ─── Send OTP ──────────────────────────────────────────────────────────────────
 export const sendOtpWhatsApp = async (phone, otp) => {
   // Dev: print to console so you can test without a real WhatsApp session
   if (!isWhatsAppLive()) {
@@ -245,59 +92,30 @@ export const sendOtpWhatsApp = async (phone, otp) => {
     return { success: true };
   }
 
-  if (!waReady || !waClient) {
-    console.error('sendOtpWhatsApp: client not ready');
+  const text =
+    `*GoaBoat OTP*\n\n` +
+    `Your one-time password is: *${otp}*\n\n` +
+    `Valid for 10 minutes. Do not share this with anyone.\n` +
+    `– GoaBoat Team`;
+
+  const result = await sendText(SYSTEM, `91${phone}`, text);
+  if (result.success) {
+    console.log(`OTP sent to +91${phone}`);
+    return { success: true };
+  }
+
+  console.error(`WhatsApp send failed for +91${phone}: ${result.reason}`);
+  if (result.reason === 'WhatsApp client not ready') {
     return {
       success: false,
       message: 'WhatsApp service is starting up. Please try again in a moment.',
     };
   }
-
-  try {
-    const text =
-      `*GoaBoat OTP*\n\n` +
-      `Your one-time password is: *${otp}*\n\n` +
-      `Valid for 10 minutes. Do not share this with anyone.\n` +
-      `– GoaBoat Team`;
-
-    await waClient.sendMessage(toWaId(phone), text);
-    console.log(`OTP sent to +91${phone}`);
-    return { success: true };
-  } catch (err) {
-    console.error(`WhatsApp send failed for +91${phone}:`, err.message);
-    return {
-      success: false,
-      message: 'Could not send OTP via WhatsApp. Please try again.',
-    };
-  }
+  return {
+    success: false,
+    message: 'Could not send OTP via WhatsApp. Please try again.',
+  };
 };
 
-// ─── Send any text message (used for booking cancellation / update notices) ───
-// `waNumber` = full international number, digits only (e.g. "919876543210").
-export const sendWhatsAppText = async (waNumber, text) => {
-  // Dev: print to console, nothing is sent
-  if (!isWhatsAppLive()) {
-    console.log('--------------------------------------------');
-    console.log(`  [DEV] WhatsApp to +${waNumber}:\n${text}`);
-    console.log('--------------------------------------------');
-    return { success: true, dev: true };
-  }
-
-  if (!waReady || !waClient) {
-    return { success: false, reason: 'WhatsApp client not ready' };
-  }
-
-  try {
-    // Resolve the number first: fails cleanly if it is not on WhatsApp
-    const id = await waClient.getNumberId(waNumber);
-    if (!id) return { success: false, reason: 'Number is not on WhatsApp' };
-    await waClient.sendMessage(id._serialized, text);
-    return { success: true };
-  } catch (err) {
-    if (/Execution context was destroyed|Session closed|Target closed|Protocol error|detached Frame/i.test(err.message)) {
-      recoverWhatsApp(`send failed (${err.message})`);
-      return { success: false, reason: 'WhatsApp client not ready' };
-    }
-    return { success: false, reason: err.message };
-  }
-};
+/** Send any text from the system account (kept for compatibility). */
+export const sendWhatsAppText = (waNumber, text) => sendText(SYSTEM, waNumber, text);

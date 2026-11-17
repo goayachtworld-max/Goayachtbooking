@@ -32,6 +32,7 @@ const EditBookingDetails= lazy(() => import("./components/EditBookingDetails"));
 const RegisterCompany   = lazy(() => import("./pages/RegisterCompany"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const Reports           = lazy(() => import("./pages/Reports"));
+const WhatsAppSettings  = lazy(() => import("./pages/WhatsAppSettings"));
 const ForgotPassword    = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword     = lazy(() => import("./pages/ResetPassword"));
 
@@ -255,6 +256,12 @@ function App() {
             <Route path="/edit-booking" element={
               <ProtectedRoute user={user}>
                 {["admin", "backdesk", "onsite"].includes(role) ? <EditBookingDetails /> : <NotFound />}
+              </ProtectedRoute>
+            } />
+
+            <Route path="/whatsapp" element={
+              <ProtectedRoute user={user}>
+                {role === "admin" || role === "backdesk" ? <WhatsAppSettings user={user} /> : <NotFound />}
               </ProtectedRoute>
             } />
 

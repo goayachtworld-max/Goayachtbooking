@@ -85,3 +85,13 @@ export const customerAuth = {
   UPDATE_PROFILE_API: `${BASE_URL}/customer/auth/profile`,
   GET_BOOKINGS_API: `${BASE_URL}/customer/auth/bookings`,
 };
+
+// ── WhatsApp accounts (company / agent) ──────────────────────────────────────
+export const whatsapp = {
+  OVERVIEW_API: `${BASE_URL}/whatsapp/overview`,
+  STATUS_API: `${BASE_URL}/whatsapp/status`,
+  CONNECT_API: `${BASE_URL}/whatsapp/connect`,
+  RECONNECT_API: `${BASE_URL}/whatsapp/reconnect`,
+  DISCONNECT_API: `${BASE_URL}/whatsapp/disconnect`,
+  TEST_API: `${BASE_URL}/whatsapp/test`,
+};

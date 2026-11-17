@@ -10,6 +10,7 @@ import { BookingModel }      from '../models/booking.model.js';
 import { AvailabilityModel } from '../models/availability.model.js';
 import { CustomerModel }     from '../models/customer.model.js';
 import { toMin, getResolvedDaySlots, syncDayLayout } from '../utils/daySlots.js';
+import { notifyBookingStatus } from '../services/bookingWhatsApp.service.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // Slots now come from the SAME place as the admin screens (utils/daySlots.js):
@@ -162,6 +163,9 @@ export const createPublicBooking = async (req, res, next) => {
     });
 
     try { await syncDayLayout(yachtId, date); } catch (e) { console.error('syncDayLayout failed:', e); }
+
+    // WhatsApp: "booking received, pending confirmation" (no location until confirmed)
+    notifyBookingStatus(booking._id, { initial: true });
 
     res.status(201).json({
       success: true,

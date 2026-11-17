@@ -7,10 +7,12 @@ import mongoose from "mongoose";
 const waMessageLogSchema = new mongoose.Schema(
   {
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", index: true, required: true },
-    event: { type: String, enum: ["confirmed", "cancelled", "updated"], required: true },
+    event: { type: String, enum: ["pending", "confirmed", "cancelled", "status", "updated"], required: true },
     to: { type: String, default: null }, // international number, digits only
     status: { type: String, enum: ["sent", "failed", "skipped"], required: true },
     reason: { type: String, default: null },
+    statusTo: { type: String, default: null }, // booking status this message told the customer about
+    accountKey: { type: String, default: null }, // which WhatsApp account sent (or would have sent) it
     text: { type: String, default: null },
   },
   { timestamps: true }

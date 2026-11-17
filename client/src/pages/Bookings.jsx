@@ -8,6 +8,7 @@ import { FiSliders } from "react-icons/fi";
 import { Eye, Copy, Phone, GlassWater, Bell, Pencil, Star } from "lucide-react";
 import toast from "react-hot-toast";
 import DemandModal from "./DemandModal";
+import WhatsAppBanner from "../components/WhatsAppBanner";
 import { getDemandsAPI, updateDemandStatusAPI } from "../services/operations/demandAPI";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -854,6 +855,7 @@ Goa Yacht World`;
   // ---------------- RENDER ----------------
   return (
     <div className="container mt-1 pb-2">
+      <WhatsAppBanner user={user} />
       {/* Mobile header: count badge + quotation button (only on mobile) */}
       {isMobile && (
         <div className="d-flex justify-content-between align-items-center mb-3">

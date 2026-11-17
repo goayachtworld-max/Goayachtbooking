@@ -8,8 +8,7 @@ import { sendNotification } from "../services/notification.service.js";
 import { EmployeeModel } from "../models/employee.model.js";
 import { syncDayLayout } from "../utils/daySlots.js";
 import {
-  notifyBookingConfirmed,
-  notifyBookingCancelled,
+  notifyBookingStatus,
   notifyBookingUpdated,
   snapshot,
 } from "../services/bookingWhatsApp.service.js";
@@ -190,11 +189,9 @@ export const createBooking = async (req, res, next) => {
       excludeUserId: req.user.id,
     });
 
-    // WhatsApp: confirmation to the customer (waits ~30s so the advance payment is included).
-    // Pending bookings / quotations are not messaged until they are confirmed.
-    if (bookingStatus === "confirmed") {
-      notifyBookingConfirmed(booking._id);
-    }
+    // WhatsApp: first message to the customer, pending or confirmed (waits ~30s so the
+    // advance payment recorded right after creation is included).
+    notifyBookingStatus(booking._id, { initial: true });
 
     console.log("booking : ", booking);
     res.status(201).json({ success: true, booking });
@@ -240,11 +237,9 @@ export const updateBooking = async (req, res, next) => {
       { new: true }
     ).populate("customerId employeeId transactionId");
 
-    // WhatsApp: only on a real status transition
-    if (status === "cancelled" && booking.status !== "cancelled") {
-      notifyBookingCancelled(bookingId, { wasConfirmed: booking.status === "confirmed" });
-    } else if (status === "confirmed" && booking.status !== "confirmed") {
-      notifyBookingConfirmed(bookingId);
+    // WhatsApp: only on a real status change
+    if (status && status !== booking.status) {
+      notifyBookingStatus(bookingId, { waitForPayment: status === "confirmed" });
     }
 
     return res.status(200).json(updatedBooking);

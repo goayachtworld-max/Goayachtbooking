@@ -4,7 +4,7 @@ import { BookingModel } from "../models/booking.model.js";
 import { deleteAvailabilityForBooking } from "./availability.controller.js";
 import { EmployeeModel } from "../models/employee.model.js";
 import { sendNotification } from "../services/notification.service.js";
-import { notifyBookingCancelled, notifyBookingConfirmed } from "../services/bookingWhatsApp.service.js";
+import { notifyBookingStatus } from "../services/bookingWhatsApp.service.js";
 
 
 export const createTransactionAndUpdateBooking = async (req, res, next) => {
@@ -105,11 +105,11 @@ export const createTransactionAndUpdateBooking = async (req, res, next) => {
   // 🚫 OUTSIDE TRANSACTION (SIDE EFFECTS ONLY)
   // ====================================================
 
-  // WhatsApp: customer gets a message only on a real status transition
-  if (statusBefore !== "cancelled" && populatedBooking?.status === "cancelled") {
-    notifyBookingCancelled(populatedBooking._id, { wasConfirmed: statusBefore === "confirmed" });
-  } else if (statusBefore !== "confirmed" && populatedBooking?.status === "confirmed") {
-    notifyBookingConfirmed(populatedBooking._id);
+  // WhatsApp: customer gets a message only when this request really changed the status
+  if (populatedBooking?.status && populatedBooking.status !== statusBefore) {
+    notifyBookingStatus(populatedBooking._id, {
+      waitForPayment: populatedBooking.status === "confirmed",
+    });
   }
 
   try {
