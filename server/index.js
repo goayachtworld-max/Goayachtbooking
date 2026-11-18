@@ -72,7 +72,6 @@ const PORT = process.env.PORT || 3000;
 connectDB().then(() => {
   server.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-
     // ── WhatsApp OTP client ──────────────────────────────────────────────
     // Initialised AFTER server is up so QR prints cleanly in the terminal.
     // In production the session is restored from .wa-session automatically.
