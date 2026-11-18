@@ -35,7 +35,6 @@ const GENERIC_FORGOT_MESSAGE =
 const INVALID_LINK_MESSAGE =
   "This reset link is invalid or has expired. Please request a new one.";
 
-const appName = () => process.env.APP_NAME || "Goa Luxury Yachts";
 const frontendUrl = () =>
   (process.env.FRONTEND_URL || "https://goaboat.com").replace(/\/+$/, "");
 const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
@@ -62,20 +61,18 @@ const findEmployeeByIdentifier = async (identifier) => {
 
 // ───────────────────────── e-mail templates ─────────────────────────────────
 export const buildResetEmail = ({ name, link }) => {
-  const app = appName();
-  const subject = `Reset your password - ${app}`;
+  const subject = "Reset your password";
   const text =
     `Hi ${name},\n\n` +
-    `We received a request to reset your ${app} password.\n\n` +
+    `We received a request to reset your account password.\n\n` +
     `Open this link to choose a new password (valid for ${TOKEN_TTL_MINUTES} minutes, works once):\n${link}\n\n` +
     `If you did not ask for this, you can ignore this email: your password will not change.\n` +
-    `Never share this link with anyone.\n\n` +
-    `${app}`;
+    `Never share this link with anyone.`;
   const html = `
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;color:#1e293b">
     <h2 style="margin:0 0 12px">Reset your password</h2>
     <p>Hi ${escapeHtml(name)},</p>
-    <p>We received a request to reset your <b>${escapeHtml(app)}</b> password.</p>
+    <p>We received a request to reset your account password.</p>
     <p style="margin:24px 0">
       <a href="${link}" style="background:#1d6fa4;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;display:inline-block;font-weight:bold">Choose a new password</a>
     </p>
@@ -88,18 +85,17 @@ export const buildResetEmail = ({ name, link }) => {
 };
 
 export const buildPasswordChangedEmail = ({ name, when }) => {
-  const app = appName();
-  const subject = `Your password was changed - ${app}`;
+  const subject = "Your password was changed";
   const text =
     `Hi ${name},\n\n` +
-    `Your ${app} password was changed on ${when} (IST).\n\n` +
+    `Your account password was changed on ${when} (IST).\n\n` +
     `If this was you, no action is needed.\n` +
-    `If it was NOT you, contact your admin immediately.\n\n${app}`;
+    `If it was NOT you, contact your admin immediately.`;
   const html = `
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;color:#1e293b">
     <h2 style="margin:0 0 12px">Your password was changed</h2>
     <p>Hi ${escapeHtml(name)},</p>
-    <p>Your <b>${escapeHtml(app)}</b> password was changed on ${escapeHtml(when)} (IST).</p>
+    <p>Your account password was changed on ${escapeHtml(when)} (IST).</p>
     <p>If this was you, no action is needed.<br>If it was <b>not</b> you, contact your admin immediately.</p>
   </div>`;
   return { subject, text, html };

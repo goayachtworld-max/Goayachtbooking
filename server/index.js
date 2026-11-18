@@ -26,7 +26,7 @@ import whatsappRouter       from "./routes/whatsapp.routes.js";
 
 dotenv.config();
 
-console.log("ENV CHECK:", process.env.MONGO_URI);
+// console.log("ENV CHECK:", process.env.MONGO_URI);
 const app = express();
 
 /* ────────────────────────── CORS ────────────────────────── */
