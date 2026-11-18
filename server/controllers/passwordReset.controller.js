@@ -22,7 +22,7 @@ import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { EmployeeModel } from "../models/employee.model.js";
 import { PasswordResetModel } from "../models/passwordReset.model.js";
-import { sendEmail } from "../utils/sendEmail.js";
+import { sendEmail, maskEmail } from "../utils/sendEmail.js";
 import { clientIp } from "../utils/rateLimit.js";
 
 const TOKEN_TTL_MINUTES = 30;
@@ -103,8 +103,20 @@ export const buildPasswordChangedEmail = ({ name, when }) => {
 
 // ───────────────────────── 1. forgot password ───────────────────────────────
 const processForgotRequest = async (identifier, req) => {
+  console.log(`[password reset] request received for "${identifier}"`);
   const employee = await findEmployeeByIdentifier(identifier);
-  if (!employee || employee.status !== "active" || !employee.email) return;
+  if (!employee) {
+    console.warn(`[password reset] no email sent: no employee matches "${identifier}"`);
+    return;
+  }
+  if (employee.status !== "active") {
+    console.warn(`[password reset] no email sent: employee ${employee._id} is not active (status: ${employee.status})`);
+    return;
+  }
+  if (!employee.email) {
+    console.warn(`[password reset] no email sent: employee ${employee._id} has no email address saved`);
+    return;
+  }
 
   // At most 3 reset e-mails per account per hour (stops e-mail bombing)
   const since = new Date(Date.now() - 60 * 60 * 1000);
@@ -133,7 +145,9 @@ const processForgotRequest = async (identifier, req) => {
 
   const link = `${frontendUrl()}/reset-password?token=${token}`;
   const mail = buildResetEmail({ name: employee.name, link });
+  console.log(`[password reset] link created for employee ${employee._id}, emailing ${maskEmail(employee.email)}`);
   await sendEmail({ to: employee.email, ...mail });
+  console.log(`[password reset] reset email handed over for employee ${employee._id}`);
 };
 
 export const forgotPassword = async (req, res) => {
@@ -223,6 +237,8 @@ export const resetPassword = async (req, res, next) => {
       { employeeId: employee._id, consumedAt: null },
       { consumedAt: new Date() }
     );
+
+    console.log(`[password reset] password changed for employee ${employee._id}`);
 
     // "Your password was changed" notice: background, never blocks the reply
     if (employee.email) {
