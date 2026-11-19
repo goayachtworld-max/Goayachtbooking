@@ -839,7 +839,7 @@ export default function Reports({ user }) {
               label="From Date"
               value={fromDate}
               onChange={setFromDate}
-              maxDate={toDate || getTodayIST()}
+              maxDate={toDate || undefined}
               shortcuts={[
                 { label: "Month",  value: getStartOfMonth() },
                 { label: "7 Days", value: getPast7Days() },
@@ -851,7 +851,6 @@ export default function Reports({ user }) {
               value={toDate}
               onChange={setToDate}
               minDate={fromDate}
-              maxDate={getTodayIST()}
               shortcuts={[
                 { label: "Today", value: getTodayIST() },
               ]}
@@ -909,7 +908,7 @@ export default function Reports({ user }) {
                 label="From Date"
                 value={fromDate}
                 onChange={v => { setFromDate(v); if (v) setShowFilters(false); }}
-                maxDate={toDate || getTodayIST()}
+                maxDate={toDate || undefined}
                 shortcuts={[
                   { label: "Month",  value: getStartOfMonth() },
                   { label: "7 Days", value: getPast7Days() },
@@ -921,7 +920,6 @@ export default function Reports({ user }) {
                 value={toDate}
                 onChange={v => { setToDate(v); if (v) setShowFilters(false); }}
                 minDate={fromDate}
-                maxDate={getTodayIST()}
               />
               <YachtTypeahead value={filterYacht} onChange={v => { setFilterYacht(v); if (v) setShowFilters(false); }} yachtNames={yachtNames} />
               <div>
@@ -968,7 +966,7 @@ export default function Reports({ user }) {
               label="From Date"
               value={fromDate}
               onChange={setFromDate}
-              maxDate={toDate || getTodayIST()}
+              maxDate={toDate || undefined}
               shortcuts={[
                 { label: "Month",  value: getStartOfMonth() },
                 { label: "7 Days", value: getPast7Days() },
@@ -980,7 +978,6 @@ export default function Reports({ user }) {
               value={toDate}
               onChange={setToDate}
               minDate={fromDate}
-              maxDate={getTodayIST()}
             />
             <YachtTypeahead value={filterYacht} onChange={setFilterYacht} yachtNames={yachtNames} />
             <div>

@@ -319,7 +319,7 @@ function Navbar({ user, onLogout }) {
     ),
   };
 
-  const MASTERS_PATHS = ["/all-yachts", "/register-company", "/create-customer", "/all-employees"];
+  const MASTERS_PATHS = ["/all-yachts", "/register-company", "/create-customer", "/all-employees", "/whatsapp"];
 
   const bottomBarPaths = ["/bookings", "/availability", "/grid-availability"];
   const bottomBarCoreItems = allNavItems.filter((item) => bottomBarPaths.includes(item.path));
