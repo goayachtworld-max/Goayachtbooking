@@ -280,7 +280,6 @@ function App() {
             {/* Staff password reset: public, no login needed */}
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-
             <Route path="*" element={<NotFound user={user} />} />
           </Routes>
         </Suspense>
